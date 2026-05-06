@@ -1842,6 +1842,114 @@ window.renderAnalysisDetail = function() {
     <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">점수 입력 시 포(Fore)/백(Back) 선택하면 자동 집계돼요</div>
     ${posCard('fore','포(Fore)','#ef4444','🔴')}
     ${posCard('back','백(Back)','#3b82f6','🔵')}
+
+    <!-- 🤝 파트너별 상세 기록 -->
+    ${partners.length ? `
+    <div style="font-size:14px;font-weight:800;color:#f59e0b;margin:20px 0 10px">🤝 파트너별 상세 기록</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${[...partners].sort((a,b)=>b.games-a.games).map((p,pi) => {
+        const pid = `pdetail_${name.replace(/\s/g,'_')}_${pi}`;
+        // 이 파트너와의 경기 상세
+        const matchDetails = [];
+        allRounds().forEach(r => {
+          (r.matches||[]).forEach(m => {
+            if (!m.done) return;
+            const t1=m.team1||[], t2=m.team2||[];
+            const inT1=t1.includes(name)&&t1.includes(p.name);
+            const inT2=t2.includes(name)&&t2.includes(p.name);
+            if (!inT1&&!inT2) return;
+            const myTeam=inT1?t1:t2, oppTeam=inT1?t2:t1;
+            const mySc=inT1?m.score1:m.score2, oppSc=inT1?m.score2:m.score1;
+            const res=mySc>oppSc?'승':mySc<oppSc?'패':'무';
+            matchDetails.push({
+              date:r.date||'',
+              opp:oppTeam.filter(Boolean).join(' / '),
+              mySc, oppSc, res,
+              court:m.court||'', tag:m.tag||''
+            });
+          });
+        });
+        return `<div style="background:rgba(4,16,55,0.7);border-radius:10px;overflow:hidden;border:1px solid rgba(35,90,180,0.25)">
+          <button onclick="toggleAtt('${pid}','${pid}_arr')"
+            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:13px;font-weight:700">${p.name}</span>
+              <span style="font-size:12px;color:#4a8ab5">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
+              <span style="font-size:12px;color:${p.diff>=0?'#34d399':'#f87171'}">득실 ${p.diff>=0?'+':''}${p.diff}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:13px;font-weight:800;color:${p.wr>=50?'#34d399':'#f87171'}">${p.wr}%</span>
+              <span id="${pid}_arr" style="color:#4a8ab5;transition:transform 0.2s">›</span>
+            </div>
+          </button>
+          <div id="${pid}" style="display:none;padding:0 14px 12px">
+            ${matchDetails.length ? matchDetails.map(md=>`
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid rgba(35,90,180,0.15);font-size:12px">
+                <div style="color:#4a8ab5;min-width:60px">${md.date||'날짜미상'}</div>
+                <div style="flex:1;color:#94a3b8;text-align:center;font-size:11px">vs ${md.opp}</div>
+                <div style="font-weight:800;font-size:13px;color:#f59e0b;margin:0 8px">${md.mySc}:${md.oppSc}</div>
+                <div style="font-weight:700;padding:2px 10px;border-radius:8px;
+                  background:${md.res==='승'?'rgba(52,211,153,0.15)':md.res==='패'?'rgba(248,113,113,0.15)':'rgba(251,191,36,0.15)'};
+                  color:${md.res==='승'?'#34d399':md.res==='패'?'#f87171':'#fbbf24'}">${md.res}</div>
+              </div>`).join('')
+            : '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
+
+    <!-- 💀 상대별 상세 기록 -->
+    ${opps.length ? `
+    <div style="font-size:14px;font-weight:800;color:#f87171;margin:20px 0 10px">⚔️ 상대별 상세 기록</div>
+    <div style="display:flex;flex-direction:column;gap:6px">
+      ${[...opps].sort((a,b)=>b.games-a.games).map((p,pi) => {
+        const oid = `odetail_${name.replace(/\s/g,'_')}_${pi}`;
+        const matchDetails = [];
+        allRounds().forEach(r => {
+          (r.matches||[]).forEach(m => {
+            if (!m.done) return;
+            const t1=m.team1||[], t2=m.team2||[];
+            const inT1=t1.includes(name), inT2=t2.includes(name);
+            if (!inT1&&!inT2) return;
+            const myTeam=inT1?t1:t2, oppTeam=inT1?t2:t1;
+            if (!oppTeam.includes(p.name)) return;
+            const mySc=inT1?m.score1:m.score2, oppSc=inT1?m.score2:m.score1;
+            const res=mySc>oppSc?'승':mySc<oppSc?'패':'무';
+            matchDetails.push({
+              date:r.date||'',
+              myTeam:myTeam.filter(x=>x!==name).join('/'),
+              mySc, oppSc, res
+            });
+          });
+        });
+        return `<div style="background:rgba(4,16,55,0.7);border-radius:10px;overflow:hidden;border:1px solid rgba(35,90,180,0.25)">
+          <button onclick="toggleAtt('${oid}','${oid}_arr')"
+            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:13px;font-weight:700">${p.name}</span>
+              <span style="font-size:12px;color:#4a8ab5">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
+              <span style="font-size:12px;color:${p.diff>=0?'#34d399':'#f87171'}">득실 ${p.diff>=0?'+':''}${p.diff}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:13px;font-weight:800;color:${p.wr>=50?'#34d399':'#f87171'}">${p.wr}%</span>
+              <span id="${oid}_arr" style="color:#4a8ab5;transition:transform 0.2s">›</span>
+            </div>
+          </button>
+          <div id="${oid}" style="display:none;padding:0 14px 12px">
+            ${matchDetails.length ? matchDetails.map(md=>`
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid rgba(35,90,180,0.15);font-size:12px">
+                <div style="color:#4a8ab5;min-width:60px">${md.date||'날짜미상'}</div>
+                <div style="flex:1;color:#94a3b8;text-align:center;font-size:11px">파트너: ${md.myTeam||'없음'}</div>
+                <div style="font-weight:800;font-size:13px;color:#f59e0b;margin:0 8px">${md.mySc}:${md.oppSc}</div>
+                <div style="font-weight:700;padding:2px 10px;border-radius:8px;
+                  background:${md.res==='승'?'rgba(52,211,153,0.15)':md.res==='패'?'rgba(248,113,113,0.15)':'rgba(251,191,36,0.15)'};
+                  color:${md.res==='승'?'#34d399':md.res==='패'?'#f87171':'#fbbf24'}">${md.res}</div>
+              </div>`).join('')
+            : '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>` : ''}
   `;
 };
 
