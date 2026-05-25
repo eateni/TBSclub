@@ -1536,6 +1536,24 @@ function renderDays() {
     const totalMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).length),0);
     const doneMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).filter(m=>m.done).length),0);
 
+    // 날짜별 승/패/무 집계
+    let dayWins=0, dayLosses=0, dayDraws=0;
+    rounds.forEach(r => {
+      (r.matches||[]).forEach(m => {
+        if (!m.done || m.isRally) return;
+        if (m.score1 > m.score2) dayWins++;
+        else if (m.score1 < m.score2) dayLosses++;
+        else dayDraws++;
+      });
+    });
+    const resultStr = doneMatches > 0
+      ? `<span style="font-size:10px;font-weight:700;margin-left:6px">
+          <span style="color:#34d399">${dayWins}승</span>
+          ${dayDraws>0?`<span style="color:#fbbf24"> ${dayDraws}무</span>`:''}
+          <span style="color:#f87171"> ${dayLosses}패</span>
+         </span>`
+      : '';
+
     // 참석자 정보
     const att = day.attendance || {};
     const dayGuestList = day.guests || [];
@@ -1602,7 +1620,7 @@ function renderDays() {
       <button class="round-hdr" onclick="toggleR('${dayId}','${dayArr}')">
         <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;">
           <span>📅 ${dateStr}${day.place?` <span style="color:rgba(100,150,200,0.6);font-size:11px;font-weight:400">· ${day.place}</span>`:''}${attendStr}</span>
-          <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료 ${delDayBtn}</span>
+          <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료${resultStr} ${delDayBtn}</span>
           ${totalMatches>0?`<div style="width:120px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-top:2px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#34d399':'#60a5fa'};border-radius:2px;transition:width 0.4s"></div></div>`:''}
         </div>
         <span id="${dayArr}" style="color:#4a8ab5;transition:transform 0.2s">›</span>
@@ -2000,6 +2018,59 @@ window.renderAnalysisDetail = function() {
           }).join('')}
         </div>
         <div style="font-size:10px;color:#4a8ab5;margin-top:10px">* 체력이 좋을수록 후반 라운드 승률이 높아요</div>
+      </div>`;
+    })()}
+
+    <!-- 📅 날짜별 승패 기록 -->
+    ${(() => {
+      const byDay = {};
+      days.forEach(day => {
+        const dateStr = day.date ? new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜미상';
+        (day.rounds||[]).forEach(r => {
+          (r.matches||[]).forEach(m => {
+            if (!m.done) return;
+            const inT1=(m.team1||[]).includes(name), inT2=(m.team2||[]).includes(name);
+            if (!inT1&&!inT2) return;
+            const mySc=inT1?m.score1:m.score2, oppSc=inT1?m.score2:m.score1;
+            const key = day.id;
+            if (!byDay[key]) byDay[key]={label:dateStr, date:day.date||'', wins:0,losses:0,draws:0,scored:0,conceded:0};
+            byDay[key].scored += mySc;
+            byDay[key].conceded += oppSc;
+            if(mySc>oppSc) byDay[key].wins++;
+            else if(mySc<oppSc) byDay[key].losses++;
+            else byDay[key].draws++;
+          });
+        });
+      });
+      const dayKeys = Object.keys(byDay).sort((a,b)=>(byDay[b].date>byDay[a].date)?1:-1);
+      if (!dayKeys.length) return '';
+      return `
+      <div style="font-size:14px;font-weight:800;color:#f59e0b;margin:20px 0 10px">📅 날짜별 승패 기록</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        ${dayKeys.map(key => {
+          const d = byDay[key];
+          const total = d.wins+d.losses+d.draws;
+          const wr = total>0?Math.round(d.wins/total*100):0;
+          const diff = d.scored-d.conceded;
+          return `<div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:11px 14px;border:1px solid rgba(50,110,200,0.25);border-left:3px solid ${wr>=50?'#34d399':'#f87171'}">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+              <span style="font-size:12px;font-weight:700;color:#f59e0b">📅 ${d.label}</span>
+              <span style="font-size:13px;font-weight:900;color:${wr>=50?'#34d399':'#f87171'}">${wr}%</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;gap:8px;font-size:12px">
+                <span style="color:#34d399;font-weight:700">${d.wins}승</span>
+                ${d.draws>0?`<span style="color:#fbbf24;font-weight:700">${d.draws}무</span>`:''}
+                <span style="color:#f87171;font-weight:700">${d.losses}패</span>
+                <span style="color:#4a8ab5">${total}게임</span>
+              </div>
+              <span style="font-size:11px;color:${diff>=0?'#34d399':'#f87171'}">득실 ${diff>=0?'+':''}${diff}</span>
+            </div>
+            <div class="wr-bg" style="margin-top:6px">
+              <div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#34d399,#10b981)':wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div>
+            </div>
+          </div>`;
+        }).join('')}
       </div>`;
     })()}
 
