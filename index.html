@@ -480,12 +480,15 @@ body {
                 <option value="3">4라운드</option>
                 <option value="4">5라운드</option>
                 <option value="5">6라운드</option>
+                <option value="6">7라운드</option>
+                <option value="7">8라운드</option>
               </select>
             </div>
             <div>
               <div style="font-size:10px;color:#4a8ab5;margin-bottom:4px">코트</div>
               <select class="row-sel" id="manualCourt" style="width:100%;padding:8px;font-size:12px">
                 <option>A코트</option><option>B코트</option><option>C코트</option><option>D코트</option>
+                <option>E코트</option><option>F코트</option><option>G코트</option><option>H코트</option>
               </select>
             </div>
             <div>
@@ -726,7 +729,7 @@ function wasPaired(a, b, pairs) {
 }
 
 // ── 당일 페어 기록 (저장된 + 미리보기) ─────────────────────────────
-function getTodayPairs(dayId) {
+function getTodayPairs(dayId, excludeRoundIdx) {
   const pairs = new Set();
   // 저장된 당일 라운드 페어
   const day = days.find(d=>d.id===dayId);
@@ -742,9 +745,10 @@ function getTodayPairs(dayId) {
       });
     });
   }
-  // 현재 미리보기 페어도 포함 (다른 라운드들)
-  generatedAllRounds.forEach(rd => {
+  // 현재 미리보기 페어도 포함 (단, 지금 굴리는 라운드는 제외)
+  generatedAllRounds.forEach((rd, ri) => {
     if (!rd) return;
+    if (excludeRoundIdx !== undefined && ri === excludeRoundIdx) return; // 자기 자신 제외
     (rd.matches||[]).forEach(m => {
       for(let i=0;i<(m.team1||[]).length;i++)
         for(let j=i+1;j<(m.team1||[]).length;j++)
@@ -764,63 +768,49 @@ function isCouple(a, b) {
 
 // ── 혼복 페어 생성 (부부 절대금지 + 당일 중복 절대금지 우선) ────────
 function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundIdx) {
-  // 백트래킹으로 가능한 모든 페어 조합 시도
-  // 1순위: 부부 금지
-  // 2순위: 당일 중복 금지
-  // 3순위: 과거 중복 최소화
-
+  // 1순위: 부부 금지, 2순위: 당일 중복 금지, 3순위: 과거 중복 최소화
   let best = { pairs:[], todayDup:Infinity, pastDup:Infinity };
 
-  function tryAllAssign() {
-    // 시도 횟수 줄이기 위해 랜덤 순서로 50회만
-    for (let attempt=0; attempt<50; attempt++) {
-      const ms = shuffle([...males]);
-      const fs = shuffle([...females]);
-      const pairs = [];
-      const usedM = new Set(), usedF = new Set();
+  for (let attempt=0; attempt<200; attempt++) {
+    const ms = shuffle([...males]);
+    const fs = shuffle([...females]);
+    const pairs = [];
+    const usedM = new Set(), usedF = new Set();
 
-      // Step 1: 부부 절대 안 만나게 페어링
-      for (let i=0; i<ms.length; i++) {
-        const m = ms[i];
-        if (usedM.has(m)) continue;
-        // m과 매칭 가능한 여자 후보 (부부 제외, 당일 중복 제외)
-        let candidates = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !todayPairs.has([m,f].sort().join('|')));
-        // 당일 중복 제외 후 후보 없으면 → 부부만 제외
-        if (candidates.length === 0) {
-          candidates = fs.filter(f => !usedF.has(f) && !isCouple(m,f));
-        }
-        // 그래도 없으면 → 어쩔 수 없이 부부 포함 (최후의 수단)
-        if (candidates.length === 0) {
-          candidates = fs.filter(f => !usedF.has(f));
-        }
-        if (candidates.length === 0) break;
-        // 과거에 안 한 조합 우선
-        const newOnes = candidates.filter(f => !allPastPairs.has([m,f].sort().join('|')));
-        const pick = newOnes.length>0 ? newOnes[0] : candidates[0];
-        pairs.push([m, pick]);
-        usedM.add(m); usedF.add(pick);
-      }
+    for (let i=0; i<ms.length; i++) {
+      const m = ms[i];
+      if (usedM.has(m)) continue;
+      // 1순위 후보: 부부X + 당일중복X + 과거중복X
+      let c1 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !todayPairs.has([m,f].sort().join('|')) && !allPastPairs.has([m,f].sort().join('|')));
+      // 2순위: 부부X + 당일중복X (과거중복 허용)
+      let c2 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !todayPairs.has([m,f].sort().join('|')));
+      // 3순위: 부부X (당일중복 허용)
+      let c3 = fs.filter(f => !usedF.has(f) && !isCouple(m,f));
+      // 4순위: 아무나 (최후)
+      let c4 = fs.filter(f => !usedF.has(f));
 
-      // 평가
-      let coupleViolation = pairs.filter(p=>isCouple(p[0],p[1])).length;
-      let todayDup = pairs.filter(p=>todayPairs.has([p[0],p[1]].sort().join('|'))).length;
-      let pastDup = pairs.filter(p=>allPastPairs.has([p[0],p[1]].sort().join('|'))).length;
+      const candidates = c1.length ? c1 : c2.length ? c2 : c3.length ? c3 : c4;
+      if (candidates.length === 0) break;
+      // 랜덤으로 선택 (첫번째 고정 X → 매번 다른 결과)
+      const pick = candidates[Math.floor(Math.random()*candidates.length)];
+      pairs.push([m, pick]);
+      usedM.add(m); usedF.add(pick);
+    }
 
-      // 부부 위반은 절대 허용 안 함 (부부 위반 0개일 때만 best로 갱신)
-      if (coupleViolation === 0) {
-        if (todayDup < best.todayDup ||
-            (todayDup === best.todayDup && pastDup < best.pastDup)) {
-          best = { pairs:[...pairs], todayDup, pastDup };
-          if (todayDup === 0 && pastDup === 0) return; // 완벽한 조합
-        }
-      } else if (best.pairs.length === 0) {
-        // 첫 시도에서 부부 위반이 있어도 일단 저장
+    const coupleViolation = pairs.filter(p=>isCouple(p[0],p[1])).length;
+    const todayDup = pairs.filter(p=>todayPairs.has([p[0],p[1]].sort().join('|'))).length;
+    const pastDup = pairs.filter(p=>allPastPairs.has([p[0],p[1]].sort().join('|'))).length;
+
+    if (coupleViolation === 0) {
+      if (todayDup < best.todayDup ||
+          (todayDup === best.todayDup && pastDup < best.pastDup)) {
         best = { pairs:[...pairs], todayDup, pastDup };
+        if (todayDup === 0 && pastDup === 0) break; // 완벽한 조합이면 종료
       }
+    } else if (best.pairs.length === 0) {
+      best = { pairs:[...pairs], todayDup, pastDup };
     }
   }
-
-  tryAllAssign();
   return best.pairs;
 }
 
@@ -1039,10 +1029,20 @@ function updateRoundTypeSelectors() {
     <div style="background:rgba(4,16,55,0.6);border-radius:10px;padding:12px;border:1px solid rgba(35,90,180,0.25)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;font-weight:800;color:#f59e0b">🏆 ${r+1}라운드</span>
-        <button onclick="rollRound(${r})"
-          style="padding:5px 14px;background:rgba(5,150,105,0.85);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">
-          🎲 섞기
-        </button>
+        <div style="display:flex;gap:5px">
+          <button onclick="rollRound(${r})"
+            style="padding:5px 12px;background:rgba(5,150,105,0.85);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">
+            🎲 섞기
+          </button>
+          <button onclick="openManualRound(${r})"
+            style="padding:5px 12px;background:rgba(245,158,11,0.85);border:none;border-radius:8px;color:#000;font-size:11px;font-weight:700;cursor:pointer">
+            ✋ 수동
+          </button>
+          <button onclick="saveOneRound(${r})"
+            style="padding:5px 12px;background:rgba(37,99,235,0.85);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">
+            💾 저장
+          </button>
+        </div>
       </div>
       <!-- 코트별 방식 선택 -->
       <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
@@ -1056,7 +1056,7 @@ function updateRoundTypeSelectors() {
           </div>`).join('')}
       </div>
       <!-- 미리보기 영역 -->
-      <div id="rndPreview_${r}" style="font-size:11px;color:#4a8ab5;padding:4px 0">🎲 섞기를 눌러 대진을 생성해요</div>
+      <div id="rndPreview_${r}" style="font-size:11px;color:#4a8ab5;padding:4px 0">🎲 섞기 또는 ✋ 수동으로 대진을 만들고 💾 저장하세요</div>
     </div>`).join('');
 }
 
@@ -1086,7 +1086,7 @@ function generateOneRoundByType(type, numCourts) {
 function generateRoundByCourtTypes(rIdx, nC, dayId) {
   const pool = dayId ? getAttendees(dayId) : allPlayers();
   const allPastPairs = getPastPairs();
-  const todayPairs = getTodayPairs(dayId);
+  const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
   let mPool = shuffle(pool.filter(m=>m.gender==='m').map(m=>m.name));
   let fPool = shuffle(pool.filter(m=>m.gender==='f').map(m=>m.name));
   const matches = [];
@@ -1200,6 +1200,46 @@ window.rollRound = function(rIdx) {
       <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team2.join(' / ')}</div>
     </div>`;
   }).join('');
+};
+
+// ── 라운드 1개만 개별 저장 ────────────────────────────────────────
+// ── 라운드 1개만 개별 저장 ────────────────────────────────────────
+window.openManualRound = function(rIdx) {
+  // 수동 페어 섹션의 라운드 선택을 해당 라운드로 맞추고 스크롤
+  const sel = document.getElementById('manualRndIdx');
+  if (sel) sel.value = String(rIdx);
+  const section = document.getElementById('mp_t1p1');
+  if (section) {
+    section.closest('div[style*="border-top"]')?.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+  alert(`✋ ${rIdx+1}라운드 수동 등록\n\n아래 '수동 페어 직접 설정'에서\n팀을 구성하고 "+ 수동 경기 추가"를 누르세요.\n라운드는 ${rIdx+1}라운드로 자동 설정됐어요!`);
+};
+
+window.saveOneRound = async function(rIdx) {
+  const dayId = document.getElementById('rndDayId').value;
+  if (!dayId) { alert('날짜 그룹을 선택해주세요'); return; }
+  const r = generatedAllRounds[rIdx];
+  if (!r || !r.matches || !r.matches.length) {
+    alert(`${rIdx+1}라운드를 먼저 생성(🎲 섞기 또는 수동 등록)해주세요`); return;
+  }
+  const day = days.find(d=>d.id===dayId);
+  const ts = Date.now();
+  const newRound = {
+    id: `${ts}_${rIdx}`,
+    name: r.name || `${rIdx+1}라운드`, type:'혼합',
+    matches: r.matches.map((m,mi)=>({
+      id:`${ts}_${rIdx}_${mi}`,
+      team1:m.team1, team2:m.team2,
+      score1:null, score2:null, done:false,
+      court:m.court, tag:m.tag, isRally:m.isRally||false
+    }))
+  };
+  await updateDoc(doc(db,'days',dayId), { rounds:[...(day.rounds||[]), newRound] });
+  // 저장한 라운드 미리보기 초기화
+  generatedAllRounds[rIdx] = { name:`${rIdx+1}라운드`, matches:[] };
+  const el = document.getElementById(`rndPreview_${rIdx}`);
+  if (el) el.innerHTML = '<span style="color:#34d399;font-size:11px">✅ 저장 완료! 대진표 탭에서 확인하세요</span>';
+  alert(`✅ ${rIdx+1}라운드 저장 완료!`);
 };
 
 // ── 전체 저장 ─────────────────────────────────────────────────────
