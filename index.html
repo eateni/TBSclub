@@ -1049,7 +1049,7 @@ function updateRoundTypeSelectors() {
         ${Array.from({length:nC}, (_,c) => `
           <div style="display:flex;align-items:center;gap:8px">
             <span style="font-size:11px;color:#4a8ab5;min-width:38px;font-weight:600">${COURT_NAMES[c]}</span>
-            <select id="ct_${r}_${c}" onchange="rollRound(${r})"
+            <select id="ct_${r}_${c}" onchange="onCourtTypeChange(${r})"
               style="flex:1;padding:7px 10px;background:rgba(3,12,45,0.85);border:1px solid rgba(35,90,180,0.35);border-radius:8px;color:#e8edf2;font-size:12px;outline:none">
               ${TYPE_OPTS.map(t=>`<option value="${t}" ${(prev[`${r}_${c}`]||defaultCourtTypes[c]||'혼복')===t?'selected':''}>${t}</option>`).join('')}
             </select>
@@ -1163,7 +1163,34 @@ function generateRoundByCourtTypes(rIdx, nC, dayId) {
   return matches;
 }
 
+// 코트 방식 변경 시: 수동 등록 경기가 있으면 자동 섞기 안 함 (보호)
+window.onCourtTypeChange = function(rIdx) {
+  const r = generatedAllRounds[rIdx];
+  const hasManual = r && r.matches && r.matches.some(m => m.tag === '수동');
+  if (hasManual) {
+    // 수동 경기가 있으면 덮어쓰지 않고 안내만
+    const el = document.getElementById(`rndPreview_${rIdx}`);
+    if (el) {
+      const note = document.getElementById(`ctnote_${rIdx}`);
+      if (!note) {
+        el.insertAdjacentHTML('beforebegin',
+          `<div id="ctnote_${rIdx}" style="font-size:10px;color:#f59e0b;margin-bottom:4px">⚠️ 수동 경기가 있어 자동 섞기를 멈췄어요. 다시 섞으려면 🎲 버튼을 누르세요</div>`);
+      }
+    }
+    return;
+  }
+  rollRound(rIdx);
+};
+
 window.rollRound = function(rIdx) {
+  // 수동 등록 경기가 있으면 확인
+  const existing = generatedAllRounds[rIdx];
+  const hasManual = existing && existing.matches && existing.matches.some(m => m.tag === '수동');
+  if (hasManual) {
+    if (!confirm(`${rIdx+1}라운드에 수동 등록한 경기가 있어요.\n🎲 섞기를 하면 수동 경기가 모두 지워져요. 계속할까요?`)) return;
+  }
+  const noteEl = document.getElementById(`ctnote_${rIdx}`);
+  if (noteEl) noteEl.remove();
   const nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
   const dayId = document.getElementById('rndDayId')?.value || '';
   const matches = generateRoundByCourtTypes(rIdx, nC, dayId);
