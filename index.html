@@ -1012,7 +1012,9 @@ const TYPE_BG    = { '혼복':'rgba(124,58,237,0.25)','남복':'rgba(37,99,235,0
 
 function updateRoundTypeSelectors() {
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
-  const nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
+  let nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
+  if (nC < 1) nC = 1;
+  if (nC > 8) nC = 8;
   const el = document.getElementById('roundTypeSelectors');
   if (!el) return;
 
@@ -3181,8 +3183,10 @@ onSnapshot(collection(db,'days'), snap => {
       days.map(d=>`<option value="${d.id}">${d.date}${d.place?' · '+d.place:''}</option>`).join('');
     if (cur) sel.value = cur;
   }
-  // 라운드 타입 선택 UI 초기화
-  updateRoundTypeSelectors();
+  // 라운드 타입 선택 UI 초기화 (최초 1회만 — 사용자가 설정 중이면 덮어쓰지 않음)
+  if (!document.getElementById('ct_0_0')) {
+    updateRoundTypeSelectors();
+  }
   renderAll();
 });
 onSnapshot(collection(db,'events'), snap => {
