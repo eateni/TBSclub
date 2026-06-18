@@ -481,7 +481,7 @@ body {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
           <div>
             <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">총 라운드 수</div>
-            <select class="row-sel" id="totalRounds" style="width:100%" onchange="generatedAllRounds=[];updateRoundTypeSelectors()">
+            <select class="row-sel" id="totalRounds" style="width:100%" onchange="rndConfigChanged()">
               <option value="2">2라운드</option>
               <option value="3" selected>3라운드</option>
               <option value="4">4라운드</option>
@@ -493,7 +493,7 @@ body {
           </div>
           <div>
             <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">코트 수</div>
-            <select class="row-sel" id="rndCourts" style="width:100%" onchange="generatedAllRounds=[];updateRoundTypeSelectors()">
+            <select class="row-sel" id="rndCourts" style="width:100%" onchange="rndConfigChanged()">
               <option value="2" selected>2코트</option>
               <option value="3">3코트</option>
               <option value="4">4코트</option>
@@ -702,6 +702,11 @@ let selectedGender = 'm';
 let selectedGuestGender = 'm';
 let generatedPairing = [];
 let generatedAllRounds = [];
+// 코트 수/라운드 수 변경 시 전역에서 호출되는 핸들러 (module 밖 onchange용)
+window.rndConfigChanged = function(){
+  generatedAllRounds = [];
+  updateRoundTypeSelectors();
+};
 
 window.hide = id => document.getElementById(id).style.display = 'none';
 
