@@ -1707,6 +1707,7 @@ function renderAll() {
   const stats = calcStats();
   renderTop3(stats); renderDays(); renderStats(stats);
   renderRanking(stats); renderAnalysis(stats); renderAdmin();
+  fillScheduleWriter();
 }
 
 const BADGES=['🥇','🥈','🥉'];
@@ -2666,14 +2667,17 @@ window.switchTab=function(tab,btn){
 };
 
 // ── 일정 공유 ──────────────────────────────────────────────────────
-function initSchedule() {
+function fillScheduleWriter() {
   const sel = document.getElementById('schWriter');
-  if (sel) {
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">이름 선택</option>' +
-      allPlayers().map(p=>`<option value="${p.name}">${p.name} ${p.gender==='f'?'♀':'♂'}</option>`).join('');
-    if(cur) sel.value = cur;
-  }
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">이름 선택</option>' +
+    allPlayers().map(p=>`<option value="${p.name}">${p.name} ${p.gender==='f'?'♀':'♂'}</option>`).join('');
+  if (cur) sel.value = cur;
+}
+
+function initSchedule() {
+  fillScheduleWriter();
   // 오늘 날짜 기본값
   const dEl = document.getElementById('schDate');
   if (dEl && !dEl.value) dEl.value = new Date().toISOString().slice(0,10);
