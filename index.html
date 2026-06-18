@@ -2754,7 +2754,8 @@ window.shareKakao = function(id) {
   const sch = schedules.find(s=>s.id===id);
   if (!sch) return;
   const dateStr = sch.date ? new Date(sch.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '';
-  const text = `🎾 TBS 일정 공유\n\n📅 ${dateStr}${sch.time?' '+sch.time:''}\n📍 ${sch.place||'장소 미정'}\n\n${sch.content}\n\n👉 ${location.href}`;
+  const shareUrl = location.origin + location.pathname + '#schedule';
+  const text = `🎾 TBS 일정 공유\n\n📅 ${dateStr}${sch.time?' '+sch.time:''}\n📍 ${sch.place||'장소 미정'}\n\n${sch.content}\n\n👉 ${shareUrl}`;
   // 클립보드 복사 후 카카오톡 공유 안내
   if (navigator.share) {
     navigator.share({ title:'TBS 일정 공유', text }).catch(()=>{});
@@ -3471,6 +3472,16 @@ onSnapshot(collection(db,'schedules'), snap => {
   renderSchedules();
   updateScheduleBadge();
 });
+// 공유 링크(#schedule 등)로 들어오면 해당 탭을 자동으로 열어줌
+(function openTabFromHash(){
+  try {
+    const tab = (location.hash || '').replace('#','').trim();
+    if (!tab) return;
+    const btn = Array.from(document.querySelectorAll('.tab-btn'))
+      .find(b => (b.getAttribute('onclick') || '').includes("switchTab('" + tab + "'"));
+    if (btn) switchTab(tab, btn);
+  } catch(e){}
+})();
 </script>
 </body>
 </html>
