@@ -525,6 +525,16 @@ body {
         </div>
       </div>
 
+      <!-- 일자별 금지/지정 페어 -->
+      <div class="admin-sec">
+        <h3>🗓️ 일자별 금지/지정 페어</h3>
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">선택한 날짜의 페어링에만 적용돼요 · 🚫금지=같은 팀 안 됨 · 📌지정=같은 팀으로 묶기</div>
+        <select class="row-inp" id="datePairSel" style="width:100%;margin-bottom:12px" onchange="changeDatePairSel()">
+          <option value="">날짜 선택...</option>
+        </select>
+        <div id="datePairBody"><div style="color:#4a8ab5;font-size:12px">날짜를 선택하세요</div></div>
+      </div>
+
       <!-- 날짜별 참석자 관리 -->
       <div class="admin-sec">
         <h3>📋 날짜별 참석자 관리</h3>
@@ -857,100 +867,112 @@ function isCouple(a, b) {
   return couples.some(c => (c.m===a&&c.f===b)||(c.m===b&&c.f===a));
 }
 
-// ── 혼복 페어 생성 (부부 절대금지 + 당일 중복 절대금지 우선) ────────
-function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundIdx) {
-  // 1순위: 부부 금지, 2순위: 당일 중복 금지, 3순위: 과거 중복 최소화
-  let best = { pairs:[], todayDup:Infinity, pastDup:Infinity };
+// ── 일자별 금지/지정 페어 헬퍼 ─────────────────────────────────────
+function dayPairKey(a,b){ return [a,b].sort().join('|'); }
+function getDayBanSet(dayId){
+  const day = days.find(d=>d.id===dayId);
+  const set = new Set();
+  if(day && Array.isArray(day.banPairs)) day.banPairs.forEach(p=>set.add(dayPairKey(p.a,p.b)));
+  return set;
+}
+function getDayFixPairs(dayId){
+  const day = days.find(d=>d.id===dayId);
+  return (day && Array.isArray(day.fixPairs)) ? day.fixPairs.map(p=>[p.a,p.b]) : [];
+}
 
+// ── 혼복 페어 생성 (부부/금지 절대금지 + 지정 강제 + 당일 중복 회피) ──
+function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundIdx, banSet, forcedPairs) {
+  banSet = banSet || new Set();
+  forcedPairs = forcedPairs || [];
+  const isBan = (a,b)=> banSet.has(dayPairKey(a,b));
+  // 지정 페어(혼복: 남+여) 시드 — 이 풀에 둘 다 있는 것만
+  const mSet=new Set(males), fSet=new Set(females);
+  const seeds=[]; const seedM=new Set(), seedF=new Set();
+  forcedPairs.forEach(p=>{
+    let m=null,f=null;
+    if(mSet.has(p[0])&&fSet.has(p[1])){m=p[0];f=p[1];}
+    else if(mSet.has(p[1])&&fSet.has(p[0])){m=p[1];f=p[0];}
+    if(m&&f&&!seedM.has(m)&&!seedF.has(f)){ seeds.push([m,f]); seedM.add(m); seedF.add(f); }
+  });
+
+  let best = { pairs:[], bad:Infinity, todayDup:Infinity, pastDup:Infinity };
   for (let attempt=0; attempt<200; attempt++) {
-    const ms = shuffle([...males]);
-    const fs = shuffle([...females]);
-    const pairs = [];
-    const usedM = new Set(), usedF = new Set();
+    const ms = shuffle(males.filter(x=>!seedM.has(x)));
+    const fs = shuffle(females.filter(x=>!seedF.has(x)));
+    const pairs = seeds.map(s=>[...s]);
+    const usedM = new Set(seedM), usedF = new Set(seedF);
 
     for (let i=0; i<ms.length; i++) {
       const m = ms[i];
       if (usedM.has(m)) continue;
-      // 1순위 후보: 부부X + 당일중복X + 과거중복X
-      let c1 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !todayPairs.has([m,f].sort().join('|')) && !allPastPairs.has([m,f].sort().join('|')));
-      // 2순위: 부부X + 당일중복X (과거중복 허용)
-      let c2 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !todayPairs.has([m,f].sort().join('|')));
-      // 3순위: 부부X (당일중복 허용)
-      let c3 = fs.filter(f => !usedF.has(f) && !isCouple(m,f));
-      // 4순위: 아무나 (최후)
+      let c1 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !isBan(m,f) && !todayPairs.has(dayPairKey(m,f)) && !allPastPairs.has(dayPairKey(m,f)));
+      let c2 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !isBan(m,f) && !todayPairs.has(dayPairKey(m,f)));
+      let c3 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !isBan(m,f));
       let c4 = fs.filter(f => !usedF.has(f));
-
       const candidates = c1.length ? c1 : c2.length ? c2 : c3.length ? c3 : c4;
       if (candidates.length === 0) break;
-      // 랜덤으로 선택 (첫번째 고정 X → 매번 다른 결과)
       const pick = candidates[Math.floor(Math.random()*candidates.length)];
       pairs.push([m, pick]);
       usedM.add(m); usedF.add(pick);
     }
 
-    const coupleViolation = pairs.filter(p=>isCouple(p[0],p[1])).length;
-    const todayDup = pairs.filter(p=>todayPairs.has([p[0],p[1]].sort().join('|'))).length;
-    const pastDup = pairs.filter(p=>allPastPairs.has([p[0],p[1]].sort().join('|'))).length;
+    // 시드(지정)는 강제이므로 평가 제외, 자유 페어만 위반 평가
+    const freePairs = pairs.slice(seeds.length);
+    const bad = freePairs.filter(p=>isCouple(p[0],p[1])||isBan(p[0],p[1])).length;
+    const todayDup = freePairs.filter(p=>todayPairs.has(dayPairKey(p[0],p[1]))).length;
+    const pastDup = freePairs.filter(p=>allPastPairs.has(dayPairKey(p[0],p[1]))).length;
 
-    if (coupleViolation === 0) {
-      if (todayDup < best.todayDup ||
-          (todayDup === best.todayDup && pastDup < best.pastDup)) {
-        best = { pairs:[...pairs], todayDup, pastDup };
-        if (todayDup === 0 && pastDup === 0) break; // 완벽한 조합이면 종료
-      }
-    } else if (best.pairs.length === 0) {
-      best = { pairs:[...pairs], todayDup, pastDup };
+    if (bad < best.bad ||
+        (bad===best.bad && (todayDup < best.todayDup ||
+        (todayDup === best.todayDup && pastDup < best.pastDup)))) {
+      best = { pairs:[...pairs], bad, todayDup, pastDup };
+      if (bad===0 && todayDup === 0 && pastDup === 0) break;
     }
   }
   return best.pairs;
 }
 
-// ── 일반복식(남복/여복) 페어 생성 (당일 중복 회피) ─────────────────
-function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtNames, tag) {
-  let best = { matches:[], todayDup:Infinity };
-
-  for (let attempt=0; attempt<50; attempt++) {
-    const arr = shuffle([...pool]);
-    const matches = [];
-    let used = new Set();
-
-    // 4명씩 묶어서 경기 만들기 (당일 중복 회피)
-    for (let i=0; i<arr.length-3; i++) {
-      if (used.has(arr[i])) continue;
-      // arr[i]와 매칭할 다른 3명 찾기
-      for (let combinations=0; combinations<10; combinations++) {
-        const remaining = arr.filter(p=>!used.has(p)&&p!==arr[i]);
-        if (remaining.length < 3) break;
-        const r = shuffle(remaining);
-        const partner = r[0];
-        const opp1 = r[1], opp2 = r[2];
-
-        // 당일 중복 체크
-        const t1Dup = todayPairs.has([arr[i],partner].sort().join('|'));
-        const t2Dup = todayPairs.has([opp1,opp2].sort().join('|'));
-
-        if (!t1Dup && !t2Dup) {
-          matches.push({team1:[arr[i],partner],team2:[opp1,opp2]});
-          used.add(arr[i]); used.add(partner); used.add(opp1); used.add(opp2);
-          break;
-        }
-        if (combinations === 9) {
-          // 어쩔 수 없이 진행
-          matches.push({team1:[arr[i],partner],team2:[opp1,opp2]});
-          used.add(arr[i]); used.add(partner); used.add(opp1); used.add(opp2);
-        }
-      }
+// ── 일반복식(남복/여복) 페어 생성 (금지 회피 + 지정 강제 + 당일 중복 회피) ──
+function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtNames, tag, banSet, forcedTeams) {
+  banSet = banSet || new Set();
+  forcedTeams = forcedTeams || [];
+  const isBan = (a,b)=> banSet.has(dayPairKey(a,b));
+  const poolSet = new Set(pool);
+  // 지정 팀 시드 (둘 다 풀에 있는 것만)
+  const seedTeams=[]; const usedSeed=new Set();
+  forcedTeams.forEach(t=>{
+    if(poolSet.has(t[0])&&poolSet.has(t[1])&&!usedSeed.has(t[0])&&!usedSeed.has(t[1])){
+      seedTeams.push([t[0],t[1]]); usedSeed.add(t[0]); usedSeed.add(t[1]);
     }
+  });
 
-    const todayDup = matches.reduce((a,m)=>{
-      const d1=todayPairs.has([m.team1[0],m.team1[1]].sort().join('|'))?1:0;
-      const d2=todayPairs.has([m.team2[0],m.team2[1]].sort().join('|'))?1:0;
-      return a+d1+d2;
-    },0);
+  let best = { matches:[], bad:Infinity, todayDup:Infinity };
+  for (let attempt=0; attempt<80; attempt++) {
+    const rest = shuffle(pool.filter(p=>!usedSeed.has(p)));
+    const teams = seedTeams.map(t=>[...t]);
+    const used = new Set();
+    for (let i=0;i<rest.length;i++){
+      const a = rest[i];
+      if(used.has(a)) continue;
+      let c1 = rest.filter(p=>p!==a && !used.has(p) && !isBan(a,p) && !todayPairs.has(dayPairKey(a,p)));
+      let c2 = rest.filter(p=>p!==a && !used.has(p) && !isBan(a,p));
+      let c3 = rest.filter(p=>p!==a && !used.has(p));
+      const cands = c1.length?c1:c2.length?c2:c3;
+      if(!cands.length) break;
+      const partner = cands[Math.floor(Math.random()*cands.length)];
+      teams.push([a,partner]); used.add(a); used.add(partner);
+    }
+    // 팀 2개씩 묶어 경기 구성 (지정 팀이 먼저 배치됨)
+    const matches = [];
+    for (let i=0;i+1<teams.length;i+=2) matches.push({team1:teams[i], team2:teams[i+1]});
 
-    if (todayDup < best.todayDup) {
-      best = { matches, todayDup };
-      if (todayDup === 0) break;
+    const freeTeams = teams.slice(seedTeams.length);
+    const bad = freeTeams.filter(t=>isBan(t[0],t[1])).length;
+    const todayDup = teams.reduce((acc,t)=> acc + (todayPairs.has(dayPairKey(t[0],t[1]))?1:0), 0);
+
+    if (bad < best.bad || (bad===best.bad && todayDup < best.todayDup)) {
+      best = { matches, bad, todayDup };
+      if (bad===0 && todayDup===0) break;
     }
   }
   return best.matches;
@@ -1222,6 +1244,31 @@ function generateRoundByCourtTypes(rIdx, nC, dayId) {
   const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
   let mPool = shuffle(pool.filter(m=>m.gender==='m').map(m=>m.name));
   let fPool = shuffle(pool.filter(m=>m.gender==='f').map(m=>m.name));
+
+  // ── 일자별 금지/지정 페어 준비 ──
+  const banSet = getDayBanSet(dayId);
+  const genderOf = {}; pool.forEach(p=>{ genderOf[p.name]=p.gender; });
+  const attendNames = new Set(pool.map(p=>p.name));
+  const fixAll = getDayFixPairs(dayId).filter(p=>attendNames.has(p[0])&&attendNames.has(p[1]));
+  const forcedMix=[], forcedMale=[], forcedFemale=[]; const fixedNames=new Set();
+  fixAll.forEach(p=>{
+    if(fixedNames.has(p[0])||fixedNames.has(p[1])) return; // 한 사람이 여러 지정에 겹치면 첫 것만
+    const g0=genderOf[p[0]], g1=genderOf[p[1]];
+    if(g0==='m'&&g1==='f') forcedMix.push([p[0],p[1]]);
+    else if(g0==='f'&&g1==='m') forcedMix.push([p[1],p[0]]);
+    else if(g0==='m'&&g1==='m') forcedMale.push([p[0],p[1]]);
+    else if(g0==='f'&&g1==='f') forcedFemale.push([p[0],p[1]]);
+    else return;
+    fixedNames.add(p[0]); fixedNames.add(p[1]);
+  });
+  // 강제 멤버를 해당 풀 앞쪽으로 정렬 → 올바른 코트 타입 슬라이스에 포함되게
+  const orderPool = (arr, fronts) => {
+    const front=[]; fronts.forEach(g=>g.forEach(n=>{ if(arr.includes(n)&&!front.includes(n)) front.push(n); }));
+    const fset=new Set(front);
+    return [...front, ...arr.filter(n=>!fset.has(n))];
+  };
+  mPool = orderPool(mPool, [forcedMix.map(p=>p[0]), forcedMale.flat()]);
+  fPool = orderPool(fPool, [forcedMix.map(p=>p[1]), forcedFemale.flat()]);
   const matches = [];
 
   // 코트별 방식 파악
@@ -1243,15 +1290,15 @@ function generateRoundByCourtTypes(rIdx, nC, dayId) {
   // 1) 혼복 페어
   const mForMix = mPool.splice(0, mixedCourts*2);
   const fForMix = fPool.splice(0, mixedCourts*2);
-  const mixedPairs = makeMixedPairs(mForMix, fForMix, todayPairs, allPastPairs, rIdx);
+  const mixedPairs = makeMixedPairs(mForMix, fForMix, todayPairs, allPastPairs, rIdx, banSet, forcedMix);
 
   // 2) 남복
   const malePool = mPool.splice(0, maleCourts*4);
-  const maleMatches = makeDoublesMatches(malePool, todayPairs, allPastPairs, maleCourts, [], '남복');
+  const maleMatches = makeDoublesMatches(malePool, todayPairs, allPastPairs, maleCourts, [], '남복', banSet, forcedMale);
 
   // 3) 여복
   const femalePool = fPool.splice(0, femaleCourts*4);
-  const femaleMatches = makeDoublesMatches(femalePool, todayPairs, allPastPairs, femaleCourts, [], '여복');
+  const femaleMatches = makeDoublesMatches(femalePool, todayPairs, allPastPairs, femaleCourts, [], '여복', banSet, forcedFemale);
 
   // 코트 순서대로 배치
   let mixIdx = 0, maleIdx = 0, femIdx = 0;
@@ -1788,6 +1835,76 @@ window.addCouple = async function() {
 };
 window.deleteCouple = async function(m, f) {
   await setDoc(doc(db,'club','couples'),{list:couples.filter(c=>!(c.m===m&&c.f===f))});
+};
+
+// ── 일자별 금지/지정 페어 UI ───────────────────────────────────────
+window.changeDatePairSel = function(){ renderDatePairs(); };
+
+function renderDatePairs(){
+  const sel = document.getElementById('datePairSel');
+  const body = document.getElementById('datePairBody');
+  if(!sel || !body) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">날짜 선택...</option>' +
+    days.map(d=>`<option value="${d.id}">${d.date}${d.place?' · '+d.place:''}</option>`).join('');
+  if(cur && days.some(d=>d.id===cur)) sel.value = cur;
+  const dayId = sel.value;
+  if(!dayId){ body.innerHTML = '<div style="color:#4a8ab5;font-size:12px">날짜를 선택하세요</div>'; return; }
+  const day = days.find(d=>d.id===dayId) || {};
+  const ban = Array.isArray(day.banPairs)?day.banPairs:[];
+  const fix = Array.isArray(day.fixPairs)?day.fixPairs:[];
+  const att = getAttendees(dayId);
+  const opts = '<option value="">선수 선택</option>' +
+    att.map(p=>`<option value="${p.name}">${p.name}${p.gender==='f'?' (여)':''}</option>`).join('');
+  const chip = (p,kind)=>`<span class="chip" style="border-color:${kind==='ban'?'rgba(239,68,68,0.45)':'rgba(96,165,250,0.45)'}"><span style="color:${kind==='ban'?'#f87171':'#60a5fa'}">${kind==='ban'?'🚫':'📌'}</span> ${p.a} &amp; ${p.b}<button class="chip-x" onclick="deleteDayPair('${dayId}','${kind}','${p.a}','${p.b}')">×</button></span>`;
+  const banChips = ban.length ? ban.map(p=>chip(p,'ban')).join('') : '<span style="color:#4a8ab5;font-size:12px">없음</span>';
+  const fixChips = fix.length ? fix.map(p=>chip(p,'fix')).join('') : '<span style="color:#4a8ab5;font-size:12px">없음</span>';
+  body.innerHTML = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:6px">🚫 금지 페어 (같은 팀 안 됨)</div>
+      <div class="chips-wrap">${banChips}</div>
+      <div class="row-form" style="margin-top:8px">
+        <select class="row-inp" id="banA" style="flex:1">${opts}</select>
+        <select class="row-inp" id="banB" style="flex:1">${opts}</select>
+        <button class="btn-add" onclick="addDayPair('ban')">추가</button>
+      </div>
+    </div>
+    <div style="padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
+      <div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:6px">📌 지정 페어 (같은 팀으로 묶기)</div>
+      <div class="chips-wrap">${fixChips}</div>
+      <div class="row-form" style="margin-top:8px">
+        <select class="row-inp" id="fixA" style="flex:1">${opts}</select>
+        <select class="row-inp" id="fixB" style="flex:1">${opts}</select>
+        <button class="btn-add" onclick="addDayPair('fix')">추가</button>
+      </div>
+    </div>`;
+}
+
+window.addDayPair = async function(kind){
+  const sel = document.getElementById('datePairSel');
+  const dayId = sel ? sel.value : '';
+  if(!dayId){ alert('날짜를 먼저 선택하세요'); return; }
+  const a = (document.getElementById(kind==='ban'?'banA':'fixA')||{}).value;
+  const b = (document.getElementById(kind==='ban'?'banB':'fixB')||{}).value;
+  if(!a||!b){ alert('두 선수를 선택하세요'); return; }
+  if(a===b){ alert('서로 다른 선수를 선택하세요'); return; }
+  const day = days.find(d=>d.id===dayId); if(!day) return;
+  const field = kind==='ban' ? 'banPairs' : 'fixPairs';
+  const otherField = kind==='ban' ? 'fixPairs' : 'banPairs';
+  const list = Array.isArray(day[field])?day[field]:[];
+  const other = Array.isArray(day[otherField])?day[otherField]:[];
+  const key = dayPairKey(a,b);
+  if(list.some(p=>dayPairKey(p.a,p.b)===key)){ alert('이미 등록된 페어예요'); return; }
+  if(other.some(p=>dayPairKey(p.a,p.b)===key)){ alert('같은 페어가 '+(kind==='ban'?'지정':'금지')+'에 이미 있어요'); return; }
+  await updateDoc(doc(db,'days',dayId), { [field]: [...list, {a,b}] });
+};
+
+window.deleteDayPair = async function(dayId, kind, a, b){
+  const day = days.find(d=>d.id===dayId); if(!day) return;
+  const field = kind==='ban' ? 'banPairs' : 'fixPairs';
+  const key = dayPairKey(a,b);
+  const list = (Array.isArray(day[field])?day[field]:[]).filter(p=>dayPairKey(p.a,p.b)!==key);
+  await updateDoc(doc(db,'days',dayId), { [field]: list });
 };
 
 // ── 렌더 ──────────────────────────────────────────────────────────
@@ -2656,6 +2773,8 @@ function renderAdmin(){
     fSel.innerHTML='<option value="">여자 선택</option>'+[...members,...guests].filter(m=>m.gender==='f').map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
     if(fCur) fSel.value=fCur;
   }
+  // ── 일자별 금지/지정 페어 (드롭다운/칩 갱신) ──
+  renderDatePairs();
   // ── 날짜별 참석자 관리 (아코디언) ──
   const attEl = document.getElementById('attendanceSection');
   if (attEl) {
