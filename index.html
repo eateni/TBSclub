@@ -798,6 +798,7 @@ let isAdmin = false;
 let members = [];
 let guests = [];
 let days = [];
+let openAttBodies = new Set();
 let events = [];
 let schedules = [];
 let schedulePage = 0;
@@ -2841,6 +2842,8 @@ function renderAdmin(){
     if (!days.length) {
       attEl.innerHTML = '<div style="color:#4a8ab5;font-size:12px">날짜 그룹을 먼저 추가해주세요</div>';
     } else {
+      const existingBodyIds = new Set(days.map(d=>`att_body_${d.id}`));
+      openAttBodies.forEach(id=>{ if(!existingBodyIds.has(id)) openAttBodies.delete(id); });
       attEl.innerHTML = days.map(day => {
         const att = day.attendance || {};
         const dayGuests = day.guests || [];
@@ -2848,6 +2851,7 @@ function renderAdmin(){
         const dateStr = day.date ? new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : day.date;
         const bodyId = `att_body_${day.id}`;
         const arrId  = `att_arr_${day.id}`;
+        const isOpen = openAttBodies.has(bodyId);
 
         // 정규회원 행
         const memberRows = members.map(m => {
@@ -2896,9 +2900,9 @@ function renderAdmin(){
                 참석 ${attendingCount}명
               </span>
             </div>
-            <span id="${arrId}" style="color:#4a8ab5;font-size:14px;transition:transform 0.2s">›</span>
+            <span id="${arrId}" style="color:#4a8ab5;font-size:14px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">›</span>
           </button>
-          <div id="${bodyId}" style="display:none;padding:0 14px 14px">
+          <div id="${bodyId}" style="display:${isOpen?'block':'none'};padding:0 14px 14px">
             ${memberRows}${guestRows}
           </div>
         </div>`;
@@ -3498,6 +3502,7 @@ window.toggleAtt=function(bodyId,arrId){
   const open=el.style.display==='none';
   el.style.display=open?'block':'none';
   if(arr)arr.style.transform=open?'rotate(90deg)':'';
+  if(open)openAttBodies.add(bodyId);else openAttBodies.delete(bodyId);
 };
 
 // 점수
