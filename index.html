@@ -74,6 +74,78 @@ body::before {
 .btn-input { margin-top:8px; width:100%; padding:8px; background:#1e3a5f; border:1px dashed #2563eb; border-radius:8px; color:#60a5fa; font-size:12px; font-weight:600; cursor:pointer; }
 .btn-del-sm { background:none; border:none; color:#f87171; cursor:pointer; font-size:11px; margin-top:4px; width:100%; }
 
+/* ── 실시간 스코어 오버레이 ── */
+#liveScoreOverlay { position:fixed; inset:0; z-index:9999; background:#030c2d; color:#e8edf2; flex-direction:column; overflow:hidden; font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif; -webkit-tap-highlight-color:transparent; user-select:none; }
+.ls-topbar { padding:12px 16px 10px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(35,90,180,0.25); flex-shrink:0; }
+.ls-title { font-size:14px; font-weight:800; color:#f59e0b; }
+.ls-badge { font-size:11px; color:#4a8ab5; }
+.ls-close-btn { background:rgba(220,38,38,0.15); color:#f87171; border:1px solid rgba(220,38,38,0.35); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+.ls-btn-gray { background:rgba(3,12,45,0.85); color:#8aa5c4; border:1px solid rgba(35,90,180,0.35); border-radius:10px; padding:13px 0; font-size:14px; font-weight:800; cursor:pointer; flex:1; }
+.ls-setup-guide { font-size:13px; color:#8aa5c4; line-height:1.6; margin-bottom:18px; }
+.ls-setup-guide b { color:#f59e0b; }
+.ls-player-pick-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+.ls-player-pick { position:relative; padding:16px 10px; border-radius:12px; text-align:center; cursor:pointer; border:2px solid rgba(35,90,180,0.3); background:rgba(4,16,55,0.6); }
+.ls-player-pick.team-a { border-color:rgba(52,211,153,0.3); }
+.ls-player-pick.team-b { border-color:rgba(96,165,250,0.3); }
+.ls-pname { font-size:15px; font-weight:800; }
+.ls-pteam { font-size:11px; color:#4a8ab5; margin-top:2px; }
+.ls-order-badge { position:absolute; top:-8px; right:-8px; width:26px; height:26px; border-radius:50%; background:#f59e0b; color:#1a120a; font-size:13px; font-weight:900; display:none; align-items:center; justify-content:center; }
+.ls-player-pick.picked .ls-order-badge { display:flex; }
+.ls-player-pick.picked { opacity:0.55; }
+.ls-setup-actions { margin-top:auto; display:flex; gap:8px; padding-top:16px; }
+#ls-nextStageBtn,#ls-startMatchBtn { flex:1; padding:13px 0; border-radius:10px; border:none; background:linear-gradient(135deg,#f59e0b,#d97706); color:#1a120a; font-size:14px; font-weight:800; cursor:pointer; }
+#ls-nextStageBtn:disabled,#ls-startMatchBtn:disabled { opacity:0.35; }
+.ls-position-pick-grid { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+.ls-position-row { display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:rgba(4,16,55,0.6); border:2px solid rgba(35,90,180,0.3); }
+.ls-position-row.team-a { border-color:rgba(52,211,153,0.3); }
+.ls-position-row.team-b { border-color:rgba(96,165,250,0.3); }
+.ls-pr-name { flex:1; font-size:14px; font-weight:800; }
+.ls-pr-toggle { display:flex; gap:6px; }
+.ls-pr-toggle button { padding:8px 14px; border-radius:8px; border:1px solid rgba(35,90,180,0.35); background:rgba(3,12,45,0.85); color:#8aa5c4; font-size:12px; font-weight:700; cursor:pointer; }
+.ls-pr-toggle button.active { background:#f59e0b; color:#1a120a; border-color:#f59e0b; }
+.ls-server-bar { display:flex; align-items:center; justify-content:center; gap:8px; padding:9px 16px; background:rgba(245,158,11,0.1); border-bottom:1px solid rgba(245,158,11,0.25); font-size:13px; flex-shrink:0; flex-wrap:wrap; }
+.ls-tag { color:#f59e0b; font-weight:900; }
+.ls-deciding-chooser { margin:10px 14px 0; padding:12px; border-radius:12px; background:rgba(245,158,11,0.12); border:1.5px solid rgba(245,158,11,0.4); text-align:center; flex-shrink:0; }
+.ls-dc-label { font-size:12.5px; font-weight:800; color:#f59e0b; margin-bottom:9px; }
+.ls-dc-btns { display:flex; gap:8px; }
+.ls-dc-btns button { flex:1; padding:10px 0; border-radius:9px; border:1.5px solid rgba(245,158,11,0.5); background:rgba(3,12,45,0.85); color:#fbbf24; font-size:13px; font-weight:800; cursor:pointer; }
+.ls-dc-btns button.active { background:#f59e0b; color:#1a120a; }
+.ls-game-score-row { display:flex; align-items:center; justify-content:center; gap:16px; padding:10px 16px; background:rgba(4,16,55,0.72); position:relative; z-index:2; border-radius:8px; flex-shrink:0; }
+.ls-num { font-size:30px; font-weight:900; color:#e8edf2; min-width:40px; text-align:center; }
+.ls-num.lead { color:#f59e0b; }
+.ls-sep { font-size:17px; color:#4a8ab5; font-weight:700; }
+.ls-gs-side { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.ls-gs-names { font-size:10.5px; font-weight:700; color:#8aa5c4; white-space:nowrap; }
+.ls-court { flex:1; display:flex; flex-direction:column; min-height:0; position:relative; margin:8px 10px 0; padding:32px 8px; border-radius:12px; overflow:hidden; background:repeating-linear-gradient(90deg,#7c8f4c 0,#7c8f4c 26px,#6f8241 26px,#6f8241 52px); box-shadow:inset 0 0 0 1px rgba(0,0,0,0.15); }
+.ls-court-lines { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.ls-team-panel { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:14px; padding:14px 16px; cursor:pointer; position:relative; z-index:2; transition:transform 0.08s ease,filter 0.15s ease; min-height:120px; }
+.ls-team-panel:active { transform:scale(0.985); filter:brightness(1.12); }
+.ls-team-panel.a { background:linear-gradient(160deg,#1d4225,#173418); }
+.ls-team-panel.b { background:linear-gradient(160deg,#1e3a5f,#16294a); }
+.ls-team-name { font-size:14px; font-weight:800; color:rgba(255,255,255,0.82); margin-bottom:6px; }
+.ls-srv-dot { color:#f59e0b; }
+.ls-point-display { font-size:60px; font-weight:900; color:#fff; line-height:1; letter-spacing:-1px; }
+.ls-tap-hint { position:absolute; bottom:12px; font-size:11px; color:rgba(255,255,255,0.4); }
+.ls-controls { display:flex; gap:8px; padding:12px 14px 14px; border-top:1px solid rgba(35,90,180,0.25); flex-shrink:0; }
+.ls-ctrl-btn { flex:1; padding:12px 0; border-radius:10px; border:1px solid rgba(35,90,180,0.35); background:rgba(3,12,45,0.85); color:#93c5fd; font-size:13px; font-weight:700; cursor:pointer; }
+.ls-ctrl-btn.undo { color:#fbbf24; border-color:rgba(245,158,11,0.35); }
+.ls-ctrl-btn.end { color:#34d399; border-color:rgba(52,211,153,0.35); }
+.ls-ctrl-btn:disabled { opacity:0.35; }
+.ls-log-box { max-height:110px; overflow-y:auto; background:rgba(4,16,55,0.5); margin:0 14px 8px; border-radius:10px; flex-shrink:0; }
+.ls-log-item { font-size:11.5px; color:#8aa5c4; padding:6px 12px; border-bottom:1px solid rgba(35,90,180,0.12); display:flex; justify-content:space-between; gap:8px; }
+.ls-who { font-weight:700; }
+.ls-who.a { color:#4ade80; }
+.ls-who.b { color:#60a5fa; }
+.ls-srv { color:#f59e0b; font-size:10.5px; }
+.ls-end-overlay { position:absolute; inset:0; background:rgba(3,8,25,0.9); display:none; align-items:center; justify-content:center; z-index:100; padding:24px; }
+.ls-end-overlay.show { display:flex; }
+.ls-end-card { background:#0a1a4a; border:1px solid rgba(245,158,11,0.35); border-radius:16px; padding:28px 24px; text-align:center; max-width:320px; width:100%; }
+.ls-trophy { font-size:40px; margin-bottom:8px; }
+.ls-win-name { font-size:19px; font-weight:900; color:#f59e0b; margin-bottom:4px; }
+.ls-final { font-size:14px; color:#8aa5c4; margin-bottom:20px; }
+.ls-confirm-btn { width:100%; padding:12px 0; border-radius:10px; border:none; background:linear-gradient(135deg,#f59e0b,#d97706); color:#1a120a; font-weight:800; font-size:14px; cursor:pointer; margin-bottom:8px; }
+.ls-cancel-btn { width:100%; padding:10px 0; border-radius:10px; border:1px solid rgba(35,90,180,0.35); background:rgba(3,12,45,0.85); color:#8aa5c4; font-size:13px; font-weight:700; cursor:pointer; }
+
 /* 성별 배지 */
 .g-m { color:#60a5fa; font-size:10px; font-weight:700; }
 .g-f { color:#f472b6; font-size:10px; font-weight:700; }
@@ -2054,7 +2126,7 @@ function renderDays() {
         const scoreEl=m.done
           ?`<div class="m-score">${m.score1} : ${m.score2}</div>`
           :`<div class="m-score pend">예정</div>`;
-        const inputBtn=!m.done?`<button class="btn-input" onclick="openScore('${day.id}','${rIdx}','${m.id}')">📝 결과 입력</button>`:'';
+        const inputBtn=!m.done?`<div style="display:flex;gap:4px;margin-top:8px"><button class="btn-input" style="margin-top:0;flex:1" onclick="openScore('${day.id}','${rIdx}','${m.id}')">📝 결과 입력</button><button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#34d399" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button></div>`:'';
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
         const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#60a5fa" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#a78bfa">[${m.tag}]</span>`:'';
@@ -3891,6 +3963,280 @@ onSnapshot(collection(db,'schedules'), snap => {
   renderTodayBanner();
   updateScheduleBadge();
 });
+// ── 실시간 스코어 ──
+const LS_PTS = ['0','15','30','40'];
+const liveScore = {
+  dayId:null, rIdx:null, mId:null,
+  players:[],        // [{name, team:'a'|'b'}]
+  serveOrder:[],
+  positions:{},      // {이름:'포'|'백'}
+  taps:[],           // [{who, time, chosenSide}]
+  lsEvents:[],       // 재생 시 생성되는 로그
+  games:{a:0,b:0},
+  points:{a:0,b:0},
+  decidingSideChoice:null,
+  curGameIdx:0
+};
+
+window.openLiveScore = function(dayId, rIdx, mId) {
+  const day = days.find(d=>d.id===dayId);
+  const round = (day?.rounds||[])[rIdx];
+  const match = (round?.matches||[]).find(m=>m.id===mId);
+  if (!match) return;
+  liveScore.dayId = dayId;
+  liveScore.rIdx = parseInt(rIdx);
+  liveScore.mId = mId;
+  liveScore.players = [
+    ...(match.team1||[]).map(n=>({name:n,team:'a'})),
+    ...(match.team2||[]).map(n=>({name:n,team:'b'}))
+  ];
+  liveScore.serveOrder = [];
+  liveScore.positions = {};
+  liveScore.taps = [];
+  liveScore.lsEvents = [];
+  liveScore.games = {a:0,b:0};
+  liveScore.points = {a:0,b:0};
+  liveScore.decidingSideChoice = null;
+  liveScore.curGameIdx = 0;
+  // 기존 포지션 있으면 fore→포, back→백 변환
+  if (match.positions) {
+    Object.entries(match.positions).forEach(([n,p]) => {
+      liveScore.positions[n] = p==='fore'?'포':'백';
+    });
+  }
+  const t1 = (match.team1||[]).join('·');
+  const t2 = (match.team2||[]).join('·');
+  document.getElementById('ls-matchBadge').textContent = `${t1} vs ${t2}`;
+  document.getElementById('ls-gsNamesA').textContent = t1;
+  document.getElementById('ls-gsNamesB').textContent = t2;
+  document.getElementById('ls-setupScreen').style.display = 'flex';
+  document.getElementById('ls-matchScreen').style.display = 'none';
+  document.getElementById('ls-stage1').style.display = 'flex';
+  document.getElementById('ls-stage2').style.display = 'none';
+  document.getElementById('ls-endOverlay').classList.remove('show');
+  lsRenderPickGrid();
+  document.getElementById('liveScoreOverlay').style.display = 'flex';
+};
+
+window.closeLiveScore = function() {
+  document.getElementById('liveScoreOverlay').style.display = 'none';
+};
+
+function lsRenderPickGrid() {
+  const grid = document.getElementById('ls-pickGrid');
+  const t1n = liveScore.players.filter(p=>p.team==='a').map(p=>p.name).join('·');
+  const t2n = liveScore.players.filter(p=>p.team==='b').map(p=>p.name).join('·');
+  grid.innerHTML = liveScore.players.map(p => {
+    const oi = liveScore.serveOrder.indexOf(p.name);
+    const picked = oi >= 0;
+    const tl = p.team==='a' ? `🟢 ${t1n} 팀` : `🔵 ${t2n} 팀`;
+    return `<div class="ls-player-pick team-${p.team}${picked?' picked':''}" onclick="lsPickPlayer('${p.name}')">
+      <div class="ls-order-badge">${picked?oi+1:''}</div>
+      <div class="ls-pname">${p.name}</div>
+      <div class="ls-pteam">${tl}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('ls-nextStageBtn').disabled = liveScore.serveOrder.length !== 4;
+}
+
+window.lsPickPlayer = function(name) {
+  const i = liveScore.serveOrder.indexOf(name);
+  if (i >= 0) liveScore.serveOrder.splice(i,1);
+  else if (liveScore.serveOrder.length < 4) liveScore.serveOrder.push(name);
+  lsRenderPickGrid();
+};
+window.lsClearOrder = function() { liveScore.serveOrder = []; lsRenderPickGrid(); };
+window.lsGoStage2 = function() {
+  if (liveScore.serveOrder.length !== 4) return;
+  document.getElementById('ls-stage1').style.display = 'none';
+  const s2 = document.getElementById('ls-stage2');
+  s2.style.display = 'flex'; s2.style.flexDirection = 'column';
+  lsRenderPositionGrid();
+};
+window.lsGoStage1 = function() {
+  document.getElementById('ls-stage2').style.display = 'none';
+  document.getElementById('ls-stage1').style.display = 'flex';
+};
+
+function lsRenderPositionGrid() {
+  const grid = document.getElementById('ls-positionGrid');
+  const t1n = liveScore.players.filter(p=>p.team==='a').map(p=>p.name).join('·');
+  const t2n = liveScore.players.filter(p=>p.team==='b').map(p=>p.name).join('·');
+  grid.innerHTML = liveScore.players.map(p => {
+    const cur = liveScore.positions[p.name]||'';
+    const tl = p.team==='a' ? `${t1n} 팀` : `${t2n} 팀`;
+    return `<div class="ls-position-row team-${p.team}">
+      <div class="ls-pr-name">${p.name} <span style="font-size:11px;color:#4a8ab5;font-weight:600">(${tl})</span></div>
+      <div class="ls-pr-toggle">
+        <button class="${cur==='포'?'active':''}" onclick="lsPickPosition('${p.name}','포')">포</button>
+        <button class="${cur==='백'?'active':''}" onclick="lsPickPosition('${p.name}','백')">백</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('ls-startMatchBtn').disabled = !lsPositionsValid();
+}
+window.lsPickPosition = function(name, pos) {
+  liveScore.positions[name] = pos;
+  const player = liveScore.players.find(p=>p.name===name);
+  const partner = liveScore.players.find(p=>p.team===player.team && p.name!==name);
+  if (partner) liveScore.positions[partner.name] = pos==='포'?'백':'포';
+  lsRenderPositionGrid();
+};
+function lsPositionsValid() {
+  if (liveScore.players.some(p=>!liveScore.positions[p.name])) return false;
+  const ta = liveScore.players.filter(p=>p.team==='a').map(p=>liveScore.positions[p.name]);
+  const tb = liveScore.players.filter(p=>p.team==='b').map(p=>liveScore.positions[p.name]);
+  return ta[0]!==ta[1] && tb[0]!==tb[1];
+}
+window.lsStartMatch = function() {
+  if (liveScore.serveOrder.length!==4 || !lsPositionsValid()) return;
+  document.getElementById('ls-setupScreen').style.display = 'none';
+  const ms = document.getElementById('ls-matchScreen');
+  ms.style.display = 'flex'; ms.style.flexDirection = 'column';
+  lsRecomputeAndRender();
+};
+
+function lsNameTeam(name) { return liveScore.players.find(p=>p.name===name).team; }
+function lsServingSideAt(n) { return n%2===0?'포':'백'; }
+function lsReceiverForSide(server, side) {
+  const opp = lsNameTeam(server)==='a'?'b':'a';
+  return liveScore.players.find(p=>p.team===opp && liveScore.positions[p.name]===side).name;
+}
+
+function lsApplyTap(who, time, gameIdx, chosenSide) {
+  const server = liveScore.serveOrder[gameIdx%4];
+  const pIdx = liveScore.points.a + liveScore.points.b;
+  const isDeciding = liveScore.points.a===3 && liveScore.points.b===3;
+  const side = (isDeciding && chosenSide) ? chosenSide : lsServingSideAt(pIdx);
+  const receiver = lsReceiverForSide(server, side);
+  liveScore.points[who]++;
+  liveScore.lsEvents.push({type:'point',who,time,server,side,receiver,gameIdx,decided:isDeciding});
+  const winner = liveScore.points.a===4?'a':liveScore.points.b===4?'b':null;
+  if (winner) {
+    liveScore.games[winner]++;
+    liveScore.lsEvents.push({type:'game',who:winner,time,server,side,receiver,gameIdx,gsA:liveScore.games.a,gsB:liveScore.games.b});
+    liveScore.points = {a:0,b:0};
+    return true;
+  }
+  return false;
+}
+
+function lsRecomputeAndRender() {
+  liveScore.games = {a:0,b:0};
+  liveScore.points = {a:0,b:0};
+  liveScore.lsEvents = [];
+  let gIdx = 0;
+  liveScore.taps.forEach(t => { if (lsApplyTap(t.who,t.time,gIdx,t.chosenSide)) gIdx++; });
+  liveScore.curGameIdx = gIdx;
+  document.getElementById('ls-pt-a').textContent = LS_PTS[Math.min(liveScore.points.a,3)];
+  document.getElementById('ls-pt-b').textContent = LS_PTS[Math.min(liveScore.points.b,3)];
+  document.getElementById('ls-gs-a').textContent = liveScore.games.a;
+  document.getElementById('ls-gs-b').textContent = liveScore.games.b;
+  document.getElementById('ls-gs-a').classList.toggle('lead', liveScore.games.a>liveScore.games.b);
+  document.getElementById('ls-gs-b').classList.toggle('lead', liveScore.games.b>liveScore.games.a);
+  document.getElementById('ls-curGameIdx').textContent = `(${gIdx+1}게임째)`;
+  lsRenderServerBar();
+  lsRenderDecidingChooser();
+  lsRenderLog();
+  document.getElementById('ls-undoBtn').disabled = liveScore.taps.length===0;
+}
+
+function lsRenderServerBar() {
+  const srv = liveScore.serveOrder[liveScore.curGameIdx%4];
+  const isDeciding = liveScore.points.a===3 && liveScore.points.b===3;
+  const side = (isDeciding && liveScore.decidingSideChoice) ? liveScore.decidingSideChoice : lsServingSideAt(liveScore.points.a+liveScore.points.b);
+  const rcv = srv ? lsReceiverForSide(srv, side) : null;
+  document.getElementById('ls-curServerName').textContent = srv?`${srv}(${side})`:'-';
+  document.getElementById('ls-curReceiverName').textContent = rcv?`${rcv}(${side})`:'-';
+  const srvTeam = srv ? lsNameTeam(srv) : 'a';
+  ['a','b'].forEach(team => {
+    const el = document.getElementById('ls-tname-'+team);
+    const emoji = team==='a'?'🟢':'🔵';
+    const [fSide,sSide] = team==='a' ? ['포','백'] : ['백','포'];
+    let fName, sName, showTag;
+    if (team===srvTeam) {
+      const partner = liveScore.players.find(p=>p.team===team && p.name!==srv).name;
+      fName = side===fSide ? srv : partner;
+      sName = side===fSide ? partner : srv;
+      showTag = false;
+    } else {
+      fName = liveScore.players.find(p=>p.team===team && liveScore.positions[p.name]===fSide).name;
+      sName = liveScore.players.find(p=>p.team===team && liveScore.positions[p.name]===sSide).name;
+      showTag = true;
+    }
+    const fmt = n => {
+      const tag = showTag?`<span style="color:rgba(255,255,255,0.4);font-size:10px">(${liveScore.positions[n]})</span>`:'';
+      return n===srv?`<span class="ls-srv-dot">🎾${n}</span>${tag}`:`${n}${tag}`;
+    };
+    el.innerHTML = `${emoji} ${fmt(fName)} · ${fmt(sName)}`;
+  });
+}
+
+function lsRenderDecidingChooser() {
+  const isDeciding = liveScore.points.a===3 && liveScore.points.b===3;
+  document.getElementById('ls-decidingChooser').style.display = isDeciding?'block':'none';
+  document.getElementById('ls-dcBtnPo').classList.toggle('active', liveScore.decidingSideChoice==='포');
+  document.getElementById('ls-dcBtnBaek').classList.toggle('active', liveScore.decidingSideChoice==='백');
+}
+window.lsPickDecidingSide = function(side) {
+  liveScore.decidingSideChoice = side;
+  lsRenderDecidingChooser();
+  lsRenderServerBar();
+};
+
+function lsNowStr() {
+  const d = new Date();
+  return `${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}:${d.getSeconds().toString().padStart(2,'0')}`;
+}
+window.lsPoint = function(who) {
+  const dec = liveScore.points.a===3 && liveScore.points.b===3;
+  liveScore.taps.push({who, time:lsNowStr(), chosenSide:dec?liveScore.decidingSideChoice:undefined});
+  liveScore.decidingSideChoice = null;
+  lsRecomputeAndRender();
+};
+window.lsUndo = function() {
+  if (!liveScore.taps.length) return;
+  liveScore.taps.pop();
+  liveScore.decidingSideChoice = null;
+  lsRecomputeAndRender();
+};
+window.lsForceEnd = function() {
+  const t1 = liveScore.players.filter(p=>p.team==='a').map(p=>p.name).join('·');
+  const t2 = liveScore.players.filter(p=>p.team==='b').map(p=>p.name).join('·');
+  const ga = liveScore.games.a, gb = liveScore.games.b;
+  document.getElementById('ls-winName').textContent = ga===gb?'무승부':ga>gb?`🟢 ${t1} 팀 승리`:`🔵 ${t2} 팀 승리`;
+  document.getElementById('ls-finalScore').textContent = `최종 게임 스코어 ${ga} : ${gb}`;
+  document.getElementById('ls-endOverlay').classList.add('show');
+};
+window.lsCloseEnd = function() { document.getElementById('ls-endOverlay').classList.remove('show'); };
+window.lsConfirmEnd = async function() {
+  const {dayId,rIdx,mId,games} = liveScore;
+  const day = days.find(d=>d.id===dayId); if(!day) return;
+  const rounds = [...(day.rounds||[])];
+  const finalPos = {};
+  Object.entries(liveScore.positions).forEach(([n,s]) => { finalPos[n] = s==='포'?'fore':'back'; });
+  const matches = (rounds[rIdx].matches||[]).map(m => m.id===mId ? {
+    ...m, score1:games.a, score2:games.b, done:true,
+    positions:{...(m.positions||{}),...finalPos},
+    liveLog:liveScore.lsEvents
+  } : m);
+  rounds[rIdx] = {...rounds[rIdx], matches};
+  await updateDoc(doc(db,'days',dayId),{rounds});
+  document.getElementById('liveScoreOverlay').style.display = 'none';
+};
+function lsRenderLog() {
+  const box = document.getElementById('ls-logBox');
+  const t1 = liveScore.players.filter(p=>p.team==='a').map(p=>p.name).join('·');
+  const t2 = liveScore.players.filter(p=>p.team==='b').map(p=>p.name).join('·');
+  const list = liveScore.lsEvents.slice().reverse();
+  if (!list.length) { box.innerHTML='<div class="ls-log-item" style="justify-content:center;color:#4a8ab5">기록 없음</div>'; return; }
+  box.innerHTML = list.map(h => {
+    const nm = h.who==='a'?t1:t2;
+    const label = h.type==='game'?`🏅 게임 획득 (${h.gsA}:${h.gsB})`:'포인트 +1';
+    return `<div class="ls-log-item"><span><span class="ls-who ${h.who}">${nm}</span> ${label}</span><span><span class="ls-srv">🎾${h.server}→${h.receiver}</span> ${h.time}</span></div>`;
+  }).join('');
+}
+
 // 공유 링크(#schedule 등)로 들어오면 해당 탭을 자동으로 열어줌
 (function openTabFromHash(){
   try {
@@ -3902,5 +4248,103 @@ onSnapshot(collection(db,'schedules'), snap => {
   } catch(e){}
 })();
 </script>
+
+<!-- ── 실시간 스코어 오버레이 ── -->
+<div id="liveScoreOverlay" style="display:none">
+  <div class="ls-topbar">
+    <div>
+      <div class="ls-title">🎾 실시간 스코어</div>
+      <div class="ls-badge" id="ls-matchBadge">-</div>
+    </div>
+    <button class="ls-close-btn" onclick="closeLiveScore()">✕ 닫기</button>
+  </div>
+
+  <!-- 설정 화면 -->
+  <div id="ls-setupScreen" style="flex:1;display:flex;flex-direction:column;overflow-y:auto;">
+    <!-- 1단계: 서브 순서 -->
+    <div id="ls-stage1" style="padding:20px 16px;flex:1;display:flex;flex-direction:column;">
+      <div class="ls-setup-guide"><b>1단계.</b> 선수를 <b>서브 넣는 순서대로</b> 탭하세요 (1 → 2 → 3 → 4번째).<br>게임이 끝날 때마다 서브가 이 순서대로 자동으로 넘어가요.</div>
+      <div class="ls-player-pick-grid" id="ls-pickGrid"></div>
+      <div class="ls-setup-actions">
+        <button class="ls-btn-gray" onclick="lsClearOrder()">순서 초기화</button>
+        <button id="ls-nextStageBtn" onclick="lsGoStage2()" disabled>다음: 포/백 자리 정하기</button>
+      </div>
+    </div>
+    <!-- 2단계: 포/백 -->
+    <div id="ls-stage2" style="display:none;padding:20px 16px;flex:1;flex-direction:column;">
+      <div class="ls-setup-guide"><b>2단계.</b> 각 팀 두 명의 <b>포/백 자리</b>를 정하세요.<br>한 명만 클릭하면 파트너 자리가 자동으로 채워져요.</div>
+      <div class="ls-position-pick-grid" id="ls-positionGrid"></div>
+      <div class="ls-setup-actions">
+        <button class="ls-btn-gray" onclick="lsGoStage1()">이전</button>
+        <button id="ls-startMatchBtn" onclick="lsStartMatch()" disabled>경기 시작</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 경기 화면 -->
+  <div id="ls-matchScreen" style="display:none;flex:1;flex-direction:column;min-height:0;">
+    <div class="ls-server-bar">
+      🎾 서브: <span class="ls-tag" id="ls-curServerName">-</span>
+      <span style="color:#4a8ab5">→ 리시브:</span>
+      <span class="ls-tag" style="color:#60a5fa" id="ls-curReceiverName">-</span>
+      <span style="color:#4a8ab5;font-size:11px" id="ls-curGameIdx">(1게임째)</span>
+    </div>
+    <div class="ls-deciding-chooser" id="ls-decidingChooser" style="display:none">
+      <div class="ls-dc-label">⚡ 40:40 결정 포인트 — 리시브 자리를 골라주세요</div>
+      <div class="ls-dc-btns">
+        <button id="ls-dcBtnPo" onclick="lsPickDecidingSide('포')">포 자리로 받기</button>
+        <button id="ls-dcBtnBaek" onclick="lsPickDecidingSide('백')">백 자리로 받기</button>
+      </div>
+    </div>
+    <div class="ls-court">
+      <svg class="ls-court-lines" viewBox="0 0 100 200" preserveAspectRatio="none">
+        <rect x="2" y="2" width="96" height="196" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
+        <line x1="2" y1="100" x2="98" y2="100" stroke="rgba(255,255,255,0.75)" stroke-width="1.4"/>
+        <line x1="50" y1="18" x2="50" y2="100" stroke="rgba(255,255,255,0.45)" stroke-width="0.9"/>
+        <line x1="50" y1="100" x2="50" y2="182" stroke="rgba(255,255,255,0.45)" stroke-width="0.9"/>
+        <line x1="2" y1="18" x2="98" y2="18" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>
+        <line x1="2" y1="182" x2="98" y2="182" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>
+      </svg>
+      <div class="ls-team-panel a" onclick="lsPoint('a')">
+        <div class="ls-team-name" id="ls-tname-a">팀A</div>
+        <div class="ls-point-display" id="ls-pt-a">0</div>
+        <div class="ls-tap-hint">탭해서 포인트 +1</div>
+      </div>
+      <div class="ls-game-score-row">
+        <div class="ls-gs-side">
+          <span class="ls-gs-names" id="ls-gsNamesA">-</span>
+          <span class="ls-num" id="ls-gs-a">0</span>
+        </div>
+        <span class="ls-sep">게임</span>
+        <div class="ls-gs-side">
+          <span class="ls-num" id="ls-gs-b">0</span>
+          <span class="ls-gs-names" id="ls-gsNamesB">-</span>
+        </div>
+      </div>
+      <div class="ls-team-panel b" onclick="lsPoint('b')">
+        <div class="ls-team-name" id="ls-tname-b">팀B</div>
+        <div class="ls-point-display" id="ls-pt-b">0</div>
+        <div class="ls-tap-hint">탭해서 포인트 +1</div>
+      </div>
+    </div>
+    <div class="ls-controls">
+      <button class="ls-ctrl-btn undo" id="ls-undoBtn" onclick="lsUndo()" disabled>↩️ 실수 취소</button>
+      <button class="ls-ctrl-btn end" onclick="lsForceEnd()">🏁 경기 종료</button>
+    </div>
+    <div class="ls-log-box" id="ls-logBox"></div>
+  </div>
+
+  <!-- 종료 확인 오버레이 -->
+  <div class="ls-end-overlay" id="ls-endOverlay">
+    <div class="ls-end-card">
+      <div class="ls-trophy">🏆</div>
+      <div class="ls-win-name" id="ls-winName">-</div>
+      <div class="ls-final" id="ls-finalScore">-</div>
+      <button class="ls-confirm-btn" onclick="lsConfirmEnd()">✅ 결과 저장 &amp; 종료</button>
+      <button class="ls-cancel-btn" onclick="lsCloseEnd()">계속 입력</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
