@@ -688,7 +688,10 @@ body {
         <!-- 라운드별 코트 방식 + 개별 주사위 -->
         <div id="roundTypeSelectors" style="display:flex;flex-direction:column;gap:10px"></div>
 
-        <div style="margin-top:14px">
+        <div style="margin-top:10px">
+          <button class="btn-add" style="width:100%;background:rgba(124,58,237,0.85)" onclick="rollAllBalanced()">🗓️ 하루 전체 섞기</button>
+        </div>
+        <div style="margin-top:8px">
           <button class="btn-add" style="width:100%" onclick="saveAllRounds()">✅ 전체 라운드 저장</button>
         </div>
       </div>
@@ -1327,7 +1330,7 @@ function generateOneRoundByType(type, numCourts) {
 }
 
 // ── 코트별 방식으로 한 라운드 생성 (커플/중복 회피) ──────────────
-function generateRoundByCourtTypes(rIdx, nC, dayId) {
+function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
   const pool = dayId ? getAttendees(dayId) : allPlayers();
   const allPastPairs = getPastPairs();
   const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
@@ -1376,18 +1379,35 @@ function generateRoundByCourtTypes(rIdx, nC, dayId) {
   const maleCourts = usableCourtTypes.filter(t=>t==='남복').length;
   const femaleCourts = usableCourtTypes.filter(t=>t==='여복').length;
 
+  // typeHistory 균형 정렬 헬퍼 (하루 전체 섞기 시에만 활성화)
+  const _thBs = typeHistory
+    ? (a,fr,k)=>[...a.filter(n=>fr.has(n)),...a.filter(n=>!fr.has(n)).sort((x,y)=>(typeHistory[x]?.[k]||0)-(typeHistory[y]?.[k]||0))]
+    : null;
+  if (_thBs) {
+    pool.forEach(p=>{if(!typeHistory[p.name])typeHistory[p.name]={혼복:0,남복:0,여복:0};});
+    const mF=new Set([...forcedMix.map(p=>p[0]),...forcedMale.flat()].filter(n=>mPool.includes(n)));
+    const fF=new Set([...forcedMix.map(p=>p[1]),...forcedFemale.flat()].filter(n=>fPool.includes(n)));
+    mPool=_thBs(mPool,mF,'혼복'); fPool=_thBs(fPool,fF,'혼복');
+  }
   // 1) 혼복 페어
   const mForMix = mPool.splice(0, mixedCourts*2);
   const fForMix = fPool.splice(0, mixedCourts*2);
   const mixedPairs = makeMixedPairs(mForMix, fForMix, todayPairs, allPastPairs, rIdx, banSet, forcedMix);
 
   // 2) 남복
+  if (_thBs) { const mF2=new Set(forcedMale.flat().filter(n=>mPool.includes(n))); mPool=_thBs(mPool,mF2,'남복'); }
   const malePool = mPool.splice(0, maleCourts*4);
   const maleMatches = makeDoublesMatches(malePool, todayPairs, allPastPairs, maleCourts, [], '남복', banSet, forcedMale);
 
   // 3) 여복
+  if (_thBs) { const fF2=new Set(forcedFemale.flat().filter(n=>fPool.includes(n))); fPool=_thBs(fPool,fF2,'여복'); }
   const femalePool = fPool.splice(0, femaleCourts*4);
   const femaleMatches = makeDoublesMatches(femalePool, todayPairs, allPastPairs, femaleCourts, [], '여복', banSet, forcedFemale);
+  if (typeHistory) {
+    [...mForMix,...fForMix].forEach(n=>{if(typeHistory[n])typeHistory[n].혼복++;});
+    malePool.forEach(n=>{if(typeHistory[n])typeHistory[n].남복++;});
+    femalePool.forEach(n=>{if(typeHistory[n])typeHistory[n].여복++;});
+  }
 
   // 코트 순서대로 배치
   let mixIdx = 0, maleIdx = 0, femIdx = 0;
@@ -1431,6 +1451,45 @@ function generateRoundByCourtTypes(rIdx, nC, dayId) {
 
   return matches;
 }
+
+// ── 하루 전체 섞기: 코트 수별 기본 조합 드롭다운 자동 채우기 ──
+function applyDayDefaults(nC, nR) {
+  const defaults = ['혼복','혼복','남복','여복'];
+  for (let r=0; r<nR; r++) {
+    const preset = nC===2 ? (r%2===0?['혼복','혼복']:['남복','여복'])
+      : nC===3 ? ['혼복','남복','여복']
+      : Array.from({length:nC},(_,c)=>defaults[c%defaults.length]);
+    for (let c=0; c<nC; c++) {
+      const sel = document.getElementById(`ct_${r}_${c}`);
+      if (sel && preset[c]) sel.value = preset[c];
+    }
+  }
+}
+
+window.rollAllBalanced = function() {
+  const nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
+  const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
+  const dayId = document.getElementById('rndDayId')?.value || '';
+  // 1) 드롭다운에 추천 조합 자동 채우기 (관리자가 이후 수정 가능)
+  applyDayDefaults(nC, nR);
+  // 2) 공유 이력으로 전 라운드 균형 생성
+  const typeHistory = {};
+  generatedAllRounds = Array.from({length:nR},(_,r)=>({name:`${r+1}라운드`,matches:[]}));
+  for (let r=0; r<nR; r++) {
+    generatedAllRounds[r] = {name:`${r+1}라운드`, matches:generateRoundByCourtTypes(r, nC, dayId, typeHistory)};
+  }
+  // 3) 미리보기 렌더링
+  for (let r=0; r<nR; r++) {
+    const el = document.getElementById(`rndPreview_${r}`);
+    if (!el) continue;
+    const ms = generatedAllRounds[r]?.matches || [];
+    if (!ms.length) { el.innerHTML='<span style="color:#f87171">⚠️ 인원 부족</span>'; continue; }
+    el.innerHTML = ms.map(m => m.isRally
+      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">🎾 랠리</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div><span style="color:#4a8ab5;font-size:10px;margin-left:6px">${m.court}</span></div>`
+      : `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team1.join(' / ')}</div><span style="color:#4a8ab5;font-size:10px;margin:0 6px">vs</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team2.join(' / ')}</div></div>`
+    ).join('');
+  }
+};
 
 // 코트 방식 변경 시: 수동 등록 경기가 있으면 자동 섞기 안 함 (보호)
 window.onCourtTypeChange = function(rIdx) {
