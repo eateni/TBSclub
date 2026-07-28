@@ -8,30 +8,38 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  color: #1e293b; min-height: 100vh;
-  background: #f4f6fb;
+  color: #e8edf2; min-height: 100vh;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 80px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 80px),
+    linear-gradient(160deg, #0a2d5e 0%, #0d4a8c 25%, #1565c0 45%, #0d3d7a 65%, #071e4a 100%);
+  background-attachment: fixed;
 }
-body::before { display:none; }
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(30,120,220,0.2) 0%, transparent 55%),
+              radial-gradient(ellipse at 50% 100%, rgba(4,20,70,0.45) 0%, transparent 55%);
+}
 #appScreen { position:relative; z-index:1; }
 
 .header {
-  background: rgba(255,255,255,0.97);
-  border-bottom: 2px solid rgba(0,0,0,0.08);
+  background: linear-gradient(180deg, rgba(4,18,55,0.97) 0%, rgba(8,36,95,0.95) 100%);
+  border-bottom: 2px solid rgba(80,160,255,0.2);
   padding: 0 16px; position:sticky; top:0; z-index:50;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.45);
 }
 .header-brand { padding:12px 0 10px; border-bottom:1px solid rgba(255,255,255,0.07); margin-bottom:10px; }
 .header-top { display:flex; justify-content:space-between; align-items:flex-start; }
-.header-title { font-size:20px; font-weight:900; color:#1e293b; letter-spacing:-0.5px; line-height:1.15; }
+.header-title { font-size:20px; font-weight:900; color:#fff; letter-spacing:-0.5px; line-height:1.15; }
 .header-slogan { margin-top:3px; }
-.slogan-en { display:block; font-size:9px; color:rgba(30,41,59,0.5); letter-spacing:1.5px; font-weight:600; text-transform:uppercase; }
-.slogan-ko { display:block; font-size:9px; color:rgba(30,41,59,0.4); letter-spacing:0.2px; margin-top:1px; }
+.slogan-en { display:block; font-size:9px; color:rgba(130,190,255,0.65); letter-spacing:1.5px; font-weight:600; text-transform:uppercase; }
+.slogan-ko { display:block; font-size:9px; color:rgba(130,190,255,0.5); letter-spacing:0.2px; margin-top:1px; }
 .header-right { display:flex; align-items:center; gap:7px; flex-shrink:0; padding-top:2px; }
 .u-badge { font-size:11px; padding:4px 10px; border-radius:20px; font-weight:700; }
 .badge-admin { background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); }
-.badge-guest { background:rgba(148,163,184,0.15); color:#64748b; border:1px solid rgba(148,163,184,0.3); font-size:10px; }
+.badge-guest { background:rgba(20,50,100,0.5); color:#4a8ab5; border:1px solid rgba(30,80,150,0.25); font-size:10px; }
 .btn-admin-toggle { background:transparent; border:none; color:rgba(255,255,255,0.1); font-size:13px; padding:5px 6px; cursor:pointer; border-radius:6px; }
-.btn-logout { background:transparent; border:1px solid rgba(248,113,113,0.3); border-radius:8px; color:#dc2626; font-size:11px; padding:5px 10px; cursor:pointer; }
+.btn-logout { background:transparent; border:1px solid rgba(248,113,113,0.3); border-radius:8px; color:#f87171; font-size:11px; padding:5px 10px; cursor:pointer; }
 .main-tabs { display:none !important; }
 .tab-btn { flex:1; padding:10px 0; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:13px; transition:all 0.2s; }
 .tab-btn.active { background:rgba(37,99,235,0.88); color:#fff; box-shadow:0 2px 8px rgba(37,99,235,0.35); }
@@ -42,14 +50,14 @@ body::before { display:none; }
 .bottom-nav {
   position:fixed; left:0; right:0; bottom:0; z-index:500;
   display:flex; justify-content:space-around; align-items:center;
-  background:rgba(255,255,255,0.97);
-  border-top:1px solid rgba(0,0,0,0.08);
+  background:rgba(3,12,45,0.97);
+  border-top:1px solid rgba(35,90,180,0.35);
   padding:6px 0 calc(6px + env(safe-area-inset-bottom));
   backdrop-filter:blur(8px);
 }
 .bn-btn {
   background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:2px;
-  color:#64748b; font-size:10px; font-weight:700; cursor:pointer; flex:1; padding:4px 0;
+  color:#4a8ab5; font-size:10px; font-weight:700; cursor:pointer; flex:1; padding:4px 0;
 }
 .bn-btn .bn-icon { font-size:20px; line-height:1; }
 .bn-btn.active { color:#f59e0b; }
@@ -59,58 +67,58 @@ body::before { display:none; }
   display:flex; align-items:flex-end;
 }
 .more-menu-sheet {
-  width:100%; background:#ffffff; border-radius:18px 18px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+  width:100%; background:#0a1a4a; border-radius:18px 18px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom));
   border-top:1px solid rgba(245,158,11,0.3);
 }
-.more-menu-title { font-size:13px; font-weight:800; color:#64748b; margin-bottom:10px; }
+.more-menu-title { font-size:13px; font-weight:800; color:#4a8ab5; margin-bottom:10px; }
 .more-menu-item {
   display:block; width:100%; text-align:left; padding:14px 10px; background:none; border:none;
-  border-bottom:1px solid rgba(148,163,184,0.2); color:#1e293b; font-size:15px; font-weight:700; cursor:pointer;
+  border-bottom:1px solid rgba(35,90,180,0.2); color:#e8edf2; font-size:15px; font-weight:700; cursor:pointer;
 }
 .more-menu-item:last-child { border-bottom:none; }
 
-.subtabs { display:flex; gap:4px; background:#ffffff; border-radius:10px; padding:4px; margin-bottom:18px; }
+.subtabs { display:flex; gap:4px; background:#0a1a4a; border-radius:10px; padding:4px; margin-bottom:18px; }
 .stab { flex:1; padding:8px 0; border-radius:7px; border:none; cursor:pointer; font-weight:600; font-size:12px; transition:all 0.2s; }
-.stab.active { background:#e2e8f0; color:#2563eb; }
-.stab:not(.active) { background:transparent; color:#64748b; }
+.stab.active { background:#1e3a5f; color:#60a5fa; }
+.stab:not(.active) { background:transparent; color:#4a8ab5; }
 
 .sec-header { font-size:18px; font-weight:800; text-align:center; margin-bottom:14px; }
 .rank-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:22px; }
-.rank-card { border-radius:14px; padding:14px 10px; text-align:center; border:1px solid rgba(255,255,255,0.1); }
+.rank-card { border-radius:14px; padding:14px 10px; text-align:center; border:1px solid rgba(3,12,45,0.1); }
 .rc1{background:linear-gradient(135deg,#f59e0b,#d97706);}
-.rc2{background:linear-gradient(135deg,#94a3b8,#64748b);}
+.rc2{background:linear-gradient(135deg,#94a3b8,#4a8ab5);}
 .rc3{background:linear-gradient(135deg,#b45309,#92400e);}
-.rcN{background:#ffffff;border:1px solid #e2e8f0;}
+.rcN{background:#0a1a4a;border:1px solid #1e3a5f;}
 
 .round-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
-.round-card { background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e2e8f0; }
-.round-hdr { width:100%; padding:14px 16px; background:transparent; border:none; color:#1e293b; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; font-size:14px; }
+.round-card { background:#0a1a4a; border-radius:12px; overflow:hidden; border:1px solid #1e3a5f; }
+.round-hdr { width:100%; padding:14px 16px; background:transparent; border:none; color:#e8edf2; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; font-size:14px; }
 .round-body { padding:0 12px 12px; display:flex; flex-direction:column; gap:8px; }
-.match-card { background:#f8faff; border-radius:10px; padding:12px; border:1px solid #e2e8f0; }
-.match-ct { font-size:10px; color:#64748b; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
+.match-card { background:#0f1923; border-radius:10px; padding:12px; border:1px solid #1e3a5f; }
+.match-ct { font-size:10px; color:#4a8ab5; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
 .match-row { display:flex; align-items:center; justify-content:space-between; }
-.m-team { flex:1; text-align:center; font-weight:700; font-size:13px; color:#1e293b; line-height:1.4; }
-.m-team.win { color:#2563eb; }
-.m-score { padding:4px 10px; background:#e2e8f0; border-radius:8px; margin:0 6px; min-width:58px; text-align:center; font-weight:900; font-size:15px; color:#f59e0b; white-space:nowrap; }
-.m-score.pend { font-size:11px; color:#64748b; font-weight:400; }
-.btn-input { margin-top:8px; width:100%; padding:8px; background:#e2e8f0; border:1px dashed #2563eb; border-radius:8px; color:#2563eb; font-size:12px; font-weight:600; cursor:pointer; }
-.btn-del-sm { background:none; border:none; color:#dc2626; cursor:pointer; font-size:11px; margin-top:4px; width:100%; }
+.m-team { flex:1; text-align:center; font-weight:700; font-size:13px; color:#e8edf2; line-height:1.4; }
+.m-team.win { color:#60a5fa; }
+.m-score { padding:4px 10px; background:#1e3a5f; border-radius:8px; margin:0 6px; min-width:58px; text-align:center; font-weight:900; font-size:15px; color:#f59e0b; white-space:nowrap; }
+.m-score.pend { font-size:11px; color:#4a8ab5; font-weight:400; }
+.btn-input { margin-top:8px; width:100%; padding:8px; background:#1e3a5f; border:1px dashed #60a5fa; border-radius:8px; color:#60a5fa; font-size:12px; font-weight:600; cursor:pointer; }
+.btn-del-sm { background:none; border:none; color:#f87171; cursor:pointer; font-size:11px; margin-top:4px; width:100%; }
 
 /* ── 실시간 스코어 오버레이 ── */
-#liveScoreOverlay { position:fixed; inset:0; z-index:9999; background:#030c2d; color:#1e293b; flex-direction:column; overflow:hidden; font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif; -webkit-tap-highlight-color:transparent; user-select:none; }
-.ls-topbar { padding:12px 16px 10px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(148,163,184,0.25); flex-shrink:0; }
+#liveScoreOverlay { position:fixed; inset:0; z-index:9999; background:#030c2d; color:#e8edf2; flex-direction:column; overflow:hidden; font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif; -webkit-tap-highlight-color:transparent; user-select:none; }
+.ls-topbar { padding:12px 16px 10px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(35,90,180,0.25); flex-shrink:0; }
 .ls-title { font-size:14px; font-weight:800; color:#f59e0b; }
-.ls-badge { font-size:11px; color:#64748b; }
-.ls-close-btn { background:rgba(220,38,38,0.15); color:#dc2626; border:1px solid rgba(220,38,38,0.35); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; }
-.ls-btn-gray { background:rgba(255,255,255,0.85); color:#7c8ba1; border:1px solid rgba(148,163,184,0.35); border-radius:10px; padding:13px 0; font-size:14px; font-weight:800; cursor:pointer; flex:1; }
-.ls-setup-guide { font-size:13px; color:#7c8ba1; line-height:1.6; margin-bottom:18px; }
+.ls-badge { font-size:11px; color:#4a8ab5; }
+.ls-close-btn { background:rgba(220,38,38,0.15); color:#f87171; border:1px solid rgba(220,38,38,0.35); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+.ls-btn-gray { background:rgba(3,12,45,0.85); color:#8aa5c4; border:1px solid rgba(35,90,180,0.35); border-radius:10px; padding:13px 0; font-size:14px; font-weight:800; cursor:pointer; flex:1; }
+.ls-setup-guide { font-size:13px; color:#8aa5c4; line-height:1.6; margin-bottom:18px; }
 .ls-setup-guide b { color:#f59e0b; }
 .ls-player-pick-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
-.ls-player-pick { position:relative; padding:16px 10px; border-radius:12px; text-align:center; cursor:pointer; border:2px solid rgba(148,163,184,0.3); background:rgba(248,250,255,0.6); }
+.ls-player-pick { position:relative; padding:16px 10px; border-radius:12px; text-align:center; cursor:pointer; border:2px solid rgba(35,90,180,0.3); background:rgba(4,16,55,0.6); }
 .ls-player-pick.team-a { border-color:rgba(52,211,153,0.3); }
 .ls-player-pick.team-b { border-color:rgba(96,165,250,0.3); }
 .ls-pname { font-size:15px; font-weight:800; }
-.ls-pteam { font-size:11px; color:#64748b; margin-top:2px; }
+.ls-pteam { font-size:11px; color:#4a8ab5; margin-top:2px; }
 .ls-order-badge { position:absolute; top:-8px; right:-8px; width:26px; height:26px; border-radius:50%; background:#f59e0b; color:#1a120a; font-size:13px; font-weight:900; display:none; align-items:center; justify-content:center; }
 .ls-player-pick.picked .ls-order-badge { display:flex; }
 .ls-player-pick.picked { opacity:0.55; }
@@ -118,160 +126,171 @@ body::before { display:none; }
 #ls-nextStageBtn,#ls-startMatchBtn { flex:1; padding:13px 0; border-radius:10px; border:none; background:linear-gradient(135deg,#f59e0b,#d97706); color:#1a120a; font-size:14px; font-weight:800; cursor:pointer; }
 #ls-nextStageBtn:disabled,#ls-startMatchBtn:disabled { opacity:0.35; }
 .ls-position-pick-grid { display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
-.ls-position-row { display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:rgba(248,250,255,0.6); border:2px solid rgba(148,163,184,0.3); }
+.ls-position-row { display:flex; align-items:center; gap:10px; padding:12px; border-radius:12px; background:rgba(4,16,55,0.6); border:2px solid rgba(35,90,180,0.3); }
 .ls-position-row.team-a { border-color:rgba(52,211,153,0.3); }
 .ls-position-row.team-b { border-color:rgba(96,165,250,0.3); }
 .ls-pr-name { flex:1; font-size:14px; font-weight:800; }
 .ls-pr-toggle { display:flex; gap:6px; }
-.ls-pr-toggle button { padding:8px 14px; border-radius:8px; border:1px solid rgba(148,163,184,0.35); background:rgba(255,255,255,0.85); color:#7c8ba1; font-size:12px; font-weight:700; cursor:pointer; }
+.ls-pr-toggle button { padding:8px 14px; border-radius:8px; border:1px solid rgba(35,90,180,0.35); background:rgba(3,12,45,0.85); color:#8aa5c4; font-size:12px; font-weight:700; cursor:pointer; }
 .ls-pr-toggle button.active { background:#f59e0b; color:#1a120a; border-color:#f59e0b; }
 .ls-server-bar { display:flex; align-items:center; justify-content:center; gap:8px; padding:9px 16px; background:rgba(245,158,11,0.1); border-bottom:1px solid rgba(245,158,11,0.25); font-size:13px; flex-shrink:0; flex-wrap:wrap; }
 .ls-tag { color:#f59e0b; font-weight:900; }
 .ls-deciding-chooser { margin:10px 14px 0; padding:12px; border-radius:12px; background:rgba(245,158,11,0.12); border:1.5px solid rgba(245,158,11,0.4); text-align:center; flex-shrink:0; }
 .ls-dc-label { font-size:12.5px; font-weight:800; color:#f59e0b; margin-bottom:9px; }
 .ls-dc-btns { display:flex; gap:8px; }
-.ls-dc-btns button { flex:1; padding:10px 0; border-radius:9px; border:1.5px solid rgba(245,158,11,0.5); background:rgba(255,255,255,0.85); color:#fbbf24; font-size:13px; font-weight:800; cursor:pointer; }
+.ls-dc-btns button { flex:1; padding:10px 0; border-radius:9px; border:1.5px solid rgba(245,158,11,0.5); background:rgba(3,12,45,0.85); color:#fbbf24; font-size:13px; font-weight:800; cursor:pointer; }
 .ls-dc-btns button.active { background:#f59e0b; color:#1a120a; }
-.ls-game-score-row { display:flex; align-items:center; justify-content:center; gap:16px; padding:10px 16px; background:rgba(248,250,255,0.72); position:relative; z-index:2; border-radius:8px; flex-shrink:0; }
-.ls-num { font-size:30px; font-weight:900; color:#1e293b; min-width:40px; text-align:center; }
+.ls-game-score-row { display:flex; align-items:center; justify-content:center; gap:16px; padding:10px 16px; background:rgba(4,16,55,0.72); position:relative; z-index:2; border-radius:8px; flex-shrink:0; }
+.ls-num { font-size:30px; font-weight:900; color:#e8edf2; min-width:40px; text-align:center; }
 .ls-num.lead { color:#f59e0b; }
-.ls-sep { font-size:17px; color:#64748b; font-weight:700; }
+.ls-sep { font-size:17px; color:#4a8ab5; font-weight:700; }
 .ls-gs-side { display:flex; flex-direction:column; align-items:center; gap:2px; }
-.ls-gs-names { font-size:10.5px; font-weight:700; color:#7c8ba1; white-space:nowrap; }
+.ls-gs-names { font-size:10.5px; font-weight:700; color:#8aa5c4; white-space:nowrap; }
 .ls-court { flex:1; display:flex; flex-direction:column; min-height:0; position:relative; margin:8px 10px 0; padding:32px 8px; border-radius:12px; overflow:hidden; background:repeating-linear-gradient(90deg,#7c8f4c 0,#7c8f4c 26px,#6f8241 26px,#6f8241 52px); box-shadow:inset 0 0 0 1px rgba(0,0,0,0.15); }
 .ls-court-lines { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .ls-team-panel { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:14px; padding:14px 16px; cursor:pointer; position:relative; z-index:2; transition:transform 0.08s ease,filter 0.15s ease; min-height:120px; }
 .ls-team-panel:active { transform:scale(0.985); filter:brightness(1.12); }
 .ls-team-panel.a { background:linear-gradient(160deg,#1d4225,#173418); }
 .ls-team-panel.b { background:linear-gradient(160deg,#1e3a5f,#16294a); }
-.ls-team-name { font-size:14px; font-weight:800; color:rgba(255,255,255,0.82); margin-bottom:6px; }
+.ls-team-name { font-size:14px; font-weight:800; color:rgba(3,12,45,0.82); margin-bottom:6px; }
 .ls-srv-dot { color:#f59e0b; }
 .ls-point-display { font-size:60px; font-weight:900; color:#fff; line-height:1; letter-spacing:-1px; }
-.ls-tap-hint { position:absolute; bottom:12px; font-size:11px; color:rgba(255,255,255,0.4); }
-.ls-controls { display:flex; gap:8px; padding:12px 14px 14px; border-top:1px solid rgba(148,163,184,0.25); flex-shrink:0; }
-.ls-ctrl-btn { flex:1; padding:12px 0; border-radius:10px; border:1px solid rgba(148,163,184,0.35); background:rgba(255,255,255,0.85); color:#93c5fd; font-size:13px; font-weight:700; cursor:pointer; }
+.ls-tap-hint { position:absolute; bottom:12px; font-size:11px; color:rgba(3,12,45,0.4); }
+.ls-controls { display:flex; gap:8px; padding:12px 14px 14px; border-top:1px solid rgba(35,90,180,0.25); flex-shrink:0; }
+.ls-ctrl-btn { flex:1; padding:12px 0; border-radius:10px; border:1px solid rgba(35,90,180,0.35); background:rgba(3,12,45,0.85); color:#93c5fd; font-size:13px; font-weight:700; cursor:pointer; }
 .ls-ctrl-btn.undo { color:#fbbf24; border-color:rgba(245,158,11,0.35); }
-.ls-ctrl-btn.end { color:#059669; border-color:rgba(52,211,153,0.35); }
+.ls-ctrl-btn.end { color:#34d399; border-color:rgba(52,211,153,0.35); }
 .ls-ctrl-btn:disabled { opacity:0.35; }
-.ls-log-box { max-height:110px; overflow-y:auto; background:rgba(248,250,255,0.5); margin:0 14px 8px; border-radius:10px; flex-shrink:0; }
-.ls-log-item { font-size:11.5px; color:#7c8ba1; padding:6px 12px; border-bottom:1px solid rgba(148,163,184,0.12); display:flex; justify-content:space-between; gap:8px; }
+.ls-log-box { max-height:110px; overflow-y:auto; background:rgba(4,16,55,0.5); margin:0 14px 8px; border-radius:10px; flex-shrink:0; }
+.ls-log-item { font-size:11.5px; color:#8aa5c4; padding:6px 12px; border-bottom:1px solid rgba(35,90,180,0.12); display:flex; justify-content:space-between; gap:8px; }
 .ls-who { font-weight:700; }
 .ls-who.a { color:#4ade80; }
-.ls-who.b { color:#2563eb; }
+.ls-who.b { color:#60a5fa; }
 .ls-srv { color:#f59e0b; font-size:10.5px; }
 .ls-end-overlay { position:absolute; inset:0; background:rgba(3,8,25,0.9); display:none; align-items:center; justify-content:center; z-index:100; padding:24px; }
 .ls-end-overlay.show { display:flex; }
-.ls-end-card { background:#ffffff; border:1px solid rgba(245,158,11,0.35); border-radius:16px; padding:28px 24px; text-align:center; max-width:320px; width:100%; }
+.ls-end-card { background:#0a1a4a; border:1px solid rgba(245,158,11,0.35); border-radius:16px; padding:28px 24px; text-align:center; max-width:320px; width:100%; }
 .ls-trophy { font-size:40px; margin-bottom:8px; }
 .ls-win-name { font-size:19px; font-weight:900; color:#f59e0b; margin-bottom:4px; }
-.ls-final { font-size:14px; color:#7c8ba1; margin-bottom:20px; }
+.ls-final { font-size:14px; color:#8aa5c4; margin-bottom:20px; }
 .ls-confirm-btn { width:100%; padding:12px 0; border-radius:10px; border:none; background:linear-gradient(135deg,#f59e0b,#d97706); color:#1a120a; font-weight:800; font-size:14px; cursor:pointer; margin-bottom:8px; }
-.ls-cancel-btn { width:100%; padding:10px 0; border-radius:10px; border:1px solid rgba(148,163,184,0.35); background:rgba(255,255,255,0.85); color:#7c8ba1; font-size:13px; font-weight:700; cursor:pointer; }
+.ls-cancel-btn { width:100%; padding:10px 0; border-radius:10px; border:1px solid rgba(35,90,180,0.35); background:rgba(3,12,45,0.85); color:#8aa5c4; font-size:13px; font-weight:700; cursor:pointer; }
 .ls-mute-btn { background:rgba(96,165,250,0.15); color:#93c5fd; border:1px solid rgba(96,165,250,0.35); border-radius:8px; padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; }
 .ls-match-chooser { margin:10px 14px 0; padding:12px; border-radius:12px; background:rgba(96,165,250,0.12); border:1.5px solid rgba(96,165,250,0.4); text-align:center; flex-shrink:0; }
 .ls-match-end-banner { margin:10px 14px 0; padding:11px; border-radius:10px; background:rgba(245,158,11,0.12); border:1.5px solid rgba(245,158,11,0.4); text-align:center; font-size:13px; color:#fbbf24; font-weight:700; flex-shrink:0; }
 
 /* 성별 배지 */
-.g-m { color:#2563eb; font-size:10px; font-weight:700; }
+.g-m { color:#60a5fa; font-size:10px; font-weight:700; }
 .g-f { color:#f472b6; font-size:10px; font-weight:700; }
 
 /* 이벤트 */
 .event-list { display:flex; flex-direction:column; gap:12px; }
-.event-card { background:#ffffff; border-radius:16px; border:1px solid #e2e8f0; overflow:hidden; }
+.event-card { background:#0a1a4a; border-radius:16px; border:1px solid #1e3a5f; overflow:hidden; }
 .event-banner { padding:18px 16px 12px; }
 .ev-type-badge { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:8px; }
 .badge-exchange{background:#7c3aed22;color:#a78bfa;border:1px solid #7c3aed44;}
-.badge-monthly{background:#05966922;color:#059669;border:1px solid #05966944;}
-.badge-special{background:#dc262622;color:#dc2626;border:1px solid #dc262644;}
+.badge-monthly{background:#34d39922;color:#34d399;border:1px solid #34d39944;}
+.badge-special{background:#f8717122;color:#f87171;border:1px solid #f8717144;}
 .ev-name{font-size:17px;font-weight:900;color:#fff;margin-bottom:4px;}
-.ev-date{font-size:12px;color:#64748b;}
+.ev-date{font-size:12px;color:#4a8ab5;}
 .ev-desc{font-size:12px;color:#94a3b8;margin-top:6px;line-height:1.6;}
-.ev-footer{padding:12px 16px;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;}
+.ev-footer{padding:12px 16px;border-top:1px solid #1e3a5f;display:flex;align-items:center;justify-content:space-between;}
 .ev-status{font-size:12px;font-weight:700;}
-.st-upcoming{color:#fbbf24;}.st-ongoing{color:#059669;}.st-done{color:#64748b;}
-.btn-ev-detail{padding:7px 14px;background:#e2e8f0;border:none;border-radius:8px;color:#2563eb;font-size:12px;font-weight:600;cursor:pointer;}
-.ev-parts{padding:10px 16px;border-top:1px solid #e2e8f0;}
+.st-upcoming{color:#fbbf24;}.st-ongoing{color:#34d399;}.st-done{color:#4a8ab5;}
+.btn-ev-detail{padding:7px 14px;background:#1e3a5f;border:none;border-radius:8px;color:#60a5fa;font-size:12px;font-weight:600;cursor:pointer;}
+.ev-parts{padding:10px 16px;border-top:1px solid #1e3a5f;}
 .part-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-.part-chip{font-size:12px;padding:4px 12px;background:#f8faff;border-radius:20px;color:#94a3b8;border:1px solid #e2e8f0;}
+.part-chip{font-size:12px;padding:4px 12px;background:#0f1923;border-radius:20px;color:#94a3b8;border:1px solid #1e3a5f;}
 
 /* 관리자 */
 .admin-sec{background:rgba(8,28,75,0.75);border-radius:14px;padding:16px;border:1px solid rgba(50,110,200,0.25);margin-bottom:12px;backdrop-filter:blur(6px);}
 .admin-sec.guest-sec{border-color:rgba(52,211,153,0.35);background:rgba(4,35,25,0.7);}
-.admin-sec.guest-sec h3{color:#059669;}
-.admin-sec h3{font-size:14px;font-weight:700;color:#1e293b;margin-bottom:12px;}
+.admin-sec.guest-sec h3{color:#34d399;}
+.admin-sec h3{font-size:14px;font-weight:700;color:#e8edf2;margin-bottom:12px;}
 .chips-wrap{display:flex;flex-wrap:wrap;gap:8px;}
-.chip{padding:6px 14px;background:rgba(248,250,255,0.8);border-radius:20px;font-size:13px;color:#94a3b8;border:1px solid rgba(148,163,184,0.25);display:flex;align-items:center;gap:6px;}
+.chip{padding:6px 14px;background:rgba(4,16,55,0.8);border-radius:20px;font-size:13px;color:#94a3b8;border:1px solid rgba(35,90,180,0.25);display:flex;align-items:center;gap:6px;}
 .chip-guest{border-color:rgba(52,211,153,0.3);}
-.g-guest{color:#059669;font-size:10px;font-weight:700;}
-.chip-x{background:none;border:none;color:#dc2626;cursor:pointer;font-size:15px;padding:0;line-height:1;}
+.g-guest{color:#34d399;font-size:10px;font-weight:700;}
+.chip-x{background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;padding:0;line-height:1;}
 .row-form{display:flex;gap:8px;margin-top:10px;}
-.row-inp{flex:1;padding:10px 12px;background:#f8faff;border:1px solid #e2e8f0;border-radius:10px;color:#1e293b;font-size:13px;outline:none;}
-.row-inp:focus{border-color:#2563eb;}
-.row-sel{padding:10px 12px;background:#f8faff;border:1px solid #e2e8f0;border-radius:10px;color:#1e293b;font-size:13px;outline:none;}
-.btn-add{padding:10px 16px;background:#2563eb;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
-.btn-green{padding:10px 16px;background:#059669;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.row-inp{flex:1;padding:10px 12px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:13px;outline:none;}
+.row-inp:focus{border-color:#60a5fa;}
+.row-sel{padding:10px 12px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:13px;outline:none;}
+.btn-add{padding:10px 16px;background:#60a5fa;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.btn-green{padding:10px 16px;background:#34d399;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
 .btn-teal{padding:10px 16px;background:#0d9488;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
 .stat-row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid #1a2a3a;}
 .stat-row:last-child{border-bottom:none;}
 
 .sec-title{font-size:15px;font-weight:800;margin-bottom:10px;}
-.tbl-wrap{background:#ffffff;border-radius:12px;overflow:hidden;border:1px solid #e2e8f0;margin-bottom:22px;overflow-x:auto;}
+.tbl-wrap{background:#0a1a4a;border-radius:12px;overflow:hidden;border:1px solid #1e3a5f;margin-bottom:22px;overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:12px;min-width:300px;}
-thead tr{background:#f8faff;}
-th{padding:10px 6px;text-align:center;font-weight:600;color:#64748b;border-bottom:1px solid #e2e8f0;white-space:nowrap;}
+thead tr{background:#0f1923;}
+th{padding:10px 6px;text-align:center;font-weight:600;color:#4a8ab5;border-bottom:1px solid #1e3a5f;white-space:nowrap;}
 td{padding:10px 6px;text-align:center;border-bottom:1px solid #1a2a3a;}
 tr:last-child td{border-bottom:none;}
-tr:nth-child(even){background:#f8faff22;}
+tr:nth-child(even){background:#0f192322;}
 
 .rank-list{display:flex;flex-direction:column;gap:8px;}
-.rank-item{background:#ffffff;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;border:1px solid rgba(148,163,184,0.3);box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+.rank-item{background:#162030;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;border:1px solid #1e3a5f;}
 .rank-item.top{border-color:#f59e0b44;}
 .rank-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#fff;flex-shrink:0;}
-.wr-bg{height:6px;background:#f8faff;border-radius:3px;overflow:hidden;margin-top:4px;}
+.wr-bg{height:6px;background:#0f1923;border-radius:3px;overflow:hidden;margin-top:4px;}
 .wr-bar{height:100%;border-radius:3px;transition:width 0.5s;}
 
 /* 자동 페어링 결과 미리보기 */
-.pairing-preview { background:#f8faff; border-radius:10px; padding:12px; margin-top:10px; border:1px solid #e2e8f0; }
+.pairing-preview { background:#0f1923; border-radius:10px; padding:12px; margin-top:10px; border:1px solid #1e3a5f; }
 .pairing-match { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #1a2a3a; font-size:13px; }
 .pairing-match:last-child { border-bottom:none; }
-.pairing-vs { color:#64748b; font-size:11px; margin:0 8px; }
+.pairing-vs { color:#4a8ab5; font-size:11px; margin:0 8px; }
 
 /* 모달 */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
-.modal{background:#ffffff;border-radius:20px;padding:24px 20px 28px;width:100%;max-width:400px;border:1px solid #e2e8f0;max-height:90vh;overflow-y:auto;}
+.modal{background:#0a1a4a;border-radius:20px;padding:24px 20px 28px;width:100%;max-width:400px;border:1px solid #1e3a5f;max-height:90vh;overflow-y:auto;}
 .overlay-bottom{position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:flex-end;justify-content:center;z-index:200;}
-.modal-bottom{background:#ffffff;border-radius:20px 20px 0 0;padding:24px 20px 44px;width:100%;max-width:480px;border:1px solid #e2e8f0;max-height:90vh;overflow-y:auto;}
+.modal-bottom{background:#0a1a4a;border-radius:20px 20px 0 0;padding:24px 20px 44px;width:100%;max-width:480px;border:1px solid #1e3a5f;max-height:90vh;overflow-y:auto;}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:18px;}
 .mg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.mf label{font-size:11px;color:#64748b;display:block;margin-bottom:5px;}
-.mf select,.mf input{width:100%;padding:10px;background:#f8faff;border:1px solid #e2e8f0;border-radius:10px;color:#1e293b;font-size:13px;outline:none;}
+.mf label{font-size:11px;color:#4a8ab5;display:block;margin-bottom:5px;}
+.mf select,.mf input{width:100%;padding:10px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:13px;outline:none;}
 .mf-full{margin-bottom:12px;}
-.mf-full label{font-size:11px;color:#64748b;display:block;margin-bottom:5px;}
-.mf-full input,.mf-full select,.mf-full textarea{width:100%;padding:10px;background:#f8faff;border:1px solid #e2e8f0;border-radius:10px;color:#1e293b;font-size:13px;outline:none;}
+.mf-full label{font-size:11px;color:#4a8ab5;display:block;margin-bottom:5px;}
+.mf-full input,.mf-full select,.mf-full textarea{width:100%;padding:10px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:13px;outline:none;}
 .mf-full textarea{resize:none;height:70px;}
 .mft{display:flex;gap:8px;margin-top:16px;}
-.btn-cancel{flex:1;padding:13px;background:#f8faff;border:1px solid #e2e8f0;border-radius:12px;color:#6b8cae;font-size:14px;font-weight:600;cursor:pointer;}
-.btn-ok{flex:2;padding:13px;background:#2563eb;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
-.btn-ok-green{flex:2;padding:13px;background:#059669;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
+.btn-cancel{flex:1;padding:13px;background:#0f1923;border:1px solid #1e3a5f;border-radius:12px;color:#6b8cae;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-ok{flex:2;padding:13px;background:#60a5fa;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
+.btn-ok-green{flex:2;padding:13px;background:#34d399;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
 
-.loading{text-align:center;padding:50px 20px;color:#64748b;font-size:14px;}
-.empty{text-align:center;padding:40px 20px;color:#64748b;}
-.f-input{width:100%;padding:12px 14px;background:#f8faff;border:1px solid #e2e8f0;border-radius:10px;color:#1e293b;font-size:14px;margin-bottom:12px;outline:none;}
-.f-input:focus{border-color:#2563eb;}
-.err{color:#dc2626;font-size:12px;margin-bottom:8px;text-align:center;min-height:16px;}
+.loading{text-align:center;padding:50px 20px;color:#4a8ab5;font-size:14px;}
+.empty{text-align:center;padding:40px 20px;color:#4a8ab5;}
+.f-input{width:100%;padding:12px 14px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:14px;margin-bottom:12px;outline:none;}
+.f-input:focus{border-color:#60a5fa;}
+.err{color:#f87171;font-size:12px;margin-bottom:8px;text-align:center;min-height:16px;}
 
 /* 성별 토글 */
 .gender-toggle { display:flex; gap:6px; }
-.g-btn { padding:8px 14px; border-radius:8px; border:1px solid rgba(148,163,184,0.35); cursor:pointer; font-size:13px; font-weight:700; background:rgba(255,255,255,0.85); }
-.g-btn.m.active { background:rgba(15,50,140,0.85); color:#2563eb; border-color:#2563eb; }
+.g-btn { padding:8px 14px; border-radius:8px; border:1px solid rgba(35,90,180,0.35); cursor:pointer; font-size:13px; font-weight:700; background:rgba(3,12,45,0.85); }
+.g-btn.m.active { background:rgba(15,50,140,0.85); color:#60a5fa; border-color:#60a5fa; }
 .g-btn.f.active { background:rgba(80,15,80,0.85); color:#f472b6; border-color:#be185d; }
-.g-btn:not(.active) { color:#64748b; }
+.g-btn:not(.active) { color:#4a8ab5; }
 
 /* ── TBS CLUB 엠블럼 배경 ── */
 body {
-  background-color: #f4f6fb;
-  background-image: none;
+  background-color: #1d4225;
+  background-image:
+    /* 가독성용 어두운 오버레이 */
+    linear-gradient(180deg, rgba(6,16,10,0.82) 0%, rgba(8,20,12,0.50) 42%, rgba(6,14,9,0.86) 100%),
+    /* 잔디 깎은 줄무늬 (윔블던 스타일) */
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,0.055) 0, rgba(255,255,255,0.055) 52px,
+      rgba(0,0,0,0.07) 52px, rgba(0,0,0,0.07) 104px),
+    /* 잔디 베이스 */
+    radial-gradient(ellipse at 50% 20%, #3f8049 0%, #2d6037 48%, #1d4225 100%);
+  background-size: cover;
   background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 /* ── 🎬 영상 인트로 (하루 1회) ── */
@@ -284,8 +303,8 @@ body {
 #introVideo{ max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; background:#000; }
 #introSkip{
   position:absolute; bottom:30px; right:20px; z-index:2;
-  background:rgba(0,0,0,0.45); color:rgba(255,255,255,0.85);
-  border:1px solid rgba(255,255,255,0.35); border-radius:20px;
+  background:rgba(0,0,0,0.45); color:rgba(3,12,45,0.85);
+  border:1px solid rgba(3,12,45,0.35); border-radius:20px;
   padding:7px 16px; font-size:12px; font-weight:600; cursor:pointer;
   backdrop-filter:blur(4px);
 }
@@ -333,7 +352,7 @@ body {
 
 <div id="appScreen">
   <div class="header">
-    <div style="padding:12px 0 10px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:10px;">
+    <div style="padding:12px 0 10px; border-bottom:1px solid rgba(3,12,45,0.08); margin-bottom:10px;">
       <div style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div>
           <div style="display:flex;align-items:center;gap:10px">
@@ -396,7 +415,7 @@ body {
     <div id="tab-league">
       <!-- 시즌 선택 -->
       <div style="margin-top:16px;display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;color:#64748b;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
+        <span style="font-size:12px;color:#4a8ab5;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
         <select id="seasonSelect" class="row-sel" style="flex:1;font-size:13px;padding:9px" onchange="changeViewSeason()"></select>
       </div>
       <div id="seasonNote" style="display:none;margin-top:8px;font-size:11px;color:#fbbf24;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 10px"></div>
@@ -416,14 +435,14 @@ body {
         </div>
       </div>
       <div id="sub-ranking" style="display:none">
-        <div class="sec-header" style="color:#2563eb;margin-top:4px">🏅 전체 랭킹</div>
+        <div class="sec-header" style="color:#60a5fa;margin-top:4px">🏅 전체 랭킹</div>
         <div class="rank-list" id="rankList"></div>
       </div>
       <div id="sub-analysis" style="display:none">
         <div class="sec-header" style="color:#a78bfa;margin-top:4px">📊 개인별 분석</div>
         <!-- 회원 선택 -->
         <div style="margin-bottom:16px">
-          <div style="font-size:11px;color:#64748b;margin-bottom:8px">분석할 회원 선택</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">분석할 회원 선택</div>
           <select id="analysisSelect" class="row-sel" style="width:100%;font-size:14px;padding:12px" onchange="renderAnalysisDetail()">
             <option value="">회원을 선택하세요</option>
           </select>
@@ -446,14 +465,14 @@ body {
       <!-- 내 기록 -->
       <div id="terra-myrecords">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div style="font-size:15px;font-weight:800;color:#1e293b">⚡ 내 게임 기록</div>
+          <div style="font-size:15px;font-weight:800;color:#e8edf2">⚡ 내 게임 기록</div>
           <button onclick="openTerraModal()"
             style="padding:8px 14px;background:rgba(234,179,8,0.85);border:none;border-radius:10px;color:#000;font-size:12px;font-weight:700;cursor:pointer">+ 경기 추가</button>
         </div>
 
         <!-- 회원 선택 (비로그인용) -->
         <div style="margin-bottom:14px">
-          <div style="font-size:11px;color:#64748b;margin-bottom:6px">내 이름 선택</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">내 이름 선택</div>
           <select id="terraMyName" class="row-sel" style="width:100%;font-size:14px;padding:11px" onchange="renderTerraMyRecords()">
             <option value="">이름을 선택하세요</option>
           </select>
@@ -463,13 +482,13 @@ body {
 
       <!-- 전체 기록 -->
       <div id="terra-all" style="display:none">
-        <div style="font-size:15px;font-weight:800;color:#1e293b;margin-bottom:12px">📋 전체 게임 기록</div>
+        <div style="font-size:15px;font-weight:800;color:#e8edf2;margin-bottom:12px">📋 전체 게임 기록</div>
         <div id="terraAllList"><div class="loading">불러오는 중...</div></div>
       </div>
 
       <!-- 통계 -->
       <div id="terra-stats" style="display:none">
-        <div style="font-size:15px;font-weight:800;color:#1e293b;margin-bottom:12px">📊 게임 기록 통계</div>
+        <div style="font-size:15px;font-weight:800;color:#e8edf2;margin-bottom:12px">📊 게임 기록 통계</div>
         <div id="terraStatsList"><div class="loading">불러오는 중...</div></div>
       </div>
     </div>
@@ -480,21 +499,21 @@ body {
 
       <!-- 새 일정 작성 -->
       <div style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:16px;margin-bottom:16px">
-        <div style="font-size:14px;font-weight:800;color:#2563eb;margin-bottom:12px">✏️ 새 일정 올리기</div>
+        <div style="font-size:14px;font-weight:800;color:#60a5fa;margin-bottom:12px">✏️ 새 일정 올리기</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div>
-            <div style="font-size:11px;color:#64748b;margin-bottom:4px">작성자</div>
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">작성자</div>
             <select id="schWriter" class="row-sel" style="width:100%;font-size:13px;padding:9px">
               <option value="">이름 선택</option>
             </select>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
-              <div style="font-size:11px;color:#64748b;margin-bottom:4px">날짜</div>
+              <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">날짜</div>
               <input type="date" id="schDate" class="row-inp" style="width:100%;font-size:13px;padding:9px">
             </div>
             <div>
-              <div style="font-size:11px;color:#64748b;margin-bottom:4px">시간</div>
+              <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">시간</div>
               <select id="schTime" class="row-sel" style="width:100%;font-size:13px;padding:9px">
                 <option value="">시간 선택</option>
                 <option value="오전 6시">오전 6시</option>
@@ -519,11 +538,11 @@ body {
             </div>
           </div>
           <div>
-            <div style="font-size:11px;color:#64748b;margin-bottom:4px">장소</div>
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">장소</div>
             <input id="schPlace" class="row-inp" placeholder="예: 포동 테니스장" style="width:100%;font-size:13px;padding:9px">
           </div>
           <div>
-            <div style="font-size:11px;color:#64748b;margin-bottom:4px">내용</div>
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">내용</div>
             <textarea id="schContent" class="row-inp" placeholder="예: 주말 번개 모임! 끝나고 저녁 같이 먹어요" style="width:100%;font-size:13px;padding:9px;min-height:60px;resize:vertical;font-family:inherit"></textarea>
           </div>
           <button onclick="addSchedule()" class="btn-add" style="width:100%;margin-top:4px">📅 일정 등록</button>
@@ -542,12 +561,12 @@ body {
       <div style="text-align:center;margin-bottom:20px">
         <div style="font-size:28px;margin-bottom:6px">🔮</div>
         <div style="font-size:20px;font-weight:900;color:#a78bfa">오늘의 테니스 운세</div>
-        <div style="font-size:11px;color:#64748b;margin-top:4px" id="fortuneDate"></div>
+        <div style="font-size:11px;color:#4a8ab5;margin-top:4px" id="fortuneDate"></div>
       </div>
 
       <!-- 회원 선택 -->
       <div style="margin-bottom:12px">
-        <div style="font-size:11px;color:#64748b;margin-bottom:6px">내 이름 선택</div>
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">내 이름 선택</div>
         <select id="fortuneNameSel" class="row-sel" style="width:100%;font-size:14px;padding:11px">
           <option value="">이름을 선택하세요</option>
         </select>
@@ -555,11 +574,11 @@ body {
 
       <!-- 생년월일 입력 -->
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;color:#64748b;margin-bottom:6px">생년월일 입력 <span style="color:#64748b">(운세 정확도 향상)</span></div>
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">생년월일 입력 <span style="color:#4a8ab5">(운세 정확도 향상)</span></div>
         <input type="date" id="fortuneBirth" class="row-inp"
           style="width:100%;font-size:14px;padding:11px"
           placeholder="생년월일">
-        <div style="font-size:10px;color:#64748b;margin-top:4px">* 저장되지 않아요. 매번 입력하거나 기억해두세요 😊</div>
+        <div style="font-size:10px;color:#4a8ab5;margin-top:4px">* 저장되지 않아요. 매번 입력하거나 기억해두세요 😊</div>
       </div>
 
       <button onclick="getFortune()"
@@ -593,8 +612,8 @@ body {
       <div class="admin-sec">
         <h3>👥 정규 회원 목록</h3>
         <div class="chips-wrap" id="memberChips"></div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(148,163,184,0.25)">
-          <div style="font-size:11px;color:#64748b;margin-bottom:8px">새 회원 추가</div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">새 회원 추가</div>
           <div class="row-form">
             <input class="row-inp" id="newMember" placeholder="이름" onkeydown="if(event.key==='Enter')addMember()">
             <div class="gender-toggle">
@@ -613,7 +632,7 @@ body {
         <div class="chips-wrap" id="guestChips"></div>
         <div id="guestStatsDetail"></div>
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(52,211,153,0.2)">
-          <div style="font-size:11px;color:#059669;margin-bottom:8px">게스트 추가</div>
+          <div style="font-size:11px;color:#34d399;margin-bottom:8px">게스트 추가</div>
           <div class="row-form">
             <input class="row-inp" id="newGuest" placeholder="이름 (예: 홍길동 게스트)" onkeydown="if(event.key==='Enter')addGuest()">
             <div class="gender-toggle">
@@ -628,10 +647,10 @@ body {
       <!-- 커플/부부 설정 -->
       <div class="admin-sec">
         <h3>💑 커플/부부 설정</h3>
-        <div style="font-size:11px;color:#64748b;margin-bottom:10px">혼복 시 같은 팀으로 배정되지 않아요</div>
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">혼복 시 같은 팀으로 배정되지 않아요</div>
         <div class="chips-wrap" id="coupleChips"></div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(148,163,184,0.25)">
-          <div style="font-size:11px;color:#64748b;margin-bottom:6px">커플 추가 (남 + 여)</div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">커플 추가 (남 + 여)</div>
           <div class="row-form">
             <select class="row-inp" id="coupleM" style="flex:1">
               <option value="">남자 선택</option>
@@ -647,38 +666,38 @@ body {
       <!-- 일자별 금지/지정 페어 -->
       <div class="admin-sec">
         <h3>🗓️ 일자별 금지/지정 페어</h3>
-        <div style="font-size:11px;color:#64748b;margin-bottom:10px">선택한 날짜의 페어링에만 적용돼요 · 🚫금지=같은 팀 안 됨 · 📌지정=같은 팀으로 묶기</div>
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">선택한 날짜의 페어링에만 적용돼요 · 🚫금지=같은 팀 안 됨 · 📌지정=같은 팀으로 묶기</div>
         <select class="row-inp" id="datePairSel" style="width:100%;margin-bottom:12px" onchange="changeDatePairSel()">
           <option value="">날짜 선택...</option>
         </select>
-        <div id="datePairBody"><div style="color:#64748b;font-size:12px">날짜를 선택하세요</div></div>
+        <div id="datePairBody"><div style="color:#4a8ab5;font-size:12px">날짜를 선택하세요</div></div>
       </div>
 
       <!-- 시즌 관리 -->
       <div class="admin-sec">
         <h3>🗓️ 시즌 관리</h3>
-        <div style="font-size:11px;color:#64748b;margin-bottom:10px">현재 <b id="curSeasonLabel">시즌 1</b> 진행 중 · 마감하면 기록이 보존되고 새 시즌부터 랭킹이 새로 집계돼요</div>
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">현재 <b id="curSeasonLabel">시즌 1</b> 진행 중 · 마감하면 기록이 보존되고 새 시즌부터 랭킹이 새로 집계돼요</div>
         <button class="btn-add" style="width:100%;background:#f59e0b;color:#1a120a;font-weight:800" onclick="startNewSeason()">🏁 이번 시즌 마감하고 새 시즌 시작</button>
       </div>
 
       <!-- 날짜별 참석자 관리 -->
       <div class="admin-sec">
         <h3>📋 날짜별 참석자 관리</h3>
-        <div style="font-size:11px;color:#64748b;margin-bottom:10px">참석/불참 설정 후 페어링 생성 시 자동 반영돼요</div>
-        <div id="attendanceSection"><div style="color:#64748b;font-size:12px">날짜 그룹을 먼저 추가해주세요</div></div>
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">참석/불참 설정 후 페어링 생성 시 자동 반영돼요</div>
+        <div id="attendanceSection"><div style="color:#4a8ab5;font-size:12px">날짜 그룹을 먼저 추가해주세요</div></div>
       </div>
 
       <!-- 날짜 그룹 추가 -->
       <div class="admin-sec">
         <h3>📅 날짜 그룹 추가</h3>
-        <div style="font-size:11px;color:#64748b;margin-bottom:8px">날짜별로 묶어서 그 안에 라운드를 추가해요</div>
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">날짜별로 묶어서 그 안에 라운드를 추가해요</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
           <div>
-            <div style="font-size:11px;color:#64748b;margin-bottom:5px">날짜</div>
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">날짜</div>
             <input type="date" class="row-inp" id="dayDate" style="width:100%">
           </div>
           <div>
-            <div style="font-size:11px;color:#64748b;margin-bottom:5px">장소 (선택)</div>
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">장소 (선택)</div>
             <input class="row-inp" id="dayPlace" placeholder="예: 부천테니스장" style="width:100%">
           </div>
         </div>
@@ -688,11 +707,11 @@ body {
       <!-- 라운드 자동 생성 -->
       <div class="admin-sec">
         <h3>🏆 라운드 자동 생성</h3>
-        <div style="font-size:11px;color:#64748b;margin-bottom:12px">날짜 선택 → 라운드별 코트 방식 설정 → 라운드마다 개별로 섞기</div>
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:12px">날짜 선택 → 라운드별 코트 방식 설정 → 라운드마다 개별로 섞기</div>
 
         <!-- 날짜 선택 -->
         <div style="margin-bottom:10px">
-          <div style="font-size:11px;color:#64748b;margin-bottom:5px">📅 날짜 그룹 선택</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">📅 날짜 그룹 선택</div>
           <select class="row-sel" id="rndDayId" style="width:100%" onchange="onRndDayChange()">
             <option value="">날짜 선택...</option>
           </select>
@@ -701,7 +720,7 @@ body {
         <!-- 라운드 수 + 코트 수 -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
           <div>
-            <div style="font-size:11px;color:#64748b;margin-bottom:5px">총 라운드 수</div>
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">총 라운드 수</div>
             <select class="row-sel" id="totalRounds" style="width:100%" onchange="rndConfigChanged()">
               <option value="2">2라운드</option>
               <option value="3" selected>3라운드</option>
@@ -713,7 +732,7 @@ body {
             </select>
           </div>
           <div>
-            <div style="font-size:11px;color:#64748b;margin-bottom:5px">코트 수</div>
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">코트 수</div>
             <select class="row-sel" id="rndCourts" style="width:100%" onchange="rndConfigChanged()">
               <option value="2" selected>2코트</option>
               <option value="3">3코트</option>
@@ -750,7 +769,7 @@ body {
 <div class="overlay-bottom" id="terraModal" style="display:none" onclick="if(event.target.id==='terraModal')hide('terraModal')">
   <div class="modal-bottom">
     <div class="modal-title">⚡ 개인별 게임 기록 경기 추가</div>
-    <div style="font-size:11px;color:#64748b;margin-bottom:14px">본인이 참여한 외부 경기를 기록해요</div>
+    <div style="font-size:11px;color:#4a8ab5;margin-bottom:14px">본인이 참여한 외부 경기를 기록해요</div>
 
     <div class="mf-full"><label>내 이름</label>
       <select id="terra_me"><option value="">선택</option></select>
@@ -789,9 +808,9 @@ body {
 <div class="overlay" id="adminLoginModal" style="display:none" onclick="if(event.target.id==='adminLoginModal')hide('adminLoginModal')">
   <div class="modal">
     <div class="modal-title">🔐 관리자 로그인</div>
-    <div style="font-size:11px;color:#64748b;margin-bottom:6px">이메일</div>
+    <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">이메일</div>
     <input class="f-input" id="adminEmail" type="email" placeholder="이메일" onkeydown="if(event.key==='Enter')doAdminLogin()">
-    <div style="font-size:11px;color:#64748b;margin-bottom:6px">비밀번호</div>
+    <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">비밀번호</div>
     <input class="f-input" id="adminPw" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doAdminLogin()">
     <div class="err" id="adminLoginErr"></div>
     <div class="mft">
@@ -811,7 +830,7 @@ body {
       <div class="mf"><label id="se2Label">팀2 스코어</label><input type="number" id="se2" min="0" placeholder="0"></div>
     </div>
     <div style="margin-bottom:14px">
-      <div style="font-size:11px;color:#64748b;margin-bottom:8px">🎾 포지션 수정</div>
+      <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">🎾 포지션 수정</div>
       <div id="scoreEditPositions" style="display:flex;flex-direction:column;gap:6px"></div>
     </div>
     <div class="mft">
@@ -832,7 +851,7 @@ body {
     </div>
     <!-- 포지션 선택 (선택사항) -->
     <div style="margin-bottom:14px">
-      <div style="font-size:11px;color:#64748b;margin-bottom:8px">🎾 나의 포지션 <span style="color:#64748b;font-size:10px">(선택사항 - 나중에도 입력 가능)</span></div>
+      <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">🎾 나의 포지션 <span style="color:#4a8ab5;font-size:10px">(선택사항 - 나중에도 입력 가능)</span></div>
       <div id="positionSelectors" style="display:flex;flex-direction:column;gap:6px"></div>
     </div>
     <div class="mft">
@@ -846,7 +865,7 @@ body {
 <div class="overlay-bottom" id="matchModal" style="display:none" onclick="if(event.target.id==='matchModal')hide('matchModal')">
   <div class="modal-bottom">
     <div class="modal-title">+ 경기 직접 추가</div>
-    <div id="matchRoundLabel" style="font-size:12px;color:#64748b;margin-bottom:12px"></div>
+    <div id="matchRoundLabel" style="font-size:12px;color:#4a8ab5;margin-bottom:12px"></div>
     <div class="mg">
       <div class="mf"><label>팀1 선수1</label><select id="t1p1"></select></div>
       <div class="mf"><label>팀1 선수2</label><select id="t1p2"></select></div>
@@ -1359,7 +1378,7 @@ function generatePairing(type, numCourts) {
 // ── 라운드별 코트 방식 선택 UI ────────────────────────────────────
 const COURT_NAMES = ['A코트','B코트','C코트','D코트','E코트','F코트','G코트','H코트'];
 const TYPE_OPTS = ['혼복','남복','여복'];
-const TYPE_COLOR = { '혼복':'#a78bfa','남복':'#2563eb','여복':'#f472b6','랠리':'#059669' };
+const TYPE_COLOR = { '혼복':'#a78bfa','남복':'#60a5fa','여복':'#f472b6','랠리':'#34d399' };
 const TYPE_BG    = { '혼복':'rgba(124,58,237,0.25)','남복':'rgba(37,99,235,0.25)','여복':'rgba(236,72,153,0.25)','랠리':'rgba(52,211,153,0.25)' };
 
 function updateRoundTypeSelectors() {
@@ -1380,7 +1399,7 @@ function updateRoundTypeSelectors() {
   const defaultCourtTypes = ['혼복','혼복','남복','여복'];
 
   el.innerHTML = Array.from({length:nR}, (_,r) => `
-    <div style="background:rgba(248,250,255,0.6);border-radius:10px;padding:12px;border:1px solid rgba(148,163,184,0.25)">
+    <div style="background:rgba(4,16,55,0.6);border-radius:10px;padding:12px;border:1px solid rgba(35,90,180,0.25)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;font-weight:800;color:#f59e0b">🏆 ${r+1}라운드</span>
         <div style="display:flex;gap:5px">
@@ -1402,9 +1421,9 @@ function updateRoundTypeSelectors() {
       <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
         ${Array.from({length:nC}, (_,c) => `
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:11px;color:#64748b;min-width:38px;font-weight:600">${COURT_NAMES[c]}</span>
+            <span style="font-size:11px;color:#4a8ab5;min-width:38px;font-weight:600">${COURT_NAMES[c]}</span>
             <select id="ct_${r}_${c}" onchange="onCourtTypeChange(${r})"
-              style="flex:1;padding:7px 10px;background:rgba(255,255,255,0.85);border:1px solid rgba(148,163,184,0.35);border-radius:8px;color:#1e293b;font-size:12px;outline:none">
+              style="flex:1;padding:7px 10px;background:rgba(3,12,45,0.85);border:1px solid rgba(35,90,180,0.35);border-radius:8px;color:#e8edf2;font-size:12px;outline:none">
               ${TYPE_OPTS.map(t=>`<option value="${t}" ${(prev[`${r}_${c}`]||defaultCourtTypes[c]||'혼복')===t?'selected':''}>${t}</option>`).join('')}
             </select>
           </div>`).join('')}
@@ -1413,7 +1432,7 @@ function updateRoundTypeSelectors() {
       <div id="manualArea_${r}" style="display:none;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px;margin-bottom:8px">
         <div style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:8px">✋ ${r+1}라운드 수동 페어 설정</div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-          <span style="font-size:11px;color:#64748b;min-width:38px">코트</span>
+          <span style="font-size:11px;color:#4a8ab5;min-width:38px">코트</span>
           <select id="mc_court_${r}" class="row-sel" style="flex:1;padding:7px;font-size:12px">
             ${Array.from({length:nC},(_,c)=>`<option value="${COURT_NAMES[c]}">${COURT_NAMES[c]}</option>`).join('')}
           </select>
@@ -1430,7 +1449,7 @@ function updateRoundTypeSelectors() {
         <button onclick="addManualToRound(${r})" class="btn-green" style="width:100%;font-size:12px;padding:9px">+ 이 코트 경기 추가</button>
       </div>
       <!-- 미리보기 영역 -->
-      <div id="rndPreview_${r}" style="font-size:11px;color:#64748b;padding:4px 0">🎲 섞기 또는 ✋ 수동으로 대진을 만들고 💾 저장하세요</div>
+      <div id="rndPreview_${r}" style="font-size:11px;color:#4a8ab5;padding:4px 0">🎲 섞기 또는 ✋ 수동으로 대진을 만들고 💾 저장하세요</div>
     </div>`).join('');
 
   // 수동 셀렉터 채우기
@@ -1631,10 +1650,10 @@ window.rollAllBalanced = function() {
     const el = document.getElementById(`rndPreview_${r}`);
     if (!el) continue;
     const ms = generatedAllRounds[r]?.matches || [];
-    if (!ms.length) { el.innerHTML='<span style="color:#dc2626">⚠️ 인원 부족</span>'; continue; }
+    if (!ms.length) { el.innerHTML='<span style="color:#f87171">⚠️ 인원 부족</span>'; continue; }
     el.innerHTML = ms.map(m => m.isRally
-      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(148,163,184,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">🎾 랠리</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#059669">${m.team1.join(', ')}</div><span style="color:#64748b;font-size:10px;margin-left:6px">${m.court}</span></div>`
-      : `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(148,163,184,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1e293b">${m.team1.join(' / ')}</div><span style="color:#64748b;font-size:10px;margin:0 6px">vs</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1e293b">${m.team2.join(' / ')}</div></div>`
+      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">🎾 랠리</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div><span style="color:#4a8ab5;font-size:10px;margin-left:6px">${m.court}</span></div>`
+      : `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team1.join(' / ')}</div><span style="color:#4a8ab5;font-size:10px;margin:0 6px">vs</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team2.join(' / ')}</div></div>`
     ).join('');
   }
 };
@@ -1682,25 +1701,25 @@ window.rollRound = function(rIdx) {
   if (!el) return;
 
   if (!matches.length) {
-    el.innerHTML = '<span style="color:#dc2626">⚠️ 인원 부족 — 회원을 먼저 등록해주세요</span>';
+    el.innerHTML = '<span style="color:#f87171">⚠️ 인원 부족 — 회원을 먼저 등록해주세요</span>';
     return;
   }
 
   el.innerHTML = matches.map(m => {
     if (m.isRally) {
-      return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(148,163,184,0.15)">
+      return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)">
         <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;
           background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">🎾 랠리</span>
-        <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#059669">${m.team1.join(', ')}</div>
-        <span style="color:#64748b;font-size:10px;margin-left:6px">${m.court}</span>
+        <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div>
+        <span style="color:#4a8ab5;font-size:10px;margin-left:6px">${m.court}</span>
       </div>`;
     }
-    return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(148,163,184,0.15)">
+    return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)">
       <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;
         background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span>
-      <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1e293b">${m.team1.join(' / ')}</div>
-      <span style="color:#64748b;font-size:10px;margin:0 6px">vs</span>
-      <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1e293b">${m.team2.join(' / ')}</div>
+      <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team1.join(' / ')}</div>
+      <span style="color:#4a8ab5;font-size:10px;margin:0 6px">vs</span>
+      <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team2.join(' / ')}</div>
     </div>`;
   }).join('');
 };
@@ -1783,13 +1802,13 @@ function renderRoundPreview(rIdx) {
         <span style="color:#94a3b8;font-size:12px;margin-left:6px">${[...(m.team1||[]),...(m.team2||[])].join(', ')}</span>
       </div>`;
     }
-    const tagColor = {'혼복':'#a78bfa','남복':'#2563eb','여복':'#f472b6'}[m.tag]||'#a78bfa';
+    const tagColor = {'혼복':'#a78bfa','남복':'#60a5fa','여복':'#f472b6'}[m.tag]||'#a78bfa';
     const manualMark = m.tag2==='수동'||r.matches.tag==='수동' ? '' : '';
     return `<div style="padding:6px 0;border-bottom:1px solid rgba(50,110,200,0.12);font-size:12px">
       <span style="color:${tagColor};font-weight:700;font-size:10px">[${m.court}·${m.tag}]</span>
-      <span style="color:#1e293b;font-weight:700;margin-left:4px">${(m.team1||[]).join('/')}</span>
-      <span style="color:#64748b;margin:0 4px">vs</span>
-      <span style="color:#1e293b;font-weight:700">${(m.team2||[]).join('/')}</span>
+      <span style="color:#e8edf2;font-weight:700;margin-left:4px">${(m.team1||[]).join('/')}</span>
+      <span style="color:#4a8ab5;margin:0 4px">vs</span>
+      <span style="color:#e8edf2;font-weight:700">${(m.team2||[]).join('/')}</span>
     </div>`;
   }).join('');
 }
@@ -1817,7 +1836,7 @@ window.saveOneRound = async function(rIdx) {
   // 저장한 라운드 미리보기 초기화
   generatedAllRounds[rIdx] = { name:`${rIdx+1}라운드`, matches:[] };
   const el = document.getElementById(`rndPreview_${rIdx}`);
-  if (el) el.innerHTML = '<span style="color:#059669;font-size:11px">✅ 저장 완료! 대진표 탭에서 확인하세요</span>';
+  if (el) el.innerHTML = '<span style="color:#34d399;font-size:11px">✅ 저장 완료! 대진표 탭에서 확인하세요</span>';
   alert(`✅ ${rIdx+1}라운드 저장 완료!`);
 };
 
@@ -1857,7 +1876,7 @@ window.saveAllRounds = async function() {
   generatedAllRounds = [];
   for (let r=0; r<nR; r++) {
     const el = document.getElementById(`rndPreview_${r}`);
-    if (el) el.innerHTML = '<span style="color:#64748b;font-size:11px">🎲 섞기를 눌러 대진을 생성해요</span>';
+    if (el) el.innerHTML = '<span style="color:#4a8ab5;font-size:11px">🎲 섞기를 눌러 대진을 생성해요</span>';
   }
   alert(`✅ ${newRounds.length}개 라운드 저장 완료!`);
 };
@@ -1898,15 +1917,15 @@ window.renderTerraMyRecords = function() {
 
   const summary = mine.length ? `
     <div style="background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:12px;padding:14px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;text-align:center">
-      ${[['⚡','총경기',mine.length,'#fbbf24'],['🏆','승',wins,'#059669'],['❌','패',losses,'#dc2626'],['📊','승률',wr+'%',wr>=50?'#059669':'#dc2626']].map(([ic,lb,vl,cl])=>`
-      <div style="background:rgba(255,255,255,0.5);border-radius:8px;padding:8px 4px">
-        <div>${ic}</div><div style="font-size:15px;font-weight:800;color:${cl}">${vl}</div><div style="font-size:10px;color:#64748b">${lb}</div>
+      ${[['⚡','총경기',mine.length,'#fbbf24'],['🏆','승',wins,'#34d399'],['❌','패',losses,'#f87171'],['📊','승률',wr+'%',wr>=50?'#34d399':'#f87171']].map(([ic,lb,vl,cl])=>`
+      <div style="background:rgba(3,12,45,0.5);border-radius:8px;padding:8px 4px">
+        <div>${ic}</div><div style="font-size:15px;font-weight:800;color:${cl}">${vl}</div><div style="font-size:10px;color:#4a8ab5">${lb}</div>
       </div>`).join('')}
     </div>` : '';
 
   el.innerHTML = summary + (mine.length
     ? mine.map(r => terraRecordCard(r, true)).join('')
-    : '<div class="empty">아직 기록이 없어요<br><small style="color:#64748b">위의 + 경기 추가를 눌러 기록해요</small></div>');
+    : '<div class="empty">아직 기록이 없어요<br><small style="color:#4a8ab5">위의 + 경기 추가를 눌러 기록해요</small></div>');
 };
 
 // 전체 기록 렌더
@@ -1925,16 +1944,16 @@ function renderTerraAll() {
 // 기록 카드
 function terraRecordCard(r, showEdit) {
   const win=r.s1>r.s2, loss=r.s1<r.s2, draw=r.s1===r.s2;
-  const resultColor=win?'#059669':loss?'#dc2626':'#fbbf24';
+  const resultColor=win?'#34d399':loss?'#f87171':'#fbbf24';
   const resultText=win?'승':'패';
   const posIcon = r.pos==='fore'?'🔴 포':r.pos==='back'?'🔵 백':'';
   const delBtn = (isAdmin||(r.player===document.getElementById('terraMyName')?.value))
-    ? `<button onclick="deleteTerraRecord('${r.id}')" style="background:none;border:none;color:#dc2626;font-size:11px;cursor:pointer">✕</button>` : '';
+    ? `<button onclick="deleteTerraRecord('${r.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">✕</button>` : '';
 
   return `<div style="background:rgba(8,28,75,0.75);border-radius:12px;padding:14px;border:1px solid rgba(50,110,200,0.25);margin-bottom:8px;border-left:3px solid ${resultColor}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
       <div>
-        <span style="font-size:12px;color:#64748b">${r.date||''}</span>
+        <span style="font-size:12px;color:#4a8ab5">${r.date||''}</span>
         ${posIcon?`<span style="font-size:11px;margin-left:8px">${posIcon}</span>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -1944,18 +1963,18 @@ function terraRecordCard(r, showEdit) {
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;color:#1e293b">${r.player}${r.partner?' / '+r.partner:''}</div>
-        <div style="font-size:11px;color:#64748b">우리팀</div>
+        <div style="font-size:13px;font-weight:700;color:#e8edf2">${r.player}${r.partner?' / '+r.partner:''}</div>
+        <div style="font-size:11px;color:#4a8ab5">우리팀</div>
       </div>
       <div style="font-size:18px;font-weight:900;color:#f59e0b;padding:4px 12px;background:rgba(15,50,120,0.5);border-radius:8px">
         ${r.s1} : ${r.s2}
       </div>
       <div style="flex:1;text-align:right">
         <div style="font-size:13px;font-weight:700;color:#94a3b8">${r.opp||'상대팀'}</div>
-        <div style="font-size:11px;color:#64748b">상대팀</div>
+        <div style="font-size:11px;color:#4a8ab5">상대팀</div>
       </div>
     </div>
-    ${r.memo?`<div style="font-size:11px;color:#64748b;padding:6px 10px;background:rgba(255,255,255,0.4);border-radius:6px">💬 ${r.memo}</div>`:''}
+    ${r.memo?`<div style="font-size:11px;color:#4a8ab5;padding:6px 10px;background:rgba(3,12,45,0.4);border-radius:6px">💬 ${r.memo}</div>`:''}
   </div>`;
 }
 
@@ -1988,21 +2007,21 @@ function renderTerraStats() {
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div style="font-weight:800;font-size:15px">${p.name}</div>
         <div style="text-align:right">
-          <div style="font-weight:900;font-size:16px;color:${wr>=50?'#059669':'#dc2626'}">${wr}%</div>
-          <div style="font-size:10px;color:#64748b">${p.games}게임 ${p.wins}승 ${p.losses}패</div>
+          <div style="font-weight:900;font-size:16px;color:${wr>=50?'#34d399':'#f87171'}">${wr}%</div>
+          <div style="font-size:10px;color:#4a8ab5">${p.games}게임 ${p.wins}승 ${p.losses}패</div>
         </div>
       </div>
-      <div class="wr-bg"><div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#059669,#10b981)':wr>=50?'linear-gradient(90deg,#2563eb,#3b82f6)':'linear-gradient(90deg,#dc2626,#ef4444)'}"></div></div>
+      <div class="wr-bg"><div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#34d399,#10b981)':wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
       ${(foreTotal+backTotal)>0?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
         <div style="background:rgba(239,68,68,0.1);border-radius:8px;padding:8px;text-align:center;border:1px solid rgba(239,68,68,0.2)">
-          <div style="font-size:11px;color:#dc2626;margin-bottom:2px">🔴 포(Fore)</div>
-          <div style="font-weight:800;font-size:14px;color:#1e293b">${typeof foreWr==='number'?foreWr+'%':'-'}</div>
-          <div style="font-size:10px;color:#64748b">${p.fore.w}승 ${p.fore.l}패</div>
+          <div style="font-size:11px;color:#f87171;margin-bottom:2px">🔴 포(Fore)</div>
+          <div style="font-weight:800;font-size:14px;color:#e8edf2">${typeof foreWr==='number'?foreWr+'%':'-'}</div>
+          <div style="font-size:10px;color:#4a8ab5">${p.fore.w}승 ${p.fore.l}패</div>
         </div>
         <div style="background:rgba(59,130,246,0.1);border-radius:8px;padding:8px;text-align:center;border:1px solid rgba(59,130,246,0.2)">
-          <div style="font-size:11px;color:#2563eb;margin-bottom:2px">🔵 백(Back)</div>
-          <div style="font-weight:800;font-size:14px;color:#1e293b">${typeof backWr==='number'?backWr+'%':'-'}</div>
-          <div style="font-size:10px;color:#64748b">${p.back.w}승 ${p.back.l}패</div>
+          <div style="font-size:11px;color:#60a5fa;margin-bottom:2px">🔵 백(Back)</div>
+          <div style="font-weight:800;font-size:14px;color:#e8edf2">${typeof backWr==='number'?backWr+'%':'-'}</div>
+          <div style="font-size:10px;color:#4a8ab5">${p.back.w}승 ${p.back.l}패</div>
         </div>
       </div>`:''}
     </div>`;
@@ -2065,7 +2084,7 @@ window.openScoreEdit = function(dayId, rIdx, mId) {
   const match=(round?.matches||[]).find(m=>m.id===mId); if(!match)return;
   pendingScoreEdit={dayId, rIdx:parseInt(rIdx), mId};
   document.getElementById('scoreEditInfo').innerHTML=
-    `<strong style="color:#1e293b">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#1e293b">${(match.team2||[]).join(' / ')}</strong>`;
+    `<strong style="color:#e8edf2">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#e8edf2">${(match.team2||[]).join(' / ')}</strong>`;
   document.getElementById('se1Label').textContent=(match.team1||[]).join('/')+' 스코어';
   document.getElementById('se2Label').textContent=(match.team2||[]).join('/')+' 스코어';
   document.getElementById('se1').value=match.score1??'';
@@ -2074,12 +2093,12 @@ window.openScoreEdit = function(dayId, rIdx, mId) {
   const existPos=match.positions||{};
   document.getElementById('scoreEditPositions').innerHTML=allP.map(p=>`
     <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:13px;font-weight:600;min-width:50px;color:#1e293b">${p}</span>
+      <span style="font-size:13px;font-weight:600;min-width:50px;color:#e8edf2">${p}</span>
       <div style="display:flex;gap:6px;flex:1">
         <button id="epos_fore_${p.replace(/\s/g,'_')}" onclick="selectEditPos('${p.replace(/\s/g,'_')}','fore')"
-          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='fore'?'#ef4444':'rgba(148,163,184,0.35)'};background:${existPos[p]==='fore'?'rgba(239,68,68,0.25)':'rgba(255,255,255,0.85)'};color:${existPos[p]==='fore'?'#dc2626':'#64748b'};font-size:12px;font-weight:700;cursor:pointer">🔴 포</button>
+          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='fore'?'#ef4444':'rgba(35,90,180,0.35)'};background:${existPos[p]==='fore'?'rgba(239,68,68,0.25)':'rgba(3,12,45,0.85)'};color:${existPos[p]==='fore'?'#f87171':'#4a8ab5'};font-size:12px;font-weight:700;cursor:pointer">🔴 포</button>
         <button id="epos_back_${p.replace(/\s/g,'_')}" onclick="selectEditPos('${p.replace(/\s/g,'_')}','back')"
-          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='back'?'#3b82f6':'rgba(148,163,184,0.35)'};background:${existPos[p]==='back'?'rgba(59,130,246,0.25)':'rgba(255,255,255,0.85)'};color:${existPos[p]==='back'?'#2563eb':'#64748b'};font-size:12px;font-weight:700;cursor:pointer">🔵 백</button>
+          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='back'?'#3b82f6':'rgba(35,90,180,0.35)'};background:${existPos[p]==='back'?'rgba(59,130,246,0.25)':'rgba(3,12,45,0.85)'};color:${existPos[p]==='back'?'#60a5fa':'#4a8ab5'};font-size:12px;font-weight:700;cursor:pointer">🔵 백</button>
       </div>
     </div>`).join('');
   document.getElementById('scoreEditModal').style.display='flex';
@@ -2088,11 +2107,11 @@ window.selectEditPos = function(playerKey, pos) {
   const fb=document.getElementById(`epos_fore_${playerKey}`);
   const bb=document.getElementById(`epos_back_${playerKey}`);
   if(pos==='fore'){
-    fb.style.cssText+=';border-color:#ef4444;background:rgba(239,68,68,0.25);color:#dc2626';
-    bb.style.cssText+=';border-color:rgba(148,163,184,0.35);background:rgba(255,255,255,0.85);color:#64748b';
+    fb.style.cssText+=';border-color:#ef4444;background:rgba(239,68,68,0.25);color:#f87171';
+    bb.style.cssText+=';border-color:rgba(35,90,180,0.35);background:rgba(3,12,45,0.85);color:#4a8ab5';
   }else{
-    bb.style.cssText+=';border-color:#3b82f6;background:rgba(59,130,246,0.25);color:#2563eb';
-    fb.style.cssText+=';border-color:rgba(148,163,184,0.35);background:rgba(255,255,255,0.85);color:#64748b';
+    bb.style.cssText+=';border-color:#3b82f6;background:rgba(59,130,246,0.25);color:#60a5fa';
+    fb.style.cssText+=';border-color:rgba(35,90,180,0.35);background:rgba(3,12,45,0.85);color:#4a8ab5';
   }
   fb.dataset.selected=(pos==='fore')?'1':'0';
   bb.dataset.selected=(pos==='back')?'1':'0';
@@ -2145,19 +2164,19 @@ function renderDatePairs(){
     days.map(d=>`<option value="${d.id}">${d.date}${d.place?' · '+d.place:''}</option>`).join('');
   if(cur && days.some(d=>d.id===cur)) sel.value = cur;
   const dayId = sel.value;
-  if(!dayId){ body.innerHTML = '<div style="color:#64748b;font-size:12px">날짜를 선택하세요</div>'; return; }
+  if(!dayId){ body.innerHTML = '<div style="color:#4a8ab5;font-size:12px">날짜를 선택하세요</div>'; return; }
   const day = days.find(d=>d.id===dayId) || {};
   const ban = Array.isArray(day.banPairs)?day.banPairs:[];
   const fix = Array.isArray(day.fixPairs)?day.fixPairs:[];
   const att = getAttendees(dayId);
   const opts = '<option value="">선수 선택</option>' +
     att.map(p=>`<option value="${p.name}">${p.name}${p.gender==='f'?' (여)':''}</option>`).join('');
-  const chip = (p,kind)=>`<span class="chip" style="border-color:${kind==='ban'?'rgba(239,68,68,0.45)':'rgba(96,165,250,0.45)'}"><span style="color:${kind==='ban'?'#dc2626':'#2563eb'}">${kind==='ban'?'🚫':'📌'}</span> ${p.a} &amp; ${p.b}<button class="chip-x" onclick="deleteDayPair('${dayId}','${kind}','${p.a}','${p.b}')">×</button></span>`;
-  const banChips = ban.length ? ban.map(p=>chip(p,'ban')).join('') : '<span style="color:#64748b;font-size:12px">없음</span>';
-  const fixChips = fix.length ? fix.map(p=>chip(p,'fix')).join('') : '<span style="color:#64748b;font-size:12px">없음</span>';
+  const chip = (p,kind)=>`<span class="chip" style="border-color:${kind==='ban'?'rgba(239,68,68,0.45)':'rgba(96,165,250,0.45)'}"><span style="color:${kind==='ban'?'#f87171':'#60a5fa'}">${kind==='ban'?'🚫':'📌'}</span> ${p.a} &amp; ${p.b}<button class="chip-x" onclick="deleteDayPair('${dayId}','${kind}','${p.a}','${p.b}')">×</button></span>`;
+  const banChips = ban.length ? ban.map(p=>chip(p,'ban')).join('') : '<span style="color:#4a8ab5;font-size:12px">없음</span>';
+  const fixChips = fix.length ? fix.map(p=>chip(p,'fix')).join('') : '<span style="color:#4a8ab5;font-size:12px">없음</span>';
   body.innerHTML = `
     <div style="margin-bottom:14px">
-      <div style="font-size:12px;font-weight:700;color:#dc2626;margin-bottom:6px">🚫 금지 페어 (같은 팀 안 됨)</div>
+      <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:6px">🚫 금지 페어 (같은 팀 안 됨)</div>
       <div class="chips-wrap">${banChips}</div>
       <div class="row-form" style="margin-top:8px">
         <select class="row-inp" id="banA" style="flex:1">${opts}</select>
@@ -2165,8 +2184,8 @@ function renderDatePairs(){
         <button class="btn-add" onclick="addDayPair('ban')">추가</button>
       </div>
     </div>
-    <div style="padding-top:12px;border-top:1px solid rgba(148,163,184,0.25)">
-      <div style="font-size:12px;font-weight:700;color:#2563eb;margin-bottom:6px">📌 지정 페어 (같은 팀으로 묶기)</div>
+    <div style="padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
+      <div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:6px">📌 지정 페어 (같은 팀으로 묶기)</div>
       <div class="chips-wrap">${fixChips}</div>
       <div class="row-form" style="margin-top:8px">
         <select class="row-inp" id="fixA" style="flex:1">${opts}</select>
@@ -2256,7 +2275,7 @@ function renderAll() {
 
 const BADGES=['🥇','🥈','🥉'];
 const BG_CARDS=['rc1','rc2','rc3'];
-const BG_CIRCLES=['linear-gradient(135deg,#f59e0b,#d97706)','linear-gradient(135deg,#94a3b8,#64748b)','linear-gradient(135deg,#b45309,#92400e)'];
+const BG_CIRCLES=['linear-gradient(135deg,#f59e0b,#d97706)','linear-gradient(135deg,#94a3b8,#4a8ab5)','linear-gradient(135deg,#b45309,#92400e)'];
 
 function renderTop3(stats) {
   const el=document.getElementById('top3');
@@ -2266,9 +2285,9 @@ function renderTop3(stats) {
     <div class="rank-card ${BG_CARDS[i]||'rcN'}">
       <div style="font-size:18px;margin-bottom:2px">${BADGES[i]}</div>
       <div style="font-size:13px;font-weight:900;color:#fff;line-height:1.2">${s.name}</div>
-      <div style="font-size:11px;color:rgba(255,255,255,0.85);margin-top:4px">총 ${s.pts}점</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.7)">${s.wins}승 ${s.draws}무 ${s.losses}패</div>
-      <div style="font-size:10px;color:rgba(255,255,255,0.7)">출석 ${s.attendance}일</div>
+      <div style="font-size:11px;color:rgba(3,12,45,0.85);margin-top:4px">총 ${s.pts}점</div>
+      <div style="font-size:10px;color:rgba(3,12,45,0.7)">${s.wins}승 ${s.draws}무 ${s.losses}패</div>
+      <div style="font-size:10px;color:rgba(3,12,45,0.7)">출석 ${s.attendance}일</div>
     </div>`).join('');
 }
 
@@ -2276,7 +2295,7 @@ function renderTop3(stats) {
 function renderDays() {
   const el = document.getElementById('roundList');
   const seasonDays = days.filter(d=>(d.season||1)===viewSeason);
-  if (!seasonDays.length) { el.innerHTML = `<div class="empty">시즌 ${viewSeason}에 등록된 경기가 없어요<br><small style="color:#64748b">${viewSeason===currentSeason?'관리자가 날짜를 추가하면 여기에 표시돼요':'지난 시즌 기록이 없습니다'}</small></div>`; return; }
+  if (!seasonDays.length) { el.innerHTML = `<div class="empty">시즌 ${viewSeason}에 등록된 경기가 없어요<br><small style="color:#4a8ab5">${viewSeason===currentSeason?'관리자가 날짜를 추가하면 여기에 표시돼요':'지난 시즌 기록이 없습니다'}</small></div>`; return; }
 
   const sorted = [...seasonDays].sort((a,b)=>(b.date||'')>(a.date||'')?1:(b.date||'')<(a.date||'')?-1:0);
 
@@ -2298,9 +2317,9 @@ function renderDays() {
     });
     const resultStr = doneMatches > 0
       ? `<span style="font-size:10px;font-weight:700;margin-left:6px">
-          <span style="color:#059669">${dayWins}승</span>
+          <span style="color:#34d399">${dayWins}승</span>
           ${dayDraws>0?`<span style="color:#fbbf24"> ${dayDraws}무</span>`:''}
-          <span style="color:#dc2626"> ${dayLosses}패</span>
+          <span style="color:#f87171"> ${dayLosses}패</span>
          </span>`
       : '';
 
@@ -2320,9 +2339,9 @@ function renderDays() {
         if (m.isRally || m.tag === '랠리') {
           const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
           return `<div class="match-card" style="border-color:rgba(52,211,153,0.3);background:rgba(20,80,30,0.2)">
-            <div class="match-ct"><span style="color:#059669">${m.court||''} <span style="font-size:10px;color:#059669">[🎾 랠리]</span></span></div>
+            <div class="match-ct"><span style="color:#34d399">${m.court||''} <span style="font-size:10px;color:#34d399">[🎾 랠리]</span></span></div>
             <div style="text-align:center;padding:8px 4px">
-              <div style="font-weight:700;font-size:13px;color:#059669;line-height:1.5">
+              <div style="font-weight:700;font-size:13px;color:#34d399;line-height:1.5">
                 ${(m.team1||[]).join(' · ')}
               </div>
               <div style="font-size:10px;color:rgba(52,211,153,0.7);margin-top:4px">자유 랠리/스파링</div>
@@ -2333,9 +2352,9 @@ function renderDays() {
         const scoreEl=m.done
           ?`<div class="m-score">${m.score1} : ${m.score2}</div>`
           :`<div class="m-score pend">예정</div>`;
-        const inputBtn=!m.done?`<div style="display:flex;gap:4px;margin-top:8px"><button class="btn-input" style="margin-top:0;flex:1" onclick="openScore('${day.id}','${rIdx}','${m.id}')">📝 결과 입력</button><button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#059669" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button></div>`:'';
+        const inputBtn=!m.done?`<div style="display:flex;gap:4px;margin-top:8px"><button class="btn-input" style="margin-top:0;flex:1" onclick="openScore('${day.id}','${rIdx}','${m.id}')">📝 결과 입력</button><button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#34d399" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button></div>`:'';
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
-        const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#2563eb" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
+        const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#60a5fa" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#a78bfa">[${m.tag}]</span>`:'';
         return `<div class="match-card">
           <div class="match-ct"><span>${m.court||''} ${tagBadge}</span></div>
@@ -2346,14 +2365,14 @@ function renderDays() {
           </div>${inputBtn}${editBtn}${delBtn}
         </div>`;
       }).join('');
-      const addMatchBtn = isAdmin ? `<button class="btn-input" style="border-color:rgba(148,163,184,0.35);color:#64748b" onclick="openAddMatch('${day.id}','${rIdx}')">+ 경기 직접 추가</button>` : '';
-      const delRoundBtn = isAdmin ? `<button onclick="delRound('${day.id}','${rIdx}')" style="background:none;border:none;color:#dc2626;font-size:11px;cursor:pointer;margin-left:6px">삭제</button>` : '';
+      const addMatchBtn = isAdmin ? `<button class="btn-input" style="border-color:rgba(35,90,180,0.35);color:#4a8ab5" onclick="openAddMatch('${day.id}','${rIdx}')">+ 경기 직접 추가</button>` : '';
+      const delRoundBtn = isAdmin ? `<button onclick="delRound('${day.id}','${rIdx}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:6px">삭제</button>` : '';
       const rid = `r_${day.id}_${rIdx}`;
       const aid = `a_${day.id}_${rIdx}`;
-      return `<div style="background:rgba(248,250,255,0.5);border-radius:10px;margin-bottom:8px;border:1px solid rgba(148,163,184,0.2);">
-        <button style="width:100%;padding:11px 14px;background:transparent;border:none;color:#1e293b;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:600;font-size:13px;" onclick="toggleR('${rid}','${aid}')">
+      return `<div style="background:rgba(4,16,55,0.5);border-radius:10px;margin-bottom:8px;border:1px solid rgba(35,90,180,0.2);">
+        <button style="width:100%;padding:11px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:600;font-size:13px;" onclick="toggleR('${rid}','${aid}')">
           <span>🎾 ${r.name} <span style="color:rgba(100,150,200,0.7);font-weight:400;font-size:11px">(${r.type})</span>${delRoundBtn}</span>
-          <span id="${aid}" style="color:#64748b;transition:transform 0.2s">›</span>
+          <span id="${aid}" style="color:#4a8ab5;transition:transform 0.2s">›</span>
         </button>
         <div id="${rid}" style="display:none;flex-direction:column;gap:6px;padding:0 10px 10px">
           ${matchesHtml}${addMatchBtn}
@@ -2361,7 +2380,7 @@ function renderDays() {
       </div>`;
     }).join('');
 
-    const delDayBtn = isAdmin ? `<button onclick="delDay('${day.id}')" style="background:none;border:none;color:#dc2626;font-size:11px;cursor:pointer;margin-left:8px">날짜 삭제</button>` : '';
+    const delDayBtn = isAdmin ? `<button onclick="delDay('${day.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:8px">날짜 삭제</button>` : '';
     const dayId = `day_${day.id}`;
     const dayArr = `darr_${day.id}`;
     const progressPct = totalMatches > 0 ? Math.round(doneMatches/totalMatches*100) : 0;
@@ -2371,12 +2390,12 @@ function renderDays() {
         <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;">
           <span>📅 ${dateStr}${day.place?` <span style="color:rgba(100,150,200,0.6);font-size:11px;font-weight:400">· ${day.place}</span>`:''}${attendStr}</span>
           <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료${resultStr} ${delDayBtn}</span>
-          ${totalMatches>0?`<div style="width:120px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-top:2px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#059669':'#2563eb'};border-radius:2px;transition:width 0.4s"></div></div>`:''}
+          ${totalMatches>0?`<div style="width:120px;height:4px;background:rgba(3,12,45,0.1);border-radius:2px;overflow:hidden;margin-top:2px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#34d399':'#60a5fa'};border-radius:2px;transition:width 0.4s"></div></div>`:''}
         </div>
-        <span id="${dayArr}" style="color:#64748b;transition:transform 0.2s">›</span>
+        <span id="${dayArr}" style="color:#4a8ab5;transition:transform 0.2s">›</span>
       </button>
       <div class="round-body" id="${dayId}" style="display:none">
-        ${roundsHtml || '<div style="color:#64748b;font-size:13px;padding:8px 0">아직 라운드가 없어요</div>'}
+        ${roundsHtml || '<div style="color:#4a8ab5;font-size:13px;padding:8px 0">아직 라운드가 없어요</div>'}
       </div>
     </div>`;
   }).join('');
@@ -2406,16 +2425,16 @@ function renderStats(stats) {
 
   const rowHtml = (s, isG, gRank) => `
     <tr>
-      <td style="font-weight:700;color:${isG?'#059669':s.rank<=3?'#f59e0b':'#64748b'}">${isG?gRank:s.rank}</td>
+      <td style="font-weight:700;color:${isG?'#34d399':s.rank<=3?'#f59e0b':'#4a8ab5'}">${isG?gRank:s.rank}</td>
       <td style="font-weight:700">${s.name} <span class="${s.gender==='f'?'g-f':'g-m'}">${s.gender==='f'?'♀':'♂'}</span></td>
-      <td style="font-weight:800;color:#2563eb">${s.pts}</td>
+      <td style="font-weight:800;color:#60a5fa">${s.pts}</td>
       <td style="color:#94a3b8">${s.wins}-${s.draws}-${s.losses}</td>
-      <td style="color:${s.wr>=70?'#059669':s.wr>=40?'#fbbf24':'#dc2626'}">${s.wr}%</td>
+      <td style="color:${s.wr>=70?'#34d399':s.wr>=40?'#fbbf24':'#f87171'}">${s.wr}%</td>
       <td style="color:#94a3b8">${s.scored}</td>
-      <td style="color:#dc2626">${s.conceded}</td>
-      <td style="color:${s.diff>0?'#059669':s.diff<0?'#dc2626':'#94a3b8'}">${s.diff>=0?'+':''}${s.diff}</td>
+      <td style="color:#f87171">${s.conceded}</td>
+      <td style="color:${s.diff>0?'#34d399':s.diff<0?'#f87171':'#94a3b8'}">${s.diff>=0?'+':''}${s.diff}</td>
       <td style="color:#a78bfa;font-weight:700">${s.games}</td>
-      <td style="color:${isG?'#059669':'#fbbf24'}">${s.attendance}일</td>
+      <td style="color:${isG?'#34d399':'#fbbf24'}">${s.attendance}일</td>
     </tr>`;
 
   const guestSortTabs = [
@@ -2424,12 +2443,12 @@ function renderStats(stats) {
   ].map(([k,label]) => {
     const active = statsGuestSortKey === k;
     const arrow = active ? (statsGuestSortDir === 1 ? ' ▲' : ' ▼') : '';
-    return `<button onclick="setStatsGuestSort('${k}')" style="padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;background:${active?'rgba(52,211,153,0.25)':'rgba(255,255,255,0.7)'};color:${active?'#059669':'#7c8ba1'};border:1px solid ${active?'rgba(52,211,153,0.5)':'rgba(148,163,184,0.3)'}">${label}${arrow}</button>`;
+    return `<button onclick="setStatsGuestSort('${k}')" style="padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;background:${active?'rgba(52,211,153,0.25)':'rgba(3,12,45,0.7)'};color:${active?'#34d399':'#8aa5c4'};border:1px solid ${active?'rgba(52,211,153,0.5)':'rgba(35,90,180,0.3)'}">${label}${arrow}</button>`;
   }).join('');
 
-  const guestRows = isAdmin && guestList.length
+  const guestRows = guestList.length
     ? `<tr><td colspan="10" style="padding:8px 6px;background:rgba(13,148,136,0.1);text-align:left">
-         <div style="font-size:10px;color:#059669;font-weight:700;margin-bottom:6px">👤 게스트</div>
+         <div style="font-size:10px;color:#34d399;font-weight:700;margin-bottom:6px">👤 게스트</div>
          <div style="display:flex;flex-wrap:wrap;gap:4px">${guestSortTabs}</div>
        </td></tr>`
       + guestList.map((s,i)=>rowHtml(s,true,i+1)).join('')
@@ -2470,22 +2489,22 @@ function renderRanking(stats) {
       <div style="flex:1">
         <div style="font-weight:800;font-size:15px">
           ${s.name} <span class="${s.gender==='f'?'g-f':'g-m'}">${s.gender==='f'?'♀':'♂'}</span>
-          ${isG?'<span style="font-size:10px;color:#059669;margin-left:4px">게스트</span>':''}
+          ${isG?'<span style="font-size:10px;color:#34d399;margin-left:4px">게스트</span>':''}
         </div>
-        <div style="font-size:11px;color:#64748b;margin-top:2px">${s.wins}승 ${s.draws}무 ${s.losses}패 · ${s.wr}% · <span style="color:#a78bfa">${s.games}게임</span></div>
-        <div class="wr-bg" style="margin-top:4px"><div class="wr-bar" style="width:${s.wr}%;background:${s.wr>=70?'linear-gradient(90deg,#059669,#10b981)':s.wr>=40?'linear-gradient(90deg,#fbbf24,#f59e0b)':'linear-gradient(90deg,#dc2626,#ef4444)'}"></div></div>
+        <div style="font-size:11px;color:#4a8ab5;margin-top:2px">${s.wins}승 ${s.draws}무 ${s.losses}패 · ${s.wr}% · <span style="color:#a78bfa">${s.games}게임</span></div>
+        <div class="wr-bg" style="margin-top:4px"><div class="wr-bar" style="width:${s.wr}%;background:${s.wr>=70?'linear-gradient(90deg,#34d399,#10b981)':s.wr>=40?'linear-gradient(90deg,#fbbf24,#f59e0b)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
       </div>
       <div style="text-align:right">
-        <div style="font-weight:900;font-size:20px;color:#2563eb">${s.pts}</div>
-        <div style="font-size:10px;color:#64748b">승점</div>
+        <div style="font-weight:900;font-size:20px;color:#60a5fa">${s.pts}</div>
+        <div style="font-size:10px;color:#4a8ab5">승점</div>
       </div>
       <div style="text-align:right;min-width:36px">
-        <div style="font-weight:700;font-size:14px;color:${s.diff>=0?'#059669':'#dc2626'}">${s.diff>=0?'+':''}${s.diff}</div>
-        <div style="font-size:10px;color:#64748b">득실</div>
+        <div style="font-weight:700;font-size:14px;color:${s.diff>=0?'#34d399':'#f87171'}">${s.diff>=0?'+':''}${s.diff}</div>
+        <div style="font-size:10px;color:#4a8ab5">득실</div>
       </div>
       <div style="text-align:right;min-width:32px">
         <div style="font-weight:700;font-size:14px;color:#fbbf24">${s.attendance}</div>
-        <div style="font-size:10px;color:#64748b">출석일</div>
+        <div style="font-size:10px;color:#4a8ab5">출석일</div>
       </div>
     </div>`;
 
@@ -2494,11 +2513,11 @@ function renderRanking(stats) {
     .map(([k,label])=>{
       const active = guestRankSortKey===k;
       const arrow = active ? (guestRankSortDir===1?' ▲':' ▼') : '';
-      return `<button onclick="setGuestRankSort('${k}')" style="padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;margin-right:5px;margin-bottom:5px;background:${active?'rgba(52,211,153,0.25)':'rgba(255,255,255,0.7)'};color:${active?'#059669':'#7c8ba1'};border:1px solid ${active?'rgba(52,211,153,0.5)':'rgba(148,163,184,0.3)'}">${label}${arrow}</button>`;
+      return `<button onclick="setGuestRankSort('${k}')" style="padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;margin-right:5px;margin-bottom:5px;background:${active?'rgba(52,211,153,0.25)':'rgba(3,12,45,0.7)'};color:${active?'#34d399':'#8aa5c4'};border:1px solid ${active?'rgba(52,211,153,0.5)':'rgba(35,90,180,0.3)'}">${label}${arrow}</button>`;
     }).join('');
 
   const guestHtml = guestList.length
-    ? `<div style="font-size:12px;color:#059669;font-weight:700;margin:12px 0 6px;padding:6px 0;border-top:1px solid rgba(13,148,136,0.3)">👤 게스트 (시즌 ${viewSeason})</div>`
+    ? `<div style="font-size:12px;color:#34d399;font-weight:700;margin:12px 0 6px;padding:6px 0;border-top:1px solid rgba(13,148,136,0.3)">👤 게스트 (시즌 ${viewSeason})</div>`
       + `<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${guestSortTabs}</div>`
       + guestList.map(s=>makeItem(s,true)).join('')
     : '';
@@ -2602,18 +2621,18 @@ window.renderAnalysisDetail = function() {
   const worstOpp = opps.filter(p=>p.wr<50).sort((a,b)=>a.wr-b.wr).slice(0,3); // 잘 지는 상대 (천적)
 
   const pairCard = (p, label) => `
-    <div style="background:rgba(248,250,255,0.7);border-radius:10px;padding:10px 12px;border:1px solid rgba(148,163,184,0.2);margin-bottom:6px">
+    <div style="background:rgba(4,16,55,0.7);border-radius:10px;padding:10px 12px;border:1px solid rgba(35,90,180,0.2);margin-bottom:6px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <span style="font-size:13px;font-weight:700">${label} ${p.name}</span>
-          <span style="font-size:11px;color:#64748b;margin-left:8px">${p.games}경기</span>
+          <span style="font-size:11px;color:#4a8ab5;margin-left:8px">${p.games}경기</span>
         </div>
         <div style="text-align:right">
-          <span style="font-weight:800;font-size:14px;color:${p.wr>=50?'#059669':'#dc2626'}">${p.wr}%</span>
-          <span style="font-size:11px;color:#64748b;margin-left:6px">${p.wins}승${p.losses}패 / 득실 ${p.diff>=0?'+':''}${p.diff}</span>
+          <span style="font-weight:800;font-size:14px;color:${p.wr>=50?'#34d399':'#f87171'}">${p.wr}%</span>
+          <span style="font-size:11px;color:#4a8ab5;margin-left:6px">${p.wins}승${p.losses}패 / 득실 ${p.diff>=0?'+':''}${p.diff}</span>
         </div>
       </div>
-      <div class="wr-bg" style="margin-top:6px"><div class="wr-bar" style="width:${p.wr}%;background:${p.wr>=70?'linear-gradient(90deg,#059669,#10b981)':p.wr>=50?'linear-gradient(90deg,#2563eb,#3b82f6)':'linear-gradient(90deg,#dc2626,#ef4444)'}"></div></div>
+      <div class="wr-bg" style="margin-top:6px"><div class="wr-bar" style="width:${p.wr}%;background:${p.wr>=70?'linear-gradient(90deg,#34d399,#10b981)':p.wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
     </div>`;
 
   const posCard = (pos, label, color, icon) => {
@@ -2621,35 +2640,35 @@ window.renderAnalysisDetail = function() {
     const wr = p.games>0 ? Math.round(p.wins/p.games*100) : 0;
     const diff = p.scored-p.conceded;
     return p.games===0
-      ? `<div style="background:rgba(248,250,255,0.5);border-radius:10px;padding:12px;border:1px dashed rgba(148,163,184,0.2);text-align:center;color:#64748b;font-size:12px">${icon} ${label} — 아직 포지션 기록 없음</div>`
-      : `<div style="background:rgba(248,250,255,0.7);border-radius:10px;padding:12px;border:1px solid ${color}44;margin-bottom:8px">
+      ? `<div style="background:rgba(4,16,55,0.5);border-radius:10px;padding:12px;border:1px dashed rgba(35,90,180,0.2);text-align:center;color:#4a8ab5;font-size:12px">${icon} ${label} — 아직 포지션 기록 없음</div>`
+      : `<div style="background:rgba(4,16,55,0.7);border-radius:10px;padding:12px;border:1px solid ${color}44;margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <span style="font-size:14px;font-weight:700">${icon} ${label}</span>
-            <span style="font-size:12px;color:#64748b">${p.games}경기</span>
+            <span style="font-size:12px;color:#4a8ab5">${p.games}경기</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
-            ${[['승률',wr+'%',wr>=50?'#059669':'#dc2626'],['승-패',p.wins+'-'+p.losses,'#94a3b8'],['득점',p.scored,'#2563eb'],['득실',(diff>=0?'+':'')+diff,diff>=0?'#059669':'#dc2626']].map(([lb,vl,cl])=>`
-            <div style="text-align:center;background:rgba(255,255,255,0.6);border-radius:8px;padding:7px 4px">
+            ${[['승률',wr+'%',wr>=50?'#34d399':'#f87171'],['승-패',p.wins+'-'+p.losses,'#94a3b8'],['득점',p.scored,'#60a5fa'],['득실',(diff>=0?'+':'')+diff,diff>=0?'#34d399':'#f87171']].map(([lb,vl,cl])=>`
+            <div style="text-align:center;background:rgba(3,12,45,0.6);border-radius:8px;padding:7px 4px">
               <div style="font-size:14px;font-weight:800;color:${cl}">${vl}</div>
-              <div style="font-size:10px;color:#64748b;margin-top:2px">${lb}</div>
+              <div style="font-size:10px;color:#4a8ab5;margin-top:2px">${lb}</div>
             </div>`).join('')}
           </div>
-          <div class="wr-bg" style="margin-top:8px"><div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#059669,#10b981)':wr>=50?'linear-gradient(90deg,#2563eb,#3b82f6)':'linear-gradient(90deg,#dc2626,#ef4444)'}"></div></div>
+          <div class="wr-bg" style="margin-top:8px"><div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#34d399,#10b981)':wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
         </div>`;
   };
 
   el.innerHTML = `
     <!-- 종합 전적 -->
     <div style="background:rgba(20,80,30,0.3);border-radius:12px;padding:14px;border:1px solid rgba(52,211,153,0.3);margin-bottom:16px;text-align:center">
-      <span style="font-size:13px;font-weight:800;color:#059669">🏅 ${name}님의 종합 전적${s.isGuest?' <span style="font-size:10px;color:#059669">(게스트)</span>':''}</span><br>
+      <span style="font-size:13px;font-weight:800;color:#34d399">🏅 ${name}님의 종합 전적${s.isGuest?' <span style="font-size:10px;color:#34d399">(게스트)</span>':''}</span><br>
       <span style="font-size:12px;color:#94a3b8;margin-top:4px;display:block">${s.games}전 ${s.wins}승 ${s.draws}무 ${s.losses}패 (승률 ${s.wr}%) · 📅 출석 ${s.attendance}일</span>
     </div>
 
     <!-- 기본 스탯 -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:20px">
-      ${[['🏆','승',s.wins,'#059669'],['🤝','무',s.draws,'#fbbf24'],['❌','패',s.losses,'#dc2626'],['⚡','득실',(s.diff>=0?'+':'')+s.diff,s.diff>=0?'#2563eb':'#dc2626']].map(([ic,lb,vl,cl])=>`
+      ${[['🏆','승',s.wins,'#34d399'],['🤝','무',s.draws,'#fbbf24'],['❌','패',s.losses,'#f87171'],['⚡','득실',(s.diff>=0?'+':'')+s.diff,s.diff>=0?'#60a5fa':'#f87171']].map(([ic,lb,vl,cl])=>`
       <div style="text-align:center;background:rgba(8,28,75,0.75);border-radius:10px;padding:10px 4px;border:1px solid rgba(50,110,200,0.25)">
-        <div>${ic}</div><div style="font-size:16px;font-weight:800;color:${cl};margin-top:2px">${vl}</div><div style="font-size:10px;color:#64748b">${lb}</div>
+        <div>${ic}</div><div style="font-size:16px;font-weight:800;color:${cl};margin-top:2px">${vl}</div><div style="font-size:10px;color:#4a8ab5">${lb}</div>
       </div>`).join('')}
     </div>
 
@@ -2662,7 +2681,7 @@ window.renderAnalysisDetail = function() {
 
     <!-- 😈 워스트 -->
     ${worstPart.length || worstOpp.length ? `
-    <div style="font-size:14px;font-weight:800;color:#dc2626;margin:16px 0 10px">😈 워스트</div>
+    <div style="font-size:14px;font-weight:800;color:#f87171;margin:16px 0 10px">😈 워스트</div>
     ${worstPart.map(p=>pairCard(p,'😅 아쉬운 파트너:')).join('')}
     ${worstOpp.map(p=>pairCard(p,'💀 천적:')).join('')}
     ` : ''}
@@ -2681,22 +2700,22 @@ window.renderAnalysisDetail = function() {
       });
       const last5 = recentMatches.slice(0,5);
       if (!last5.length) return '';
-      const resColor = {W:'#059669',L:'#dc2626',D:'#fbbf24'};
+      const resColor = {W:'#34d399',L:'#f87171',D:'#fbbf24'};
       const resBg = {W:'rgba(52,211,153,0.2)',L:'rgba(248,113,113,0.2)',D:'rgba(251,191,36,0.2)'};
       const recentWr = last5.length>0?Math.round(last5.filter(x=>x.res==='W').length/last5.length*100):0;
       return `
-      <div style="font-size:14px;font-weight:800;color:#059669;margin:20px 0 10px">📈 최근 폼</div>
+      <div style="font-size:14px;font-weight:800;color:#34d399;margin:20px 0 10px">📈 최근 폼</div>
       <div style="background:rgba(8,28,75,0.75);border-radius:12px;padding:14px;border:1px solid rgba(50,110,200,0.25)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <div style="display:flex;gap:6px">
             ${last5.map(r=>`<div style="width:36px;height:36px;border-radius:8px;background:${resBg[r.res]};border:1px solid ${resColor[r.res]}40;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:${resColor[r.res]}">${r.res}</div>`).join('')}
           </div>
           <div style="margin-left:8px">
-            <div style="font-size:13px;font-weight:700;color:#1e293b">최근 ${last5.length}경기</div>
-            <div style="font-size:11px;color:#64748b">${last5.filter(x=>x.res==='W').length}승 ${last5.filter(x=>x.res==='D').length}무 ${last5.filter(x=>x.res==='L').length}패 · ${recentWr}%</div>
+            <div style="font-size:13px;font-weight:700;color:#e8edf2">최근 ${last5.length}경기</div>
+            <div style="font-size:11px;color:#4a8ab5">${last5.filter(x=>x.res==='W').length}승 ${last5.filter(x=>x.res==='D').length}무 ${last5.filter(x=>x.res==='L').length}패 · ${recentWr}%</div>
           </div>
         </div>
-        <div class="wr-bg"><div class="wr-bar" style="width:${recentWr}%;background:${recentWr>=70?'linear-gradient(90deg,#059669,#10b981)':recentWr>=40?'linear-gradient(90deg,#fbbf24,#f59e0b)':'linear-gradient(90deg,#dc2626,#ef4444)'}"></div></div>
+        <div class="wr-bg"><div class="wr-bar" style="width:${recentWr}%;background:${recentWr>=70?'linear-gradient(90deg,#34d399,#10b981)':recentWr>=40?'linear-gradient(90deg,#fbbf24,#f59e0b)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
       </div>`;
     })()}
 
@@ -2722,22 +2741,22 @@ window.renderAnalysisDetail = function() {
       // 최장 연패
       let maxLoss=0; cur=0;
       allMatchResults.forEach(r=>{if(r==='L'){cur++;maxLoss=Math.max(maxLoss,cur);}else cur=0;});
-      const streakColor=curType==='W'?'#059669':curType==='L'?'#dc2626':'#fbbf24';
+      const streakColor=curType==='W'?'#34d399':curType==='L'?'#f87171':'#fbbf24';
       const streakText=curType==='W'?'연승':curType==='L'?'연패':'연속무';
       return `
       <div style="font-size:14px;font-weight:800;color:#f59e0b;margin:20px 0 10px">🔥 연승/연패 기록</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:12px;text-align:center;border:1px solid ${streakColor}44">
           <div style="font-size:22px;font-weight:900;color:${streakColor}">${curStreak}</div>
-          <div style="font-size:11px;color:#64748b;margin-top:2px">현재 ${streakText}</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">현재 ${streakText}</div>
         </div>
         <div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:12px;text-align:center;border:1px solid rgba(52,211,153,0.25)">
-          <div style="font-size:22px;font-weight:900;color:#059669">${maxWin}</div>
-          <div style="font-size:11px;color:#64748b;margin-top:2px">최장 연승</div>
+          <div style="font-size:22px;font-weight:900;color:#34d399">${maxWin}</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">최장 연승</div>
         </div>
         <div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:12px;text-align:center;border:1px solid rgba(248,113,113,0.25)">
-          <div style="font-size:22px;font-weight:900;color:#dc2626">${maxLoss}</div>
-          <div style="font-size:11px;color:#64748b;margin-top:2px">최장 연패</div>
+          <div style="font-size:22px;font-weight:900;color:#f87171">${maxLoss}</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">최장 연패</div>
         </div>
       </div>`;
     })()}
@@ -2770,20 +2789,20 @@ window.renderAnalysisDetail = function() {
           const monLabel=mon.slice(0,4)+'년 '+parseInt(mon.slice(5))+'월';
           return `<div style="margin-bottom:10px">
             <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-              <span style="color:#1e293b;font-weight:600">${monLabel}</span>
-              <span style="color:#64748b">${d.wins}승 ${d.draws}무 ${d.losses}패 · <span style="color:${wr>=50?'#059669':'#dc2626'};font-weight:700">${wr}%</span></span>
+              <span style="color:#e8edf2;font-weight:600">${monLabel}</span>
+              <span style="color:#4a8ab5">${d.wins}승 ${d.draws}무 ${d.losses}패 · <span style="color:${wr>=50?'#34d399':'#f87171'};font-weight:700">${wr}%</span></span>
             </div>
-            <div style="display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;background:rgba(255,255,255,0.5)">
-              <div style="width:${d.games>0?Math.round(d.wins/d.games*100):0}%;background:#059669;transition:width 0.5s"></div>
+            <div style="display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;background:rgba(3,12,45,0.5)">
+              <div style="width:${d.games>0?Math.round(d.wins/d.games*100):0}%;background:#34d399;transition:width 0.5s"></div>
               <div style="width:${d.games>0?Math.round(d.draws/d.games*100):0}%;background:#fbbf24;transition:width 0.5s"></div>
-              <div style="width:${d.games>0?Math.round(d.losses/d.games*100):0}%;background:#dc2626;transition:width 0.5s"></div>
+              <div style="width:${d.games>0?Math.round(d.losses/d.games*100):0}%;background:#f87171;transition:width 0.5s"></div>
             </div>
           </div>`;
         }).join('')}
         <div style="display:flex;gap:12px;margin-top:6px;font-size:10px">
-          <span><span style="color:#059669">■</span> 승</span>
+          <span><span style="color:#34d399">■</span> 승</span>
           <span><span style="color:#fbbf24">■</span> 무</span>
-          <span><span style="color:#dc2626">■</span> 패</span>
+          <span><span style="color:#f87171">■</span> 패</span>
         </div>
       </div>`;
     })()}
@@ -2808,22 +2827,22 @@ window.renderAnalysisDetail = function() {
       const rounds = Object.keys(byRound).sort((a,b)=>parseInt(a)-parseInt(b));
       if (rounds.length < 2) return '';
       return `
-      <div style="font-size:14px;font-weight:800;color:#2563eb;margin:20px 0 10px">⏱️ 라운드별 강세</div>
+      <div style="font-size:14px;font-weight:800;color:#60a5fa;margin:20px 0 10px">⏱️ 라운드별 강세</div>
       <div style="background:rgba(8,28,75,0.75);border-radius:12px;padding:14px;border:1px solid rgba(50,110,200,0.25)">
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px">
           ${rounds.map(rk => {
             const d=byRound[rk];
             const wr=d.games>0?Math.round(d.wins/d.games*100):0;
-            const barColor=wr>=70?'#059669':wr>=50?'#2563eb':wr>=30?'#fbbf24':'#dc2626';
-            return `<div style="text-align:center;background:rgba(255,255,255,0.6);border-radius:10px;padding:10px 6px;border:1px solid ${barColor}33">
-              <div style="font-size:11px;color:#64748b;margin-bottom:4px">${rk}</div>
+            const barColor=wr>=70?'#34d399':wr>=50?'#60a5fa':wr>=30?'#fbbf24':'#f87171';
+            return `<div style="text-align:center;background:rgba(3,12,45,0.6);border-radius:10px;padding:10px 6px;border:1px solid ${barColor}33">
+              <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">${rk}</div>
               <div style="font-size:18px;font-weight:900;color:${barColor}">${wr}%</div>
-              <div style="font-size:10px;color:#64748b;margin-top:2px">${d.wins}승${d.losses}패</div>
+              <div style="font-size:10px;color:#4a8ab5;margin-top:2px">${d.wins}승${d.losses}패</div>
               <div class="wr-bg" style="margin-top:4px"><div class="wr-bar" style="width:${wr}%;background:${barColor}"></div></div>
             </div>`;
           }).join('')}
         </div>
-        <div style="font-size:10px;color:#64748b;margin-top:10px">* 체력이 좋을수록 후반 라운드 승률이 높아요</div>
+        <div style="font-size:10px;color:#4a8ab5;margin-top:10px">* 체력이 좋을수록 후반 라운드 승률이 높아요</div>
       </div>`;
     })()}
 
@@ -2858,22 +2877,22 @@ window.renderAnalysisDetail = function() {
           const total = d.wins+d.losses+d.draws;
           const wr = total>0?Math.round(d.wins/total*100):0;
           const diff = d.scored-d.conceded;
-          return `<div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:11px 14px;border:1px solid rgba(50,110,200,0.25);border-left:3px solid ${wr>=50?'#059669':'#dc2626'}">
+          return `<div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:11px 14px;border:1px solid rgba(50,110,200,0.25);border-left:3px solid ${wr>=50?'#34d399':'#f87171'}">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
               <span style="font-size:12px;font-weight:700;color:#f59e0b">📅 ${d.label}</span>
-              <span style="font-size:13px;font-weight:900;color:${wr>=50?'#059669':'#dc2626'}">${wr}%</span>
+              <span style="font-size:13px;font-weight:900;color:${wr>=50?'#34d399':'#f87171'}">${wr}%</span>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center">
               <div style="display:flex;gap:8px;font-size:12px">
-                <span style="color:#059669;font-weight:700">${d.wins}승</span>
+                <span style="color:#34d399;font-weight:700">${d.wins}승</span>
                 ${d.draws>0?`<span style="color:#fbbf24;font-weight:700">${d.draws}무</span>`:''}
-                <span style="color:#dc2626;font-weight:700">${d.losses}패</span>
-                <span style="color:#64748b">${total}게임</span>
+                <span style="color:#f87171;font-weight:700">${d.losses}패</span>
+                <span style="color:#4a8ab5">${total}게임</span>
               </div>
-              <span style="font-size:11px;color:${diff>=0?'#059669':'#dc2626'}">득실 ${diff>=0?'+':''}${diff}</span>
+              <span style="font-size:11px;color:${diff>=0?'#34d399':'#f87171'}">득실 ${diff>=0?'+':''}${diff}</span>
             </div>
             <div class="wr-bg" style="margin-top:6px">
-              <div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#059669,#10b981)':wr>=50?'linear-gradient(90deg,#2563eb,#3b82f6)':'linear-gradient(90deg,#dc2626,#ef4444)'}"></div>
+              <div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#34d399,#10b981)':wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div>
             </div>
           </div>`;
         }).join('')}
@@ -2881,8 +2900,8 @@ window.renderAnalysisDetail = function() {
     })()}
 
     <!-- 🎾 포지션별 득실 분석 -->
-    <div style="font-size:14px;font-weight:800;color:#2563eb;margin:16px 0 10px">🎾 포지션별 득실 분석</div>
-    <div style="font-size:11px;color:#64748b;margin-bottom:10px">점수 입력 시 포(Fore)/백(Back) 선택하면 자동 집계돼요</div>
+    <div style="font-size:14px;font-weight:800;color:#60a5fa;margin:16px 0 10px">🎾 포지션별 득실 분석</div>
+    <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">점수 입력 시 포(Fore)/백(Back) 선택하면 자동 집계돼요</div>
     ${posCard('fore','포(Fore)','#ef4444','🔴')}
     ${posCard('back','백(Back)','#3b82f6','🔵')}
 
@@ -2905,7 +2924,7 @@ window.renderAnalysisDetail = function() {
       });
       // 성별에 따라 보여줄 방식 결정
       const showTypes = s.gender==='m'
-        ? [['혼복','혼복','#a78bfa','rgba(124,58,237,0.2)'],['남복','남복','#2563eb','rgba(37,99,235,0.2)']]
+        ? [['혼복','혼복','#a78bfa','rgba(124,58,237,0.2)'],['남복','남복','#60a5fa','rgba(37,99,235,0.2)']]
         : [['혼복','혼복','#a78bfa','rgba(124,58,237,0.2)'],['여복','여복','#f472b6','rgba(236,72,153,0.2)']];
       const hasData = showTypes.some(([k])=>typeStats[k].games>0);
       if (!hasData) return '';
@@ -2920,11 +2939,11 @@ window.renderAnalysisDetail = function() {
           return `<div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:12px;border:1px solid ${color}44">
             <div style="display:flex;justify-content:space-between;margin-bottom:6px">
               <span style="font-size:12px;font-weight:700;color:${color}">${label}</span>
-              <span style="font-size:11px;color:#64748b">${d.games}게임</span>
+              <span style="font-size:11px;color:#4a8ab5">${d.games}게임</span>
             </div>
-            <div style="font-size:22px;font-weight:900;color:${wr>=50?'#059669':'#dc2626'};margin-bottom:4px">${wr}%</div>
-            <div style="font-size:11px;color:#64748b">${d.wins}승 ${d.draws}무 ${d.losses}패</div>
-            <div class="wr-bg" style="margin-top:6px"><div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#059669,#10b981)':wr>=50?'linear-gradient(90deg,#2563eb,#3b82f6)':'linear-gradient(90deg,#dc2626,#ef4444)'}"></div></div>
+            <div style="font-size:22px;font-weight:900;color:${wr>=50?'#34d399':'#f87171'};margin-bottom:4px">${wr}%</div>
+            <div style="font-size:11px;color:#4a8ab5">${d.wins}승 ${d.draws}무 ${d.losses}패</div>
+            <div class="wr-bg" style="margin-top:6px"><div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#34d399,#10b981)':wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
           </div>`;
         }).join('')}
       </div>`;
@@ -2956,30 +2975,30 @@ window.renderAnalysisDetail = function() {
             });
           });
         });
-        return `<div style="background:rgba(248,250,255,0.7);border-radius:10px;overflow:hidden;border:1px solid rgba(148,163,184,0.25)">
+        return `<div style="background:rgba(4,16,55,0.7);border-radius:10px;overflow:hidden;border:1px solid rgba(35,90,180,0.25)">
           <button onclick="toggleAtt('${pid}','${pid}_arr')"
-            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#1e293b;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-size:13px;font-weight:700">${p.name}</span>
-              <span style="font-size:12px;color:#64748b">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
-              <span style="font-size:12px;color:${p.diff>=0?'#059669':'#dc2626'}">득실 ${p.diff>=0?'+':''}${p.diff}</span>
+              <span style="font-size:12px;color:#4a8ab5">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
+              <span style="font-size:12px;color:${p.diff>=0?'#34d399':'#f87171'}">득실 ${p.diff>=0?'+':''}${p.diff}</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:13px;font-weight:800;color:${p.wr>=50?'#059669':'#dc2626'}">${p.wr}%</span>
-              <span id="${pid}_arr" style="color:#64748b;transition:transform 0.2s">›</span>
+              <span style="font-size:13px;font-weight:800;color:${p.wr>=50?'#34d399':'#f87171'}">${p.wr}%</span>
+              <span id="${pid}_arr" style="color:#4a8ab5;transition:transform 0.2s">›</span>
             </div>
           </button>
           <div id="${pid}" style="display:none;padding:0 14px 12px">
             ${matchDetails.length ? matchDetails.map(md=>`
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid rgba(148,163,184,0.15);font-size:12px">
-                <div style="color:#64748b;min-width:60px">${md.date||'날짜미상'}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid rgba(35,90,180,0.15);font-size:12px">
+                <div style="color:#4a8ab5;min-width:60px">${md.date||'날짜미상'}</div>
                 <div style="flex:1;color:#94a3b8;text-align:center;font-size:11px">vs ${md.opp}</div>
                 <div style="font-weight:800;font-size:13px;color:#f59e0b;margin:0 8px">${md.mySc}:${md.oppSc}</div>
                 <div style="font-weight:700;padding:2px 10px;border-radius:8px;
                   background:${md.res==='승'?'rgba(52,211,153,0.15)':md.res==='패'?'rgba(248,113,113,0.15)':'rgba(251,191,36,0.15)'};
-                  color:${md.res==='승'?'#059669':md.res==='패'?'#dc2626':'#fbbf24'}">${md.res}</div>
+                  color:${md.res==='승'?'#34d399':md.res==='패'?'#f87171':'#fbbf24'}">${md.res}</div>
               </div>`).join('')
-            : '<div style="color:#64748b;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
+            : '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
           </div>
         </div>`;
       }).join('')}
@@ -2987,7 +3006,7 @@ window.renderAnalysisDetail = function() {
 
     <!-- 💀 상대별 상세 기록 -->
     ${opps.length ? `
-    <div style="font-size:14px;font-weight:800;color:#dc2626;margin:20px 0 10px">⚔️ 상대별 상세 기록</div>
+    <div style="font-size:14px;font-weight:800;color:#f87171;margin:20px 0 10px">⚔️ 상대별 상세 기록</div>
     <div style="display:flex;flex-direction:column;gap:6px">
       ${[...opps].sort((a,b)=>b.games-a.games).map((p,pi) => {
         const oid = `odetail_${name.replace(/\s/g,'_')}_${pi}`;
@@ -3009,30 +3028,30 @@ window.renderAnalysisDetail = function() {
             });
           });
         });
-        return `<div style="background:rgba(248,250,255,0.7);border-radius:10px;overflow:hidden;border:1px solid rgba(148,163,184,0.25)">
+        return `<div style="background:rgba(4,16,55,0.7);border-radius:10px;overflow:hidden;border:1px solid rgba(35,90,180,0.25)">
           <button onclick="toggleAtt('${oid}','${oid}_arr')"
-            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#1e293b;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-size:13px;font-weight:700">${p.name}</span>
-              <span style="font-size:12px;color:#64748b">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
-              <span style="font-size:12px;color:${p.diff>=0?'#059669':'#dc2626'}">득실 ${p.diff>=0?'+':''}${p.diff}</span>
+              <span style="font-size:12px;color:#4a8ab5">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
+              <span style="font-size:12px;color:${p.diff>=0?'#34d399':'#f87171'}">득실 ${p.diff>=0?'+':''}${p.diff}</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
-              <span style="font-size:13px;font-weight:800;color:${p.wr>=50?'#059669':'#dc2626'}">${p.wr}%</span>
-              <span id="${oid}_arr" style="color:#64748b;transition:transform 0.2s">›</span>
+              <span style="font-size:13px;font-weight:800;color:${p.wr>=50?'#34d399':'#f87171'}">${p.wr}%</span>
+              <span id="${oid}_arr" style="color:#4a8ab5;transition:transform 0.2s">›</span>
             </div>
           </button>
           <div id="${oid}" style="display:none;padding:0 14px 12px">
             ${matchDetails.length ? matchDetails.map(md=>`
-              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid rgba(148,163,184,0.15);font-size:12px">
-                <div style="color:#64748b;min-width:60px">${md.date||'날짜미상'}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid rgba(35,90,180,0.15);font-size:12px">
+                <div style="color:#4a8ab5;min-width:60px">${md.date||'날짜미상'}</div>
                 <div style="flex:1;color:#94a3b8;text-align:center;font-size:11px">파트너: ${md.myTeam||'없음'}</div>
                 <div style="font-weight:800;font-size:13px;color:#f59e0b;margin:0 8px">${md.mySc}:${md.oppSc}</div>
                 <div style="font-weight:700;padding:2px 10px;border-radius:8px;
                   background:${md.res==='승'?'rgba(52,211,153,0.15)':md.res==='패'?'rgba(248,113,113,0.15)':'rgba(251,191,36,0.15)'};
-                  color:${md.res==='승'?'#059669':md.res==='패'?'#dc2626':'#fbbf24'}">${md.res}</div>
+                  color:${md.res==='승'?'#34d399':md.res==='패'?'#f87171':'#fbbf24'}">${md.res}</div>
               </div>`).join('')
-            : '<div style="color:#64748b;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
+            : '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
           </div>
         </div>`;
       }).join('')}
@@ -3054,8 +3073,8 @@ function renderEvents() {
   if(!filtered.length){el.innerHTML='<div class="empty">아직 이벤트가 없어요</div>';return;}
   el.innerHTML=filtered.map(ev=>{
     const parts=ev.participants||[];
-    const partHtml=parts.length?`<div class="ev-parts"><div style="font-size:11px;color:#64748b">참가자 (${parts.length}명)</div><div class="part-chips">${parts.map(p=>`<span class="part-chip">${p}</span>`).join('')}</div></div>`:'';
-    const delBtn=isAdmin?`<button onclick="delEvent('${ev.id}')" style="background:none;border:none;color:#dc2626;font-size:11px;cursor:pointer">삭제</button>`:'';
+    const partHtml=parts.length?`<div class="ev-parts"><div style="font-size:11px;color:#4a8ab5">참가자 (${parts.length}명)</div><div class="part-chips">${parts.map(p=>`<span class="part-chip">${p}</span>`).join('')}</div></div>`:'';
+    const delBtn=isAdmin?`<button onclick="delEvent('${ev.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">삭제</button>`:'';
     return `<div class="event-card">
       <div class="event-banner">
         <span class="ev-type-badge ${EV_TYPE_BADGE[ev.type]||''}">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${EV_TYPE_LABEL[ev.type]||ev.type}</span>
@@ -3083,17 +3102,17 @@ window.openEventDetail=function(evId){
   const memberNames = members.map(m=>m.name);
   const partSec=`<div style="margin-bottom:16px">
     <div style="font-size:13px;font-weight:700;margin-bottom:8px">👥 참가자 (${parts.length}명)</div>
-    <div class="part-chips">${parts.map(p=>`<span class="part-chip">${p}</span>`).join('')||'<span style="color:#64748b;font-size:12px">없음</span>'}</div>
+    <div class="part-chips">${parts.map(p=>`<span class="part-chip">${p}</span>`).join('')||'<span style="color:#4a8ab5;font-size:12px">없음</span>'}</div>
     ${isAdmin?`<div class="row-form" style="margin-top:10px"><select class="row-inp" id="evPartSel"><option value="">참가자 추가</option>${memberNames.map(m=>`<option>${m}</option>`).join('')}</select><button class="btn-add" onclick="addEvPart('${evId}')">추가</button></div>`:''}
   </div>`;
-  const resSec=results.length?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 결과</div>${results.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a2a3a"><span>${['🥇','🥈','🥉'][i]||i+1+'위'}</span><span style="font-weight:700">${r.name}</span>${r.note?`<span style="font-size:11px;color:#64748b">${r.note}</span>`:''}</div>`).join('')}</div>`:'';
+  const resSec=results.length?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 결과</div>${results.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a2a3a"><span>${['🥇','🥈','🥉'][i]||i+1+'위'}</span><span style="font-weight:700">${r.name}</span>${r.note?`<span style="font-size:11px;color:#4a8ab5">${r.note}</span>`:''}</div>`).join('')}</div>`:'';
   const addRes=isAdmin?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏅 결과 추가</div><div class="row-form"><select class="row-inp" id="evResName"><option value="">선수</option>${parts.map(p=>`<option>${p}</option>`).join('')}</select><input class="row-inp" id="evResNote" placeholder="메모"><button class="btn-add" onclick="addEvResult('${evId}')">추가</button></div></div>`:'';
   document.getElementById('eventDetailContent').innerHTML=`
     <div class="modal-title">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${ev.name}</div>
     <div style="margin-bottom:16px">
       <span class="ev-type-badge ${EV_TYPE_BADGE[ev.type]||''}">${EV_TYPE_LABEL[ev.type]||ev.type}</span>
       <span class="ev-status ${EV_STATUS_CLASS[ev.status]||''}" style="margin-left:8px;font-size:12px">● ${EV_STATUS_LABEL[ev.status]||''}</span>
-      <div style="font-size:12px;color:#64748b;margin-top:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
+      <div style="font-size:12px;color:#4a8ab5;margin-top:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
       ${ev.desc?`<div style="font-size:13px;color:#94a3b8;margin-top:8px;line-height:1.6">${ev.desc}</div>`:''}
     </div>${partSec}${resSec}${addRes}
     <div class="mft"><button class="btn-cancel" style="flex:1" onclick="hide('eventDetailModal')">닫기</button></div>`;
@@ -3137,12 +3156,12 @@ function renderAdmin(){
           <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span>
           ${m.name}
           <button onclick="renameMember('${m.name}')" title="이름 변경"
-            style="background:none;border:none;color:#2563eb;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
+            style="background:none;border:none;color:#60a5fa;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="demoteMember('${m.name}')" title="게스트로 전환"
             style="background:none;border:none;color:#fbbf24;font-size:12px;cursor:pointer;padding:0 2px">⬇️</button>
           <button class="chip-x" onclick="delMember('${m.name}')">×</button>
         </span>`).join('')
-    : '<span style="color:#64748b;font-size:12px">등록된 회원 없음</span>';
+    : '<span style="color:#4a8ab5;font-size:12px">등록된 회원 없음</span>';
 
   // ── 게스트 칩 (버그 수정) ──
   document.getElementById('guestChips').innerHTML = guests.length
@@ -3152,12 +3171,12 @@ function renderAdmin(){
           <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span>
           ${g.name}
           <button onclick="renameGuest('${g.name}')" title="이름 변경"
-            style="background:none;border:none;color:#2563eb;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
+            style="background:none;border:none;color:#60a5fa;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="promoteGuest('${g.name}')" title="정규회원으로 전환"
-            style="background:none;border:none;color:#059669;font-size:12px;cursor:pointer;padding:0 2px">⬆️</button>
+            style="background:none;border:none;color:#34d399;font-size:12px;cursor:pointer;padding:0 2px">⬆️</button>
           <button class="chip-x" onclick="delGuest('${g.name}')">×</button>
         </span>`).join('')
-    : '<span style="color:#64748b;font-size:12px">등록된 게스트 없음</span>';
+    : '<span style="color:#4a8ab5;font-size:12px">등록된 게스트 없음</span>';
 
   // ── 게스트 상세 성적 (합산/시즌별 토글, 정렬 가능) ──
   const guestStatsEl = document.getElementById('guestStatsDetail');
@@ -3193,13 +3212,13 @@ function renderAdmin(){
       const headHtml = headers.map(([k,label]) => {
         const active = adminGuestSortKey === k;
         const arrow = active ? (adminGuestSortDir === 1 ? ' ▲' : ' ▼') : '';
-        return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#059669':'#64748b'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
+        return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#34d399':'#4a8ab5'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
       }).join('');
 
       const toggleBar = `
         <div style="display:flex;gap:6px;margin:14px 0 6px">
-          <button onclick="setAdminGuestViewMode('total')" style="padding:5px 12px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;background:${adminGuestViewMode==='total'?'rgba(52,211,153,0.25)':'rgba(255,255,255,0.7)'};color:${adminGuestViewMode==='total'?'#059669':'#7c8ba1'};border:1px solid ${adminGuestViewMode==='total'?'rgba(52,211,153,0.5)':'rgba(148,163,184,0.3)'}">합산 보기</button>
-          <button onclick="setAdminGuestViewMode('bySeason')" style="padding:5px 12px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;background:${adminGuestViewMode==='bySeason'?'rgba(52,211,153,0.25)':'rgba(255,255,255,0.7)'};color:${adminGuestViewMode==='bySeason'?'#059669':'#7c8ba1'};border:1px solid ${adminGuestViewMode==='bySeason'?'rgba(52,211,153,0.5)':'rgba(148,163,184,0.3)'}">시즌별 보기</button>
+          <button onclick="setAdminGuestViewMode('total')" style="padding:5px 12px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;background:${adminGuestViewMode==='total'?'rgba(52,211,153,0.25)':'rgba(3,12,45,0.7)'};color:${adminGuestViewMode==='total'?'#34d399':'#8aa5c4'};border:1px solid ${adminGuestViewMode==='total'?'rgba(52,211,153,0.5)':'rgba(35,90,180,0.3)'}">합산 보기</button>
+          <button onclick="setAdminGuestViewMode('bySeason')" style="padding:5px 12px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;background:${adminGuestViewMode==='bySeason'?'rgba(52,211,153,0.25)':'rgba(3,12,45,0.7)'};color:${adminGuestViewMode==='bySeason'?'#34d399':'#8aa5c4'};border:1px solid ${adminGuestViewMode==='bySeason'?'rgba(52,211,153,0.5)':'rgba(35,90,180,0.3)'}">시즌별 보기</button>
         </div>`;
 
       let rowsHtml = '';
@@ -3210,13 +3229,13 @@ function renderAdmin(){
             const d = r.gd.bySeason[s];
             const sAtt = r.att.bySeason[s] || 0;
             return `<tr>
-              <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#2563eb'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
-              <td style="text-align:center;padding:4px 6px;color:#64748b">S${s}</td>
+              <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
+              <td style="text-align:center;padding:4px 6px;color:#4a8ab5">S${s}</td>
               <td style="text-align:center;padding:4px 6px">${d.games}</td>
               <td style="text-align:center;padding:4px 6px;color:#fbbf24">${sAtt}일</td>
-              <td style="text-align:center;padding:4px 6px;color:#059669">${d.wins}</td>
+              <td style="text-align:center;padding:4px 6px;color:#34d399">${d.wins}</td>
               <td style="text-align:center;padding:4px 6px;color:#fbbf24">${d.draws}</td>
-              <td style="text-align:center;padding:4px 6px;color:#dc2626">${d.losses}</td>
+              <td style="text-align:center;padding:4px 6px;color:#f87171">${d.losses}</td>
               <td style="text-align:center;padding:4px 6px">${d.wr}%</td>
               <td style="text-align:center;padding:4px 6px">${d.scored}</td>
               <td style="text-align:center;padding:4px 6px">${d.conceded}</td>
@@ -3225,13 +3244,13 @@ function renderAdmin(){
           }).join('');
           const t = r.gd.total;
           const totalRow = `<tr style="font-weight:800;background:rgba(52,211,153,0.08)">
-            <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#2563eb'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
-            <td style="text-align:center;padding:4px 6px;color:#059669">총계</td>
+            <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
+            <td style="text-align:center;padding:4px 6px;color:#34d399">총계</td>
             <td style="text-align:center;padding:4px 6px">${t.games}</td>
             <td style="text-align:center;padding:4px 6px;color:#fbbf24">${r.att.total}일</td>
-            <td style="text-align:center;padding:4px 6px;color:#059669">${t.wins}</td>
+            <td style="text-align:center;padding:4px 6px;color:#34d399">${t.wins}</td>
             <td style="text-align:center;padding:4px 6px;color:#fbbf24">${t.draws}</td>
-            <td style="text-align:center;padding:4px 6px;color:#dc2626">${t.losses}</td>
+            <td style="text-align:center;padding:4px 6px;color:#f87171">${t.losses}</td>
             <td style="text-align:center;padding:4px 6px">${t.wr}%</td>
             <td style="text-align:center;padding:4px 6px">${t.scored}</td>
             <td style="text-align:center;padding:4px 6px">${t.conceded}</td>
@@ -3241,12 +3260,12 @@ function renderAdmin(){
         }).join('');
       } else {
         rowsHtml = rows.map(r => `<tr>
-          <td style="padding:5px 6px;color:${r.gender==='f'?'#f472b6':'#2563eb'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
+          <td style="padding:5px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
           <td style="text-align:center;padding:5px 6px">${r.games}</td>
           <td style="text-align:center;padding:5px 6px;color:#fbbf24">${r.attendance}일</td>
-          <td style="text-align:center;padding:5px 6px;color:#059669">${r.wins}</td>
+          <td style="text-align:center;padding:5px 6px;color:#34d399">${r.wins}</td>
           <td style="text-align:center;padding:5px 6px;color:#fbbf24">${r.draws}</td>
-          <td style="text-align:center;padding:5px 6px;color:#dc2626">${r.losses}</td>
+          <td style="text-align:center;padding:5px 6px;color:#f87171">${r.losses}</td>
           <td style="text-align:center;padding:5px 6px">${r.wr}%</td>
           <td style="text-align:center;padding:5px 6px">${r.scored}</td>
           <td style="text-align:center;padding:5px 6px">${r.conceded}</td>
@@ -3257,19 +3276,19 @@ function renderAdmin(){
       const titleLabel = adminGuestViewMode === 'bySeason' ? '📈 게스트 상세 성적 (시즌별)' : '📈 게스트 상세 성적 (전체 시즌 합산)';
       const colSpan = adminGuestViewMode === 'bySeason' ? 11 : 10;
       const seasonHeadExtra = adminGuestViewMode === 'bySeason'
-        ? `<th style="text-align:center;padding:5px 6px;color:#64748b;font-weight:600">시즌</th>` : '';
+        ? `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600">시즌</th>` : '';
       const headRow = adminGuestViewMode === 'bySeason'
-        ? `<th style="text-align:center;padding:5px 6px;color:#64748b;font-weight:600">이름</th>${seasonHeadExtra}` + headers.slice(1).map(([k,label]) => {
+        ? `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600">이름</th>${seasonHeadExtra}` + headers.slice(1).map(([k,label]) => {
             const active = adminGuestSortKey === k;
             const arrow = active ? (adminGuestSortDir === 1 ? ' ▲' : ' ▼') : '';
-            return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#059669':'#64748b'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
+            return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#34d399':'#4a8ab5'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
           }).join('')
         : headHtml;
 
       guestStatsEl.innerHTML = !rows.length
-        ? toggleBar + '<div style="color:#64748b;font-size:12px;margin-top:10px">아직 완료된 게스트 경기가 없어요</div>'
+        ? toggleBar + '<div style="color:#4a8ab5;font-size:12px;margin-top:10px">아직 완료된 게스트 경기가 없어요</div>'
         : `${toggleBar}
-        <div style="font-size:11px;color:#059669;margin-bottom:6px">${titleLabel}</div>
+        <div style="font-size:11px;color:#34d399;margin-bottom:6px">${titleLabel}</div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:11.5px">
             <thead><tr>${headRow}</tr></thead>
@@ -3288,7 +3307,7 @@ function renderAdmin(){
             <span style="color:#f472b6">💑</span> ${c.m} & ${c.f}
             <button class="chip-x" onclick="deleteCouple('${c.m}','${c.f}')">×</button>
           </span>`).join('')
-      : '<span style="color:#64748b;font-size:12px">등록된 커플/부부 없음</span>';
+      : '<span style="color:#4a8ab5;font-size:12px">등록된 커플/부부 없음</span>';
   }
   // 커플 셀렉터 옵션 업데이트
   const mSel=document.getElementById('coupleM'), fSel=document.getElementById('coupleF');
@@ -3308,7 +3327,7 @@ function renderAdmin(){
   const attEl = document.getElementById('attendanceSection');
   if (attEl) {
     if (!days.length) {
-      attEl.innerHTML = '<div style="color:#64748b;font-size:12px">날짜 그룹을 먼저 추가해주세요</div>';
+      attEl.innerHTML = '<div style="color:#4a8ab5;font-size:12px">날짜 그룹을 먼저 추가해주세요</div>';
     } else {
       const existingBodyIds = new Set(days.map(d=>`att_body_${d.id}`));
       openAttBodies.forEach(id=>{ if(!existingBodyIds.has(id)) openAttBodies.delete(id); });
@@ -3324,17 +3343,17 @@ function renderAdmin(){
         // 정규회원 행
         const memberRows = members.map(m => {
           const status = att[m.name] ?? true;
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(148,163,184,0.12)">
-            <span style="font-size:13px;font-weight:600;color:#1e293b">
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(35,90,180,0.12)">
+            <span style="font-size:13px;font-weight:600;color:#e8edf2">
               <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span> ${m.name}
             </span>
             <div style="display:flex;gap:6px">
               <button onclick="setAttendance('${day.id}','${m.name}',true)"
                 style="padding:4px 12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-                  background:${status?'#059669':'rgba(255,255,255,0.8)'};color:${status?'#fff':'#64748b'}">✅ 참석</button>
+                  background:${status?'#34d399':'rgba(3,12,45,0.8)'};color:${status?'#fff':'#4a8ab5'}">✅ 참석</button>
               <button onclick="setAttendance('${day.id}','${m.name}',false)"
                 style="padding:4px 12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-                  background:${!status?'#dc2626':'rgba(255,255,255,0.8)'};color:${!status?'#fff':'#64748b'}">❌ 불참</button>
+                  background:${!status?'#f87171':'rgba(3,12,45,0.8)'};color:${!status?'#fff':'#4a8ab5'}">❌ 불참</button>
             </div>
           </div>`;
         }).join('');
@@ -3342,33 +3361,33 @@ function renderAdmin(){
         // 게스트 행
         const guestRows = guests.length ? `
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(52,211,153,0.2)">
-            <div style="font-size:11px;color:#059669;margin-bottom:6px">👤 게스트 참석</div>
+            <div style="font-size:11px;color:#34d399;margin-bottom:6px">👤 게스트 참석</div>
             ${guests.map(g => {
               const joined = dayGuests.includes(g.name);
               return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">
-                <span style="font-size:13px;color:#1e293b">
+                <span style="font-size:13px;color:#e8edf2">
                   <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span> ${g.name}
                 </span>
                 <button onclick="toggleDayGuest('${day.id}','${g.name}')"
                   style="padding:4px 14px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-                    background:${joined?'#0d9488':'rgba(255,255,255,0.8)'};color:${joined?'#fff':'#64748b'}">
+                    background:${joined?'#0d9488':'rgba(3,12,45,0.8)'};color:${joined?'#fff':'#4a8ab5'}">
                   ${joined?'✅ 참석중':'+ 참석 추가'}
                 </button>
               </div>`;
             }).join('')}
           </div>` : '';
 
-        return `<div style="background:rgba(248,250,255,0.6);border-radius:10px;border:1px solid rgba(148,163,184,0.25);margin-bottom:6px;overflow:hidden">
+        return `<div style="background:rgba(4,16,55,0.6);border-radius:10px;border:1px solid rgba(35,90,180,0.25);margin-bottom:6px;overflow:hidden">
           <button onclick="toggleAtt('${bodyId}','${arrId}')"
-            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#1e293b;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
             <div style="display:flex;align-items:center;gap:8px">
               <span style="font-size:13px;font-weight:800;color:#f59e0b">📅 ${dateStr}${day.place?' · '+day.place:''}</span>
               <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;
-                background:rgba(5,150,105,0.2);color:#059669;border:1px solid rgba(52,211,153,0.3)">
+                background:rgba(5,150,105,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.3)">
                 참석 ${attendingCount}명
               </span>
             </div>
-            <span id="${arrId}" style="color:#64748b;font-size:14px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">›</span>
+            <span id="${arrId}" style="color:#4a8ab5;font-size:14px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">›</span>
           </button>
           <div id="${bodyId}" style="display:${isOpen?'block':'none'};padding:0 14px 14px">
             ${memberRows}${guestRows}
@@ -3383,13 +3402,13 @@ function renderAdmin(){
   const totalM=days.reduce((a,d)=>(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).length,a),0);
   const doneM=days.reduce((a,d)=>(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).filter(m=>m.done).length,a),0);
   document.getElementById('leagueStat').innerHTML=`
-    <div class="stat-row"><span style="color:#64748b">정규 회원</span><span style="font-weight:700">${members.length}명 (남${members.filter(m=>m.gender==='m').length}/여${members.filter(m=>m.gender==='f').length})</span></div>
-    <div class="stat-row"><span style="color:#059669">게스트</span><span style="font-weight:700;color:#059669">${guests.length}명</span></div>
-    <div class="stat-row"><span style="color:#64748b">날짜 그룹</span><span style="font-weight:700">${days.length}일</span></div>
-    <div class="stat-row"><span style="color:#64748b">총 라운드</span><span style="font-weight:700">${totalR}라운드</span></div>
-    <div class="stat-row"><span style="color:#64748b">완료 경기</span><span style="font-weight:700;color:#059669">${doneM}경기</span></div>
-    <div class="stat-row"><span style="color:#64748b">예정 경기</span><span style="font-weight:700;color:#fbbf24">${totalM-doneM}경기</span></div>
-    <div class="stat-row"><span style="color:#64748b">이벤트</span><span style="font-weight:700;color:#a78bfa">${events.length}개</span></div>`;
+    <div class="stat-row"><span style="color:#4a8ab5">정규 회원</span><span style="font-weight:700">${members.length}명 (남${members.filter(m=>m.gender==='m').length}/여${members.filter(m=>m.gender==='f').length})</span></div>
+    <div class="stat-row"><span style="color:#34d399">게스트</span><span style="font-weight:700;color:#34d399">${guests.length}명</span></div>
+    <div class="stat-row"><span style="color:#4a8ab5">날짜 그룹</span><span style="font-weight:700">${days.length}일</span></div>
+    <div class="stat-row"><span style="color:#4a8ab5">총 라운드</span><span style="font-weight:700">${totalR}라운드</span></div>
+    <div class="stat-row"><span style="color:#4a8ab5">완료 경기</span><span style="font-weight:700;color:#34d399">${doneM}경기</span></div>
+    <div class="stat-row"><span style="color:#4a8ab5">예정 경기</span><span style="font-weight:700;color:#fbbf24">${totalM-doneM}경기</span></div>
+    <div class="stat-row"><span style="color:#4a8ab5">이벤트</span><span style="font-weight:700;color:#a78bfa">${events.length}개</span></div>`;
 }
 
 // 탭
@@ -3579,7 +3598,7 @@ function renderTodayBanner() {
           <span style="font-size:13px;color:#fff">📍 ${target.place || '장소 미정'}</span>
           <span style="font-size:11px;color:rgba(150,210,255,0.85)">✅ 참석 ${yes}명</span>
         </div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.82);margin-top:5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc}</div>
+        <div style="font-size:12px;color:rgba(3,12,45,0.82);margin-top:5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc}</div>
       </div>
       <div style="display:flex;gap:7px;margin-top:10px">
         <button onclick="openSchedule()" style="flex:1;background:rgba(96,165,250,0.18);color:#93c5fd;border:1px solid rgba(96,165,250,0.4);border-radius:9px;padding:7px 0;font-size:12px;font-weight:700;cursor:pointer">자세히 / 참석체크</button>
@@ -3678,25 +3697,25 @@ function renderCalendar(){
     const isToday = dateStr === todayStr;
     const isSelected = dateStr === calSelectedDate;
     cells.push(`
-      <div onclick="selectCalDate('${dateStr}')" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:12px;position:relative;background:${isSelected?'rgba(245,158,11,0.25)':isToday?'rgba(96,165,250,0.15)':'transparent'};border:1px solid ${isSelected?'rgba(245,158,11,0.5)':isToday?'rgba(96,165,250,0.35)':'transparent'};color:${isSelected?'#f59e0b':isToday?'#93c5fd':'#1e293b'};font-weight:${isToday||isSelected?800:500}">
+      <div onclick="selectCalDate('${dateStr}')" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:12px;position:relative;background:${isSelected?'rgba(245,158,11,0.25)':isToday?'rgba(96,165,250,0.15)':'transparent'};border:1px solid ${isSelected?'rgba(245,158,11,0.5)':isToday?'rgba(96,165,250,0.35)':'transparent'};color:${isSelected?'#f59e0b':isToday?'#93c5fd':'#e8edf2'};font-weight:${isToday||isSelected?800:500}">
         <span>${d}</span>
-        ${count ? `<span style="width:5px;height:5px;border-radius:50%;background:#059669;margin-top:2px"></span>` : ''}
+        ${count ? `<span style="width:5px;height:5px;border-radius:50%;background:#34d399;margin-top:2px"></span>` : ''}
       </div>`);
   }
 
   const filterChip = calSelectedDate
     ? `<div style="margin-top:10px;display:flex;align-items:center;gap:6px">
          <span style="font-size:11px;color:#fbbf24;font-weight:700">📅 ${calSelectedDate} 일정만 보는 중</span>
-         <button onclick="clearCalFilter()" style="font-size:11px;color:#64748b;background:none;border:none;cursor:pointer;text-decoration:underline">전체보기</button>
+         <button onclick="clearCalFilter()" style="font-size:11px;color:#4a8ab5;background:none;border:none;cursor:pointer;text-decoration:underline">전체보기</button>
        </div>` : '';
 
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <button onclick="changeCalMonth(-1)" style="background:none;border:none;color:#2563eb;font-size:16px;cursor:pointer;padding:4px 10px">‹</button>
-      <div style="font-size:14px;font-weight:800;color:#2563eb">${calYear}년 ${calMonth+1}월</div>
-      <button onclick="changeCalMonth(1)" style="background:none;border:none;color:#2563eb;font-size:16px;cursor:pointer;padding:4px 10px">›</button>
+      <button onclick="changeCalMonth(-1)" style="background:none;border:none;color:#60a5fa;font-size:16px;cursor:pointer;padding:4px 10px">‹</button>
+      <div style="font-size:14px;font-weight:800;color:#60a5fa">${calYear}년 ${calMonth+1}월</div>
+      <button onclick="changeCalMonth(1)" style="background:none;border:none;color:#60a5fa;font-size:16px;cursor:pointer;padding:4px 10px">›</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:#64748b;text-align:center;margin-bottom:4px">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:#4a8ab5;text-align:center;margin-bottom:4px">
       <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells.join('')}</div>
@@ -3707,7 +3726,7 @@ function renderSchedules() {
   const el = document.getElementById('scheduleList');
   if (!el) return;
   if (!schedules.length) {
-    el.innerHTML = '<div style="text-align:center;padding:30px;color:#64748b;font-size:13px">아직 등록된 일정이 없어요 📭<br>위에서 첫 일정을 올려보세요!</div>';
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:#4a8ab5;font-size:13px">아직 등록된 일정이 없어요 📭<br>위에서 첫 일정을 올려보세요!</div>';
     return;
   }
   // 날짜순 정렬 (최근 날짜 먼저, 같은 날짜는 등록순)
@@ -3732,7 +3751,7 @@ function renderSchedules() {
     const no = Object.entries(attend).filter(([_,v])=>v==='불참').map(([n])=>n);
     const maybe = Object.entries(attend).filter(([_,v])=>v==='미정').map(([n])=>n);
     const comments = s.comments || [];
-    const delBtn = isAdmin ? `<button onclick="delSchedule('${s.id}')" style="background:none;border:none;color:#dc2626;font-size:11px;cursor:pointer">🗑️ 삭제</button>` : '';
+    const delBtn = isAdmin ? `<button onclick="delSchedule('${s.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">🗑️ 삭제</button>` : '';
 
     return `
     <div style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:16px;margin-bottom:14px">
@@ -3740,16 +3759,16 @@ function renderSchedules() {
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div>
           <div style="font-size:15px;font-weight:800;color:#f59e0b">📅 ${dateStr}${s.time?` · ${s.time}`:''}</div>
-          ${s.place?`<div style="font-size:12px;color:#2563eb;margin-top:3px">📍 ${s.place}</div>`:''}
+          ${s.place?`<div style="font-size:12px;color:#60a5fa;margin-top:3px">📍 ${s.place}</div>`:''}
         </div>
         <div style="text-align:right">
-          <div style="font-size:11px;color:#64748b">✍️ ${s.writer}</div>
+          <div style="font-size:11px;color:#4a8ab5">✍️ ${s.writer}</div>
           ${delBtn}
         </div>
       </div>
 
       <!-- 내용 -->
-      <div style="background:rgba(255,255,255,0.5);border-radius:10px;padding:12px;font-size:13px;color:#1e293b;line-height:1.6;white-space:pre-wrap;margin-bottom:12px">${s.content}</div>
+      <div style="background:rgba(3,12,45,0.5);border-radius:10px;padding:12px;font-size:13px;color:#e8edf2;line-height:1.6;white-space:pre-wrap;margin-bottom:12px">${s.content}</div>
 
       <!-- 공유 / 캘린더 -->
       <div style="display:flex;gap:7px;margin-bottom:12px">
@@ -3758,32 +3777,32 @@ function renderSchedules() {
       </div>
 
       <!-- 참석 여부 -->
-      <div style="background:rgba(255,255,255,0.4);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="background:rgba(3,12,45,0.4);border-radius:10px;padding:12px;margin-bottom:10px">
         <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:8px">🙋 참석 여부 체크</div>
         <select id="att_who_${s.id}" class="row-sel" style="width:100%;font-size:12px;padding:7px;margin-bottom:8px">${opts}</select>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-          <button onclick="setAttend('${s.id}','참석')" style="padding:8px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#059669;font-size:12px;font-weight:700;cursor:pointer">⭕ 참석</button>
-          <button onclick="setAttend('${s.id}','불참')" style="padding:8px;background:rgba(248,113,113,0.2);border:1px solid rgba(248,113,113,0.4);border-radius:8px;color:#dc2626;font-size:12px;font-weight:700;cursor:pointer">❌ 불참</button>
+          <button onclick="setAttend('${s.id}','참석')" style="padding:8px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">⭕ 참석</button>
+          <button onclick="setAttend('${s.id}','불참')" style="padding:8px;background:rgba(248,113,113,0.2);border:1px solid rgba(248,113,113,0.4);border-radius:8px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer">❌ 불참</button>
           <button onclick="setAttend('${s.id}','미정')" style="padding:8px;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.4);border-radius:8px;color:#fbbf24;font-size:12px;font-weight:700;cursor:pointer">❔ 미정</button>
         </div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:11px">
-          <div><span style="color:#059669;font-weight:700">⭕ 참석 ${yes.length}</span> <span style="color:#1e293b">${yes.join(', ')}</span></div>
-          <div><span style="color:#dc2626;font-weight:700">❌ 불참 ${no.length}</span> <span style="color:#8aa">${no.join(', ')}</span></div>
+          <div><span style="color:#34d399;font-weight:700">⭕ 참석 ${yes.length}</span> <span style="color:#e8edf2">${yes.join(', ')}</span></div>
+          <div><span style="color:#f87171;font-weight:700">❌ 불참 ${no.length}</span> <span style="color:#8aa">${no.join(', ')}</span></div>
           <div><span style="color:#fbbf24;font-weight:700">❔ 미정 ${maybe.length}</span> <span style="color:#8aa">${maybe.join(', ')}</span></div>
         </div>
       </div>
 
       <!-- 댓글 -->
-      <div style="background:rgba(255,255,255,0.4);border-radius:10px;padding:12px">
-        <div style="font-size:11px;color:#2563eb;font-weight:700;margin-bottom:8px">💬 댓글 ${comments.length}개</div>
+      <div style="background:rgba(3,12,45,0.4);border-radius:10px;padding:12px">
+        <div style="font-size:11px;color:#60a5fa;font-weight:700;margin-bottom:8px">💬 댓글 ${comments.length}개</div>
         ${comments.map((c,i)=>`
           <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(50,110,200,0.15)">
             <div style="flex:1">
               <span style="font-size:12px;font-weight:700;color:#a78bfa">${c.name}</span>
-              <span style="font-size:12px;color:#1e293b;margin-left:6px">${c.text}</span>
+              <span style="font-size:12px;color:#e8edf2;margin-left:6px">${c.text}</span>
             </div>
-            ${isAdmin?`<button onclick="delComment('${s.id}',${i})" style="background:none;border:none;color:#dc2626;font-size:11px;cursor:pointer;flex-shrink:0">×</button>`:''}
-          </div>`).join('') || '<div style="font-size:11px;color:#64748b;padding:4px 0">첫 댓글을 남겨보세요!</div>'}
+            ${isAdmin?`<button onclick="delComment('${s.id}',${i})" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;flex-shrink:0">×</button>`:''}
+          </div>`).join('') || '<div style="font-size:11px;color:#4a8ab5;padding:4px 0">첫 댓글을 남겨보세요!</div>'}
         <div style="display:flex;gap:6px;margin-top:8px">
           <select id="cmt_who_${s.id}" class="row-sel" style="width:80px;font-size:11px;padding:6px">${opts}</select>
           <input id="cmt_text_${s.id}" class="row-inp" placeholder="댓글 입력..." style="flex:1;font-size:12px;padding:7px" onkeydown="if(event.key==='Enter')addComment('${s.id}')">
@@ -3861,7 +3880,7 @@ window.getFortune = function() {
   const 상생={목:'화',화:'토',토:'금',금:'수',수:'목'};
   const 상극={목:'토',화:'금',토:'수',금:'목',수:'화'};
   const 관계=상생[일간오행]===오늘오행?'상생':상극[일간오행]===오늘오행?'상극':일간오행===오늘오행?'비화':'보통';
-  const 관계색={상생:'#059669',상극:'#dc2626',비화:'#2563eb',보통:'#fbbf24'}[관계];
+  const 관계색={상생:'#34d399',상극:'#f87171',비화:'#60a5fa',보통:'#fbbf24'}[관계];
   const 관계텍스트={상생:'상생(도움)',상극:'상극(주의)',비화:'비화(평온)',보통:'보통'}[관계];
 
   // ── 시드 기반 랜덤 ──────────────────────────────────────────
@@ -3959,20 +3978,20 @@ window.getFortune = function() {
       <div style="display:flex;justify-content:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
         ${[['년주',년간+년지],['월주',월간+월지],['일주',일간+일지]].map(([lb,v])=>`
         <div style="background:rgba(8,28,75,0.7);border-radius:8px;padding:5px 10px;text-align:center">
-          <div style="font-size:9px;color:#64748b">${lb}</div>
-          <div style="font-size:13px;font-weight:800;color:#1e293b">${v}</div>
+          <div style="font-size:9px;color:#4a8ab5">${lb}</div>
+          <div style="font-size:13px;font-weight:800;color:#e8edf2">${v}</div>
         </div>`).join('')}
         <div style="background:rgba(8,28,75,0.7);border-radius:8px;padding:5px 10px;text-align:center;border:1px solid ${관계색}55">
-          <div style="font-size:9px;color:#64748b">오늘기운</div>
+          <div style="font-size:9px;color:#4a8ab5">오늘기운</div>
           <div style="font-size:11px;font-weight:700;color:${관계색}">${관계텍스트}</div>
         </div>
       </div>
 
       <!-- 헤더 -->
       <div style="text-align:center;margin-bottom:16px">
-        <div style="font-size:20px;font-weight:900;color:#1e293b;margin-bottom:6px">${pick(전체운[관계])}</div>
+        <div style="font-size:20px;font-weight:900;color:#e8edf2;margin-bottom:6px">${pick(전체운[관계])}</div>
         <div style="font-size:22px;margin:4px 0">${stars}</div>
-        <div style="font-size:12px;color:#64748b">테니스 운 ${score}/5</div>
+        <div style="font-size:12px;color:#4a8ab5">테니스 운 ${score}/5</div>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:10px">
@@ -3990,48 +4009,48 @@ window.getFortune = function() {
         <!-- 게임운 -->
         <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px">
           <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:6px">🎾 게임운</div>
-          <div style="font-size:13px;color:#1e293b;line-height:1.6">${pick(관계별게임운[관계])}</div>
+          <div style="font-size:13px;color:#e8edf2;line-height:1.6">${pick(관계별게임운[관계])}</div>
         </div>
 
         <!-- 파트너운 -->
         <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px">
-          <div style="font-size:11px;color:#2563eb;font-weight:700;margin-bottom:6px">🤝 파트너운</div>
-          <div style="font-size:13px;color:#1e293b;line-height:1.6">${pick(파트너운)}</div>
+          <div style="font-size:11px;color:#60a5fa;font-weight:700;margin-bottom:6px">🤝 파트너운</div>
+          <div style="font-size:13px;color:#e8edf2;line-height:1.6">${pick(파트너운)}</div>
         </div>
 
         <!-- 조언 -->
         <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px">
-          <div style="font-size:11px;color:#059669;font-weight:700;margin-bottom:6px">💡 오행 기반 조언</div>
-          <div style="font-size:13px;color:#1e293b;line-height:1.6">${pick(조언풀[일간오행])}</div>
+          <div style="font-size:11px;color:#34d399;font-weight:700;margin-bottom:6px">💡 오행 기반 조언</div>
+          <div style="font-size:13px;color:#e8edf2;line-height:1.6">${pick(조언풀[일간오행])}</div>
         </div>
 
         <!-- 행운 정보 -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
           <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px">
-            <div style="font-size:10px;color:#64748b;margin-bottom:6px">🎯 행운의 포지션</div>
+            <div style="font-size:10px;color:#4a8ab5;margin-bottom:6px">🎯 행운의 포지션</div>
             <div style="font-size:12px;font-weight:700;color:#f59e0b;line-height:1.4">${행운포지션[일간오행]}</div>
           </div>
           <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px;text-align:center">
-            <div style="font-size:10px;color:#64748b;margin-bottom:6px">🎨 오행 행운색</div>
+            <div style="font-size:10px;color:#4a8ab5;margin-bottom:6px">🎨 오행 행운색</div>
             <div style="font-size:18px;font-weight:900;color:#f472b6">${행운색[일간오행]}</div>
-            <div style="font-size:10px;color:#64748b;margin-top:2px">${오행한자[일간오행]}</div>
+            <div style="font-size:10px;color:#4a8ab5;margin-top:2px">${오행한자[일간오행]}</div>
           </div>
         </div>
 
         <!-- 에너지 -->
         <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px;border-left:3px solid ${관계색}">
           <div style="font-size:11px;color:${관계색};font-weight:700;margin-bottom:4px">⚡ 오늘의 에너지</div>
-          <div style="font-size:12px;color:#1e293b;line-height:1.5">${pick(에너지문구[관계])}</div>
+          <div style="font-size:12px;color:#e8edf2;line-height:1.5">${pick(에너지문구[관계])}</div>
         </div>
 
         <!-- 주의사항 -->
         <div style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.25);border-radius:10px;padding:12px">
-          <div style="font-size:11px;color:#dc2626;font-weight:700;margin-bottom:6px">⚠️ 주의사항</div>
-          <div style="font-size:13px;color:#1e293b;line-height:1.6">${pick(주의사항[관계])}</div>
+          <div style="font-size:11px;color:#f87171;font-weight:700;margin-bottom:6px">⚠️ 주의사항</div>
+          <div style="font-size:13px;color:#e8edf2;line-height:1.6">${pick(주의사항[관계])}</div>
         </div>
       </div>
     </div>
-    <div style="font-size:10px;color:#64748b;text-align:center">${name}님 일간 ${일간}(${띠}띠) · ${today} 사주 운세 🔮</div>`;
+    <div style="font-size:10px;color:#4a8ab5;text-align:center">${name}님 일간 ${일간}(${띠}띠) · ${today} 사주 운세 🔮</div>`;
   }, 800);
 };
 window.switchSub=function(sub,btn){
@@ -4060,7 +4079,7 @@ window.openScore=function(rId,mId){
   const round=rounds.find(r=>r.id===rId);
   const match=(round?.matches||[]).find(m=>m.id===mId); if(!match)return;
   pendingScore={rId,mId};
-  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#1e293b">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#1e293b">${(match.team2||[]).join(' / ')}</strong>`;
+  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#e8edf2">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#e8edf2">${(match.team2||[]).join(' / ')}</strong>`;
   document.getElementById('s1Label').textContent=(match.team1||[]).join('/')+' 스코어';
   document.getElementById('s2Label').textContent=(match.team2||[]).join('/')+' 스코어';
   document.getElementById('s1').value=''; document.getElementById('s2').value='';
@@ -4083,7 +4102,7 @@ window.openScore=function(dayId, rIdx, mId){
   const match=(round?.matches||[]).find(m=>m.id===mId); if(!match)return;
   pendingScore={dayId, rIdx:parseInt(rIdx), mId};
   const allP=[...(match.team1||[]),...(match.team2||[])].filter(Boolean);
-  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#1e293b">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#1e293b">${(match.team2||[]).join(' / ')}</strong>`;
+  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#e8edf2">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#e8edf2">${(match.team2||[]).join(' / ')}</strong>`;
   document.getElementById('s1Label').textContent=(match.team1||[]).join('/')+' 스코어';
   document.getElementById('s2Label').textContent=(match.team2||[]).join('/')+' 스코어';
   document.getElementById('s1').value=''; document.getElementById('s2').value='';
@@ -4091,14 +4110,14 @@ window.openScore=function(dayId, rIdx, mId){
   const existPos=match.positions||{};
   document.getElementById('positionSelectors').innerHTML=allP.map(p=>`
     <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:13px;font-weight:600;min-width:50px;color:#1e293b">${p}</span>
+      <span style="font-size:13px;font-weight:600;min-width:50px;color:#e8edf2">${p}</span>
       <div style="display:flex;gap:6px;flex:1">
         <button id="pos_fore_${p.replace(/\s/g,'_')}" onclick="selectPos('${p.replace(/\s/g,'_')}','fore')"
-          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='fore'?'#ef4444':'rgba(148,163,184,0.35)'};background:${existPos[p]==='fore'?'rgba(239,68,68,0.25)':'rgba(255,255,255,0.85)'};color:${existPos[p]==='fore'?'#dc2626':'#64748b'};font-size:12px;font-weight:700;cursor:pointer">
+          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='fore'?'#ef4444':'rgba(35,90,180,0.35)'};background:${existPos[p]==='fore'?'rgba(239,68,68,0.25)':'rgba(3,12,45,0.85)'};color:${existPos[p]==='fore'?'#f87171':'#4a8ab5'};font-size:12px;font-weight:700;cursor:pointer">
           🔴 포(Fore)
         </button>
         <button id="pos_back_${p.replace(/\s/g,'_')}" onclick="selectPos('${p.replace(/\s/g,'_')}','back')"
-          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='back'?'#3b82f6':'rgba(148,163,184,0.35)'};background:${existPos[p]==='back'?'rgba(59,130,246,0.25)':'rgba(255,255,255,0.85)'};color:${existPos[p]==='back'?'#2563eb':'#64748b'};font-size:12px;font-weight:700;cursor:pointer">
+          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='back'?'#3b82f6':'rgba(35,90,180,0.35)'};background:${existPos[p]==='back'?'rgba(59,130,246,0.25)':'rgba(3,12,45,0.85)'};color:${existPos[p]==='back'?'#60a5fa':'#4a8ab5'};font-size:12px;font-weight:700;cursor:pointer">
           🔵 백(Back)
         </button>
       </div>
@@ -4111,11 +4130,11 @@ window.selectPos=function(playerKey, pos){
   const foreBt=document.getElementById(`pos_fore_${playerKey}`);
   const backBt=document.getElementById(`pos_back_${playerKey}`);
   if(pos==='fore'){
-    foreBt.style.borderColor='#ef4444';foreBt.style.background='rgba(239,68,68,0.25)';foreBt.style.color='#dc2626';
-    backBt.style.borderColor='rgba(148,163,184,0.35)';backBt.style.background='rgba(255,255,255,0.85)';backBt.style.color='#64748b';
+    foreBt.style.borderColor='#ef4444';foreBt.style.background='rgba(239,68,68,0.25)';foreBt.style.color='#f87171';
+    backBt.style.borderColor='rgba(35,90,180,0.35)';backBt.style.background='rgba(3,12,45,0.85)';backBt.style.color='#4a8ab5';
   } else {
-    backBt.style.borderColor='#3b82f6';backBt.style.background='rgba(59,130,246,0.25)';backBt.style.color='#2563eb';
-    foreBt.style.borderColor='rgba(148,163,184,0.35)';foreBt.style.background='rgba(255,255,255,0.85)';foreBt.style.color='#64748b';
+    backBt.style.borderColor='#3b82f6';backBt.style.background='rgba(59,130,246,0.25)';backBt.style.color='#60a5fa';
+    foreBt.style.borderColor='rgba(35,90,180,0.35)';foreBt.style.background='rgba(3,12,45,0.85)';foreBt.style.color='#4a8ab5';
   }
   foreBt.dataset.selected=(pos==='fore')?'1':'0';
   backBt.dataset.selected=(pos==='back')?'1':'0';
@@ -4637,7 +4656,7 @@ function lsRenderPositionGrid() {
     const cur = liveScore.positions[p.name]||'';
     const tl = p.team==='a' ? `${t1n} 팀` : `${t2n} 팀`;
     return `<div class="ls-position-row team-${p.team}">
-      <div class="ls-pr-name">${p.name} <span style="font-size:11px;color:#64748b;font-weight:600">(${tl})</span></div>
+      <div class="ls-pr-name">${p.name} <span style="font-size:11px;color:#4a8ab5;font-weight:600">(${tl})</span></div>
       <div class="ls-pr-toggle">
         <button class="${cur==='포'?'active':''}" onclick="lsPickPosition('${p.name}','포')">포</button>
         <button class="${cur==='백'?'active':''}" onclick="lsPickPosition('${p.name}','백')">백</button>
@@ -4772,7 +4791,7 @@ function lsRenderServerBar() {
       showTag = true;
     }
     const fmt = n => {
-      const tag = showTag?`<span style="color:rgba(255,255,255,0.4);font-size:10px">(${liveScore.positions[n]})</span>`:'';
+      const tag = showTag?`<span style="color:rgba(3,12,45,0.4);font-size:10px">(${liveScore.positions[n]})</span>`:'';
       return n===srv?`<span class="ls-srv-dot">🎾${n}</span>${tag}`:`${n}${tag}`;
     };
     el.innerHTML = `${emoji} ${fmt(fName)} · ${fmt(sName)}`;
@@ -4909,7 +4928,7 @@ function lsRenderLog() {
   const t1 = liveScore.players.filter(p=>p.team==='a').map(p=>p.name).join('·');
   const t2 = liveScore.players.filter(p=>p.team==='b').map(p=>p.name).join('·');
   const list = liveScore.lsEvents.slice().reverse();
-  if (!list.length) { box.innerHTML='<div class="ls-log-item" style="justify-content:center;color:#64748b">기록 없음</div>'; return; }
+  if (!list.length) { box.innerHTML='<div class="ls-log-item" style="justify-content:center;color:#4a8ab5">기록 없음</div>'; return; }
   box.innerHTML = list.map(h => {
     const nm = h.who==='a'?t1:t2;
     const label = h.type==='game'?`🏅 게임 획득 (${h.gsA}:${h.gsB})`:'포인트 +1';
@@ -4968,9 +4987,9 @@ function lsRenderLog() {
   <div id="ls-matchScreen" style="display:none;flex:1;flex-direction:column;min-height:0;">
     <div class="ls-server-bar">
       🎾 서브: <span class="ls-tag" id="ls-curServerName">-</span>
-      <span style="color:#64748b">→ 리시브:</span>
-      <span class="ls-tag" style="color:#2563eb" id="ls-curReceiverName">-</span>
-      <span style="color:#64748b;font-size:11px" id="ls-curGameIdx">(1게임째)</span>
+      <span style="color:#4a8ab5">→ 리시브:</span>
+      <span class="ls-tag" style="color:#60a5fa" id="ls-curReceiverName">-</span>
+      <span style="color:#4a8ab5;font-size:11px" id="ls-curGameIdx">(1게임째)</span>
     </div>
     <div class="ls-deciding-chooser" id="ls-decidingChooser" style="display:none">
       <div class="ls-dc-label">⚡ 40:40 결정 포인트 — 리시브 자리를 골라주세요</div>
@@ -4980,7 +4999,7 @@ function lsRenderLog() {
       </div>
     </div>
     <div class="ls-match-chooser" id="ls-matchChooser" style="display:none">
-      <div class="ls-dc-label" style="color:#2563eb">🎾 5:5 — 어떻게 마무리할까요?</div>
+      <div class="ls-dc-label" style="color:#60a5fa">🎾 5:5 — 어떻게 마무리할까요?</div>
       <div class="ls-dc-btns">
         <button onclick="lsChooseTiebreak()" style="border-color:rgba(96,165,250,0.5);color:#93c5fd">타이브레이크 (7점 선승)</button>
         <button onclick="lsChooseDraw()" style="border-color:rgba(52,211,153,0.5);color:#6ee7b7">🤝 무승부로 마무리</button>
@@ -4989,12 +5008,12 @@ function lsRenderLog() {
     <div class="ls-match-end-banner" id="ls-matchEndBanner" style="display:none"></div>
     <div class="ls-court">
       <svg class="ls-court-lines" viewBox="0 0 100 200" preserveAspectRatio="none">
-        <rect x="2" y="2" width="96" height="196" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>
-        <line x1="2" y1="100" x2="98" y2="100" stroke="rgba(255,255,255,0.75)" stroke-width="1.4"/>
-        <line x1="50" y1="18" x2="50" y2="100" stroke="rgba(255,255,255,0.45)" stroke-width="0.9"/>
-        <line x1="50" y1="100" x2="50" y2="182" stroke="rgba(255,255,255,0.45)" stroke-width="0.9"/>
-        <line x1="2" y1="18" x2="98" y2="18" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>
-        <line x1="2" y1="182" x2="98" y2="182" stroke="rgba(255,255,255,0.35)" stroke-width="0.7"/>
+        <rect x="2" y="2" width="96" height="196" fill="none" stroke="rgba(3,12,45,0.5)" stroke-width="1"/>
+        <line x1="2" y1="100" x2="98" y2="100" stroke="rgba(3,12,45,0.75)" stroke-width="1.4"/>
+        <line x1="50" y1="18" x2="50" y2="100" stroke="rgba(3,12,45,0.45)" stroke-width="0.9"/>
+        <line x1="50" y1="100" x2="50" y2="182" stroke="rgba(3,12,45,0.45)" stroke-width="0.9"/>
+        <line x1="2" y1="18" x2="98" y2="18" stroke="rgba(3,12,45,0.35)" stroke-width="0.7"/>
+        <line x1="2" y1="182" x2="98" y2="182" stroke="rgba(3,12,45,0.35)" stroke-width="0.7"/>
       </svg>
       <div class="ls-team-panel a" onclick="lsPoint('a')">
         <div class="ls-team-name" id="ls-tname-a">팀A</div>
