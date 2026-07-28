@@ -495,6 +495,8 @@ body {
         </div>
       </div>
 
+      <!-- 월 캘린더 -->
+      <div id="scheduleCalendar" style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:14px;margin-bottom:16px"></div>
       <!-- 일정 목록 -->
       <div id="scheduleList"></div>
     </div>
@@ -881,6 +883,9 @@ let days = [];
 let openAttBodies = new Set();
 let events = [];
 let schedules = [];
+let calYear = new Date().getFullYear();
+let calMonth = new Date().getMonth();
+let calSelectedDate = null;
 let schedulePage = 0;
 const SCHEDULE_PER_PAGE = 5;
 window.gotoSchedulePage = function(p){ schedulePage = p; renderSchedules(); const el = document.getElementById('scheduleList'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
@@ -2305,9 +2310,27 @@ function renderStats(stats) {
     || '<tr><td colspan="9" class="empty">데이터 없음</td></tr>';
 }
 
+let guestRankSortKey = null;
+let guestRankSortDir = -1;
+window.setGuestRankSort = function(key){
+  if (guestRankSortKey === key) { guestRankSortDir *= -1; }
+  else { guestRankSortKey = key; guestRankSortDir = (key==='name') ? 1 : -1; }
+  renderAll();
+};
+
 function renderRanking(stats) {
   const regular = stats.filter(s=>!s.isGuest);
-  const guestList = stats.filter(s=>s.isGuest);
+
+  let guestList = stats.filter(s=>s.isGuest && s.games>0);
+  if (guestRankSortKey) {
+    guestList = [...guestList].sort((a,b)=>{
+      const av=a[guestRankSortKey], bv=b[guestRankSortKey];
+      if (typeof av==='string') return guestRankSortDir*av.localeCompare(bv);
+      return guestRankSortDir*(av-bv);
+    });
+  } else {
+    guestList = [...guestList].sort((a,b)=>b.pts-a.pts);
+  }
 
   const makeItem = (s, isG) => `
     <div class="rank-item ${!isG&&s.rank<=3?'top':''}" style="${isG?'border-color:rgba(13,148,136,0.3);':''}">
@@ -2337,8 +2360,16 @@ function renderRanking(stats) {
     </div>`;
 
   const regularHtml = regular.map(s=>makeItem(s,false)).join('');
+  const guestSortTabs = [['name','이름'],['pts','승점'],['diff','득실'],['attendance','출석'],['wins','승']]
+    .map(([k,label])=>{
+      const active = guestRankSortKey===k;
+      const arrow = active ? (guestRankSortDir===1?' ▲':' ▼') : '';
+      return `<button onclick="setGuestRankSort('${k}')" style="padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;margin-right:5px;margin-bottom:5px;background:${active?'rgba(52,211,153,0.25)':'rgba(3,12,45,0.7)'};color:${active?'#34d399':'#8aa5c4'};border:1px solid ${active?'rgba(52,211,153,0.5)':'rgba(35,90,180,0.3)'}">${label}${arrow}</button>`;
+    }).join('');
+
   const guestHtml = isAdmin && guestList.length
-    ? `<div style="font-size:12px;color:#34d399;font-weight:700;margin:12px 0 6px;padding:6px 0;border-top:1px solid rgba(13,148,136,0.3)">👤 게스트</div>`
+    ? `<div style="font-size:12px;color:#34d399;font-weight:700;margin:12px 0 6px;padding:6px 0;border-top:1px solid rgba(13,148,136,0.3)">👤 게스트 (시즌 ${viewSeason})</div>`
+      + `<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${guestSortTabs}</div>`
       + guestList.map(s=>makeItem(s,true)).join('')
     : '';
 
@@ -2985,65 +3016,66 @@ function renderAdmin(){
         </span>`).join('')
     : '<span style="color:#4a8ab5;font-size:12px">등록된 게스트 없음</span>';
 
-  // ── 게스트 시즌별 상세 성적표 (승/무/패·득실점·승률) ──
+  // ── 게스트 상세 성적 (시즌 합산 전용, 정렬 가능) ──
+  let adminGuestSortKey = null;
+  let adminGuestSortDir = -1;
+  window.setAdminGuestSort = function(key){
+    if (adminGuestSortKey === key) { adminGuestSortDir *= -1; }
+    else { adminGuestSortKey = key; adminGuestSortDir = (key==='name') ? 1 : -1; }
+    renderAdmin();
+  };
+
   const guestStatsEl = document.getElementById('guestStatsDetail');
   if (guestStatsEl) {
     if (!guests.length) {
       guestStatsEl.innerHTML = '';
     } else {
       const statsData = calcGuestStatsBySeason();
-      const rowsHtml = guests.map(g => {
+      let rows = guests.map(g => {
         const gd = statsData[g.name];
-        if (!gd || gd.total.games === 0) return '';
-        const seasonKeys = Object.keys(gd.bySeason).map(Number).sort((a,b)=>a-b);
-        const seasonRows = seasonKeys.map(s => {
-          const d = gd.bySeason[s];
-          return `<tr>
-            <td style="padding:4px 6px;color:${g.gender==='f'?'#f472b6':'#60a5fa'}">${g.gender==='f'?'♀':'♂'} ${g.name}</td>
-            <td style="text-align:center;padding:4px 6px;color:#4a8ab5">S${s}</td>
-            <td style="text-align:center;padding:4px 6px">${d.games}</td>
-            <td style="text-align:center;padding:4px 6px;color:#34d399">${d.wins}</td>
-            <td style="text-align:center;padding:4px 6px;color:#fbbf24">${d.draws}</td>
-            <td style="text-align:center;padding:4px 6px;color:#f87171">${d.losses}</td>
-            <td style="text-align:center;padding:4px 6px">${d.wr}%</td>
-            <td style="text-align:center;padding:4px 6px">${d.scored}</td>
-            <td style="text-align:center;padding:4px 6px">${d.conceded}</td>
-            <td style="text-align:center;padding:4px 6px;font-weight:700">${d.diff>=0?'+':''}${d.diff}</td>
-          </tr>`;
-        }).join('');
-        const t = gd.total;
-        const totalRow = `<tr style="font-weight:800;background:rgba(52,211,153,0.08)">
-          <td style="padding:4px 6px;color:${g.gender==='f'?'#f472b6':'#60a5fa'}">${g.gender==='f'?'♀':'♂'} ${g.name}</td>
-          <td style="text-align:center;padding:4px 6px;color:#34d399">총계</td>
-          <td style="text-align:center;padding:4px 6px">${t.games}</td>
-          <td style="text-align:center;padding:4px 6px;color:#34d399">${t.wins}</td>
-          <td style="text-align:center;padding:4px 6px;color:#fbbf24">${t.draws}</td>
-          <td style="text-align:center;padding:4px 6px;color:#f87171">${t.losses}</td>
-          <td style="text-align:center;padding:4px 6px">${t.wr}%</td>
-          <td style="text-align:center;padding:4px 6px">${t.scored}</td>
-          <td style="text-align:center;padding:4px 6px">${t.conceded}</td>
-          <td style="text-align:center;padding:4px 6px">${t.diff>=0?'+':''}${t.diff}</td>
-        </tr>`;
-        return seasonRows + totalRow;
+        if (!gd || gd.total.games === 0) return null;
+        return { name: g.name, gender: g.gender, ...gd.total };
+      }).filter(Boolean);
+
+      if (adminGuestSortKey) {
+        rows.sort((a,b) => {
+          const av = a[adminGuestSortKey], bv = b[adminGuestSortKey];
+          if (typeof av === 'string') return adminGuestSortDir * av.localeCompare(bv);
+          return adminGuestSortDir * (av - bv);
+        });
+      } else {
+        rows.sort((a,b) => b.pts - a.pts);
+      }
+
+      const headers = [
+        ['name','이름'], ['games','경기'], ['wins','승'], ['draws','무'], ['losses','패'],
+        ['wr','승률'], ['scored','득점'], ['conceded','실점'], ['diff','득실'],
+      ];
+      const headHtml = headers.map(([k,label]) => {
+        const active = adminGuestSortKey === k;
+        const arrow = active ? (adminGuestSortDir === 1 ? ' ▲' : ' ▼') : '';
+        return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#34d399':'#4a8ab5'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
       }).join('');
-      guestStatsEl.innerHTML = !rowsHtml
+
+      const rowsHtml = rows.map(r => `<tr>
+        <td style="padding:5px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
+        <td style="text-align:center;padding:5px 6px">${r.games}</td>
+        <td style="text-align:center;padding:5px 6px;color:#34d399">${r.wins}</td>
+        <td style="text-align:center;padding:5px 6px;color:#fbbf24">${r.draws}</td>
+        <td style="text-align:center;padding:5px 6px;color:#f87171">${r.losses}</td>
+        <td style="text-align:center;padding:5px 6px">${r.wr}%</td>
+        <td style="text-align:center;padding:5px 6px">${r.scored}</td>
+        <td style="text-align:center;padding:5px 6px">${r.conceded}</td>
+        <td style="text-align:center;padding:5px 6px;font-weight:700">${r.diff>=0?'+':''}${r.diff}</td>
+      </tr>`).join('');
+
+      guestStatsEl.innerHTML = !rows.length
         ? '<div style="color:#4a8ab5;font-size:12px;margin-top:10px">아직 완료된 게스트 경기가 없어요</div>'
         : `
-        <div style="font-size:11px;color:#34d399;margin:14px 0 6px">📈 게스트 시즌별 상세 성적</div>
+        <div style="font-size:11px;color:#34d399;margin:14px 0 6px">📈 게스트 상세 성적 (전체 시즌 합산)</div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-            <thead><tr>
-              <th style="text-align:left;padding:4px 6px;color:#4a8ab5;font-weight:600">이름</th>
-              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">시즌</th>
-              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">경기</th>
-              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">승</th>
-              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">무</th>
-              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">패</th>
-              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">승률</th>
-              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">득점</th>
-              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">실점</th>
-              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">득실</th>
-            </tr></thead>
+            <thead><tr>${headHtml}</tr></thead>
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>`;
@@ -3393,6 +3425,65 @@ window.openGoogleCal = function(id){
   if(u) window.open(u, '_blank');
 };
 
+window.changeCalMonth = function(delta){
+  calMonth += delta;
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  else if (calMonth > 11) { calMonth = 0; calYear++; }
+  renderCalendar();
+};
+window.selectCalDate = function(dateStr){
+  calSelectedDate = (calSelectedDate === dateStr) ? null : dateStr;
+  renderCalendar();
+  schedulePage = 0;
+  renderSchedules();
+};
+window.clearCalFilter = function(){
+  calSelectedDate = null;
+  renderCalendar();
+  renderSchedules();
+};
+
+function renderCalendar(){
+  const el = document.getElementById('scheduleCalendar');
+  if (!el) return;
+  const first = new Date(calYear, calMonth, 1);
+  const startDow = first.getDay();
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const todayStr = new Date().toISOString().slice(0,10);
+
+  const cells = [];
+  for (let i=0;i<startDow;i++) cells.push('<div></div>');
+  for (let d=1; d<=daysInMonth; d++){
+    const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const count = schedules.filter(s=>s.date===dateStr).length;
+    const isToday = dateStr === todayStr;
+    const isSelected = dateStr === calSelectedDate;
+    cells.push(`
+      <div onclick="selectCalDate('${dateStr}')" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:12px;position:relative;background:${isSelected?'rgba(245,158,11,0.25)':isToday?'rgba(96,165,250,0.15)':'transparent'};border:1px solid ${isSelected?'rgba(245,158,11,0.5)':isToday?'rgba(96,165,250,0.35)':'transparent'};color:${isSelected?'#f59e0b':isToday?'#93c5fd':'#e8edf2'};font-weight:${isToday||isSelected?800:500}">
+        <span>${d}</span>
+        ${count ? `<span style="width:5px;height:5px;border-radius:50%;background:#34d399;margin-top:2px"></span>` : ''}
+      </div>`);
+  }
+
+  const filterChip = calSelectedDate
+    ? `<div style="margin-top:10px;display:flex;align-items:center;gap:6px">
+         <span style="font-size:11px;color:#fbbf24;font-weight:700">📅 ${calSelectedDate} 일정만 보는 중</span>
+         <button onclick="clearCalFilter()" style="font-size:11px;color:#4a8ab5;background:none;border:none;cursor:pointer;text-decoration:underline">전체보기</button>
+       </div>` : '';
+
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <button onclick="changeCalMonth(-1)" style="background:none;border:none;color:#60a5fa;font-size:16px;cursor:pointer;padding:4px 10px">‹</button>
+      <div style="font-size:14px;font-weight:800;color:#60a5fa">${calYear}년 ${calMonth+1}월</div>
+      <button onclick="changeCalMonth(1)" style="background:none;border:none;color:#60a5fa;font-size:16px;cursor:pointer;padding:4px 10px">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:#4a8ab5;text-align:center;margin-bottom:4px">
+      <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells.join('')}</div>
+    ${filterChip}`;
+}
+
 function renderSchedules() {
   const el = document.getElementById('scheduleList');
   if (!el) return;
@@ -3406,13 +3497,14 @@ function renderSchedules() {
     if (da !== db) return db > da ? 1 : -1;
     return (b.ts||0)-(a.ts||0);
   });
+  const filtered = calSelectedDate ? sorted.filter(s => s.date === calSelectedDate) : sorted;
   const opts = '<option value="">이름</option>'+allPlayers().map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
 
   // 페이지 나누기
-  const totalPages = Math.max(1, Math.ceil(sorted.length / SCHEDULE_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(filtered.length / SCHEDULE_PER_PAGE));
   if (schedulePage >= totalPages) schedulePage = totalPages - 1;
   if (schedulePage < 0) schedulePage = 0;
-  const pageItems = sorted.slice(schedulePage*SCHEDULE_PER_PAGE, schedulePage*SCHEDULE_PER_PAGE + SCHEDULE_PER_PAGE);
+  const pageItems = filtered.slice(schedulePage*SCHEDULE_PER_PAGE, schedulePage*SCHEDULE_PER_PAGE + SCHEDULE_PER_PAGE);
 
   el.innerHTML = pageItems.map(s => {
     const dateStr = s.date ? new Date(s.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
@@ -4126,6 +4218,7 @@ onSnapshot(collection(db,'events'), snap => {
 });
 onSnapshot(collection(db,'schedules'), snap => {
   schedules = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderCalendar();
   renderSchedules();
   renderTodayBanner();
   updateScheduleBadge();
