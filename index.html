@@ -2306,7 +2306,7 @@ window.setStatsGuestSort = function(key) {
 
 function renderStats(stats) {
   const regular = stats.filter(s=>!s.isGuest);
-  let guestList = stats.filter(s=>s.isGuest);
+  let guestList = stats.filter(s=>s.isGuest && s.games>0);
 
   if (statsGuestSortKey) {
     guestList = [...guestList].sort((a,b) => {
