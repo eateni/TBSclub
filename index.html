@@ -40,12 +40,42 @@ body::before {
 .badge-guest { background:rgba(20,50,100,0.5); color:#4a8ab5; border:1px solid rgba(30,80,150,0.25); font-size:10px; }
 .btn-admin-toggle { background:transparent; border:none; color:rgba(255,255,255,0.1); font-size:13px; padding:5px 6px; cursor:pointer; border-radius:6px; }
 .btn-logout { background:transparent; border:1px solid rgba(248,113,113,0.3); border-radius:8px; color:#f87171; font-size:11px; padding:5px 10px; cursor:pointer; }
-.main-tabs { display:flex; gap:4px; background:rgba(0,0,0,0.28); border-radius:12px; padding:4px; margin-bottom:10px; }
+.main-tabs { display:none !important; }
 .tab-btn { flex:1; padding:10px 0; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:13px; transition:all 0.2s; }
 .tab-btn.active { background:rgba(37,99,235,0.88); color:#fff; box-shadow:0 2px 8px rgba(37,99,235,0.35); }
 .tab-btn:not(.active) { background:transparent; color:rgba(130,180,230,0.6); }
 
-.content { padding:16px 16px 100px; max-width:640px; margin:0 auto; }
+.content { padding:16px 16px 100px; max-width:640px; margin:0 auto; padding-bottom:84px; }
+
+.bottom-nav {
+  position:fixed; left:0; right:0; bottom:0; z-index:500;
+  display:flex; justify-content:space-around; align-items:center;
+  background:rgba(3,12,45,0.97);
+  border-top:1px solid rgba(35,90,180,0.35);
+  padding:6px 0 calc(6px + env(safe-area-inset-bottom));
+  backdrop-filter:blur(8px);
+}
+.bn-btn {
+  background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:2px;
+  color:#4a8ab5; font-size:10px; font-weight:700; cursor:pointer; flex:1; padding:4px 0;
+}
+.bn-btn .bn-icon { font-size:20px; line-height:1; }
+.bn-btn.active { color:#f59e0b; }
+
+.more-menu-overlay {
+  position:fixed; inset:0; z-index:600; background:rgba(0,0,0,0.5);
+  display:flex; align-items:flex-end;
+}
+.more-menu-sheet {
+  width:100%; background:#0a1a4a; border-radius:18px 18px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+  border-top:1px solid rgba(245,158,11,0.3);
+}
+.more-menu-title { font-size:13px; font-weight:800; color:#4a8ab5; margin-bottom:10px; }
+.more-menu-item {
+  display:block; width:100%; text-align:left; padding:14px 10px; background:none; border:none;
+  border-bottom:1px solid rgba(35,90,180,0.2); color:#e8edf2; font-size:15px; font-weight:700; cursor:pointer;
+}
+.more-menu-item:last-child { border-bottom:none; }
 
 .subtabs { display:flex; gap:4px; background:#162030; border-radius:10px; padding:4px; margin-bottom:18px; }
 .stab { flex:1; padding:8px 0; border-radius:7px; border:none; cursor:pointer; font-weight:600; font-size:12px; transition:all 0.2s; }
@@ -350,7 +380,31 @@ body {
       <button class="tab-btn" id="adminTabBtn" style="display:none" onclick="switchTab('admin',this)">⚙️ 관리자</button>
     </div>
   </div>
-   
+
+  <div class="bottom-nav">
+    <button class="bn-btn active" data-bucket="league" onclick="navTo('league')">
+      <span class="bn-icon">🏠</span><span class="bn-label">홈</span>
+    </button>
+    <button class="bn-btn" data-bucket="terra" onclick="navTo('terra')">
+      <span class="bn-icon">⚡</span><span class="bn-label">기록</span>
+    </button>
+    <button class="bn-btn" data-bucket="schedule" onclick="navTo('schedule')" style="position:relative">
+      <span class="bn-icon">📅</span><span class="bn-label">일정</span>
+      <span id="scheduleBadgeBottom" style="display:none;position:absolute;top:2px;right:14px;background:#ef4444;color:#fff;font-size:7px;font-weight:800;padding:1px 4px;border-radius:8px">NEW</span>
+    </button>
+    <button class="bn-btn" data-bucket="more" onclick="toggleMoreMenu()">
+      <span class="bn-icon">☰</span><span class="bn-label">메뉴</span>
+    </button>
+  </div>
+
+  <div id="moreMenuOverlay" class="more-menu-overlay" style="display:none" onclick="if(event.target===this) toggleMoreMenu()">
+    <div class="more-menu-sheet">
+      <div class="more-menu-title">메뉴</div>
+      <button class="more-menu-item" onclick="navTo('fortune')">🔮 오늘의 운세</button>
+      <button class="more-menu-item" onclick="navTo('event')">🎉 이벤트전</button>
+      <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
+    </div>
+  </div>
 
   <div class="content">
 
@@ -3318,6 +3372,26 @@ window.switchTab=function(tab,btn){
   if(tab==='schedule') initSchedule();
 };
 
+window.navTo = function(tab){
+  const origBtn = document.querySelector(`.tab-btn[onclick*="switchTab('${tab}'"]`);
+  if (origBtn) switchTab(tab, origBtn);
+
+  document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
+  const bucketMap = { league:'league', terra:'terra', schedule:'schedule', fortune:'more', event:'more', admin:'more' };
+  const bucket = bucketMap[tab] || 'more';
+  const bnBtn = document.querySelector(`.bn-btn[data-bucket="${bucket}"]`);
+  if (bnBtn) bnBtn.classList.add('active');
+
+  const overlay = document.getElementById('moreMenuOverlay');
+  if (overlay) overlay.style.display = 'none';
+  window.scrollTo({top:0, behavior:'smooth'});
+};
+window.toggleMoreMenu = function(){
+  const el = document.getElementById('moreMenuOverlay');
+  if (!el) return;
+  el.style.display = (el.style.display === 'none') ? 'flex' : 'none';
+};
+
 // ── 일정 공유 ──────────────────────────────────────────────────────
 function fillScheduleWriter() {
   const sel = document.getElementById('schWriter');
@@ -3346,6 +3420,8 @@ function updateScheduleBadge() {
   try { lastSeen = parseInt(localStorage.getItem('schLastSeen')||'0'); } catch(e){}
   const hasNew = schedules.some(s => (s.createdAt?.toMillis ? s.createdAt.toMillis() : s.ts||0) > lastSeen);
   badge.style.display = hasNew ? 'block' : 'none';
+  const badgeBottom = document.getElementById('scheduleBadgeBottom');
+  if (badgeBottom) badgeBottom.style.display = hasNew ? 'block' : 'none';
 }
 
 window.addSchedule = async function() {
@@ -4263,6 +4339,8 @@ function setAdminMode(on){
   document.getElementById('uBadge').className='u-badge '+(on?'badge-admin':'badge-guest');
   document.getElementById('logoutBtn').style.display=on?'block':'none';
   document.getElementById('adminTabBtn').style.display=on?'block':'none';
+  const moreAdminBtn = document.getElementById('moreAdminBtn');
+  if (moreAdminBtn) moreAdminBtn.style.display = on?'block':'none';
   document.getElementById('btnAddEvent').style.display=on?'block':'none';
   if(!on && document.getElementById('tab-admin').style.display!=='none'){
     document.getElementById('tab-admin').style.display='none';
