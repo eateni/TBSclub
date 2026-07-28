@@ -576,7 +576,6 @@ body {
         <h3>🙋 게스트 목록</h3>
         <div style="font-size:11px;color:rgba(52,211,153,0.6);margin-bottom:10px">게스트는 경기에 참여하지만 정규 통계에는 포함되지 않아요</div>
         <div class="chips-wrap" id="guestChips"></div>
-        <div id="guestSeasonSummary"></div>
         <div id="guestStatsDetail"></div>
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(52,211,153,0.2)">
           <div style="font-size:11px;color:#34d399;margin-bottom:8px">게스트 추가</div>
@@ -3072,45 +3071,6 @@ function renderAdmin(){
           <button class="chip-x" onclick="delGuest('${g.name}')">×</button>
         </span>`).join('')
     : '<span style="color:#4a8ab5;font-size:12px">등록된 게스트 없음</span>';
-
-  // ── 게스트 시즌별 출석 요약 ──
-  const guestAttForSummary = calcGuestAttendanceBySeason();
-  const guestSummaryEl = document.getElementById('guestSeasonSummary');
-  if (guestSummaryEl) {
-    if (!guests.length) {
-      guestSummaryEl.innerHTML = '';
-    } else {
-      const allSeasons = new Set();
-      Object.values(guestAttForSummary).forEach(a => Object.keys(a.bySeason).forEach(s => allSeasons.add(Number(s))));
-      const seasonList = [...allSeasons].sort((a,b)=>a-b);
-      if (!seasonList.length) {
-        guestSummaryEl.innerHTML = '<div style="color:#4a8ab5;font-size:12px">아직 게스트 출석 기록이 없어요</div>';
-      } else {
-        const rows = guests.map(g => {
-          const a = guestAttForSummary[g.name] || { total:0, bySeason:{} };
-          const seasonCells = seasonList.map(s=>`<td style="text-align:center;padding:4px 6px">${a.bySeason[s]||0}</td>`).join('');
-          return `<tr>
-            <td style="padding:4px 6px;color:${g.gender==='f'?'#f472b6':'#60a5fa'}">${g.gender==='f'?'♀':'♂'} ${g.name}</td>
-            ${seasonCells}
-            <td style="text-align:center;padding:4px 6px;font-weight:800;color:#34d399">${a.total}</td>
-          </tr>`;
-        }).join('');
-        const headerCells = seasonList.map(s=>`<th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">S${s}</th>`).join('');
-        guestSummaryEl.innerHTML = `
-          <div style="font-size:11px;color:#34d399;margin:12px 0 6px">📊 게스트 시즌별 출석 요약</div>
-          <div style="overflow-x:auto">
-            <table style="width:100%;border-collapse:collapse;font-size:12px">
-              <thead><tr>
-                <th style="text-align:left;padding:4px 6px;color:#4a8ab5;font-weight:600">이름</th>
-                ${headerCells}
-                <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">총계</th>
-              </tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>`;
-      }
-    }
-  }
 
   // ── 게스트 상세 성적 (합산/시즌별 토글, 정렬 가능) ──
   const guestStatsEl = document.getElementById('guestStatsDetail');
