@@ -2367,7 +2367,7 @@ function renderRanking(stats) {
       return `<button onclick="setGuestRankSort('${k}')" style="padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;cursor:pointer;margin-right:5px;margin-bottom:5px;background:${active?'rgba(52,211,153,0.25)':'rgba(3,12,45,0.7)'};color:${active?'#34d399':'#8aa5c4'};border:1px solid ${active?'rgba(52,211,153,0.5)':'rgba(35,90,180,0.3)'}">${label}${arrow}</button>`;
     }).join('');
 
-  const guestHtml = isAdmin && guestList.length
+  const guestHtml = guestList.length
     ? `<div style="font-size:12px;color:#34d399;font-weight:700;margin:12px 0 6px;padding:6px 0;border-top:1px solid rgba(13,148,136,0.3)">👤 게스트 (시즌 ${viewSeason})</div>`
       + `<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${guestSortTabs}</div>`
       + guestList.map(s=>makeItem(s,true)).join('')
@@ -2984,6 +2984,19 @@ window.addEvResult=async function(evId){
   openEventDetail(evId);
 };
 
+let adminGuestSortKey = null;
+let adminGuestSortDir = -1;
+window.setAdminGuestSort = function(key){
+  if (adminGuestSortKey === key) { adminGuestSortDir *= -1; }
+  else { adminGuestSortKey = key; adminGuestSortDir = (key==='name') ? 1 : -1; }
+  renderAdmin();
+};
+let adminGuestViewMode = 'total'; // 'total' | 'bySeason'
+window.setAdminGuestViewMode = function(mode){
+  adminGuestViewMode = mode;
+  renderAdmin();
+};
+
 function renderAdmin(){
   if(!isAdmin)return;
 
@@ -3016,25 +3029,19 @@ function renderAdmin(){
         </span>`).join('')
     : '<span style="color:#4a8ab5;font-size:12px">등록된 게스트 없음</span>';
 
-  // ── 게스트 상세 성적 (시즌 합산 전용, 정렬 가능) ──
-  let adminGuestSortKey = null;
-  let adminGuestSortDir = -1;
-  window.setAdminGuestSort = function(key){
-    if (adminGuestSortKey === key) { adminGuestSortDir *= -1; }
-    else { adminGuestSortKey = key; adminGuestSortDir = (key==='name') ? 1 : -1; }
-    renderAdmin();
-  };
-
+  // ── 게스트 상세 성적 (합산/시즌별 토글, 정렬 가능) ──
   const guestStatsEl = document.getElementById('guestStatsDetail');
   if (guestStatsEl) {
     if (!guests.length) {
       guestStatsEl.innerHTML = '';
     } else {
       const statsData = calcGuestStatsBySeason();
+
+      // 정렬 기준 행(total) 기준으로 먼저 순서를 확정
       let rows = guests.map(g => {
         const gd = statsData[g.name];
         if (!gd || gd.total.games === 0) return null;
-        return { name: g.name, gender: g.gender, ...gd.total };
+        return { name: g.name, gender: g.gender, gd, ...gd.total };
       }).filter(Boolean);
 
       if (adminGuestSortKey) {
@@ -3057,25 +3064,79 @@ function renderAdmin(){
         return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#34d399':'#4a8ab5'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
       }).join('');
 
-      const rowsHtml = rows.map(r => `<tr>
-        <td style="padding:5px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
-        <td style="text-align:center;padding:5px 6px">${r.games}</td>
-        <td style="text-align:center;padding:5px 6px;color:#34d399">${r.wins}</td>
-        <td style="text-align:center;padding:5px 6px;color:#fbbf24">${r.draws}</td>
-        <td style="text-align:center;padding:5px 6px;color:#f87171">${r.losses}</td>
-        <td style="text-align:center;padding:5px 6px">${r.wr}%</td>
-        <td style="text-align:center;padding:5px 6px">${r.scored}</td>
-        <td style="text-align:center;padding:5px 6px">${r.conceded}</td>
-        <td style="text-align:center;padding:5px 6px;font-weight:700">${r.diff>=0?'+':''}${r.diff}</td>
-      </tr>`).join('');
+      const toggleBar = `
+        <div style="display:flex;gap:6px;margin:14px 0 6px">
+          <button onclick="setAdminGuestViewMode('total')" style="padding:5px 12px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;background:${adminGuestViewMode==='total'?'rgba(52,211,153,0.25)':'rgba(3,12,45,0.7)'};color:${adminGuestViewMode==='total'?'#34d399':'#8aa5c4'};border:1px solid ${adminGuestViewMode==='total'?'rgba(52,211,153,0.5)':'rgba(35,90,180,0.3)'}">합산 보기</button>
+          <button onclick="setAdminGuestViewMode('bySeason')" style="padding:5px 12px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;background:${adminGuestViewMode==='bySeason'?'rgba(52,211,153,0.25)':'rgba(3,12,45,0.7)'};color:${adminGuestViewMode==='bySeason'?'#34d399':'#8aa5c4'};border:1px solid ${adminGuestViewMode==='bySeason'?'rgba(52,211,153,0.5)':'rgba(35,90,180,0.3)'}">시즌별 보기</button>
+        </div>`;
+
+      let rowsHtml = '';
+      if (adminGuestViewMode === 'bySeason') {
+        rowsHtml = rows.map(r => {
+          const seasonKeys = Object.keys(r.gd.bySeason).map(Number).sort((a,b)=>a-b);
+          const seasonRows = seasonKeys.map(s => {
+            const d = r.gd.bySeason[s];
+            return `<tr>
+              <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
+              <td style="text-align:center;padding:4px 6px;color:#4a8ab5">S${s}</td>
+              <td style="text-align:center;padding:4px 6px">${d.games}</td>
+              <td style="text-align:center;padding:4px 6px;color:#34d399">${d.wins}</td>
+              <td style="text-align:center;padding:4px 6px;color:#fbbf24">${d.draws}</td>
+              <td style="text-align:center;padding:4px 6px;color:#f87171">${d.losses}</td>
+              <td style="text-align:center;padding:4px 6px">${d.wr}%</td>
+              <td style="text-align:center;padding:4px 6px">${d.scored}</td>
+              <td style="text-align:center;padding:4px 6px">${d.conceded}</td>
+              <td style="text-align:center;padding:4px 6px;font-weight:700">${d.diff>=0?'+':''}${d.diff}</td>
+            </tr>`;
+          }).join('');
+          const t = r.gd.total;
+          const totalRow = `<tr style="font-weight:800;background:rgba(52,211,153,0.08)">
+            <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
+            <td style="text-align:center;padding:4px 6px;color:#34d399">총계</td>
+            <td style="text-align:center;padding:4px 6px">${t.games}</td>
+            <td style="text-align:center;padding:4px 6px;color:#34d399">${t.wins}</td>
+            <td style="text-align:center;padding:4px 6px;color:#fbbf24">${t.draws}</td>
+            <td style="text-align:center;padding:4px 6px;color:#f87171">${t.losses}</td>
+            <td style="text-align:center;padding:4px 6px">${t.wr}%</td>
+            <td style="text-align:center;padding:4px 6px">${t.scored}</td>
+            <td style="text-align:center;padding:4px 6px">${t.conceded}</td>
+            <td style="text-align:center;padding:4px 6px;font-weight:700">${t.diff>=0?'+':''}${t.diff}</td>
+          </tr>`;
+          return seasonRows + totalRow;
+        }).join('');
+      } else {
+        rowsHtml = rows.map(r => `<tr>
+          <td style="padding:5px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
+          <td style="text-align:center;padding:5px 6px">${r.games}</td>
+          <td style="text-align:center;padding:5px 6px;color:#34d399">${r.wins}</td>
+          <td style="text-align:center;padding:5px 6px;color:#fbbf24">${r.draws}</td>
+          <td style="text-align:center;padding:5px 6px;color:#f87171">${r.losses}</td>
+          <td style="text-align:center;padding:5px 6px">${r.wr}%</td>
+          <td style="text-align:center;padding:5px 6px">${r.scored}</td>
+          <td style="text-align:center;padding:5px 6px">${r.conceded}</td>
+          <td style="text-align:center;padding:5px 6px;font-weight:700">${r.diff>=0?'+':''}${r.diff}</td>
+        </tr>`).join('');
+      }
+
+      const titleLabel = adminGuestViewMode === 'bySeason' ? '📈 게스트 상세 성적 (시즌별)' : '📈 게스트 상세 성적 (전체 시즌 합산)';
+      const colSpan = adminGuestViewMode === 'bySeason' ? 10 : 9;
+      const seasonHeadExtra = adminGuestViewMode === 'bySeason'
+        ? `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600">시즌</th>` : '';
+      const headRow = adminGuestViewMode === 'bySeason'
+        ? `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600">이름</th>${seasonHeadExtra}` + headers.slice(1).map(([k,label]) => {
+            const active = adminGuestSortKey === k;
+            const arrow = active ? (adminGuestSortDir === 1 ? ' ▲' : ' ▼') : '';
+            return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#34d399':'#4a8ab5'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
+          }).join('')
+        : headHtml;
 
       guestStatsEl.innerHTML = !rows.length
-        ? '<div style="color:#4a8ab5;font-size:12px;margin-top:10px">아직 완료된 게스트 경기가 없어요</div>'
-        : `
-        <div style="font-size:11px;color:#34d399;margin:14px 0 6px">📈 게스트 상세 성적 (전체 시즌 합산)</div>
+        ? toggleBar + '<div style="color:#4a8ab5;font-size:12px;margin-top:10px">아직 완료된 게스트 경기가 없어요</div>'
+        : `${toggleBar}
+        <div style="font-size:11px;color:#34d399;margin-bottom:6px">${titleLabel}</div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:11.5px">
-            <thead><tr>${headHtml}</tr></thead>
+            <thead><tr>${headRow}</tr></thead>
             <tbody>${rowsHtml}</tbody>
           </table>
         </div>`;
