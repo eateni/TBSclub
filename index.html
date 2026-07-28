@@ -574,6 +574,8 @@ body {
         <h3>🙋 게스트 목록</h3>
         <div style="font-size:11px;color:rgba(52,211,153,0.6);margin-bottom:10px">게스트는 경기에 참여하지만 정규 통계에는 포함되지 않아요</div>
         <div class="chips-wrap" id="guestChips"></div>
+        <div id="guestSeasonSummary"></div>
+        <div id="guestStatsDetail"></div>
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(52,211,153,0.2)">
           <div style="font-size:11px;color:#34d399;margin-bottom:8px">게스트 추가</div>
           <div class="row-form">
@@ -1124,6 +1126,44 @@ function calcAttendance() {
     guests.forEach(g => { if (dayGuests.includes(g.name)) att[g.name] = (att[g.name]||0)+1; });
   });
   return att;
+}
+
+// ── 게스트 성적: 시즌별 분해 + 전체 합계 (승/무/패·득실점·승률) ──
+function calcGuestStatsBySeason() {
+  const result = {};
+  const blank = () => ({ wins:0, draws:0, losses:0, pts:0, scored:0, conceded:0, games:0 });
+  guests.forEach(g => { result[g.name] = { total: blank(), bySeason: {} }; });
+
+  days.forEach(day => {
+    const season = day.season || 1;
+    (day.rounds||[]).forEach(r => {
+      (r.matches||[]).forEach(m => {
+        if (!m.done) return;
+        const ap = (team, sc, cc, res) => (team||[]).filter(Boolean).forEach(p => {
+          if (!result[p]) return;
+          if (!result[p].bySeason[season]) result[p].bySeason[season] = blank();
+          const t = result[p].total, s = result[p].bySeason[season];
+          [t, s].forEach(obj => {
+            obj.games++; obj.scored += sc; obj.conceded += cc;
+            if (res==='w') { obj.wins++; obj.pts+=3; }
+            else if (res==='d') { obj.draws++; obj.pts+=1; }
+            else obj.losses++;
+          });
+        });
+        if (m.score1 > m.score2) { ap(m.team1, m.score1, m.score2, 'w'); ap(m.team2, m.score2, m.score1, 'l'); }
+        else if (m.score1 < m.score2) { ap(m.team2, m.score2, m.score1, 'w'); ap(m.team1, m.score1, m.score2, 'l'); }
+        else { ap(m.team1, m.score1, m.score2, 'd'); ap(m.team2, m.score2, m.score1, 'd'); }
+      });
+    });
+  });
+
+  Object.values(result).forEach(r => {
+    const finalize = (o) => { o.wr = o.games>0 ? Math.round(o.wins/o.games*100) : 0; o.diff = o.scored - o.conceded; };
+    finalize(r.total);
+    Object.values(r.bySeason).forEach(finalize);
+  });
+
+  return result;
 }
 
 // ── 통계 계산 (정규회원 + 게스트 모두) ──────────────────────────
@@ -2944,6 +2984,71 @@ function renderAdmin(){
           <button class="chip-x" onclick="delGuest('${g.name}')">×</button>
         </span>`).join('')
     : '<span style="color:#4a8ab5;font-size:12px">등록된 게스트 없음</span>';
+
+  // ── 게스트 시즌별 상세 성적표 (승/무/패·득실점·승률) ──
+  const guestStatsEl = document.getElementById('guestStatsDetail');
+  if (guestStatsEl) {
+    if (!guests.length) {
+      guestStatsEl.innerHTML = '';
+    } else {
+      const statsData = calcGuestStatsBySeason();
+      const rowsHtml = guests.map(g => {
+        const gd = statsData[g.name];
+        if (!gd || gd.total.games === 0) return '';
+        const seasonKeys = Object.keys(gd.bySeason).map(Number).sort((a,b)=>a-b);
+        const seasonRows = seasonKeys.map(s => {
+          const d = gd.bySeason[s];
+          return `<tr>
+            <td style="padding:4px 6px;color:${g.gender==='f'?'#f472b6':'#60a5fa'}">${g.gender==='f'?'♀':'♂'} ${g.name}</td>
+            <td style="text-align:center;padding:4px 6px;color:#4a8ab5">S${s}</td>
+            <td style="text-align:center;padding:4px 6px">${d.games}</td>
+            <td style="text-align:center;padding:4px 6px;color:#34d399">${d.wins}</td>
+            <td style="text-align:center;padding:4px 6px;color:#fbbf24">${d.draws}</td>
+            <td style="text-align:center;padding:4px 6px;color:#f87171">${d.losses}</td>
+            <td style="text-align:center;padding:4px 6px">${d.wr}%</td>
+            <td style="text-align:center;padding:4px 6px">${d.scored}</td>
+            <td style="text-align:center;padding:4px 6px">${d.conceded}</td>
+            <td style="text-align:center;padding:4px 6px;font-weight:700">${d.diff>=0?'+':''}${d.diff}</td>
+          </tr>`;
+        }).join('');
+        const t = gd.total;
+        const totalRow = `<tr style="font-weight:800;background:rgba(52,211,153,0.08)">
+          <td style="padding:4px 6px;color:${g.gender==='f'?'#f472b6':'#60a5fa'}">${g.gender==='f'?'♀':'♂'} ${g.name}</td>
+          <td style="text-align:center;padding:4px 6px;color:#34d399">총계</td>
+          <td style="text-align:center;padding:4px 6px">${t.games}</td>
+          <td style="text-align:center;padding:4px 6px;color:#34d399">${t.wins}</td>
+          <td style="text-align:center;padding:4px 6px;color:#fbbf24">${t.draws}</td>
+          <td style="text-align:center;padding:4px 6px;color:#f87171">${t.losses}</td>
+          <td style="text-align:center;padding:4px 6px">${t.wr}%</td>
+          <td style="text-align:center;padding:4px 6px">${t.scored}</td>
+          <td style="text-align:center;padding:4px 6px">${t.conceded}</td>
+          <td style="text-align:center;padding:4px 6px">${t.diff>=0?'+':''}${t.diff}</td>
+        </tr>`;
+        return seasonRows + totalRow;
+      }).join('');
+      guestStatsEl.innerHTML = !rowsHtml
+        ? '<div style="color:#4a8ab5;font-size:12px;margin-top:10px">아직 완료된 게스트 경기가 없어요</div>'
+        : `
+        <div style="font-size:11px;color:#34d399;margin:14px 0 6px">📈 게스트 시즌별 상세 성적</div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:11.5px">
+            <thead><tr>
+              <th style="text-align:left;padding:4px 6px;color:#4a8ab5;font-weight:600">이름</th>
+              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">시즌</th>
+              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">경기</th>
+              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">승</th>
+              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">무</th>
+              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">패</th>
+              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">승률</th>
+              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">득점</th>
+              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">실점</th>
+              <th style="text-align:center;padding:4px 6px;color:#4a8ab5;font-weight:600">득실</th>
+            </tr></thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+        </div>`;
+    }
+  }
 
   // ── 커플/부부 칩 + 셀렉터 ──
   const coupleEl = document.getElementById('coupleChips');
