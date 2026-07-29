@@ -378,6 +378,7 @@ body {
       <button class="tab-btn" onclick="switchTab('schedule',this)" style="position:relative">📅 일정 공유<span id="scheduleBadge" style="display:none;position:absolute;top:2px;right:4px;background:#ef4444;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px">NEW</span></button>
       <button class="tab-btn" onclick="switchTab('fortune',this)">🔮 오늘의 운세</button>
       <button class="tab-btn" onclick="switchTab('event',this)">🎉 이벤트전</button>
+      <button class="tab-btn" onclick="switchTab('board',this)">📋 게시판</button>
       <button class="tab-btn" id="adminTabBtn" style="display:none" onclick="switchTab('admin',this)">⚙️ 관리자</button>
     </div>
   </div>
@@ -403,6 +404,7 @@ body {
       <div class="more-menu-title">메뉴</div>
       <button class="more-menu-item" onclick="navTo('fortune')">🔮 오늘의 운세</button>
       <button class="more-menu-item" onclick="navTo('event')">🎉 이벤트전</button>
+      <button class="more-menu-item" onclick="navTo('board')">📋 게시판</button>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
     </div>
   </div>
@@ -604,6 +606,23 @@ body {
         <button class="stab" onclick="filterEvent('special',this)">특별전</button>
       </div>
       <div class="event-list" id="eventList"><div class="loading">불러오는 중...</div></div>
+    </div>
+
+    <!-- 게시판 -->
+    <div id="tab-board" style="display:none">
+      <div style="margin-top:16px">
+        <div class="sec-header">📋 게시판</div>
+
+        <div class="admin-sec" style="margin-bottom:14px">
+          <h3>✏️ 새 글 작성</h3>
+          <select id="boardAuthorSelect" class="row-sel" style="width:100%;margin-bottom:8px"></select>
+          <input id="boardTitleInput" class="row-inp" placeholder="제목" style="width:100%;margin-bottom:8px">
+          <textarea id="boardContentInput" class="row-inp" placeholder="내용을 입력하세요" style="width:100%;min-height:80px;margin-bottom:8px;resize:vertical"></textarea>
+          <button class="btn-input" onclick="addBoardPost()">게시글 등록</button>
+        </div>
+
+        <div id="boardList"></div>
+      </div>
     </div>
 
     <!-- 관리자 -->
@@ -987,6 +1006,7 @@ let days = [];
 let openAttBodies = new Set();
 let events = [];
 let schedules = [];
+let boardPosts = [];
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let calSelectedDate = null;
@@ -2407,6 +2427,20 @@ function renderDays() {
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
         const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#60a5fa" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#a78bfa">[${m.tag}]</span>`:'';
+        const mComments = m.comments || [];
+        const commentOpts = [...members, ...guests].map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+        const commentsHtml = `
+          <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+            ${mComments.map((c,ci)=>`
+              <div style="font-size:11px;color:#8aa5c4;margin-bottom:3px;display:flex;justify-content:space-between">
+                <span><b style="color:#60a5fa">${c.name}</b> ${c.text}</span>
+                ${isAdmin?`<button onclick="delMatchComment('${day.id}','${rIdx}','${m.id}',${ci})" style="background:none;border:none;color:#f87171;font-size:10px;cursor:pointer">×</button>`:''}
+              </div>`).join('')}
+            <div style="display:flex;gap:4px;margin-top:4px">
+              <select id="mcmt_who_${m.id}" class="row-sel" style="width:70px;font-size:10px;padding:5px"><option value="">이름</option>${commentOpts}</select>
+              <input id="mcmt_text_${m.id}" class="row-inp" placeholder="댓글..." style="flex:1;font-size:11px;padding:6px" onkeydown="if(event.key==='Enter')addMatchComment('${day.id}','${rIdx}','${m.id}')">
+            </div>
+          </div>`;
         return `<div class="match-card">
           <div class="match-ct"><span>${m.court||''} ${tagBadge}</span></div>
           <div class="match-row">
@@ -2414,6 +2448,7 @@ function renderDays() {
             ${scoreEl}
             <div class="m-team ${w2?'win':''}">${(m.team2||[]).join(' / ')}</div>
           </div>${inputBtn}${editBtn}${delBtn}
+          ${commentsHtml}
         </div>`;
       }).join('');
       const addMatchBtn = isAdmin ? `<button class="btn-input" style="border-color:rgba(35,90,180,0.35);color:#4a8ab5" onclick="openAddMatch('${day.id}','${rIdx}')">+ 경기 직접 추가</button>` : '';
@@ -3488,7 +3523,7 @@ function renderAdmin(){
 
 // 탭
 window.switchTab=function(tab,btn){
-  ['league','terra','schedule','fortune','event','admin'].forEach(t=>{
+  ['league','terra','schedule','fortune','event','board','admin'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
     if(el) el.style.display=t===tab?'block':'none';
   });
@@ -3497,6 +3532,7 @@ window.switchTab=function(tab,btn){
   if(tab==='terra') { updateTerraSelects(); renderTerraMyRecords(); }
   if(tab==='fortune') initFortune();
   if(tab==='schedule') initSchedule();
+  if(tab==='board') populateBoardAuthorSelect();
 };
 
 window.navTo = function(tab){
@@ -3504,7 +3540,7 @@ window.navTo = function(tab){
   if (origBtn) switchTab(tab, origBtn);
 
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
-  const bucketMap = { league:'league', terra:'terra', schedule:'schedule', fortune:'more', event:'more', admin:'more' };
+  const bucketMap = { league:'league', terra:'terra', schedule:'schedule', fortune:'more', event:'more', board:'more', admin:'more' };
   const bucket = bucketMap[tab] || 'more';
   const bnBtn = document.querySelector(`.bn-btn[data-bucket="${bucket}"]`);
   if (bnBtn) bnBtn.classList.add('active');
@@ -3607,6 +3643,93 @@ window.delComment = async function(id, idx) {
   if (!confirm('댓글을 삭제할까요?')) return;
   const comments = (sch.comments||[]).filter((_,i)=>i!==idx);
   await updateDoc(doc(db,'schedules',id), { comments });
+};
+
+function populateBoardAuthorSelect(){
+  const sel = document.getElementById('boardAuthorSelect');
+  if (!sel) return;
+  const names = [...members, ...guests].map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML = '<option value="">작성자 선택</option>' + names.map(n=>`<option value="${n}">${n}</option>`).join('');
+}
+
+window.addBoardPost = async function(){
+  const author = document.getElementById('boardAuthorSelect').value;
+  const title = document.getElementById('boardTitleInput').value.trim();
+  const content = document.getElementById('boardContentInput').value.trim();
+  if (!author) { alert('작성자를 선택해주세요'); return; }
+  if (!title || !content) { alert('제목과 내용을 입력해주세요'); return; }
+  await addDoc(collection(db,'boardPosts'), { author, title, content, comments: [], createdAt: serverTimestamp() });
+  document.getElementById('boardTitleInput').value = '';
+  document.getElementById('boardContentInput').value = '';
+};
+
+window.delBoardPost = async function(id){
+  if (!confirm('이 게시글을 삭제할까요?')) return;
+  await deleteDoc(doc(db,'boardPosts',id));
+};
+
+window.addBoardComment = async function(postId){
+  const name = document.getElementById(`bcmt_who_${postId}`)?.value;
+  const text = document.getElementById(`bcmt_text_${postId}`)?.value.trim();
+  if (!name) { alert('이름을 선택해주세요'); return; }
+  if (!text) { alert('댓글을 입력해주세요'); return; }
+  const post = boardPosts.find(p=>p.id===postId);
+  if (!post) return;
+  const comments = [...(post.comments||[]), {name, text, ts:Date.now()}];
+  await updateDoc(doc(db,'boardPosts',postId), { comments });
+  document.getElementById(`bcmt_text_${postId}`).value='';
+};
+
+function renderBoard(){
+  const el = document.getElementById('boardList');
+  if (!el) return;
+  const opts = [...members, ...guests].map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  const sorted = [...boardPosts].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+  el.innerHTML = sorted.length ? sorted.map(p => `
+    <div class="admin-sec" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <h3 style="margin-bottom:4px">${p.title}</h3>
+        <button onclick="delBoardPost('${p.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">삭제</button>
+      </div>
+      <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">✍️ ${p.author}</div>
+      <div style="font-size:13px;color:#e8edf2;white-space:pre-wrap;margin-bottom:10px">${p.content}</div>
+      <div style="border-top:1px solid rgba(35,90,180,0.2);padding-top:8px">
+        ${(p.comments||[]).map(c=>`<div style="font-size:12px;color:#8aa5c4;margin-bottom:4px"><b style="color:#60a5fa">${c.name}</b> ${c.text}</div>`).join('')}
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <select id="bcmt_who_${p.id}" class="row-sel" style="width:80px;font-size:11px;padding:6px"><option value="">이름</option>${opts}</select>
+          <input id="bcmt_text_${p.id}" class="row-inp" placeholder="댓글 입력..." style="flex:1;font-size:12px;padding:7px" onkeydown="if(event.key==='Enter')addBoardComment('${p.id}')">
+        </div>
+      </div>
+    </div>`).join('') : '<div class="empty">아직 게시글이 없어요</div>';
+}
+
+window.addMatchComment = async function(dayId, rIdx, mId){
+  const name = document.getElementById(`mcmt_who_${mId}`)?.value;
+  const text = document.getElementById(`mcmt_text_${mId}`)?.value.trim();
+  if (!name) { alert('이름을 선택해주세요'); return; }
+  if (!text) { alert('댓글을 입력해주세요'); return; }
+  const day = days.find(d=>d.id===dayId);
+  if (!day) return;
+  const rounds = (day.rounds||[]).map((r,idx)=>{
+    if (idx != rIdx) return r;
+    return { ...r, matches: (r.matches||[]).map(m =>
+      m.id === mId ? { ...m, comments: [...(m.comments||[]), {name, text, ts:Date.now()}] } : m
+    )};
+  });
+  await updateDoc(doc(db,'days',dayId), { rounds });
+  document.getElementById(`mcmt_text_${mId}`).value='';
+};
+
+window.delMatchComment = async function(dayId, rIdx, mId, idx){
+  const day = days.find(d=>d.id===dayId);
+  if (!day) return;
+  const rounds = (day.rounds||[]).map((r,ri)=>{
+    if (ri != rIdx) return r;
+    return { ...r, matches: (r.matches||[]).map(m =>
+      m.id === mId ? { ...m, comments: (m.comments||[]).filter((_,i)=>i!==idx) } : m
+    )};
+  });
+  await updateDoc(doc(db,'days',dayId), { rounds });
 };
 
 window.shareKakao = function(id) {
@@ -4779,6 +4902,10 @@ onSnapshot(collection(db,'schedules'), snap => {
   renderSchedules();
   renderTodayBanner();
   updateScheduleBadge();
+});
+onSnapshot(collection(db,'boardPosts'), snap => {
+  boardPosts = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderBoard();
 });
 // ── 실시간 스코어 ──
 const LS_PTS = ['0','15','30','40'];
