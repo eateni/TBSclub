@@ -365,6 +365,7 @@ body {
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:7px; flex-shrink:0; padding-top:2px;">
+          <button id="myDashboardBtn" class="u-badge badge-guest" style="cursor:pointer;border:none;background:rgba(35,90,180,0.2)">회원가입</button>
           <span class="u-badge badge-guest" id="uBadge">👤 게스트</span>
           <button class="btn-admin-toggle" onclick="openAdminLogin()" title="관리자">⚙</button>
           <button class="btn-logout" id="logoutBtn" style="display:none" onclick="doLogout()">로그아웃</button>
@@ -608,6 +609,9 @@ body {
     <div id="tab-admin" style="display:none">
       <div style="margin-top:16px"></div>
 
+      <!-- 가입 승인 대기 -->
+      <div id="signupSection"></div>
+
       <!-- 정규 회원 -->
       <div class="admin-sec">
         <h3>👥 정규 회원 목록</h3>
@@ -805,6 +809,45 @@ body {
 </div>
 
 <!-- 관리자 로그인 모달 -->
+<div class="overlay" id="signupModal" style="display:none" onclick="if(event.target.id==='signupModal')hide('signupModal')">
+  <div class="modal">
+    <div class="modal-title">회원가입</div>
+    <button type="button" onclick="doGoogleSignIn()" style="width:100%;padding:12px;margin-bottom:10px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">🔵 구글로 계속하기</button>
+    <div id="signupGoogleNotice" style="display:none;text-align:center;font-size:12px;color:#34d399;font-weight:700;margin-bottom:10px;padding:8px;background:rgba(52,211,153,0.1);border-radius:8px"></div>
+    <div style="text-align:center;font-size:11px;color:#4a8ab5;margin:8px 0">— 또는 이메일로 —</div>
+    <div id="signupEmailPwFields">
+      <input type="email" id="signupEmail" class="row-inp" placeholder="이메일" style="width:100%;margin-bottom:8px">
+      <input type="password" id="signupPw" class="row-inp" placeholder="비밀번호(6자 이상)" style="width:100%;margin-bottom:8px">
+      <input type="password" id="signupPw2" class="row-inp" placeholder="비밀번호 확인" style="width:100%;margin-bottom:8px">
+    </div>
+    <label style="font-size:12px;color:#4a8ab5;display:block;margin-top:10px">본인 이름</label>
+    <select id="signupNameSelect" class="row-sel" style="width:100%;margin-bottom:8px" onchange="onSignupNameChange()">
+      <option value="">선택하세요</option>
+      <option value="__new__">➕ 명단에 없어요 (새 이름으로 등록)</option>
+    </select>
+    <div id="signupNewNameWrap" style="display:none">
+      <input type="text" id="signupNewName" class="row-inp" placeholder="이름" style="width:100%;margin-bottom:8px">
+      <select id="signupNewGender" class="row-sel" style="width:100%;margin-bottom:8px">
+        <option value="m">남</option><option value="f">여</option>
+      </select>
+    </div>
+    <div id="signupNicknameWrap" style="display:none">
+      <label style="font-size:12px;color:#4a8ab5;display:block">닉네임으로 표시하고 싶으신가요? (선택)</label>
+      <input type="text" id="signupNickname" class="row-inp" placeholder="예: 종첸 (비워두면 원래 이름 그대로)" style="width:100%;margin-bottom:8px">
+    </div>
+    <button onclick="doSignup()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a120a;border:none;border-radius:10px;font-weight:800;cursor:pointer">가입 신청</button>
+    <div class="mft"><button class="btn-cancel" onclick="hide('signupModal')">취소</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="myDashboardModal" style="display:none" onclick="if(event.target.id==='myDashboardModal')hide('myDashboardModal')">
+  <div class="modal">
+    <div class="modal-title" id="myDashboardTitle">내 기록</div>
+    <div id="myDashboardBody"></div>
+    <div class="mft"><button class="btn-cancel" onclick="hide('myDashboardModal')">닫기</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="adminLoginModal" style="display:none" onclick="if(event.target.id==='adminLoginModal')hide('adminLoginModal')">
   <div class="modal">
     <div class="modal-title">🔐 관리자 로그인</div>
@@ -910,9 +953,10 @@ body {
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
+  createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp }
+import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const FIREBASE_CONFIG = {
@@ -928,6 +972,10 @@ const ADMIN_EMAIL = "mk5minki@gmail.com";
 const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+let googleAuthedUser = null;
+let pendingSignups = [];
+let myClaim = null;
 
 let isAdmin = false;
 let members = [];
@@ -3149,6 +3197,30 @@ window.setAdminGuestViewMode = function(mode){
 function renderAdmin(){
   if(!isAdmin)return;
 
+  // ── 가입 승인 대기 목록 ──
+  const signupEl = document.getElementById('signupSection');
+  if (signupEl) {
+    signupEl.innerHTML = pendingSignups.length ? `
+      <div class="admin-sec" style="border-color:rgba(245,158,11,0.4);background:rgba(40,30,0,0.5)">
+        <h3>🆕 가입 승인 대기 (${pendingSignups.length})</h3>
+        ${pendingSignups.map(r => `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid rgba(35,90,180,0.2)">
+            <div>
+              <div style="font-weight:700">
+                ${r.claimedName} ${r.gender==='f'?'♀':'♂'}
+                ${r.isNewName?'<span style="color:#f59e0b;font-size:11px">(신규)</span>':''}
+                ${r.nickname?`<span style="color:#60a5fa;font-size:11px"> → "${r.nickname}"으로 표시 희망</span>`:''}
+              </div>
+              <div style="font-size:11px;color:#4a8ab5">${r.email}</div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button onclick="approveSignup('${r.id}')" style="padding:6px 12px;background:#34d399;color:#04150c;border:none;border-radius:8px;font-weight:700;cursor:pointer">승인</button>
+              <button onclick="rejectSignup('${r.id}')" style="padding:6px 12px;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.4);border-radius:8px;font-weight:700;cursor:pointer">거절</button>
+            </div>
+          </div>`).join('')}
+      </div>` : '';
+  }
+
   // ── 정규 회원 칩 ──
   document.getElementById('memberChips').innerHTML = members.length
     ? members.map(m=>`
@@ -4402,7 +4474,192 @@ function setAdminMode(on){
   renderAll();
 }
 
-onAuthStateChanged(auth, user => { setAdminMode(!!(user&&user.email===ADMIN_EMAIL)); });
+// ── 회원가입 관련 ─────────────────────────────────────────────────
+function populateSignupNameSelect(){
+  const sel = document.getElementById('signupNameSelect');
+  if (!sel) return;
+  const cur = sel.value;
+  const names = [...members, ...guests].map(p=>p.name).sort((a,b)=>a.localeCompare(b));
+  sel.innerHTML = '<option value="">선택하세요</option>'
+    + names.map(n=>`<option value="${n}">${n}</option>`).join('')
+    + '<option value="__new__">➕ 명단에 없어요 (새 이름으로 등록)</option>';
+  if (cur) sel.value = cur;
+}
+
+window.onSignupNameChange = function(){
+  const val = document.getElementById('signupNameSelect').value;
+  const isNew = val === '__new__';
+  document.getElementById('signupNewNameWrap').style.display = isNew ? 'block' : 'none';
+  document.getElementById('signupNicknameWrap').style.display = (val && !isNew) ? 'block' : 'none';
+};
+
+window.doGoogleSignIn = async function(){
+  try {
+    const cred = await signInWithPopup(auth, googleProvider);
+    const user = cred.user;
+    const already = members.find(m => m.uid === user.uid) || guests.find(g => g.uid === user.uid);
+    if (already) { alert(`${already.name}님, 다시 오신 걸 환영해요!`); hide('signupModal'); return; }
+    const snap = await getDocs(query(collection(db,'signupRequests'), where('uid','==',user.uid)));
+    if (snap.docs.some(d => d.data().status === 'pending')) {
+      alert('이미 가입 승인 대기중이에요.'); hide('signupModal'); return;
+    }
+    googleAuthedUser = user;
+    document.getElementById('signupEmailPwFields').style.display = 'none';
+    const notice = document.getElementById('signupGoogleNotice');
+    notice.textContent = `✅ ${user.email} 계정으로 계속 진행합니다 — 아래에서 본인 이름을 선택해주세요`;
+    notice.style.display = 'block';
+  } catch(e) { alert('구글 로그인 실패: ' + (e.message || e)); }
+};
+
+window.doSignup = async function(){
+  const nameSel = document.getElementById('signupNameSelect').value;
+  if (!nameSel) { alert('본인 이름을 선택해주세요'); return; }
+  const isNewName = nameSel === '__new__';
+  let claimedName, gender, nickname = null;
+
+  if (isNewName) {
+    claimedName = document.getElementById('signupNewName').value.trim();
+    gender = document.getElementById('signupNewGender').value;
+    if (!claimedName || !gender) { alert('이름과 성별을 입력하세요'); return; }
+  } else {
+    claimedName = nameSel;
+    const found = [...members, ...guests].find(p=>p.name===claimedName);
+    gender = found ? found.gender : 'm';
+    const nick = document.getElementById('signupNickname').value.trim();
+    if (nick) nickname = nick;
+  }
+
+  let uid, email;
+  if (googleAuthedUser) {
+    uid = googleAuthedUser.uid; email = googleAuthedUser.email;
+  } else {
+    const em = document.getElementById('signupEmail').value.trim();
+    const pw = document.getElementById('signupPw').value;
+    const pw2 = document.getElementById('signupPw2').value;
+    if (!em || !pw) { alert('이메일과 비밀번호를 입력하세요'); return; }
+    if (pw !== pw2) { alert('비밀번호가 일치하지 않아요'); return; }
+    if (pw.length < 6) { alert('비밀번호는 6자 이상이어야 해요'); return; }
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, em, pw);
+      uid = cred.user.uid; email = em;
+    } catch(e) { alert('가입 실패: ' + (e.message || e)); return; }
+  }
+
+  await addDoc(collection(db,'signupRequests'), {
+    uid, email, claimedName, nickname, gender, isNewName,
+    status: 'pending', requestedAt: serverTimestamp()
+  });
+  alert('가입 신청 완료! 관리자 승인 후 이용하실 수 있어요.');
+  googleAuthedUser = null;
+  document.getElementById('signupEmailPwFields').style.display = '';
+  document.getElementById('signupGoogleNotice').style.display = 'none';
+  hide('signupModal');
+};
+
+// ── 관리자 승인/거절 ──────────────────────────────────────────────
+window.approveSignup = async function(reqId){
+  const req = pendingSignups.find(r => r.id === reqId);
+  if (!req) return;
+
+  const wantsNickname = req.nickname && req.nickname.trim() && req.nickname.trim() !== req.claimedName;
+  const newName = wantsNickname ? req.nickname.trim() : req.claimedName;
+
+  if (wantsNickname && allPlayers().some(p => p.name === newName)) {
+    alert(`"${newName}" 이름은 이미 사용 중이에요. 관리자 페이지에서 정리 후 다시 승인해주세요.`);
+    return;
+  }
+
+  if (req.isNewName) {
+    await setDoc(doc(db,'club','members'), { list: [...members, { name:newName, gender:req.gender, uid:req.uid }] });
+  } else {
+    const inMembers = members.some(m => m.name === req.claimedName);
+    const targetList = inMembers ? members : guests;
+    const collName = inMembers ? 'members' : 'guests';
+    await setDoc(doc(db,'club',collName), {
+      list: targetList.map(x => x.name === req.claimedName ? { ...x, name:newName, uid:req.uid } : x)
+    });
+    if (wantsNickname) {
+      await cascadeRename(req.claimedName, newName);
+    }
+  }
+
+  await updateDoc(doc(db,'signupRequests',reqId), { status:'approved' });
+  alert(`${newName}님 승인 완료!` + (wantsNickname ? ` ("${req.claimedName}"에서 이름 변경됨)` : ''));
+};
+window.rejectSignup = async function(reqId){
+  if (!confirm('이 가입 신청을 거절할까요?')) return;
+  await updateDoc(doc(db,'signupRequests',reqId), { status:'rejected' });
+};
+
+// ── 내 대시보드 ────────────────────────────────────────────────────
+function renderMyDashboardState(){
+  const btn = document.getElementById('myDashboardBtn');
+  if (!btn) return;
+  if (myClaim === 'pending') {
+    btn.textContent = '⏳ 승인 대기중';
+    btn.onclick = () => alert('관리자 승인을 기다리고 있어요.');
+  } else if (myClaim) {
+    btn.textContent = `👤 ${myClaim.name}님`;
+    btn.onclick = () => openMyDashboard();
+  } else {
+    btn.textContent = '회원가입';
+    btn.onclick = () => { populateSignupNameSelect(); document.getElementById('signupModal').style.display = 'flex'; };
+  }
+}
+
+window.openMyDashboard = function(){
+  if (!myClaim || myClaim === 'pending') return;
+  const stats = calcStats();
+  const att = calcAttendance();
+  const me = stats.find(s => s.name === myClaim.name);
+  const today = new Date().toISOString().slice(0,10);
+  const mySchedules = schedules
+    .filter(s => (s.date||'') >= today)
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||''))
+    .slice(0,5);
+
+  const statsHtml = me ? `
+    <div style="text-align:center;margin-bottom:14px">
+      <div style="font-size:22px;font-weight:900;color:#f59e0b">${me.pts}점</div>
+      <div style="font-size:13px;color:#4a8ab5">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
+      <div style="font-size:12px;color:#8aa5c4;margin-top:4px">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff}</div>
+      <div style="font-size:12px;color:#8aa5c4">게임 ${me.games} · 출석 ${att[me.name]||0}일</div>
+    </div>`
+    : `<div style="text-align:center;color:#4a8ab5;padding:14px">아직 경기 기록이 없어요</div>`;
+
+  const schedHtml = mySchedules.length
+    ? mySchedules.map(s=>`<div style="padding:6px 0;font-size:12px;color:#e8edf2;border-bottom:1px solid rgba(35,90,180,0.15)">📅 ${s.date}${s.place?' · '+s.place:''}${s.time?' '+s.time:''}</div>`).join('')
+    : `<div style="font-size:12px;color:#4a8ab5">다가오는 일정이 없어요</div>`;
+
+  document.getElementById('myDashboardTitle').textContent = `👤 ${myClaim.name}님의 기록`;
+  document.getElementById('myDashboardBody').innerHTML = statsHtml
+    + `<div style="font-size:11px;color:#4a8ab5;font-weight:700;margin:10px 0 4px">📅 다가오는 일정</div>`
+    + schedHtml;
+  document.getElementById('myDashboardModal').style.display = 'flex';
+};
+
+onAuthStateChanged(auth, async user => {
+  setAdminMode(!!(user && user.email === ADMIN_EMAIL));
+  if (!user || user.email === ADMIN_EMAIL) { myClaim = null; renderMyDashboardState(); return; }
+
+  const foundMember = members.find(m => m.uid === user.uid);
+  const foundGuest = guests.find(g => g.uid === user.uid);
+  if (foundMember) { myClaim = { ...foundMember, isGuest:false }; }
+  else if (foundGuest) { myClaim = { ...foundGuest, isGuest:true }; }
+  else {
+    const q = query(collection(db,'signupRequests'), where('uid','==',user.uid));
+    const snap = await getDocs(q);
+    const pending = snap.docs.find(d => d.data().status === 'pending');
+    myClaim = pending ? 'pending' : null;
+  }
+  renderMyDashboardState();
+});
+
+// 가입 승인 대기 실시간 리스너
+onSnapshot(query(collection(db,'signupRequests'), where('status','==','pending')), snap => {
+  pendingSignups = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+  renderAdmin();
+});
 
 // Firestore 실시간 (누구나 읽기)
 // 테라리그 실시간 리스너
@@ -4427,11 +4684,13 @@ onSnapshot(doc(db,'club','couples'), snap => {
 });
 onSnapshot(doc(db,'club','guests'), snap => {
   guests = snap.exists() ? (snap.data().list||[]) : [];
+  populateSignupNameSelect();
   renderAll();
 });
 onSnapshot(doc(db,'club','members'), snap => {
   const raw = snap.exists() ? (snap.data().list||[]) : [];
   members = raw.map(m => typeof m === 'string' ? {name:m, gender:'m'} : m);
+  populateSignupNameSelect();
   updateTerraSelects();
   renderAll();
 });
