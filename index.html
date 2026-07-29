@@ -975,6 +975,7 @@ const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 let googleAuthedUser = null;
 let pendingSignups = [];
+let signupUnsub = null;
 let myClaim = null;
 
 let isAdmin = false;
@@ -4471,6 +4472,24 @@ function setAdminMode(on){
     document.getElementById('tab-league').style.display='block';
     document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   }
+  if (on) {
+    if (!signupUnsub) {
+      signupUnsub = onSnapshot(
+        query(collection(db,'signupRequests'), where('status','==','pending')),
+        snap => {
+          pendingSignups = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+          renderAdmin();
+        },
+        err => {
+          console.error('signupRequests 구독 실패:', err);
+          alert('가입 승인 목록을 불러오지 못했어요: ' + err.message);
+        }
+      );
+    }
+  } else {
+    if (signupUnsub) { signupUnsub(); signupUnsub = null; }
+    pendingSignups = [];
+  }
   renderAll();
 }
 
@@ -4653,12 +4672,6 @@ onAuthStateChanged(auth, async user => {
     myClaim = pending ? 'pending' : null;
   }
   renderMyDashboardState();
-});
-
-// 가입 승인 대기 실시간 리스너
-onSnapshot(query(collection(db,'signupRequests'), where('status','==','pending')), snap => {
-  pendingSignups = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-  renderAdmin();
 });
 
 // Firestore 실시간 (누구나 읽기)
