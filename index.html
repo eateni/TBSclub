@@ -977,6 +977,7 @@ let googleAuthedUser = null;
 let pendingSignups = [];
 let signupUnsub = null;
 let myClaim = null;
+let lastAuthUser = null;
 
 let isAdmin = false;
 let members = [];
@@ -4657,10 +4658,9 @@ window.openMyDashboard = function(){
   document.getElementById('myDashboardModal').style.display = 'flex';
 };
 
-onAuthStateChanged(auth, async user => {
-  setAdminMode(!!(user && user.email === ADMIN_EMAIL));
+async function resolveMyClaim() {
+  const user = lastAuthUser;
   if (!user || user.email === ADMIN_EMAIL) { myClaim = null; renderMyDashboardState(); return; }
-
   const foundMember = members.find(m => m.uid === user.uid);
   const foundGuest = guests.find(g => g.uid === user.uid);
   if (foundMember) { myClaim = { ...foundMember, isGuest:false }; }
@@ -4672,6 +4672,12 @@ onAuthStateChanged(auth, async user => {
     myClaim = pending ? 'pending' : null;
   }
   renderMyDashboardState();
+}
+
+onAuthStateChanged(auth, async user => {
+  setAdminMode(!!(user && user.email === ADMIN_EMAIL));
+  lastAuthUser = user;
+  await resolveMyClaim();
 });
 
 // Firestore 실시간 (누구나 읽기)
@@ -4699,6 +4705,7 @@ onSnapshot(doc(db,'club','guests'), snap => {
   guests = snap.exists() ? (snap.data().list||[]) : [];
   populateSignupNameSelect();
   renderAll();
+  resolveMyClaim();
 });
 onSnapshot(doc(db,'club','members'), snap => {
   const raw = snap.exists() ? (snap.data().list||[]) : [];
@@ -4706,6 +4713,7 @@ onSnapshot(doc(db,'club','members'), snap => {
   populateSignupNameSelect();
   updateTerraSelects();
   renderAll();
+  resolveMyClaim();
 });
 onSnapshot(collection(db,'days'), snap => {
   days = snap.docs.map(d=>({id:d.id,...d.data()}))
