@@ -361,8 +361,8 @@ body {
           </div>
           <div style="margin-top:4px;">
             <div style="margin-top:6px; padding-top:6px; border-top:1px solid rgba(30,41,59,0.08);">
-              <span style="display:block; font-size:13px; color:rgba(30,41,59,0.85); letter-spacing:1.2px; font-weight:800; text-transform:uppercase;">After Match, Start Again</span>
-              <span style="display:block; font-size:12px; color:rgba(30,41,59,0.6); margin-top:3px; letter-spacing:0.2px; font-weight:500;">경기가 끝나도 우리의 즐거움은 이제 시작이다.</span>
+              <span style="display:block; font-size:11px; color:rgba(30,41,59,0.85); letter-spacing:0.6px; font-weight:800; text-transform:uppercase; white-space:nowrap;">After Match, Start Again</span>
+              <span style="display:block; font-size:11.5px; color:rgba(30,41,59,0.6); margin-top:3px; letter-spacing:0.1px; font-weight:500; white-space:nowrap;">경기가 끝나도 우리의 즐거움은 이제 시작이다.</span>
             </div>
           </div>
         </div>
@@ -413,12 +413,14 @@ body {
 
   <div class="content">
 
-    <!-- 📌 오늘 일정 배너 (C안: 오늘 일정 + 원탭 공유) -->
-    <div id="todayBanner" style="display:none"></div>
+    <!-- 📌 오늘 일정 + 내 기록 (로그인 시 좌우 배치) -->
+    <div id="topCardsRow" style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
+      <div id="todayBanner" style="display:none; flex:1; min-width:150px;"></div>
+      <div id="myRecordCard" style="display:none; flex:1; min-width:150px;"></div>
+    </div>
 
     <!-- 정규리그 -->
     <div id="tab-league">
-      <div id="myRecordCard" style="display:none"></div>
       <!-- 시즌 선택 -->
       <div style="margin-top:16px;display:flex;align-items:center;gap:8px">
         <span style="font-size:12px;color:#4a8ab5;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
@@ -631,161 +633,176 @@ body {
     <div id="tab-admin" style="display:none">
       <div style="margin-top:16px"></div>
 
-      <!-- 가입 승인 대기 -->
-      <div id="signupSection"></div>
+      <div class="subtabs" style="margin-bottom:14px">
+        <button class="stab active" onclick="switchAdminSub('members',this)">👥 회원 관리</button>
+        <button class="stab" onclick="switchAdminSub('match',this)">🎾 경기 설정</button>
+        <button class="stab" onclick="switchAdminSub('schedule',this)">🗓️ 일정·라운드</button>
+        <button class="stab" onclick="switchAdminSub('status',this)">📊 현황</button>
+      </div>
 
-      <!-- 정규 회원 -->
-      <div class="admin-sec">
-        <h3>👥 정규 회원 목록</h3>
-        <div class="chips-wrap" id="memberChips"></div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">새 회원 추가</div>
-          <div class="row-form">
-            <input class="row-inp" id="newMember" placeholder="이름" onkeydown="if(event.key==='Enter')addMember()">
-            <div class="gender-toggle">
-              <button class="g-btn m active" id="gBtnM" onclick="selectGender('m')">♂ 남</button>
-              <button class="g-btn f" id="gBtnF" onclick="selectGender('f')">♀ 여</button>
+      <div id="adminGroup-members">
+        <!-- 가입 승인 대기 -->
+        <div id="signupSection"></div>
+
+        <!-- 정규 회원 -->
+        <div class="admin-sec">
+          <h3>👥 정규 회원 목록</h3>
+          <div class="chips-wrap" id="memberChips"></div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">새 회원 추가</div>
+            <div class="row-form">
+              <input class="row-inp" id="newMember" placeholder="이름" onkeydown="if(event.key==='Enter')addMember()">
+              <div class="gender-toggle">
+                <button class="g-btn m active" id="gBtnM" onclick="selectGender('m')">♂ 남</button>
+                <button class="g-btn f" id="gBtnF" onclick="selectGender('f')">♀ 여</button>
+              </div>
+              <button class="btn-add" onclick="addMember()">추가</button>
             </div>
-            <button class="btn-add" onclick="addMember()">추가</button>
           </div>
         </div>
-      </div>
 
-      <!-- 게스트 회원 (관리자 전용) -->
-      <div class="admin-sec guest-sec">
-        <h3>🙋 게스트 목록</h3>
-        <div style="font-size:11px;color:rgba(52,211,153,0.6);margin-bottom:10px">게스트는 경기에 참여하지만 정규 통계에는 포함되지 않아요</div>
-        <div class="chips-wrap" id="guestChips"></div>
-        <div id="guestStatsDetail"></div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(52,211,153,0.2)">
-          <div style="font-size:11px;color:#34d399;margin-bottom:8px">게스트 추가</div>
-          <div class="row-form">
-            <input class="row-inp" id="newGuest" placeholder="이름 (예: 홍길동 게스트)" onkeydown="if(event.key==='Enter')addGuest()">
-            <div class="gender-toggle">
-              <button class="g-btn m active" id="ggBtnM" onclick="selectGuestGender('m')">♂ 남</button>
-              <button class="g-btn f" id="ggBtnF" onclick="selectGuestGender('f')">♀ 여</button>
+        <!-- 게스트 회원 (관리자 전용) -->
+        <div class="admin-sec guest-sec">
+          <h3>🙋 게스트 목록</h3>
+          <div style="font-size:11px;color:rgba(52,211,153,0.6);margin-bottom:10px">게스트는 경기에 참여하지만 정규 통계에는 포함되지 않아요</div>
+          <div class="chips-wrap" id="guestChips"></div>
+          <div id="guestStatsDetail"></div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(52,211,153,0.2)">
+            <div style="font-size:11px;color:#34d399;margin-bottom:8px">게스트 추가</div>
+            <div class="row-form">
+              <input class="row-inp" id="newGuest" placeholder="이름 (예: 홍길동 게스트)" onkeydown="if(event.key==='Enter')addGuest()">
+              <div class="gender-toggle">
+                <button class="g-btn m active" id="ggBtnM" onclick="selectGuestGender('m')">♂ 남</button>
+                <button class="g-btn f" id="ggBtnF" onclick="selectGuestGender('f')">♀ 여</button>
+              </div>
+              <button class="btn-teal" onclick="addGuest()">추가</button>
             </div>
-            <button class="btn-teal" onclick="addGuest()">추가</button>
+          </div>
+        </div>
+
+        <!-- 커플/부부 설정 -->
+        <div class="admin-sec">
+          <h3>💑 커플/부부 설정</h3>
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">혼복 시 같은 팀으로 배정되지 않아요</div>
+          <div class="chips-wrap" id="coupleChips"></div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">커플 추가 (남 + 여)</div>
+            <div class="row-form">
+              <select class="row-inp" id="coupleM" style="flex:1">
+                <option value="">남자 선택</option>
+              </select>
+              <select class="row-inp" id="coupleF" style="flex:1">
+                <option value="">여자 선택</option>
+              </select>
+              <button class="btn-add" onclick="addCouple()">추가</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- 커플/부부 설정 -->
-      <div class="admin-sec">
-        <h3>💑 커플/부부 설정</h3>
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">혼복 시 같은 팀으로 배정되지 않아요</div>
-        <div class="chips-wrap" id="coupleChips"></div>
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">커플 추가 (남 + 여)</div>
-          <div class="row-form">
-            <select class="row-inp" id="coupleM" style="flex:1">
-              <option value="">남자 선택</option>
-            </select>
-            <select class="row-inp" id="coupleF" style="flex:1">
-              <option value="">여자 선택</option>
-            </select>
-            <button class="btn-add" onclick="addCouple()">추가</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 일자별 금지/지정 페어 -->
-      <div class="admin-sec">
-        <h3>🗓️ 일자별 금지/지정 페어</h3>
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">선택한 날짜의 페어링에만 적용돼요 · 🚫금지=같은 팀 안 됨 · 📌지정=같은 팀으로 묶기</div>
-        <select class="row-inp" id="datePairSel" style="width:100%;margin-bottom:12px" onchange="changeDatePairSel()">
-          <option value="">날짜 선택...</option>
-        </select>
-        <div id="datePairBody"><div style="color:#4a8ab5;font-size:12px">날짜를 선택하세요</div></div>
-      </div>
-
-      <!-- 시즌 관리 -->
-      <div class="admin-sec">
-        <h3>🗓️ 시즌 관리</h3>
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">현재 <b id="curSeasonLabel">시즌 1</b> 진행 중 · 마감하면 기록이 보존되고 새 시즌부터 랭킹이 새로 집계돼요</div>
-        <button class="btn-add" style="width:100%;background:#f59e0b;color:#1a120a;font-weight:800" onclick="startNewSeason()">🏁 이번 시즌 마감하고 새 시즌 시작</button>
-      </div>
-
-      <!-- 날짜별 참석자 관리 -->
-      <div class="admin-sec">
-        <h3>📋 날짜별 참석자 관리</h3>
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">참석/불참 설정 후 페어링 생성 시 자동 반영돼요</div>
-        <div id="attendanceSection"><div style="color:#4a8ab5;font-size:12px">날짜 그룹을 먼저 추가해주세요</div></div>
-      </div>
-
-      <!-- 날짜 그룹 추가 -->
-      <div class="admin-sec">
-        <h3>📅 날짜 그룹 추가</h3>
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">날짜별로 묶어서 그 안에 라운드를 추가해요</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-          <div>
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">날짜</div>
-            <input type="date" class="row-inp" id="dayDate" style="width:100%">
-          </div>
-          <div>
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">장소 (선택)</div>
-            <input class="row-inp" id="dayPlace" placeholder="예: 부천테니스장" style="width:100%">
-          </div>
-        </div>
-        <button class="btn-add" style="width:100%" onclick="addDay()">📅 날짜 그룹 추가</button>
-      </div>
-
-      <!-- 라운드 자동 생성 -->
-      <div class="admin-sec">
-        <h3>🏆 라운드 자동 생성</h3>
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:12px">날짜 선택 → 라운드별 코트 방식 설정 → 라운드마다 개별로 섞기</div>
-
-        <!-- 날짜 선택 -->
-        <div style="margin-bottom:10px">
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">📅 날짜 그룹 선택</div>
-          <select class="row-sel" id="rndDayId" style="width:100%" onchange="onRndDayChange()">
+      <div id="adminGroup-match" style="display:none">
+        <!-- 일자별 금지/지정 페어 -->
+        <div class="admin-sec">
+          <h3>🗓️ 일자별 금지/지정 페어</h3>
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">선택한 날짜의 페어링에만 적용돼요 · 🚫금지=같은 팀 안 됨 · 📌지정=같은 팀으로 묶기</div>
+          <select class="row-inp" id="datePairSel" style="width:100%;margin-bottom:12px" onchange="changeDatePairSel()">
             <option value="">날짜 선택...</option>
           </select>
+          <div id="datePairBody"><div style="color:#4a8ab5;font-size:12px">날짜를 선택하세요</div></div>
         </div>
 
-        <!-- 라운드 수 + 코트 수 -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-          <div>
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">총 라운드 수</div>
-            <select class="row-sel" id="totalRounds" style="width:100%" onchange="rndConfigChanged()">
-              <option value="2">2라운드</option>
-              <option value="3" selected>3라운드</option>
-              <option value="4">4라운드</option>
-              <option value="5">5라운드</option>
-              <option value="6">6라운드</option>
-              <option value="7">7라운드</option>
-              <option value="8">8라운드</option>
-            </select>
-          </div>
-          <div>
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">코트 수</div>
-            <select class="row-sel" id="rndCourts" style="width:100%" onchange="rndConfigChanged()">
-              <option value="2" selected>2코트</option>
-              <option value="3">3코트</option>
-              <option value="4">4코트</option>
-              <option value="5">5코트</option>
-              <option value="6">6코트</option>
-              <option value="7">7코트</option>
-              <option value="8">8코트</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- 라운드별 코트 방식 + 개별 주사위 -->
-        <div id="roundTypeSelectors" style="display:flex;flex-direction:column;gap:10px"></div>
-
-        <div style="margin-top:10px">
-          <button class="btn-add" style="width:100%;background:rgba(124,58,237,0.85)" onclick="rollAllBalanced()">🗓️ 하루 전체 섞기</button>
-        </div>
-        <div style="margin-top:8px">
-          <button class="btn-add" style="width:100%" onclick="saveAllRounds()">✅ 전체 라운드 저장</button>
+        <!-- 시즌 관리 -->
+        <div class="admin-sec">
+          <h3>🗓️ 시즌 관리</h3>
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">현재 <b id="curSeasonLabel">시즌 1</b> 진행 중 · 마감하면 기록이 보존되고 새 시즌부터 랭킹이 새로 집계돼요</div>
+          <button class="btn-add" style="width:100%;background:#f59e0b;color:#1a120a;font-weight:800" onclick="startNewSeason()">🏁 이번 시즌 마감하고 새 시즌 시작</button>
         </div>
       </div>
 
-      <!-- 현황 -->
-      <div class="admin-sec">
-        <h3>📋 현황</h3>
-        <div id="leagueStat"></div>
+      <div id="adminGroup-schedule" style="display:none">
+        <!-- 날짜별 참석자 관리 -->
+        <div class="admin-sec">
+          <h3>📋 날짜별 참석자 관리</h3>
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">참석/불참 설정 후 페어링 생성 시 자동 반영돼요</div>
+          <div id="attendanceSection"><div style="color:#4a8ab5;font-size:12px">날짜 그룹을 먼저 추가해주세요</div></div>
+        </div>
+
+        <!-- 날짜 그룹 추가 -->
+        <div class="admin-sec">
+          <h3>📅 날짜 그룹 추가</h3>
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">날짜별로 묶어서 그 안에 라운드를 추가해요</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+            <div>
+              <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">날짜</div>
+              <input type="date" class="row-inp" id="dayDate" style="width:100%">
+            </div>
+            <div>
+              <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">장소 (선택)</div>
+              <input class="row-inp" id="dayPlace" placeholder="예: 부천테니스장" style="width:100%">
+            </div>
+          </div>
+          <button class="btn-add" style="width:100%" onclick="addDay()">📅 날짜 그룹 추가</button>
+        </div>
+
+        <!-- 라운드 자동 생성 -->
+        <div class="admin-sec">
+          <h3>🏆 라운드 자동 생성</h3>
+          <div style="font-size:11px;color:#4a8ab5;margin-bottom:12px">날짜 선택 → 라운드별 코트 방식 설정 → 라운드마다 개별로 섞기</div>
+
+          <!-- 날짜 선택 -->
+          <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">📅 날짜 그룹 선택</div>
+            <select class="row-sel" id="rndDayId" style="width:100%" onchange="onRndDayChange()">
+              <option value="">날짜 선택...</option>
+            </select>
+          </div>
+
+          <!-- 라운드 수 + 코트 수 -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+            <div>
+              <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">총 라운드 수</div>
+              <select class="row-sel" id="totalRounds" style="width:100%" onchange="rndConfigChanged()">
+                <option value="2">2라운드</option>
+                <option value="3" selected>3라운드</option>
+                <option value="4">4라운드</option>
+                <option value="5">5라운드</option>
+                <option value="6">6라운드</option>
+                <option value="7">7라운드</option>
+                <option value="8">8라운드</option>
+              </select>
+            </div>
+            <div>
+              <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">코트 수</div>
+              <select class="row-sel" id="rndCourts" style="width:100%" onchange="rndConfigChanged()">
+                <option value="2" selected>2코트</option>
+                <option value="3">3코트</option>
+                <option value="4">4코트</option>
+                <option value="5">5코트</option>
+                <option value="6">6코트</option>
+                <option value="7">7코트</option>
+                <option value="8">8코트</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 라운드별 코트 방식 + 개별 주사위 -->
+          <div id="roundTypeSelectors" style="display:flex;flex-direction:column;gap:10px"></div>
+
+          <div style="margin-top:10px">
+            <button class="btn-add" style="width:100%;background:rgba(124,58,237,0.85)" onclick="rollAllBalanced()">🗓️ 하루 전체 섞기</button>
+          </div>
+          <div style="margin-top:8px">
+            <button class="btn-add" style="width:100%" onclick="saveAllRounds()">✅ 전체 라운드 저장</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="adminGroup-status" style="display:none">
+        <!-- 현황 -->
+        <div class="admin-sec">
+          <h3>📋 현황</h3>
+          <div id="leagueStat"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -3524,6 +3541,15 @@ function renderAdmin(){
 }
 
 // 탭
+window.switchAdminSub = function(key, btn){
+  ['members','match','schedule','status'].forEach(k => {
+    const el = document.getElementById(`adminGroup-${k}`);
+    if (el) el.style.display = (k === key) ? 'block' : 'none';
+  });
+  document.querySelectorAll('#tab-admin .subtabs .stab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+};
+
 window.switchTab=function(tab,btn){
   ['league','terra','schedule','fortune','event','board','admin'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
