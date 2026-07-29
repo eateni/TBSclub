@@ -4602,9 +4602,31 @@ window.openAdminLogin=function(){
 window.doAdminLogin=async function(){
   const email=document.getElementById('adminEmail').value.trim();
   const pw=document.getElementById('adminPw').value;
-  document.getElementById('adminLoginErr').textContent='';
-  try{ await signInWithEmailAndPassword(auth,email,pw); hide('adminLoginModal'); }
-  catch(e){ document.getElementById('adminLoginErr').textContent='이메일 또는 비밀번호가 틀렸어요'; }
+  const errEl = document.getElementById('adminLoginErr');
+  const btn = document.querySelector('#adminLoginModal .btn-ok');
+  errEl.textContent='';
+
+  if (!email || !pw) { errEl.textContent='이메일과 비밀번호를 입력해주세요'; return; }
+
+  if (btn) { btn.disabled = true; btn.textContent = '로그인 중...'; }
+  try{
+    await signInWithEmailAndPassword(auth,email,pw);
+    hide('adminLoginModal');
+  } catch(e){
+    console.error('로그인 실패:', e.code, e.message);
+    const msgMap = {
+      'auth/wrong-password': '비밀번호가 틀렸어요',
+      'auth/invalid-credential': '이메일 또는 비밀번호가 틀렸어요',
+      'auth/user-not-found': '가입되지 않은 이메일이에요',
+      'auth/invalid-email': '이메일 형식이 올바르지 않아요',
+      'auth/too-many-requests': '너무 여러 번 시도해서 잠시 제한됐어요. 몇 분 후 다시 시도해주세요',
+      'auth/network-request-failed': '네트워크 연결을 확인해주세요',
+      'auth/user-disabled': '비활성화된 계정이에요. 관리자에게 문의해주세요',
+    };
+    errEl.textContent = msgMap[e.code] || `로그인 실패: ${e.message}`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '로그인'; }
+  }
 };
 window.doLogout=async function(){
   if(!confirm('관리자 모드에서 로그아웃 할까요?'))return;
