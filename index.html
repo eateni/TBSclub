@@ -360,8 +360,10 @@ body {
             <div style="font-size:20px; font-weight:900; color:#1e293b; letter-spacing:-0.5px; line-height:1.15;">TBS HISTORY</div>
           </div>
           <div style="margin-top:4px;">
-            <span style="display:block; font-size:9.5px; color:rgba(30,41,59,0.75); letter-spacing:1.8px; font-weight:700; text-transform:uppercase;">After Match, Start Again</span>
-            <span style="display:block; font-size:9px; color:rgba(30,41,59,0.55); margin-top:2px; letter-spacing:0.3px;">경기가 끝나도 우리의 즐거움은 이제 시작이다.</span>
+            <div style="margin-top:6px; padding-top:6px; border-top:1px solid rgba(30,41,59,0.08);">
+              <span style="display:block; font-size:13px; color:rgba(30,41,59,0.85); letter-spacing:1.2px; font-weight:800; text-transform:uppercase;">After Match, Start Again</span>
+              <span style="display:block; font-size:12px; color:rgba(30,41,59,0.6); margin-top:3px; letter-spacing:0.2px; font-weight:500;">경기가 끝나도 우리의 즐거움은 이제 시작이다.</span>
+            </div>
           </div>
         </div>
         <div style="display:flex; align-items:center; gap:7px; flex-shrink:0; padding-top:2px;">
@@ -870,7 +872,7 @@ body {
 
 <div class="overlay" id="adminLoginModal" style="display:none" onclick="if(event.target.id==='adminLoginModal')hide('adminLoginModal')">
   <div class="modal">
-    <div class="modal-title">🔐 관리자 로그인</div>
+    <div class="modal-title">🔑 로그인</div>
     <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">이메일</div>
     <input class="f-input" id="adminEmail" type="email" placeholder="이메일" onkeydown="if(event.key==='Enter')doAdminLogin()">
     <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">비밀번호</div>
