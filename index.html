@@ -4884,18 +4884,36 @@ window.openMyDashboard = function(){
   document.getElementById('myDashboardModal').style.display = 'flex';
 };
 
-async function resolveMyClaim() {
+async function resolveMyClaim(isRetry) {
   const user = lastAuthUser;
   if (!user || user.email === ADMIN_EMAIL) { myClaim = null; renderMyDashboardState(); return; }
+
   const foundMember = members.find(m => m.uid === user.uid);
   const foundGuest = guests.find(g => g.uid === user.uid);
-  if (foundMember) { myClaim = { ...foundMember, isGuest:false }; }
-  else if (foundGuest) { myClaim = { ...foundGuest, isGuest:true }; }
-  else {
+
+  if (foundMember) {
+    myClaim = { ...foundMember, isGuest:false };
+    renderMyDashboardState();
+    return;
+  }
+  if (foundGuest) {
+    myClaim = { ...foundGuest, isGuest:true };
+    renderMyDashboardState();
+    return;
+  }
+
+  try {
     const q = query(collection(db,'signupRequests'), where('uid','==',user.uid));
     const snap = await getDocs(q);
     const pending = snap.docs.find(d => d.data().status === 'pending');
     myClaim = pending ? 'pending' : null;
+  } catch (e) {
+    console.error('resolveMyClaim 실패:', e.code, e.message);
+    if (!isRetry) {
+      setTimeout(() => resolveMyClaim(true), 1500);
+      return;
+    }
+    myClaim = null;
   }
   renderMyDashboardState();
 }
