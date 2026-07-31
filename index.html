@@ -309,6 +309,13 @@ body {
   backdrop-filter:blur(4px);
 }
 #introSkip:hover{ background:rgba(0,0,0,0.7); }
+@media (max-width: 480px) {
+  .header-btn-row {
+    width: 100%;
+    justify-content: center !important;
+    margin-top: 8px;
+  }
+}
 </style>
 </head>
 <body>
@@ -366,7 +373,7 @@ body {
             </div>
           </div>
         </div>
-        <div style="display:flex; align-items:center; gap:6px; flex-shrink:0; padding-top:2px; flex-wrap:wrap;">
+        <div class="header-btn-row" style="display:flex; align-items:center; gap:6px; flex-shrink:0; padding-top:2px; flex-wrap:wrap;">
           <button id="myDashboardBtn" class="u-badge badge-guest" style="cursor:pointer;border:none;background:rgba(35,90,180,0.2)">회원가입</button>
           <span class="u-badge badge-guest" id="uBadge">👤 게스트</span>
           <button class="btn-admin-toggle" onclick="openAdminLogin()" title="로그인">🔑 로그인</button>
