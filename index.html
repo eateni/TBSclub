@@ -414,7 +414,7 @@ body {
   <div class="content">
 
     <!-- 📌 오늘 일정 + 내 기록 (로그인 시 좌우 배치) -->
-    <div id="topCardsRow" style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap;">
+    <div id="topCardsRow" style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;">
       <div id="todayBanner" style="display:none; flex:1; min-width:150px;"></div>
       <div id="myRecordCard" style="display:none; flex:1; min-width:150px;"></div>
     </div>
@@ -517,6 +517,7 @@ body {
             <select id="schWriter" class="row-sel" style="width:100%;font-size:13px;padding:9px">
               <option value="">이름 선택</option>
             </select>
+            <div id="schWriterLockNotice" style="display:none;font-size:10px;color:#34d399;margin-top:4px">🔒 로그인한 본인 이름으로 자동 설정됨</div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
@@ -1041,6 +1042,12 @@ body {
       <input type="checkbox" id="editSchIsGameMeetup" style="width:16px;height:16px">
       <label for="editSchIsGameMeetup" style="font-size:12px;color:#a78bfa;font-weight:700;cursor:pointer">🎾 게임모임으로 표시</label>
     </div>
+    <div style="font-size:11px;color:#4a8ab5;margin:4px 0 6px">🙋 참석자 관리</div>
+    <div id="editAttendList" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <select id="editAttendAddSel" class="row-sel" style="flex:1;font-size:12px;padding:7px"></select>
+      <button onclick="editAttendAdd()" style="padding:7px 12px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">추가</button>
+    </div>
     <div class="mft">
       <button class="btn-cancel" onclick="hide('editScheduleModal')">취소</button>
       <button class="btn-ok" onclick="saveEditSchedule()">저장</button>
@@ -1087,7 +1094,8 @@ let events = [];
 let schedules = [];
 let boardPosts = [];
 let meetupCurrentScheduleId = null;
-let meetupCurrentMatches = [];
+let meetupCurrentRounds = [];
+let meetupConfig = { courts: 2, rounds: 1, types: {} };
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let calSelectedDate = null;
@@ -3653,6 +3661,21 @@ function fillScheduleWriter() {
   sel.innerHTML = '<option value="">이름 선택</option>' +
     allPlayers().map(p=>`<option value="${p.name}">${p.name} ${p.gender==='f'?'♀':'♂'}</option>`).join('');
   if (cur) sel.value = cur;
+  applyWriterAutoSelect();
+}
+
+function applyWriterAutoSelect() {
+  const sel = document.getElementById('schWriter');
+  if (!sel) return;
+  const notice = document.getElementById('schWriterLockNotice');
+  if (myClaim && myClaim !== 'pending' && !isAdmin) {
+    sel.value = myClaim.name;
+    sel.disabled = true;
+    if (notice) notice.style.display = 'block';
+  } else {
+    sel.disabled = false;
+    if (notice) notice.style.display = 'none';
+  }
 }
 
 function initSchedule() {
@@ -3687,10 +3710,12 @@ window.addSchedule = async function() {
   if (!date) { alert('날짜를 선택해주세요'); return; }
   if (!content) { alert('내용을 입력해주세요'); return; }
 
+  const writerUid = (myClaim && myClaim !== 'pending' && myClaim.name === writer) ? myClaim.uid : null;
+
   await addDoc(collection(db,'schedules'), {
-    writer, date, time, place, content,
-    attend: {},      // {이름: '참석'|'불참'|'미정'}
-    comments: [],    // [{name, text, ts}]
+    writer, writerUid, date, time, place, content,
+    attend: { [writer]: '참석' },
+    comments: [],
     isGameMeetup: document.getElementById('schIsGameMeetup').checked,
     ts: Date.now(),
     createdAt: serverTimestamp()
@@ -3716,6 +3741,13 @@ window.openEditSchedule = function(id) {
   document.getElementById('editSchPlace').value = s.place || '';
   document.getElementById('editSchContent').value = s.content || '';
   document.getElementById('editSchIsGameMeetup').checked = !!s.isGameMeetup;
+  renderEditAttendList(s.attend || {});
+  const addSel = document.getElementById('editAttendAddSel');
+  if (addSel) {
+    const already = Object.keys(s.attend || {});
+    addSel.innerHTML = '<option value="">이름 선택</option>' +
+      allPlayers().filter(p => !already.includes(p.name)).map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  }
   document.getElementById('editScheduleModal').style.display = 'flex';
 };
 
@@ -3728,9 +3760,48 @@ window.saveEditSchedule = async function() {
   const isGameMeetup = document.getElementById('editSchIsGameMeetup').checked;
   if (!date) { alert('날짜를 선택해주세요'); return; }
   if (!content) { alert('내용을 입력해주세요'); return; }
-  await updateDoc(doc(db, 'schedules', id), { date, time, place, content, isGameMeetup });
+  await updateDoc(doc(db, 'schedules', id), { date, time, place, content, isGameMeetup, attend: editAttendState });
   hide('editScheduleModal');
   alert('✅ 일정이 수정됐어요!');
+};
+
+let editAttendState = {};
+
+function renderEditAttendList(attend) {
+  editAttendState = {...attend};
+  const el = document.getElementById('editAttendList');
+  if (!el) return;
+  const entries = Object.entries(editAttendState);
+  el.innerHTML = entries.length ? entries.map(([name, status]) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)">
+      <span style="font-size:12px;color:#e8edf2">${name}</span>
+      <div style="display:flex;gap:4px;align-items:center">
+        <select onchange="editAttendSetStatus('${name}', this.value)" class="row-sel" style="font-size:11px;padding:4px">
+          <option value="참석" ${status==='참석'?'selected':''}>참석</option>
+          <option value="불참" ${status==='불참'?'selected':''}>불참</option>
+          <option value="미정" ${status==='미정'?'selected':''}>미정</option>
+        </select>
+        <button onclick="editAttendRemove('${name}')" style="background:none;border:none;color:#f87171;font-size:14px;cursor:pointer;padding:0 4px">×</button>
+      </div>
+    </div>`).join('') : '<div style="font-size:11px;color:#4a8ab5;padding:4px 0">참석자가 없어요</div>';
+}
+
+window.editAttendSetStatus = function(name, status) {
+  editAttendState[name] = status;
+};
+
+window.editAttendRemove = function(name) {
+  delete editAttendState[name];
+  renderEditAttendList(editAttendState);
+};
+
+window.editAttendAdd = function() {
+  const sel = document.getElementById('editAttendAddSel');
+  const name = sel.value;
+  if (!name) return;
+  editAttendState[name] = '참석';
+  renderEditAttendList(editAttendState);
+  sel.value = '';
 };
 
 // ── 게임모임 페어 짜기 ────────────────────────────────────────────
@@ -3745,80 +3816,171 @@ window.openMeetupPairModal = function(scheduleId) {
     document.getElementById('meetupPairModal').style.display = 'flex';
     return;
   }
-  meetupShufflePairs(attendees);
+  meetupConfig = { courts: Math.max(1, Math.min(4, Math.floor(attendees.length/4))), rounds: 1, types: {} };
+  renderMeetupConfigStep();
   document.getElementById('meetupPairModal').style.display = 'flex';
 };
 
-function meetupShufflePairs(attendees) {
-  const shuffled = shuffle([...attendees]);
-  const matches = [];
-  for (let i = 0; i + 3 < shuffled.length; i += 4) {
-    matches.push({ team1: [shuffled[i], shuffled[i+1]], team2: [shuffled[i+2], shuffled[i+3]], score1: '', score2: '' });
-  }
-  const leftover = shuffled.slice(Math.floor(shuffled.length / 4) * 4);
-  meetupCurrentMatches = matches;
-  renderMeetupPairBody(leftover);
+function renderMeetupConfigStep() {
+  const body = document.getElementById('meetupPairBody');
+  body.innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="flex:1">
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">코트 수</div>
+        <select id="meetupCourtsSel" class="row-sel" style="width:100%;padding:8px">
+          ${[1,2,3,4].map(n=>`<option value="${n}" ${n===meetupConfig.courts?'selected':''}>${n}코트</option>`).join('')}
+        </select>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">라운드 수</div>
+        <select id="meetupRoundsSel" class="row-sel" style="width:100%;padding:8px">
+          ${[1,2,3,4].map(n=>`<option value="${n}" ${n===meetupConfig.rounds?'selected':''}>${n}라운드</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <button onclick="meetupGoToTypeStep()" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">다음: 코트별 타입 정하기 →</button>`;
 }
 
-function renderMeetupPairBody(leftover) {
+window.meetupGoToTypeStep = function() {
+  meetupConfig.courts = parseInt(document.getElementById('meetupCourtsSel').value);
+  meetupConfig.rounds = parseInt(document.getElementById('meetupRoundsSel').value);
+  renderMeetupTypeStep();
+};
+
+function renderMeetupTypeStep() {
   const body = document.getElementById('meetupPairBody');
-  const rows = meetupCurrentMatches.map((m, idx) => `
-    <div style="background:rgba(3,12,45,0.5);border-radius:10px;padding:10px;margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#e8edf2">
-        <span style="flex:1;text-align:right;font-weight:700">${m.team1.join(' · ')}</span>
-        <input type="number" id="meetupS1_${idx}" value="${m.score1}" min="0" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1px solid rgba(35,90,180,0.3);border-radius:6px;color:#fff;padding:4px">
-        <span style="color:#a78bfa;font-weight:700">:</span>
-        <input type="number" id="meetupS2_${idx}" value="${m.score2}" min="0" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1px solid rgba(35,90,180,0.3);border-radius:6px;color:#fff;padding:4px">
-        <span style="flex:1;font-weight:700">${m.team2.join(' · ')}</span>
-      </div>
-    </div>`).join('');
-  const leftoverHtml = (leftover && leftover.length)
-    ? `<div style="font-size:11px;color:#4a8ab5;margin-bottom:8px;padding:6px 8px;background:rgba(3,12,45,0.4);border-radius:8px">쉬는 인원: ${leftover.join(', ')}</div>`
-    : '';
-  body.innerHTML = `
-    ${leftoverHtml}
-    ${rows}
+  let rows = '';
+  for (let r = 1; r <= meetupConfig.rounds; r++) {
+    rows += `<div style="font-size:12px;color:#a78bfa;font-weight:700;margin:8px 0 4px">${r}라운드</div>`;
+    for (let c = 1; c <= meetupConfig.courts; c++) {
+      const key = `r${r}_c${c}`;
+      const cur = meetupConfig.types[key] || '혼복';
+      rows += `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="font-size:11px;color:#8aa5c4;width:50px">${c}코트</span>
+          <select id="meetupType_${key}" class="row-sel" style="flex:1;padding:6px;font-size:12px">
+            ${['혼복','남복','여복','잡복'].map(t=>`<option value="${t}" ${t===cur?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+  }
+  body.innerHTML = `${rows}
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button onclick="renderMeetupConfigStep()" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">← 뒤로</button>
+      <button onclick="meetupGenerate()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">🎲 게임 생성</button>
+    </div>`;
+}
+
+window.meetupGenerate = function() {
+  for (let r = 1; r <= meetupConfig.rounds; r++) {
+    for (let c = 1; c <= meetupConfig.courts; c++) {
+      const key = `r${r}_c${c}`;
+      const sel = document.getElementById(`meetupType_${key}`);
+      if (sel) meetupConfig.types[key] = sel.value;
+    }
+  }
+
+  const sch = schedules.find(s => s.id === meetupCurrentScheduleId);
+  const attend = sch ? sch.attend || {} : {};
+  const attendeeNames = Object.entries(attend).filter(([_, v]) => v === '참석').map(([n]) => n);
+  const allP = allPlayers();
+  const attendeesWithGender = attendeeNames.map(n => {
+    const found = allP.find(p => p.name === n);
+    return { name: n, gender: found ? found.gender : 'm' };
+  });
+
+  const rounds = [];
+  for (let r = 1; r <= meetupConfig.rounds; r++) {
+    const mPool = shuffle(attendeesWithGender.filter(p => p.gender === 'm').map(p => p.name));
+    const fPool = shuffle(attendeesWithGender.filter(p => p.gender === 'f').map(p => p.name));
+    const matches = [];
+    for (let c = 1; c <= meetupConfig.courts; c++) {
+      const type = meetupConfig.types[`r${r}_c${c}`] || '혼복';
+      let team1 = null, team2 = null;
+      if (type === '혼복' && mPool.length >= 2 && fPool.length >= 2) {
+        team1 = [mPool.shift(), fPool.shift()];
+        team2 = [mPool.shift(), fPool.shift()];
+      } else if (type === '남복' && mPool.length >= 4) {
+        team1 = [mPool.shift(), mPool.shift()];
+        team2 = [mPool.shift(), mPool.shift()];
+      } else if (type === '여복' && fPool.length >= 4) {
+        team1 = [fPool.shift(), fPool.shift()];
+        team2 = [fPool.shift(), fPool.shift()];
+      } else if (type === '잡복') {
+        const majorityIsM = mPool.length >= fPool.length;
+        const threePool = majorityIsM ? mPool : fPool;
+        const onePool = majorityIsM ? fPool : mPool;
+        if (threePool.length >= 3 && onePool.length >= 1) {
+          team1 = [threePool.shift(), threePool.shift()];
+          team2 = [threePool.shift(), onePool.shift()];
+        }
+      }
+      if (team1 && team2) matches.push({ court: c, type, team1, team2, score1: '', score2: '' });
+    }
+    rounds.push({ round: r, matches });
+  }
+
+  meetupCurrentRounds = rounds;
+  renderMeetupResultStep();
+};
+
+function renderMeetupResultStep() {
+  const body = document.getElementById('meetupPairBody');
+  const html = meetupCurrentRounds.map(rd => `
+    <div style="font-size:12px;color:#a78bfa;font-weight:700;margin:10px 0 6px">${rd.round}라운드</div>
+    ${rd.matches.map((m, mi) => `
+      <div style="background:rgba(3,12,45,0.5);border-radius:10px;padding:10px;margin-bottom:6px">
+        <div style="font-size:10px;color:#8aa5c4;margin-bottom:4px">${m.court}코트 · ${m.type}</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#e8edf2">
+          <span style="flex:1;text-align:right;font-weight:700">${m.team1.join(' · ')}</span>
+          <input type="number" id="meetupS1_${rd.round}_${mi}" min="0" style="width:40px;text-align:center;background:rgba(0,0,0,0.3);border:1px solid rgba(35,90,180,0.3);border-radius:6px;color:#fff;padding:4px">
+          <span style="color:#a78bfa">:</span>
+          <input type="number" id="meetupS2_${rd.round}_${mi}" min="0" style="width:40px;text-align:center;background:rgba(0,0,0,0.3);border:1px solid rgba(35,90,180,0.3);border-radius:6px;color:#fff;padding:4px">
+          <span style="flex:1;font-weight:700">${m.team2.join(' · ')}</span>
+        </div>
+      </div>`).join('')}
+  `).join('');
+  body.innerHTML = `${html}
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="meetupReshuffle()" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 섞기</button>
+      <button onclick="renderMeetupTypeStep()" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 설정</button>
       <button onclick="saveMeetupPairs()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">✅ 저장</button>
     </div>`;
 }
 
-window.meetupReshuffle = function() {
-  const sch = schedules.find(s => s.id === meetupCurrentScheduleId);
-  if (!sch) return;
-  const attend = sch.attend || {};
-  const attendees = Object.entries(attend).filter(([_, v]) => v === '참석').map(([n]) => n);
-  meetupShufflePairs(attendees);
-};
-
 window.saveMeetupPairs = async function() {
-  meetupCurrentMatches.forEach((m, idx) => {
-    m.score1 = parseInt(document.getElementById(`meetupS1_${idx}`).value) || 0;
-    m.score2 = parseInt(document.getElementById(`meetupS2_${idx}`).value) || 0;
+  meetupCurrentRounds.forEach(rd => {
+    rd.matches.forEach((m, mi) => {
+      m.score1 = parseInt(document.getElementById(`meetupS1_${rd.round}_${mi}`)?.value) || 0;
+      m.score2 = parseInt(document.getElementById(`meetupS2_${rd.round}_${mi}`)?.value) || 0;
+    });
   });
 
-  await updateDoc(doc(db, 'schedules', meetupCurrentScheduleId), { gamePairs: meetupCurrentMatches });
+  await updateDoc(doc(db, 'schedules', meetupCurrentScheduleId), { gamePairs: meetupCurrentRounds });
 
   const sch = schedules.find(s => s.id === meetupCurrentScheduleId);
   const date = sch ? sch.date : new Date().toISOString().split('T')[0];
   const writes = [];
-  meetupCurrentMatches.forEach(m => {
-    const [a, b] = m.team1, [c, d] = m.team2;
-    writes.push(addDoc(collection(db, 'terra'), { player: a, date, partner: b, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
-    writes.push(addDoc(collection(db, 'terra'), { player: b, date, partner: a, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
-    writes.push(addDoc(collection(db, 'terra'), { player: c, date, partner: d, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
-    writes.push(addDoc(collection(db, 'terra'), { player: d, date, partner: c, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+  meetupCurrentRounds.forEach(rd => {
+    rd.matches.forEach(m => {
+      const [a, b] = m.team1, [c, d] = m.team2;
+      writes.push(addDoc(collection(db, 'terra'), { player: a, date, partner: b, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+      writes.push(addDoc(collection(db, 'terra'), { player: b, date, partner: a, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+      writes.push(addDoc(collection(db, 'terra'), { player: c, date, partner: d, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+      writes.push(addDoc(collection(db, 'terra'), { player: d, date, partner: c, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+    });
   });
   await Promise.all(writes);
 
-  alert('✅ 페어와 결과가 저장되고, 참여자 개인 기록에도 자동으로 반영됐어요!');
+  alert('✅ 저장 완료! 참여자 개인 기록에도 반영됐어요.');
   hide('meetupPairModal');
 };
 
 window.setAttend = async function(id, status) {
-  const name = document.getElementById(`att_who_${id}`)?.value;
-  if (!name) { alert('먼저 본인 이름을 선택해주세요'); return; }
+  const sel = document.getElementById(`att_who_${id}`)?.value;
+  const name = sel === '__custom__'
+    ? document.getElementById(`att_who_custom_${id}`)?.value.trim()
+    : sel;
+  if (!name) { alert('이름을 선택하거나 입력해주세요'); return; }
   const sch = schedules.find(s=>s.id===id);
   if (!sch) return;
   const attend = {...(sch.attend||{})};
@@ -3985,7 +4147,7 @@ function renderTodayBanner() {
 
   el.style.display = 'block';
   el.innerHTML = `
-    <div style="margin:14px 0 4px; background:linear-gradient(135deg, rgba(30,58,95,0.92), rgba(20,32,26,0.92)); border:1px solid rgba(245,158,11,0.45); border-radius:14px; padding:13px 14px; box-shadow:0 4px 14px rgba(0,0,0,0.35); position:relative; overflow:hidden">
+    <div style="margin:14px 0 4px; background:linear-gradient(135deg, rgba(30,58,95,0.92), rgba(20,32,26,0.92)); border:1px solid rgba(245,158,11,0.45); border-radius:14px; padding:13px 14px; box-shadow:0 4px 14px rgba(0,0,0,0.35); position:relative; overflow:hidden; height:100%; box-sizing:border-box">
       <div style="position:absolute;top:-18px;right:-8px;font-size:60px;opacity:0.08;pointer-events:none">🎾</div>
       <div onclick="openSchedule()" style="cursor:pointer">
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:6px;flex-wrap:wrap">
@@ -4135,7 +4297,7 @@ function renderSchedules() {
     return (b.ts||0)-(a.ts||0);
   });
   const filtered = calSelectedDate ? sorted.filter(s => s.date === calSelectedDate) : sorted;
-  const opts = '<option value="">이름</option>'+allPlayers().map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  const opts = '<option value="">이름</option>'+allPlayers().map(p=>`<option value="${p.name}">${p.name}</option>`).join('')+'<option value="__custom__">✏️ 직접 입력</option>';
 
   // 페이지 나누기
   const totalPages = Math.max(1, Math.ceil(filtered.length / SCHEDULE_PER_PAGE));
@@ -4150,11 +4312,11 @@ function renderSchedules() {
     const no = Object.entries(attend).filter(([_,v])=>v==='불참').map(([n])=>n);
     const maybe = Object.entries(attend).filter(([_,v])=>v==='미정').map(([n])=>n);
     const comments = s.comments || [];
-    const canManage = isAdmin || (myClaim && myClaim !== 'pending' && myClaim.name === s.writer);
+    const canManage = isAdmin || (myClaim && myClaim !== 'pending' && s.writerUid && myClaim.uid === s.writerUid);
     const editBtn = canManage ? `<button onclick="openEditSchedule('${s.id}')" style="background:none;border:none;color:#93c5fd;font-size:11px;cursor:pointer;margin-right:8px">✏️ 수정</button>` : '';
     const delBtn = canManage ? `<button onclick="delSchedule('${s.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">🗑️ 삭제</button>` : '';
     const canSetPairs = isAdmin || (myClaim && myClaim !== 'pending');
-    const pairsResultHtml = (s.gamePairs && s.gamePairs.length) ? `<div style="margin-top:8px;font-size:11px;color:#e8edf2">${s.gamePairs.map(m=>`<div style="padding:3px 0">${m.team1.join(' · ')} <b style="color:#a78bfa">${m.score1} : ${m.score2}</b> ${m.team2.join(' · ')}</div>`).join('')}</div>` : '';
+    const pairsResultHtml = (s.gamePairs && s.gamePairs.length) ? `<div style="margin-top:8px;font-size:11px;color:#e8edf2">${s.gamePairs.map(rd=>`<div style="color:#a78bfa;font-weight:700;margin-top:6px">${rd.round}라운드</div>${(rd.matches||[]).map(m=>`<div style="padding:3px 0">${m.court}코트(${m.type}) ${m.team1.join(' · ')} <b style="color:#a78bfa">${m.score1} : ${m.score2}</b> ${m.team2.join(' · ')}</div>`).join('')}`).join('')}</div>` : '';
     const meetupSection = s.isGameMeetup ? `
       <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:10px;margin-bottom:10px">
         <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:6px">🎾 게임모임</div>
@@ -4193,7 +4355,8 @@ function renderSchedules() {
       <!-- 참석 여부 -->
       <div style="background:rgba(3,12,45,0.4);border-radius:10px;padding:12px;margin-bottom:10px">
         <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:8px">🙋 참석 여부 체크</div>
-        <select id="att_who_${s.id}" class="row-sel" style="width:100%;font-size:12px;padding:7px;margin-bottom:8px">${opts}</select>
+        <select id="att_who_${s.id}" class="row-sel" style="width:100%;font-size:12px;padding:7px;margin-bottom:8px" onchange="document.getElementById('att_who_custom_${s.id}').style.display=(this.value==='__custom__')?'block':'none'">${opts}</select>
+        <input type="text" id="att_who_custom_${s.id}" placeholder="이름을 입력하세요" style="display:none;width:100%;font-size:12px;padding:7px;margin-bottom:8px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:8px;color:#fff;box-sizing:border-box">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
           <button onclick="setAttend('${s.id}','참석')" style="padding:8px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">⭕ 참석</button>
           <button onclick="setAttend('${s.id}','불참')" style="padding:8px;background:rgba(248,113,113,0.2);border:1px solid rgba(248,113,113,0.4);border-radius:8px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer">❌ 불참</button>
@@ -4996,6 +5159,8 @@ function renderMyRecordCard(){
 
   const stats = calcStats();
   const att = calcAttendance();
+  const ranked = [...stats].sort((a,b)=>b.pts-a.pts);
+  const myRank = ranked.findIndex(s => s.name === myClaim.name) + 1;
   const me = stats.find(s => s.name === myClaim.name);
   const today = new Date().toISOString().slice(0,10);
   const mySchedules = schedules
@@ -5005,7 +5170,10 @@ function renderMyRecordCard(){
 
   const statsHtml = me ? `
     <div style="text-align:center;margin-bottom:10px">
-      <div style="font-size:20px;font-weight:900;color:#f59e0b">${me.pts}점</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px">
+        <div style="font-size:20px;font-weight:900;color:#f59e0b">${me.pts}점</div>
+        ${myRank>0?`<div style="font-size:11px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">${myRank}위</div>`:''}
+      </div>
       <div style="font-size:12px;color:#4a8ab5">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
       <div style="font-size:11px;color:#8aa5c4;margin-top:2px">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
     </div>` : `<div style="text-align:center;color:#4a8ab5;padding:10px;font-size:12px">아직 경기 기록이 없어요</div>`;
@@ -5016,7 +5184,7 @@ function renderMyRecordCard(){
 
   el.style.display = 'block';
   el.innerHTML = `
-    <div class="admin-sec" style="margin-bottom:14px">
+    <div class="admin-sec" style="height:100%;box-sizing:border-box">
       <h3>👤 ${myClaim.name}님의 기록</h3>
       ${statsHtml}
       <div style="font-size:11px;color:#4a8ab5;font-weight:700;margin:8px 0 4px">📅 다가오는 일정</div>
@@ -5038,6 +5206,7 @@ function renderMyDashboardState(){
     btn.onclick = () => { populateSignupNameSelect(); document.getElementById('signupModal').style.display = 'flex'; };
   }
   renderMyRecordCard();
+  applyWriterAutoSelect();
 }
 
 window.openMyDashboard = function(){
