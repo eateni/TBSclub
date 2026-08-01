@@ -505,6 +505,9 @@ body {
     <div id="tab-schedule" style="display:none">
       <div style="margin-top:16px"></div>
 
+      <!-- 월 캘린더 -->
+      <div id="scheduleCalendar" style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:14px;margin-bottom:16px"></div>
+
       <!-- 새 일정 작성 -->
       <div style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:16px;margin-bottom:16px">
         <div style="font-size:14px;font-weight:800;color:#60a5fa;margin-bottom:12px">✏️ 새 일정 올리기</div>
@@ -561,8 +564,6 @@ body {
         </div>
       </div>
 
-      <!-- 월 캘린더 -->
-      <div id="scheduleCalendar" style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:14px;margin-bottom:16px"></div>
       <!-- 일정 목록 -->
       <div id="scheduleList"></div>
     </div>
@@ -1000,6 +1001,49 @@ body {
     <div id="meetupPairBody"></div>
     <div class="mft">
       <button class="btn-cancel" onclick="hide('meetupPairModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="editScheduleModal" style="display:none" onclick="if(event.target.id==='editScheduleModal')hide('editScheduleModal')">
+  <div class="modal">
+    <div class="modal-title">✏️ 일정 수정</div>
+    <input type="hidden" id="editSchId">
+    <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">날짜</div>
+    <input type="date" id="editSchDate" class="row-inp" style="width:100%;margin-bottom:8px">
+    <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">시간</div>
+    <select id="editSchTime" class="row-sel" style="width:100%;margin-bottom:8px">
+      <option value="">시간 선택</option>
+      <option value="오전 6시">오전 6시</option>
+      <option value="오전 7시">오전 7시</option>
+      <option value="오전 8시">오전 8시</option>
+      <option value="오전 9시">오전 9시</option>
+      <option value="오전 10시">오전 10시</option>
+      <option value="오전 11시">오전 11시</option>
+      <option value="낮 12시">낮 12시</option>
+      <option value="오후 1시">오후 1시</option>
+      <option value="오후 2시">오후 2시</option>
+      <option value="오후 3시">오후 3시</option>
+      <option value="오후 4시">오후 4시</option>
+      <option value="오후 5시">오후 5시</option>
+      <option value="오후 6시">오후 6시</option>
+      <option value="오후 7시">오후 7시</option>
+      <option value="오후 8시">오후 8시</option>
+      <option value="오후 9시">오후 9시</option>
+      <option value="오후 10시">오후 10시</option>
+      <option value="오후 11시">오후 11시</option>
+    </select>
+    <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">장소</div>
+    <input id="editSchPlace" class="row-inp" style="width:100%;margin-bottom:8px">
+    <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">내용</div>
+    <textarea id="editSchContent" class="row-inp" style="width:100%;min-height:60px;margin-bottom:8px"></textarea>
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0 10px">
+      <input type="checkbox" id="editSchIsGameMeetup" style="width:16px;height:16px">
+      <label for="editSchIsGameMeetup" style="font-size:12px;color:#a78bfa;font-weight:700;cursor:pointer">🎾 게임모임으로 표시</label>
+    </div>
+    <div class="mft">
+      <button class="btn-cancel" onclick="hide('editScheduleModal')">취소</button>
+      <button class="btn-ok" onclick="saveEditSchedule()">저장</button>
     </div>
   </div>
 </div>
@@ -3663,6 +3707,32 @@ window.delSchedule = async function(id) {
   await deleteDoc(doc(db,'schedules',id));
 };
 
+window.openEditSchedule = function(id) {
+  const s = schedules.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('editSchId').value = id;
+  document.getElementById('editSchDate').value = s.date || '';
+  document.getElementById('editSchTime').value = s.time || '';
+  document.getElementById('editSchPlace').value = s.place || '';
+  document.getElementById('editSchContent').value = s.content || '';
+  document.getElementById('editSchIsGameMeetup').checked = !!s.isGameMeetup;
+  document.getElementById('editScheduleModal').style.display = 'flex';
+};
+
+window.saveEditSchedule = async function() {
+  const id = document.getElementById('editSchId').value;
+  const date = document.getElementById('editSchDate').value;
+  const time = document.getElementById('editSchTime').value;
+  const place = document.getElementById('editSchPlace').value.trim();
+  const content = document.getElementById('editSchContent').value.trim();
+  const isGameMeetup = document.getElementById('editSchIsGameMeetup').checked;
+  if (!date) { alert('날짜를 선택해주세요'); return; }
+  if (!content) { alert('내용을 입력해주세요'); return; }
+  await updateDoc(doc(db, 'schedules', id), { date, time, place, content, isGameMeetup });
+  hide('editScheduleModal');
+  alert('✅ 일정이 수정됐어요!');
+};
+
 // ── 게임모임 페어 짜기 ────────────────────────────────────────────
 window.openMeetupPairModal = function(scheduleId) {
   meetupCurrentScheduleId = scheduleId;
@@ -4080,7 +4150,9 @@ function renderSchedules() {
     const no = Object.entries(attend).filter(([_,v])=>v==='불참').map(([n])=>n);
     const maybe = Object.entries(attend).filter(([_,v])=>v==='미정').map(([n])=>n);
     const comments = s.comments || [];
-    const delBtn = isAdmin ? `<button onclick="delSchedule('${s.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">🗑️ 삭제</button>` : '';
+    const canManage = isAdmin || (myClaim && myClaim !== 'pending' && myClaim.name === s.writer);
+    const editBtn = canManage ? `<button onclick="openEditSchedule('${s.id}')" style="background:none;border:none;color:#93c5fd;font-size:11px;cursor:pointer;margin-right:8px">✏️ 수정</button>` : '';
+    const delBtn = canManage ? `<button onclick="delSchedule('${s.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">🗑️ 삭제</button>` : '';
     const canSetPairs = isAdmin || (myClaim && myClaim !== 'pending');
     const pairsResultHtml = (s.gamePairs && s.gamePairs.length) ? `<div style="margin-top:8px;font-size:11px;color:#e8edf2">${s.gamePairs.map(m=>`<div style="padding:3px 0">${m.team1.join(' · ')} <b style="color:#a78bfa">${m.score1} : ${m.score2}</b> ${m.team2.join(' · ')}</div>`).join('')}</div>` : '';
     const meetupSection = s.isGameMeetup ? `
@@ -4102,7 +4174,7 @@ function renderSchedules() {
         </div>
         <div style="text-align:right">
           <div style="font-size:11px;color:#4a8ab5">✍️ ${s.writer}</div>
-          ${delBtn}
+          ${editBtn}${delBtn}
         </div>
       </div>
 
