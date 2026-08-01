@@ -553,6 +553,10 @@ body {
             <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">내용</div>
             <textarea id="schContent" class="row-inp" placeholder="예: 주말 번개 모임! 끝나고 저녁 같이 먹어요" style="width:100%;font-size:13px;padding:9px;min-height:60px;resize:vertical;font-family:inherit"></textarea>
           </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
+            <input type="checkbox" id="schIsGameMeetup" style="width:16px;height:16px;cursor:pointer">
+            <label for="schIsGameMeetup" style="font-size:12px;color:#a78bfa;font-weight:700;cursor:pointer">🎾 게임모임으로 표시 (참석자끼리 페어를 짜서 게임할 수 있어요)</label>
+          </div>
           <button onclick="addSchedule()" class="btn-add" style="width:100%;margin-top:4px">📅 일정 등록</button>
         </div>
       </div>
@@ -990,6 +994,16 @@ body {
   <div class="modal-bottom" id="eventDetailContent"></div>
 </div>
 
+<div class="overlay" id="meetupPairModal" style="display:none" onclick="if(event.target.id==='meetupPairModal')hide('meetupPairModal')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">🎲 게임모임 페어 짜기</div>
+    <div id="meetupPairBody"></div>
+    <div class="mft">
+      <button class="btn-cancel" onclick="hide('meetupPairModal')">닫기</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
@@ -1028,6 +1042,8 @@ let openAttBodies = new Set();
 let events = [];
 let schedules = [];
 let boardPosts = [];
+let meetupCurrentScheduleId = null;
+let meetupCurrentMatches = [];
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let calSelectedDate = null;
@@ -3631,18 +3647,103 @@ window.addSchedule = async function() {
     writer, date, time, place, content,
     attend: {},      // {이름: '참석'|'불참'|'미정'}
     comments: [],    // [{name, text, ts}]
+    isGameMeetup: document.getElementById('schIsGameMeetup').checked,
     ts: Date.now(),
     createdAt: serverTimestamp()
   });
   document.getElementById('schPlace').value='';
   document.getElementById('schContent').value='';
   document.getElementById('schTime').value='';
+  document.getElementById('schIsGameMeetup').checked = false;
   alert('✅ 일정이 등록됐어요!');
 };
 
 window.delSchedule = async function(id) {
   if (!confirm('이 일정을 삭제할까요?')) return;
   await deleteDoc(doc(db,'schedules',id));
+};
+
+// ── 게임모임 페어 짜기 ────────────────────────────────────────────
+window.openMeetupPairModal = function(scheduleId) {
+  meetupCurrentScheduleId = scheduleId;
+  const sch = schedules.find(s => s.id === scheduleId);
+  if (!sch) return;
+  const attend = sch.attend || {};
+  const attendees = Object.entries(attend).filter(([_, v]) => v === '참석').map(([n]) => n);
+  if (attendees.length < 4) {
+    document.getElementById('meetupPairBody').innerHTML = '<div class="empty" style="padding:16px;text-align:center;color:#8aa5c4;font-size:13px">참석자가 4명 이상이어야 페어를 짤 수 있어요</div>';
+    document.getElementById('meetupPairModal').style.display = 'flex';
+    return;
+  }
+  meetupShufflePairs(attendees);
+  document.getElementById('meetupPairModal').style.display = 'flex';
+};
+
+function meetupShufflePairs(attendees) {
+  const shuffled = shuffle([...attendees]);
+  const matches = [];
+  for (let i = 0; i + 3 < shuffled.length; i += 4) {
+    matches.push({ team1: [shuffled[i], shuffled[i+1]], team2: [shuffled[i+2], shuffled[i+3]], score1: '', score2: '' });
+  }
+  const leftover = shuffled.slice(Math.floor(shuffled.length / 4) * 4);
+  meetupCurrentMatches = matches;
+  renderMeetupPairBody(leftover);
+}
+
+function renderMeetupPairBody(leftover) {
+  const body = document.getElementById('meetupPairBody');
+  const rows = meetupCurrentMatches.map((m, idx) => `
+    <div style="background:rgba(3,12,45,0.5);border-radius:10px;padding:10px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#e8edf2">
+        <span style="flex:1;text-align:right;font-weight:700">${m.team1.join(' · ')}</span>
+        <input type="number" id="meetupS1_${idx}" value="${m.score1}" min="0" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1px solid rgba(35,90,180,0.3);border-radius:6px;color:#fff;padding:4px">
+        <span style="color:#a78bfa;font-weight:700">:</span>
+        <input type="number" id="meetupS2_${idx}" value="${m.score2}" min="0" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1px solid rgba(35,90,180,0.3);border-radius:6px;color:#fff;padding:4px">
+        <span style="flex:1;font-weight:700">${m.team2.join(' · ')}</span>
+      </div>
+    </div>`).join('');
+  const leftoverHtml = (leftover && leftover.length)
+    ? `<div style="font-size:11px;color:#4a8ab5;margin-bottom:8px;padding:6px 8px;background:rgba(3,12,45,0.4);border-radius:8px">쉬는 인원: ${leftover.join(', ')}</div>`
+    : '';
+  body.innerHTML = `
+    ${leftoverHtml}
+    ${rows}
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button onclick="meetupReshuffle()" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 섞기</button>
+      <button onclick="saveMeetupPairs()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">✅ 저장</button>
+    </div>`;
+}
+
+window.meetupReshuffle = function() {
+  const sch = schedules.find(s => s.id === meetupCurrentScheduleId);
+  if (!sch) return;
+  const attend = sch.attend || {};
+  const attendees = Object.entries(attend).filter(([_, v]) => v === '참석').map(([n]) => n);
+  meetupShufflePairs(attendees);
+};
+
+window.saveMeetupPairs = async function() {
+  meetupCurrentMatches.forEach((m, idx) => {
+    m.score1 = parseInt(document.getElementById(`meetupS1_${idx}`).value) || 0;
+    m.score2 = parseInt(document.getElementById(`meetupS2_${idx}`).value) || 0;
+  });
+
+  await updateDoc(doc(db, 'schedules', meetupCurrentScheduleId), { gamePairs: meetupCurrentMatches });
+
+  const sch = schedules.find(s => s.id === meetupCurrentScheduleId);
+  const date = sch ? sch.date : new Date().toISOString().split('T')[0];
+  const writes = [];
+  meetupCurrentMatches.forEach(m => {
+    const [a, b] = m.team1, [c, d] = m.team2;
+    writes.push(addDoc(collection(db, 'terra'), { player: a, date, partner: b, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+    writes.push(addDoc(collection(db, 'terra'), { player: b, date, partner: a, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+    writes.push(addDoc(collection(db, 'terra'), { player: c, date, partner: d, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+    writes.push(addDoc(collection(db, 'terra'), { player: d, date, partner: c, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+  });
+  await Promise.all(writes);
+
+  alert('✅ 페어와 결과가 저장되고, 참여자 개인 기록에도 자동으로 반영됐어요!');
+  hide('meetupPairModal');
 };
 
 window.setAttend = async function(id, status) {
@@ -3980,6 +4081,16 @@ function renderSchedules() {
     const maybe = Object.entries(attend).filter(([_,v])=>v==='미정').map(([n])=>n);
     const comments = s.comments || [];
     const delBtn = isAdmin ? `<button onclick="delSchedule('${s.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">🗑️ 삭제</button>` : '';
+    const canSetPairs = isAdmin || (myClaim && myClaim !== 'pending');
+    const pairsResultHtml = (s.gamePairs && s.gamePairs.length) ? `<div style="margin-top:8px;font-size:11px;color:#e8edf2">${s.gamePairs.map(m=>`<div style="padding:3px 0">${m.team1.join(' · ')} <b style="color:#a78bfa">${m.score1} : ${m.score2}</b> ${m.team2.join(' · ')}</div>`).join('')}</div>` : '';
+    const meetupSection = s.isGameMeetup ? `
+      <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:10px;margin-bottom:10px">
+        <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:6px">🎾 게임모임</div>
+        ${canSetPairs
+          ? `<button onclick="openMeetupPairModal('${s.id}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">🎲 페어 짜기</button>`
+          : `<div style="font-size:11px;color:#8aa5c4">정회원만 페어를 짤 수 있어요</div>`}
+        ${pairsResultHtml}
+      </div>` : '';
 
     return `
     <div style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:16px;margin-bottom:14px">
@@ -4003,6 +4114,9 @@ function renderSchedules() {
         <button onclick="shareKakao('${s.id}')" style="flex:1;padding:9px;background:#fee500;border:none;border-radius:9px;color:#3c1e1e;font-size:12px;font-weight:800;cursor:pointer">💬 카톡 공유</button>
         <button onclick="openGoogleCal('${s.id}')" style="flex:1;padding:9px;background:#fff;border:1px solid #dadce0;border-radius:9px;color:#3c4043;font-size:12px;font-weight:800;cursor:pointer">📅 구글 캘린더</button>
       </div>
+
+      <!-- 게임모임 -->
+      ${meetupSection}
 
       <!-- 참석 여부 -->
       <div style="background:rgba(3,12,45,0.4);border-radius:10px;padding:12px;margin-bottom:10px">
