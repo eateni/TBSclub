@@ -431,6 +431,7 @@ body {
         <button class="stab active" onclick="switchSub('bracket',this)">대진표</button>
         <button class="stab" onclick="switchSub('ranking',this)">랭킹</button>
         <button class="stab" onclick="switchSub('analysis',this)">개인별</button>
+        <button class="stab" onclick="switchSub('pairs',this)">👫 페어랭킹</button>
       </div>
       <div id="sub-bracket">
         <div class="sec-header" style="color:#f59e0b">🏆 실시간 순위</div>
@@ -456,6 +457,14 @@ body {
           </select>
         </div>
         <div id="analysisDetail"></div>
+      </div>
+
+      <div id="sub-pairs" style="display:none">
+        <div style="display:flex;gap:6px;margin-bottom:14px">
+          <button id="pairScopeGuest" class="stab active" onclick="setPairScope('all')" style="flex:1">게스트 포함</button>
+          <button id="pairScopeMember" class="stab" onclick="setPairScope('member')" style="flex:1">정회원만</button>
+        </div>
+        <div id="pairRankingBody"></div>
       </div>
     </div>
 
@@ -1485,6 +1494,69 @@ function calcStats() {
     ...x,rank:null,wr:x.games>0?Math.round(x.wins/x.games*100):0,diff:x.scored-x.conceded,attendance:attMap[x.name]||0
   }));
   return [...withRank, ...guestWithRank];
+}
+
+// ── 페어 랭킹 ──────────────────────────────────────────────────────
+let pairScope = 'all';
+
+window.setPairScope = function(scope) {
+  pairScope = scope;
+  document.getElementById('pairScopeGuest').classList.toggle('active', scope === 'all');
+  document.getElementById('pairScopeMember').classList.toggle('active', scope === 'member');
+  renderPairRanking();
+};
+
+function calcPairStats() {
+  const result = { 혼복:{}, 남복:{}, 여복:{} };
+  allRounds().forEach(r => {
+    (r.matches||[]).forEach(m => {
+      if (!m.done) return;
+      if (!m.tag || !result[m.tag]) return;
+      if (!m.team1 || !m.team2 || m.team1.length !== 2 || m.team2.length !== 2) return;
+
+      [[m.team1, m.score1, m.score2], [m.team2, m.score2, m.score1]].forEach(([team, myScore, oppScore]) => {
+        const key = [...team].sort().join(' · ');
+        if (!result[m.tag][key]) {
+          result[m.tag][key] = { players: [...team].sort(), wins:0, draws:0, losses:0, games:0 };
+        }
+        const rec = result[m.tag][key];
+        rec.games++;
+        if (myScore > oppScore) rec.wins++;
+        else if (myScore < oppScore) rec.losses++;
+        else rec.draws++;
+      });
+    });
+  });
+  return result;
+}
+
+function renderPairRanking() {
+  const el = document.getElementById('pairRankingBody');
+  if (!el) return;
+  const pairData = calcPairStats();
+  const guestNames = new Set(guests.map(g => g.name));
+
+  el.innerHTML = ['혼복','남복','여복'].map(tag => {
+    let list = Object.values(pairData[tag] || {});
+    if (pairScope === 'member') {
+      list = list.filter(p => !p.players.some(name => guestNames.has(name)));
+    }
+    list.sort((a,b) => b.wins - a.wins || (b.wins/(b.games||1)) - (a.wins/(a.games||1)));
+    const top = list.slice(0, 10);
+    const rows = top.length ? top.map((p, idx) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(35,90,180,0.15)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;font-weight:800;color:${idx<3?'#f59e0b':'#4a8ab5'};width:20px">${idx+1}</span>
+          <span style="font-size:13px;font-weight:700;color:#e8edf2">${p.players.join(' · ')}</span>
+        </div>
+        <div style="font-size:12px;color:#8aa5c4">${p.wins}승 ${p.draws}무 ${p.losses}패 <span style="color:#34d399;font-weight:700">(${p.games?Math.round(p.wins/p.games*100):0}%)</span></div>
+      </div>`).join('') : '<div class="empty" style="padding:14px">데이터가 없어요</div>';
+    return `
+      <div class="admin-sec" style="margin-bottom:14px">
+        <h3>${tag==='혼복'?'🔀':tag==='남복'?'👨':'👩'} ${tag} 최다승 페어</h3>
+        ${rows}
+      </div>`;
+  }).join('');
 }
 
 // ── 자동 페어링 ───────────────────────────────────────────────────
@@ -4635,9 +4707,10 @@ window.getFortune = function() {
   }, 800);
 };
 window.switchSub=function(sub,btn){
-  ['bracket','ranking','analysis'].forEach(s=>document.getElementById('sub-'+s).style.display=s===sub?'block':'none');
+  ['bracket','ranking','analysis','pairs'].forEach(s=>document.getElementById('sub-'+s).style.display=s===sub?'block':'none');
   document.querySelectorAll('#tab-league .stab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
+  if (sub === 'pairs') renderPairRanking();
 };
 window.toggleR=function(bodyId,arrId){
   const el=document.getElementById(bodyId),arr=document.getElementById(arrId);
