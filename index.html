@@ -1609,9 +1609,9 @@ function generatePairing(type, numCourts) {
 
 // ── 라운드별 코트 방식 선택 UI ────────────────────────────────────
 const COURT_NAMES = ['A코트','B코트','C코트','D코트','E코트','F코트','G코트','H코트'];
-const TYPE_OPTS = ['혼복','남복','여복'];
-const TYPE_COLOR = { '혼복':'#a78bfa','남복':'#60a5fa','여복':'#f472b6','랠리':'#34d399' };
-const TYPE_BG    = { '혼복':'rgba(124,58,237,0.25)','남복':'rgba(37,99,235,0.25)','여복':'rgba(236,72,153,0.25)','랠리':'rgba(52,211,153,0.25)' };
+const TYPE_OPTS = ['혼복','남복','여복','잡복'];
+const TYPE_COLOR = { '혼복':'#a78bfa','남복':'#60a5fa','여복':'#f472b6','랠리':'#34d399','잡복':'#fb923c' };
+const TYPE_BG    = { '혼복':'rgba(124,58,237,0.25)','남복':'rgba(37,99,235,0.25)','여복':'rgba(236,72,153,0.25)','랠리':'rgba(52,211,153,0.25)','잡복':'rgba(251,146,60,0.25)' };
 
 function updateRoundTypeSelectors() {
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
@@ -1825,10 +1825,19 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
     } else if (type === '여복') {
       const m = femaleMatches[femIdx]; femIdx++;
       if (m) matches.push({team1:m.team1, team2:m.team2, court, tag:'여복'});
+    } else if (type === '잡복') {
+      const majorityIsM = mPool.length >= fPool.length;
+      const threeP = majorityIsM ? mPool : fPool;
+      const oneP = majorityIsM ? fPool : mPool;
+      if (threeP.length >= 3 && oneP.length >= 1) {
+        const t1 = [threeP.shift(), threeP.shift()];
+        const t2 = [threeP.shift(), oneP.shift()];
+        matches.push({team1: t1, team2: t2, court, tag:'잡복'});
+      }
     }
   }
 
-  // 4) 남은 인원이 있으면 → 랠리 코트 (다음 코트 자리에 배치)
+  // 4) 남은 인원이 있으면 → 대기 코트 (다음 코트 자리에 배치)
   const leftover = [...mPool, ...fPool];
   if (leftover.length > 0 && maxCourts < nC) {
     const rallyCourt = COURT_NAMES[maxCourts];
@@ -1884,7 +1893,7 @@ window.rollAllBalanced = function() {
     const ms = generatedAllRounds[r]?.matches || [];
     if (!ms.length) { el.innerHTML='<span style="color:#f87171">⚠️ 인원 부족</span>'; continue; }
     el.innerHTML = ms.map(m => m.isRally
-      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">🎾 랠리</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div><span style="color:#4a8ab5;font-size:10px;margin-left:6px">${m.court}</span></div>`
+      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">⏳ 대기</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div><span style="color:#4a8ab5;font-size:10px;margin-left:6px">${m.court}</span></div>`
       : `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team1.join(' / ')}</div><span style="color:#4a8ab5;font-size:10px;margin:0 6px">vs</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team2.join(' / ')}</div></div>`
     ).join('');
   }
@@ -1941,7 +1950,7 @@ window.rollRound = function(rIdx) {
     if (m.isRally) {
       return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)">
         <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;
-          background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">🎾 랠리</span>
+          background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">⏳ 대기</span>
         <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div>
         <span style="color:#4a8ab5;font-size:10px;margin-left:6px">${m.court}</span>
       </div>`;
@@ -2571,12 +2580,12 @@ function renderDays() {
         if (m.isRally || m.tag === '랠리') {
           const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
           return `<div class="match-card" style="border-color:rgba(52,211,153,0.3);background:rgba(20,80,30,0.2)">
-            <div class="match-ct"><span style="color:#34d399">${m.court||''} <span style="font-size:10px;color:#34d399">[🎾 랠리]</span></span></div>
+            <div class="match-ct"><span style="color:#34d399">${m.court||''} <span style="font-size:10px;color:#34d399">[⏳ 대기]</span></span></div>
             <div style="text-align:center;padding:8px 4px">
               <div style="font-weight:700;font-size:13px;color:#34d399;line-height:1.5">
                 ${(m.team1||[]).join(' · ')}
               </div>
-              <div style="font-size:10px;color:rgba(52,211,153,0.7);margin-top:4px">자유 랠리/스파링</div>
+              <div style="font-size:10px;color:rgba(52,211,153,0.7);margin-top:4px">다음 라운드 대기</div>
             </div>${delBtn}
           </div>`;
         }
