@@ -3943,6 +3943,29 @@ function renderMeetupTypeStep() {
     </div>`;
 }
 
+function getMeetupTodayPairs(existingRounds, excludeIdx) {
+  const s = new Set();
+  existingRounds.forEach((rd, ri) => {
+    if (ri === excludeIdx) return;
+    (rd.matches||[]).forEach(m => {
+      if (m.team1 && m.team1.length===2) s.add([m.team1[0],m.team1[1]].sort().join('|'));
+      if (m.team2 && m.team2.length===2) s.add([m.team2[0],m.team2[1]].sort().join('|'));
+    });
+  });
+  return s;
+}
+
+function getMeetupTodayOpponents(existingRounds, excludeIdx) {
+  const s = new Set();
+  existingRounds.forEach((rd, ri) => {
+    if (ri === excludeIdx) return;
+    (rd.matches||[]).forEach(m => {
+      (m.team1||[]).forEach(a => (m.team2||[]).forEach(b => { if (a && b) s.add([a,b].sort().join('|')); }));
+    });
+  });
+  return s;
+}
+
 window.meetupGenerate = function() {
   for (let r = 1; r <= meetupConfig.rounds; r++) {
     for (let c = 1; c <= meetupConfig.courts; c++) {
@@ -3961,27 +3984,76 @@ window.meetupGenerate = function() {
     return { name: n, gender: found ? found.gender : 'm' };
   });
 
+  const allPastPairs = getPastPairs();
+  const allPastOpp = getPastOpponents();
+  const emptyBanSet = new Set();
+
   const rounds = [];
   for (let r = 1; r <= meetupConfig.rounds; r++) {
-    const mPool = shuffle(attendeesWithGender.filter(p => p.gender === 'm').map(p => p.name));
-    const fPool = shuffle(attendeesWithGender.filter(p => p.gender === 'f').map(p => p.name));
-    const matches = [];
+    const todayPairs = getMeetupTodayPairs(rounds, -1);
+    const todayOpp = getMeetupTodayOpponents(rounds, -1);
+
+    // Group courts by type
+    const courtTypeMap = {};
+    const courtGroups = { '혼복': [], '남복': [], '여복': [], '잡복': [] };
     for (let c = 1; c <= meetupConfig.courts; c++) {
       const type = meetupConfig.types[`r${r}_c${c}`] || '혼복';
+      courtTypeMap[c] = type;
+      (courtGroups[type] || courtGroups['잡복']).push(c);
+    }
+
+    const malePool = shuffle(attendeesWithGender.filter(p => p.gender === 'm').map(p => p.name));
+    const femalePool = shuffle(attendeesWithGender.filter(p => p.gender === 'f').map(p => p.name));
+
+    // 혼복: smart mixed pairing for all 혼복 courts at once
+    const hCount = courtGroups['혼복'].length;
+    const hMales = malePool.splice(0, hCount * 2);
+    const hFemales = femalePool.splice(0, hCount * 2);
+    let 혼복Matches = [];
+    if (hMales.length >= 2 && hFemales.length >= 2) {
+      const mixedPairs = makeMixedPairs(hMales, hFemales, todayPairs, allPastPairs, r - 1, emptyBanSet, []);
+      혼복Matches = matchUpUnits(mixedPairs, allPastOpp, todayOpp);
+    }
+
+    // 남복: smart doubles for all 남복 courts at once
+    const nCount = courtGroups['남복'].length;
+    const nMales = malePool.splice(0, nCount * 4);
+    let 남복Matches = [];
+    if (nMales.length >= 4) {
+      남복Matches = makeDoublesMatches(nMales, todayPairs, allPastPairs, nCount, courtGroups['남복'], '남복', emptyBanSet, [], allPastOpp, todayOpp);
+    }
+
+    // 여복: smart doubles for all 여복 courts at once
+    const yCount = courtGroups['여복'].length;
+    const yFemales = femalePool.splice(0, yCount * 4);
+    let 여복Matches = [];
+    if (yFemales.length >= 4) {
+      여복Matches = makeDoublesMatches(yFemales, todayPairs, allPastPairs, yCount, courtGroups['여복'], '여복', emptyBanSet, [], allPastOpp, todayOpp);
+    }
+
+    // 잡복: simple random with remaining players
+    const jMPool = shuffle([...malePool]);
+    const jFPool = shuffle([...femalePool]);
+
+    // Assemble matches by court number
+    const matches = [];
+    let hIdx = 0, nIdx = 0, yIdx = 0;
+    for (let c = 1; c <= meetupConfig.courts; c++) {
+      const type = courtTypeMap[c];
       let team1 = null, team2 = null;
-      if (type === '혼복' && mPool.length >= 2 && fPool.length >= 2) {
-        team1 = [mPool.shift(), fPool.shift()];
-        team2 = [mPool.shift(), fPool.shift()];
-      } else if (type === '남복' && mPool.length >= 4) {
-        team1 = [mPool.shift(), mPool.shift()];
-        team2 = [mPool.shift(), mPool.shift()];
-      } else if (type === '여복' && fPool.length >= 4) {
-        team1 = [fPool.shift(), fPool.shift()];
-        team2 = [fPool.shift(), fPool.shift()];
+      if (type === '혼복') {
+        const hm = 혼복Matches[hIdx++];
+        if (hm) { team1 = hm.team1; team2 = hm.team2; }
+      } else if (type === '남복') {
+        const nm = 남복Matches[nIdx++];
+        if (nm) { team1 = nm.team1; team2 = nm.team2; }
+      } else if (type === '여복') {
+        const ym = 여복Matches[yIdx++];
+        if (ym) { team1 = ym.team1; team2 = ym.team2; }
       } else if (type === '잡복') {
-        const majorityIsM = mPool.length >= fPool.length;
-        const threePool = majorityIsM ? mPool : fPool;
-        const onePool = majorityIsM ? fPool : mPool;
+        const majorityIsM = jMPool.length >= jFPool.length;
+        const threePool = majorityIsM ? jMPool : jFPool;
+        const onePool = majorityIsM ? jFPool : jMPool;
         if (threePool.length >= 3 && onePool.length >= 1) {
           team1 = [threePool.shift(), threePool.shift()];
           team2 = [threePool.shift(), onePool.shift()];
