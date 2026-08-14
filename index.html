@@ -4333,7 +4333,7 @@ function renderHomeTab() {
   if (!el || el.style.display === 'none') return;
 
   const now = new Date();
-  // 로컬 날짜 기준 (UTC 변환 시 한국 시간과 날짜가 다를 수 있으므로)
+  // 로컬 날짜 기준 (KST 등 UTC 오프셋 있는 환경에서 toISOString 쓰면 날짜 다를 수 있음)
   const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const weekdays = ['일','월','화','수','목','금','토'];
   const todayLabel = `${todayStr.replace(/-/g,'.')}(${weekdays[now.getDay()]})`;
@@ -4347,73 +4347,72 @@ function renderHomeTab() {
   const monthMatchCount = days.filter(d=>(d.date||'').startsWith(thisMonth))
     .reduce((a,d)=>a+(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).filter(m=>m.done).length,0),0);
 
-  // 내 승률·순위·최근5경기
-  let myWinrate = '-', myRank = 0, last5Html = '';
+  // ── 내 기록 상세 (기록탭 renderMyRecordCard와 동일 구성) ──────────
+  let myRecordHtml = '';
   if (isLoggedIn) {
     const stats = calcStats();
+    const att = calcAttendance();
     const ranked = [...stats].sort((a,b)=>b.pts-a.pts);
-    myRank = ranked.findIndex(s=>s.name===myClaim.name) + 1;
+    const myRank = ranked.findIndex(s=>s.name===myClaim.name) + 1;
     const me = stats.find(s=>s.name===myClaim.name);
-    if (me) myWinrate = me.wr + '%';
 
-    const myMatches = [];
-    [...days].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(day=>{
-      (day.rounds||[]).forEach(r=>{
-        (r.matches||[]).forEach(m=>{
-          if (!m.done) return;
-          const inT1=(m.team1||[]).includes(myClaim.name), inT2=(m.team2||[]).includes(myClaim.name);
-          if (!inT1&&!inT2) return;
-          const ms=inT1?m.score1:m.score2, os=inT1?m.score2:m.score1;
-          myMatches.push(ms>os?'W':ms<os?'L':'D');
-        });
-      });
-    });
-    const r5 = myMatches.slice(0,5);
-    if (r5.length) {
-      const dotMap = {W:'rgba(52,211,153,0.15)',L:'rgba(248,113,113,0.15)',D:'rgba(251,191,36,0.15)'};
-      const colMap = {W:'#34d399',L:'#f87171',D:'#fbbf24'};
-      last5Html = `<div style="display:flex;gap:5px;margin-top:8px">
-        ${r5.map(v=>`<span style="width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${colMap[v]};background:${dotMap[v]};border:1.5px solid ${colMap[v]}">${v}</span>`).join('')}
+    const statsInner = me
+      ? `<div style="text-align:center">
+           <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:4px">
+             <div style="font-size:22px;font-weight:900;color:#f59e0b">${me.pts}점</div>
+             ${myRank>0?`<div style="font-size:11px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">${myRank}위</div>`:''}
+           </div>
+           <div style="font-size:12px;color:#60a5fa;margin-bottom:3px">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
+           <div style="font-size:11px;color:#8aa5c4">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
+         </div>`
+      : `<div style="text-align:center;color:#4a8ab5;font-size:12px;padding:4px 0">아직 경기 기록이 없어요</div>`;
+
+    myRecordHtml = `
+      <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:800;color:#4a8ab5;margin-bottom:10px">📊 ${myClaim.name}님의 기록</div>
+        ${statsInner}
       </div>`;
-    }
   }
 
-  // 다가오는 일정 (메인게임 / 회원일정 분리)
+  // ── 다가오는 일정 (메인게임 독립 카드 / 회원일정 리스트 분리) ──────
   const futureScheds = schedules
     .filter(s=>s.date&&s.date>=todayStr)
     .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
-  // isGameMeetup === true 인 것만 메인 게임 (1건만 표시)
   const mainGames = futureScheds.filter(s=>!!s.isGameMeetup).slice(0,1);
   const memberScheds = futureScheds.filter(s=>!s.isGameMeetup).slice(0,3);
-  console.log('[홈] schedules 전체:', schedules.length, '/ 미래:', futureScheds.length, '/ 메인게임:', mainGames.length);
 
-  const mainGamesHtml = mainGames.length
-    ? mainGames.map(s=>{
-        const d=new Date(s.date+'T00:00:00');
-        const dl=`${d.getMonth()+1}/${d.getDate()}(${weekdays[d.getDay()]})`;
-        const yes=Object.values(s.attend||{}).filter(v=>v==='참석').length;
-        const myAttend = (isLoggedIn && s.attend && s.attend[myClaim.name]) || '';
-        const attendBadge = myAttend==='참석'
-          ? `<span style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 7px;border-radius:10px">✅ 참석</span>`
-          : myAttend==='불참'
-          ? `<span style="font-size:10px;font-weight:700;color:#f87171;background:rgba(248,113,113,0.15);padding:2px 7px;border-radius:10px">❌ 불참</span>`
-          : '';
-        return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;background:linear-gradient(135deg,rgba(124,58,237,0.18) 0%,rgba(37,99,235,0.18) 100%);border:1px solid rgba(124,58,237,0.35);border-radius:12px;padding:12px 14px;margin-bottom:8px">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-            <span style="font-size:10px;font-weight:800;color:#a78bfa;background:rgba(124,58,237,0.2);padding:2px 8px;border-radius:10px">🎾 메인 게임</span>
-            ${attendBadge}
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-size:14px;font-weight:900;color:#fbbf24">${dl}</span>
-            ${s.time?`<span style="font-size:12px;font-weight:700;color:#e8edf2">${s.time}</span>`:''}
-            <span style="font-size:11px;color:#34d399">✅ ${yes}명 참석</span>
-          </div>
-          ${s.place?`<div style="font-size:11px;color:#60a5fa;margin-bottom:3px">📍 ${s.place}</div>`:''}
-          <div style="font-size:11px;color:#8aa5c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(s.content||'').slice(0,55)}</div>
-        </div>`;
-      }).join('')
-    : '';
+  // 진단 로그: 전체 schedule 목록과 isGameMeetup 값 확인
+  console.log('[홈] schedules 총', schedules.length, '건 / 오늘 이후:', futureScheds.length, '건 / 메인게임(isGameMeetup=true):', mainGames.length, '건');
+  if (schedules.length) console.log('[홈] schedule isGameMeetup 값 목록:', schedules.map(s=>({date:s.date, isGameMeetup:s.isGameMeetup, id:s.id})));
 
+  // 관리자 대진표 독립 카드
+  const nextGameCardHtml = mainGames.length ? (()=>{
+    const s = mainGames[0];
+    const d = new Date(s.date+'T00:00:00');
+    const dl = `${d.getMonth()+1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+    const yes = Object.values(s.attend||{}).filter(v=>v==='참석').length;
+    const myAttend = (isLoggedIn && s.attend && s.attend[myClaim.name]) || '';
+    const attendBadge = myAttend==='참석'
+      ? `<span style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">✅ 참석</span>`
+      : myAttend==='불참'
+      ? `<span style="font-size:10px;font-weight:700;color:#f87171;background:rgba(248,113,113,0.15);padding:2px 8px;border-radius:10px">❌ 불참</span>`
+      : '';
+    return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;background:linear-gradient(135deg,rgba(124,58,237,0.22) 0%,rgba(37,99,235,0.22) 100%);border:1.5px solid rgba(124,58,237,0.5);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:800;color:#a78bfa;background:rgba(124,58,237,0.2);padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
+        ${attendBadge}
+      </div>
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+        <span style="font-size:16px;font-weight:900;color:#fbbf24">${dl}</span>
+        ${s.time?`<span style="font-size:13px;font-weight:700;color:#e8edf2">${s.time}</span>`:''}
+        <span style="font-size:11px;color:#34d399">✅ ${yes}명 참석</span>
+      </div>
+      ${s.place?`<div style="font-size:11px;color:#60a5fa;margin-bottom:4px">📍 ${s.place}</div>`:''}
+      <div style="font-size:11px;color:#8aa5c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(s.content||'').slice(0,55)}</div>
+    </div>`;
+  })() : '';
+
+  // 일반 회원 일정 (isGameMeetup이 아닌 것)
   const memberSchedsHtml = memberScheds.length
     ? memberScheds.map(s=>{
         const d=new Date(s.date+'T00:00:00');
@@ -4428,12 +4427,7 @@ function renderHomeTab() {
           <div style="font-size:11px;color:#8aa5c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(s.content||'').slice(0,45)}</div>
         </div>`;
       }).join('')
-    : '';
-
-  const upcomingHtml = (!mainGames.length && !memberScheds.length)
-    ? `<div style="font-size:12px;color:#4a8ab5;padding:4px 0">예정된 일정이 없어요</div>`
-    : (mainGamesHtml
-      + (memberScheds.length ? `<div style="font-size:10px;font-weight:800;color:#4a8ab5;letter-spacing:0.4px;margin:${mainGames.length?'12px':'0'} 0 6px">📅 회원 일정</div>${memberSchedsHtml}` : ''));
+    : `<div style="font-size:12px;color:#4a8ab5;padding:4px 0">예정된 일정이 없어요</div>`;
 
   // 바로가기
   const cats = [
@@ -4464,6 +4458,7 @@ function renderHomeTab() {
       </div>
     </div>`).join('') : '';
 
+  // 배치 순서: 웰컴배너 → 통계4칸 → 내 기록 → 다음게임(있을 때만) → 다가오는 일정 → 바로가기
   el.innerHTML = `
     <div style="padding-top:12px">
       <!-- 웰컴 배너 -->
@@ -4497,26 +4492,16 @@ function renderHomeTab() {
         </div>
       </div>
 
-      <!-- 내 최근 전적 (로그인 시만, 이름 개인화) -->
-      ${isLoggedIn ? `
-      <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:800;color:#4a8ab5;margin-bottom:10px">📊 ${myClaim.name}님의 기록</div>
-        <div style="display:flex;align-items:center;gap:16px">
-          <div style="text-align:center;min-width:56px">
-            <div style="font-size:30px;font-weight:900;color:#f59e0b;line-height:1">${myWinrate}</div>
-            <div style="font-size:9px;color:#4a8ab5;margin-top:3px">승률${myRank>0?' · '+myRank+'위':''}</div>
-          </div>
-          <div style="flex:1">
-            <div style="font-size:10px;color:#8aa5c4;margin-bottom:4px">최근 5경기</div>
-            ${last5Html||`<div style="font-size:11px;color:#4a8ab5">아직 경기 기록이 없어요</div>`}
-          </div>
-        </div>
-      </div>` : ''}
+      <!-- 내 기록 상세 (로그인 시만) -->
+      ${myRecordHtml}
 
-      <!-- 다가오는 일정 -->
+      <!-- 관리자 다음 게임 카드 (isGameMeetup=true 일정 있을 때만) -->
+      ${nextGameCardHtml}
+
+      <!-- 다가오는 일정 (일반 회원 일정) -->
       <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
         <div style="font-size:11px;font-weight:800;color:#4a8ab5;margin-bottom:8px">📅 다가오는 일정</div>
-        ${upcomingHtml}
+        ${memberSchedsHtml}
         <button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#60a5fa;font-size:11px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>
       </div>
 
