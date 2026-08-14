@@ -4378,12 +4378,16 @@ function renderHomeTab() {
   const futureScheds = schedules
     .filter(s=>s.date&&s.date>=todayStr)
     .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
-  const mainGames = futureScheds.filter(s=>!!s.isGameMeetup).slice(0,1);
-  const memberScheds = futureScheds.filter(s=>!s.isGameMeetup).slice(0,3);
 
-  // 진단 로그: 전체 schedule 목록과 isGameMeetup 값 확인
-  console.log('[홈] schedules 총', schedules.length, '건 / 오늘 이후:', futureScheds.length, '건 / 메인게임(isGameMeetup=true):', mainGames.length, '건');
-  if (schedules.length) console.log('[홈] schedule isGameMeetup 값 목록:', schedules.map(s=>({date:s.date, isGameMeetup:s.isGameMeetup, id:s.id})));
+  // isGameMeetup=true 이거나 gamePairs(대진표)가 실제로 있는 일정 → 다음 게임 카드
+  // (isGameMeetup 체크박스를 안 눌렀어도 gamePairs가 있으면 게임 모임으로 간주)
+  const isNextGame = s => !!s.isGameMeetup || (Array.isArray(s.gamePairs) && s.gamePairs.length > 0);
+  const mainGames = futureScheds.filter(s=>isNextGame(s)).slice(0,1);
+  const memberScheds = futureScheds.filter(s=>!isNextGame(s)).slice(0,3);
+
+  // 진단 로그
+  console.log('[홈] schedules 총', schedules.length, '건 / 오늘이후:', futureScheds.length, '건 / 메인게임:', mainGames.length, '건');
+  if (schedules.length) console.log('[홈] schedules 상세:', schedules.map(s=>({date:s.date, isGameMeetup:s.isGameMeetup, hasPairs:!!(s.gamePairs&&s.gamePairs.length), id:s.id})));
 
   // 관리자 대진표 독립 카드
   const nextGameCardHtml = mainGames.length ? (()=>{
@@ -4397,17 +4401,28 @@ function renderHomeTab() {
       : myAttend==='불참'
       ? `<span style="font-size:10px;font-weight:700;color:#f87171;background:rgba(248,113,113,0.15);padding:2px 8px;border-radius:10px">❌ 불참</span>`
       : '';
+    // 대진표 요약: N라운드 · N/N 경기 완료
+    const pairs = s.gamePairs || [];
+    const roundCount = pairs.length;
+    const totalM = pairs.reduce((a,rd)=>a+(rd.matches||[]).length, 0);
+    const doneM = pairs.reduce((a,rd)=>a+(rd.matches||[]).filter(m=>(m.score1||0)||(m.score2||0)).length, 0);
+    const pairsSummary = roundCount
+      ? `<span style="font-size:10px;color:#a78bfa;background:rgba(124,58,237,0.15);padding:2px 7px;border-radius:8px">${roundCount}라운드 · ${doneM}/${totalM}경기</span>`
+      : '';
     return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;background:linear-gradient(135deg,rgba(124,58,237,0.22) 0%,rgba(37,99,235,0.22) 100%);border:1.5px solid rgba(124,58,237,0.5);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:11px;font-weight:800;color:#a78bfa;background:rgba(124,58,237,0.2);padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
         ${attendBadge}
       </div>
-      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px">
         <span style="font-size:16px;font-weight:900;color:#fbbf24">${dl}</span>
         ${s.time?`<span style="font-size:13px;font-weight:700;color:#e8edf2">${s.time}</span>`:''}
         <span style="font-size:11px;color:#34d399">✅ ${yes}명 참석</span>
       </div>
-      ${s.place?`<div style="font-size:11px;color:#60a5fa;margin-bottom:4px">📍 ${s.place}</div>`:''}
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+        ${s.place?`<span style="font-size:11px;color:#60a5fa">📍 ${s.place}</span>`:''}
+        ${pairsSummary}
+      </div>
       <div style="font-size:11px;color:#8aa5c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(s.content||'').slice(0,55)}</div>
     </div>`;
   })() : '';
