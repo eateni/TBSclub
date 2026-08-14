@@ -369,7 +369,7 @@ body {
       </div>
 
       <!-- 2줄: 슬로건, 전체 너비, 로고 줄 아래로 -->
-      <div style="margin-top:8px; padding-top:6px; border-top:1px solid rgba(30,41,59,0.08);">
+      <div id="headerSlogan" style="margin-top:8px; padding-top:6px; border-top:1px solid rgba(30,41,59,0.08);">
         <span style="display:block; font-size:13px; color:rgba(30,41,59,0.85); letter-spacing:0.4px; font-weight:800; text-transform:uppercase; white-space:nowrap;">After Match, Start Again</span>
         <span style="display:block; font-size:13px; color:rgba(30,41,59,0.6); margin-top:3px; letter-spacing:0.1px; font-weight:500; white-space:nowrap;">경기가 끝나도 우리의 즐거움은 이제 시작이다.</span>
       </div>
@@ -4377,19 +4377,47 @@ function renderHomeTab() {
     }
   }
 
-  // 다가오는 일정
-  const upcoming = schedules
+  // 다가오는 일정 (메인게임 / 회원일정 분리)
+  const futureScheds = schedules
     .filter(s=>s.date&&s.date>=todayStr)
-    .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''))
-    .slice(0,2);
+    .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
+  const mainGames = futureScheds.filter(s=>s.isGameMeetup).slice(0,2);
+  const memberScheds = futureScheds.filter(s=>!s.isGameMeetup).slice(0,3);
 
-  const upcomingHtml = upcoming.length
-    ? upcoming.map(s=>{
+  const mainGamesHtml = mainGames.length
+    ? mainGames.map(s=>{
         const d=new Date(s.date+'T00:00:00');
         const dl=`${d.getMonth()+1}/${d.getDate()}(${weekdays[d.getDay()]})`;
         const yes=Object.values(s.attend||{}).filter(v=>v==='참석').length;
-        return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;padding:9px 0;border-bottom:1px solid rgba(50,110,200,0.12)">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+        const myAttend = (isLoggedIn && s.attend && s.attend[myClaim.name]) || '';
+        const attendBadge = myAttend==='참석'
+          ? `<span style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 7px;border-radius:10px">✅ 참석</span>`
+          : myAttend==='불참'
+          ? `<span style="font-size:10px;font-weight:700;color:#f87171;background:rgba(248,113,113,0.15);padding:2px 7px;border-radius:10px">❌ 불참</span>`
+          : '';
+        return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;background:linear-gradient(135deg,rgba(124,58,237,0.18) 0%,rgba(37,99,235,0.18) 100%);border:1px solid rgba(124,58,237,0.35);border-radius:12px;padding:12px 14px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+            <span style="font-size:10px;font-weight:800;color:#a78bfa;background:rgba(124,58,237,0.2);padding:2px 8px;border-radius:10px">🎾 메인 게임</span>
+            ${attendBadge}
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:14px;font-weight:900;color:#fbbf24">${dl}</span>
+            ${s.time?`<span style="font-size:12px;font-weight:700;color:#e8edf2">${s.time}</span>`:''}
+            <span style="font-size:11px;color:#34d399">✅ ${yes}명 참석</span>
+          </div>
+          ${s.place?`<div style="font-size:11px;color:#60a5fa;margin-bottom:3px">📍 ${s.place}</div>`:''}
+          <div style="font-size:11px;color:#8aa5c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(s.content||'').slice(0,55)}</div>
+        </div>`;
+      }).join('')
+    : '';
+
+  const memberSchedsHtml = memberScheds.length
+    ? memberScheds.map(s=>{
+        const d=new Date(s.date+'T00:00:00');
+        const dl=`${d.getMonth()+1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+        const yes=Object.values(s.attend||{}).filter(v=>v==='참석').length;
+        return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;padding:8px 0;border-bottom:1px solid rgba(50,110,200,0.1)">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
             <span style="font-size:12px;font-weight:800;color:#fbbf24">${dl}${s.time?' '+s.time:''}</span>
             <span style="font-size:10px;color:#34d399">✅ ${yes}명</span>
             ${s.place?`<span style="font-size:10px;color:#4a8ab5">📍 ${s.place}</span>`:''}
@@ -4397,7 +4425,12 @@ function renderHomeTab() {
           <div style="font-size:11px;color:#8aa5c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(s.content||'').slice(0,45)}</div>
         </div>`;
       }).join('')
-    : `<div style="font-size:12px;color:#4a8ab5;padding:4px 0">다가오는 일정이 없어요</div>`;
+    : '';
+
+  const upcomingHtml = (!mainGames.length && !memberScheds.length)
+    ? `<div style="font-size:12px;color:#4a8ab5;padding:4px 0">예정된 일정이 없어요</div>`
+    : (mainGamesHtml
+      + (memberScheds.length ? `<div style="font-size:10px;font-weight:800;color:#4a8ab5;letter-spacing:0.4px;margin:${mainGames.length?'12px':'0'} 0 6px">📅 회원 일정</div>${memberSchedsHtml}` : ''));
 
   // 바로가기
   const cats = [
@@ -5416,6 +5449,7 @@ window.doLogout=async function(){
 
 function setAdminMode(on){
   isAdmin=on;
+  updateSloganVisibility();
   document.getElementById('uBadge').textContent=on?'👑 관리자':'👤 게스트';
   document.getElementById('uBadge').className='u-badge '+(on?'badge-admin':'badge-guest');
   document.getElementById('logoutBtn').style.display=on?'block':'none';
@@ -5608,6 +5642,13 @@ function renderMyRecordCard(){
     </div>`;
 }
 
+function updateSloganVisibility() {
+  const el = document.getElementById('headerSlogan');
+  if (!el) return;
+  const loggedIn = isAdmin || (myClaim && myClaim !== null);
+  el.style.display = loggedIn ? 'none' : '';
+}
+
 function renderMyDashboardState(){
   const btn = document.getElementById('myDashboardBtn');
   if (!btn) return;
@@ -5621,6 +5662,7 @@ function renderMyDashboardState(){
     btn.textContent = '회원가입';
     btn.onclick = () => { populateSignupNameSelect(); document.getElementById('signupModal').style.display = 'flex'; };
   }
+  updateSloganVisibility();
   renderMyRecordCard();
   applyWriterAutoSelect();
 }
