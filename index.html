@@ -386,7 +386,7 @@ body {
   </div>
 
   <div class="bottom-nav">
-    <button class="bn-btn active" data-bucket="league" onclick="navTo('league')">
+    <button class="bn-btn active" data-bucket="home" onclick="navTo('home')">
       <span class="bn-icon">🏠</span><span class="bn-label">홈</span>
     </button>
     <button class="bn-btn" data-bucket="terra" onclick="navTo('terra')">
@@ -407,6 +407,7 @@ body {
       <button class="more-menu-item" onclick="navTo('fortune')">🔮 오늘의 운세</button>
       <button class="more-menu-item" onclick="navTo('event')">🎉 이벤트전</button>
       <button class="more-menu-item" onclick="navTo('board')">📋 게시판</button>
+      <button class="more-menu-item" onclick="navTo('photo')">📸 사진/동영상</button>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
     </div>
   </div>
@@ -414,13 +415,16 @@ body {
   <div class="content">
 
     <!-- 📌 오늘 일정 + 내 기록 (로그인 시 좌우 배치) -->
-    <div id="topCardsRow" style="display:flex; gap:8px; align-items:stretch; flex-wrap:wrap;">
+    <div id="topCardsRow" style="display:none; gap:8px; align-items:stretch; flex-wrap:wrap;">
       <div id="todayBanner" style="display:none; flex:1; min-width:150px;"></div>
       <div id="myRecordCard" style="display:none; flex:1; min-width:150px;"></div>
     </div>
 
+    <!-- 홈 탭 -->
+    <div id="tab-home"></div>
+
     <!-- 정규리그 -->
-    <div id="tab-league">
+    <div id="tab-league" style="display:none">
       <!-- 시즌 선택 -->
       <div style="margin-top:16px;display:flex;align-items:center;gap:8px">
         <span style="font-size:12px;color:#4a8ab5;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
@@ -643,6 +647,9 @@ body {
         <div id="boardList"></div>
       </div>
     </div>
+
+    <!-- 사진/동영상 -->
+    <div id="tab-photo" style="display:none"></div>
 
     <!-- 관리자 -->
     <div id="tab-admin" style="display:none">
@@ -1121,6 +1128,7 @@ let currentSeason = 1;      // 현재 진행 시즌
 let viewSeason = 1;         // 화면에서 보고 있는 시즌
 let seasonUserPicked = false; // 사용자가 과거 시즌을 직접 선택했는지
 let adminDaySeason = null;  // null = currentSeason, -1 = 전체
+let homeShortcutsOpen = true; // 홈 탭 바로가기 아코디언 상태
 let pendingScore = null;
 let pendingScoreEdit = null;
 let pendingDayId = null;
@@ -2545,6 +2553,7 @@ function renderAll() {
   renderRanking(stats); renderAnalysis(stats); renderAdmin();
   renderSeasonSelect();
   fillScheduleWriter();
+  renderHomeTab();
 }
 
 const BADGES=['🥇','🥈','🥉'];
@@ -3740,24 +3749,32 @@ window.switchAdminSub = function(key, btn){
 };
 
 window.switchTab=function(tab,btn){
-  ['league','terra','schedule','fortune','event','board','admin'].forEach(t=>{
+  ['home','league','terra','schedule','fortune','event','board','photo','admin'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
     if(el) el.style.display=t===tab?'block':'none';
   });
+  const tcr = document.getElementById('topCardsRow');
+  if (tcr) tcr.style.display = (tab==='home') ? 'none' : 'flex';
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
+  if(btn) btn.classList.add('active');
   if(tab==='terra') { updateTerraSelects(); renderTerraMyRecords(); }
   if(tab==='fortune') initFortune();
   if(tab==='schedule') initSchedule();
   if(tab==='board') populateBoardAuthorSelect();
+  if(tab==='home') renderHomeTab();
+  if(tab==='photo') renderPhotoTab();
 };
 
 window.navTo = function(tab){
   const origBtn = document.querySelector(`.tab-btn[onclick*="switchTab('${tab}'"]`);
-  if (origBtn) switchTab(tab, origBtn);
+  if (origBtn) {
+    switchTab(tab, origBtn);
+  } else if (['home','photo'].includes(tab)) {
+    switchTab(tab, null);
+  }
 
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
-  const bucketMap = { league:'league', terra:'terra', schedule:'schedule', fortune:'more', event:'more', board:'more', admin:'more' };
+  const bucketMap = { home:'home', league:'home', terra:'terra', schedule:'schedule', fortune:'more', event:'more', board:'more', admin:'more', photo:'more' };
   const bucket = bucketMap[tab] || 'more';
   const bnBtn = document.querySelector(`.bn-btn[data-bucket="${bucket}"]`);
   if (bnBtn) bnBtn.classList.add('active');
@@ -4310,6 +4327,208 @@ window.shareKakao = function(id) {
 
 // ── 📌 오늘 일정 배너 (C안) ───────────────────────────────────────────
 let bannerSchId = null;
+// ── 홈 탭 렌더 ────────────────────────────────────────────────────
+function renderHomeTab() {
+  const el = document.getElementById('tab-home');
+  if (!el || el.style.display === 'none') return;
+
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+  const weekdays = ['일','월','화','수','목','금','토'];
+  const todayLabel = `${todayStr.replace(/-/g,'.')}(${weekdays[now.getDay()]})`;
+
+  const isLoggedIn = myClaim && myClaim !== 'pending';
+  const welcomeName = isLoggedIn ? `${myClaim.name}님 환영합니다 👋` : 'TBS HISTORY 👋';
+  const subMsg = isLoggedIn ? '오늘도 좋은 경기 되세요!' : '로그인하면 내 기록을 확인할 수 있어요';
+
+  // 요약 통계
+  const thisMonth = todayStr.slice(0,7);
+  const monthMatchCount = days.filter(d=>(d.date||'').startsWith(thisMonth))
+    .reduce((a,d)=>a+(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).filter(m=>m.done).length,0),0);
+
+  // 내 승률·순위·최근5경기
+  let myWinrate = '-', myRank = 0, last5Html = '';
+  if (isLoggedIn) {
+    const stats = calcStats();
+    const ranked = [...stats].sort((a,b)=>b.pts-a.pts);
+    myRank = ranked.findIndex(s=>s.name===myClaim.name) + 1;
+    const me = stats.find(s=>s.name===myClaim.name);
+    if (me) myWinrate = me.wr + '%';
+
+    const myMatches = [];
+    [...days].sort((a,b)=>(b.date||'').localeCompare(a.date||'')).forEach(day=>{
+      (day.rounds||[]).forEach(r=>{
+        (r.matches||[]).forEach(m=>{
+          if (!m.done) return;
+          const inT1=(m.team1||[]).includes(myClaim.name), inT2=(m.team2||[]).includes(myClaim.name);
+          if (!inT1&&!inT2) return;
+          const ms=inT1?m.score1:m.score2, os=inT1?m.score2:m.score1;
+          myMatches.push(ms>os?'W':ms<os?'L':'D');
+        });
+      });
+    });
+    const r5 = myMatches.slice(0,5);
+    if (r5.length) {
+      const dotMap = {W:'rgba(52,211,153,0.15)',L:'rgba(248,113,113,0.15)',D:'rgba(251,191,36,0.15)'};
+      const colMap = {W:'#34d399',L:'#f87171',D:'#fbbf24'};
+      last5Html = `<div style="display:flex;gap:5px;margin-top:8px">
+        ${r5.map(v=>`<span style="width:30px;height:30px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:${colMap[v]};background:${dotMap[v]};border:1.5px solid ${colMap[v]}">${v}</span>`).join('')}
+      </div>`;
+    }
+  }
+
+  // 다가오는 일정
+  const upcoming = schedules
+    .filter(s=>s.date&&s.date>=todayStr)
+    .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''))
+    .slice(0,2);
+
+  const upcomingHtml = upcoming.length
+    ? upcoming.map(s=>{
+        const d=new Date(s.date+'T00:00:00');
+        const dl=`${d.getMonth()+1}/${d.getDate()}(${weekdays[d.getDay()]})`;
+        const yes=Object.values(s.attend||{}).filter(v=>v==='참석').length;
+        return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;padding:9px 0;border-bottom:1px solid rgba(50,110,200,0.12)">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:800;color:#fbbf24">${dl}${s.time?' '+s.time:''}</span>
+            <span style="font-size:10px;color:#34d399">✅ ${yes}명</span>
+            ${s.place?`<span style="font-size:10px;color:#4a8ab5">📍 ${s.place}</span>`:''}
+          </div>
+          <div style="font-size:11px;color:#8aa5c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(s.content||'').slice(0,45)}</div>
+        </div>`;
+      }).join('')
+    : `<div style="font-size:12px;color:#4a8ab5;padding:4px 0">다가오는 일정이 없어요</div>`;
+
+  // 바로가기
+  const cats = [
+    { label:'기록', items:[
+      {icon:'🏆',name:'랭킹 순위',desc:'이번 시즌 리그 순위',go:'ranking'},
+      {icon:'📊',name:'내 성적',desc:'개인별 게임 기록',go:'terra'},
+      {icon:'🎉',name:'이벤트전',desc:'특별 이벤트 결과',go:'event'},
+      {icon:'👫',name:'페어 랭킹',desc:'혼복·남복·여복 팀 기록',go:'pairs'},
+    ]},
+    { label:'경기·소통', items:[
+      {icon:'📋',name:'대진표',desc:'라운드별 경기 대진',go:'league'},
+      {icon:'📅',name:'일정/참석',desc:'모임 일정 확인·참석',go:'schedule'},
+      {icon:'📰',name:'게시판',desc:'클럽 공지·소통',go:'board'},
+      {icon:'📸',name:'사진/동영상',desc:'경기 사진·영상 모음',go:'photo'},
+    ]},
+  ];
+
+  const shortcutsBody = homeShortcutsOpen ? cats.map(cat=>`
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;font-weight:800;color:#4a8ab5;letter-spacing:0.6px;margin-bottom:7px">${cat.label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">
+        ${cat.items.map(it=>`<button onclick="homeGoTo('${it.go}')" style="background:rgba(3,12,45,0.55);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:11px 10px;text-align:left;cursor:pointer;width:100%">
+          <div style="font-size:20px;margin-bottom:4px">${it.icon}</div>
+          <div style="font-size:12px;font-weight:800;color:#e8edf2;margin-bottom:2px">${it.name}</div>
+          <div style="font-size:10px;color:#4a8ab5;line-height:1.35">${it.desc}</div>
+        </button>`).join('')}
+      </div>
+    </div>`).join('') : '';
+
+  el.innerHTML = `
+    <div style="padding-top:12px">
+      <!-- 웰컴 배너 -->
+      <div style="background:linear-gradient(135deg,#1e3a8a 0%,#1565c0 50%,#0891b2 100%);border-radius:18px;padding:20px 18px 18px;margin-bottom:12px;position:relative;overflow:hidden">
+        <div style="position:absolute;top:-24px;right:-16px;font-size:90px;opacity:0.07;pointer-events:none;user-select:none">🎾</div>
+        <div style="font-size:19px;font-weight:900;color:#fff;margin-bottom:4px">${welcomeName}</div>
+        <div style="font-size:12px;color:rgba(200,225,255,0.8);margin-bottom:14px">${subMsg}</div>
+        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.13);border-radius:20px;padding:5px 13px">
+          <span style="font-size:12px">📆</span>
+          <span style="font-size:12px;font-weight:700;color:#e0f2fe">오늘 ${todayLabel}</span>
+        </div>
+      </div>
+
+      <!-- 요약 통계 4칸 -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
+        <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
+          <div style="font-size:18px;font-weight:900;color:#60a5fa">${members.length}</div>
+          <div style="font-size:9px;color:#4a8ab5;margin-top:2px">정규회원</div>
+        </div>
+        <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
+          <div style="font-size:18px;font-weight:900;color:#a78bfa">${guests.length}</div>
+          <div style="font-size:9px;color:#4a8ab5;margin-top:2px">게스트</div>
+        </div>
+        <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
+          <div style="font-size:18px;font-weight:900;color:#34d399">${monthMatchCount}</div>
+          <div style="font-size:9px;color:#4a8ab5;margin-top:2px">이달 경기</div>
+        </div>
+        <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
+          <div style="font-size:18px;font-weight:900;color:#f59e0b">S${currentSeason}</div>
+          <div style="font-size:9px;color:#4a8ab5;margin-top:2px">현재시즌</div>
+        </div>
+      </div>
+
+      <!-- 내 최근 전적 -->
+      ${isLoggedIn ? `
+      <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:800;color:#4a8ab5;margin-bottom:10px">📊 내 최근 전적</div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <div style="text-align:center;min-width:56px">
+            <div style="font-size:30px;font-weight:900;color:#f59e0b;line-height:1">${myWinrate}</div>
+            <div style="font-size:9px;color:#4a8ab5;margin-top:3px">승률${myRank>0?' · '+myRank+'위':''}</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:10px;color:#8aa5c4;margin-bottom:4px">최근 5경기</div>
+            ${last5Html||`<div style="font-size:11px;color:#4a8ab5">아직 경기 기록이 없어요</div>`}
+          </div>
+        </div>
+      </div>` : ''}
+
+      <!-- 다가오는 일정 -->
+      <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:800;color:#4a8ab5;margin-bottom:8px">📅 다가오는 일정</div>
+        ${upcomingHtml}
+        <button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#60a5fa;font-size:11px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>
+      </div>
+
+      <!-- 바로가기 -->
+      <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;overflow:hidden;margin-bottom:12px">
+        <button onclick="toggleHomeShortcuts()" style="width:100%;padding:14px 16px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer">
+          <span style="font-size:12px;font-weight:800">⚡ 바로가기</span>
+          <span style="font-size:18px;color:#4a8ab5;display:inline-block;transition:transform 0.2s;${homeShortcutsOpen?'transform:rotate(90deg)':''}">›</span>
+        </button>
+        ${homeShortcutsOpen?`<div style="padding:0 14px 14px">${shortcutsBody}</div>`:''}
+      </div>
+    </div>`;
+}
+
+function renderPhotoTab() {
+  const el = document.getElementById('tab-photo');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="text-align:center;padding:64px 24px">
+      <div style="font-size:64px;margin-bottom:18px">📸</div>
+      <div style="font-size:20px;font-weight:900;color:#e8edf2;margin-bottom:10px">사진 · 동영상</div>
+      <div style="font-size:14px;color:#4a8ab5;line-height:1.8">곧 경기 사진/영상을<br>함께 볼 수 있어요 🎾</div>
+      <div style="margin-top:20px;font-size:11px;color:rgba(74,138,181,0.6)">저장소 연동 후 업데이트 예정</div>
+    </div>`;
+}
+
+window.toggleHomeShortcuts = function() {
+  homeShortcutsOpen = !homeShortcutsOpen;
+  renderHomeTab();
+};
+
+window.homeGoTo = function(target) {
+  if (target === 'ranking') {
+    navTo('league');
+    setTimeout(()=>{
+      const b = document.querySelector('#tab-league .stab:nth-child(2)');
+      if (b) switchSub('ranking', b);
+    }, 60);
+  } else if (target === 'pairs') {
+    navTo('league');
+    setTimeout(()=>{
+      const b = document.querySelector('#tab-league .stab:nth-child(4)');
+      if (b) switchSub('pairs', b);
+    }, 60);
+  } else {
+    navTo(target);
+  }
+};
+
 function renderTodayBanner() {
   const el = document.getElementById('todayBanner');
   if (!el) return;
@@ -5206,7 +5425,8 @@ function setAdminMode(on){
   document.getElementById('btnAddEvent').style.display=on?'block':'none';
   if(!on && document.getElementById('tab-admin').style.display!=='none'){
     document.getElementById('tab-admin').style.display='none';
-    document.getElementById('tab-league').style.display='block';
+    document.getElementById('tab-home').style.display='block';
+    renderHomeTab();
     document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',i===0));
   }
   if (on) {
@@ -5539,6 +5759,7 @@ onSnapshot(collection(db,'schedules'), snap => {
   renderSchedules();
   renderTodayBanner();
   updateScheduleBadge();
+  renderHomeTab();
 });
 onSnapshot(collection(db,'boardPosts'), snap => {
   boardPosts = snap.docs.map(d=>({id:d.id,...d.data()}));
