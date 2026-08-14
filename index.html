@@ -735,6 +735,11 @@ body {
       </div>
 
       <div id="adminGroup-schedule" style="display:none">
+        <!-- 어드민 시즌 필터 -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:rgba(8,28,75,0.6);border-radius:10px;padding:10px 14px;border:1px solid rgba(50,110,200,0.2)">
+          <span style="font-size:12px;color:#4a8ab5;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
+          <select id="adminDaySeasonSel" class="row-sel" style="flex:1;font-size:12px;padding:6px" onchange="changeAdminDaySeason()"></select>
+        </div>
         <!-- 날짜별 참석자 관리 -->
         <div class="admin-sec">
           <h3>📋 날짜별 참석자 관리</h3>
@@ -1115,6 +1120,7 @@ let couples = [];  // [{m, f}] 커플/부부
 let currentSeason = 1;      // 현재 진행 시즌
 let viewSeason = 1;         // 화면에서 보고 있는 시즌
 let seasonUserPicked = false; // 사용자가 과거 시즌을 직접 선택했는지
+let adminDaySeason = null;  // null = currentSeason, -1 = 전체
 let pendingScore = null;
 let pendingScoreEdit = null;
 let pendingDayId = null;
@@ -2401,9 +2407,10 @@ function renderDatePairs(){
   const body = document.getElementById('datePairBody');
   if(!sel || !body) return;
   const cur = sel.value;
+  const pairDays = getAdminDays();
   sel.innerHTML = '<option value="">날짜 선택...</option>' +
-    days.map(d=>`<option value="${d.id}">${d.date}${d.place?' · '+d.place:''}</option>`).join('');
-  if(cur && days.some(d=>d.id===cur)) sel.value = cur;
+    pairDays.map(d=>`<option value="${d.id}">${d.date}${d.place?' · '+d.place:''}</option>`).join('');
+  if(cur && pairDays.some(d=>d.id===cur)) sel.value = cur;
   const dayId = sel.value;
   if(!dayId){ body.innerHTML = '<div style="color:#4a8ab5;font-size:12px">날짜를 선택하세요</div>'; return; }
   const day = days.find(d=>d.id===dayId) || {};
@@ -2493,6 +2500,32 @@ window.changeViewSeason = function(){
   viewSeason = parseInt(sel.value,10) || currentSeason;
   seasonUserPicked = (viewSeason !== currentSeason);
   renderAll();
+};
+
+// ── 어드민 날짜 목록 시즌 필터 ──────────────────────────────────────
+function getAdminDays() {
+  const s = adminDaySeason ?? currentSeason;
+  if (s === -1) return days;
+  return days.filter(d => (d.season||1) === s);
+}
+function renderAdminSeasonFilter() {
+  const sel = document.getElementById('adminDaySeasonSel');
+  if (!sel) return;
+  const cur = adminDaySeason ?? currentSeason;
+  let html = '<option value="-1">📋 전체 시즌</option>';
+  for (let s = currentSeason; s >= 1; s--) {
+    html += `<option value="${s}">시즌 ${s}${s === currentSeason ? ' (진행중)' : ''}</option>`;
+  }
+  sel.innerHTML = html;
+  sel.value = String(cur);
+}
+window.changeAdminDaySeason = function() {
+  const sel = document.getElementById('adminDaySeasonSel');
+  if (!sel) return;
+  const v = parseInt(sel.value, 10);
+  adminDaySeason = isNaN(v) ? null : v;
+  renderAdmin();
+  renderDatePairs();
 };
 window.startNewSeason = async function(){
   if(!confirm(`현재 시즌(시즌 ${currentSeason})을 마감하고\n새로운 시즌 ${currentSeason+1}을 시작할까요?\n\n• 지금까지 모든 기록은 '시즌 ${currentSeason}'으로 보존돼요\n• 새 시즌부터 개인 랭킹/성적이 새로 집계돼요\n• 시즌 선택에서 지난 시즌을 골라 언제든 다시 볼 수 있어요`)) return;
@@ -3404,6 +3437,7 @@ window.setAdminGuestViewMode = function(mode){
 
 function renderAdmin(){
   if(!isAdmin)return;
+  renderAdminSeasonFilter();
 
   // ── 가입 승인 대기 목록 ──
   const signupEl = document.getElementById('signupSection');
@@ -3606,12 +3640,16 @@ function renderAdmin(){
   // ── 날짜별 참석자 관리 (아코디언) ──
   const attEl = document.getElementById('attendanceSection');
   if (attEl) {
+    const adminDays = getAdminDays();
     if (!days.length) {
       attEl.innerHTML = '<div style="color:#4a8ab5;font-size:12px">날짜 그룹을 먼저 추가해주세요</div>';
+    } else if (!adminDays.length) {
+      const s = adminDaySeason ?? currentSeason;
+      attEl.innerHTML = `<div style="color:#4a8ab5;font-size:12px">시즌 ${s}에 등록된 날짜가 없어요</div>`;
     } else {
-      const existingBodyIds = new Set(days.map(d=>`att_body_${d.id}`));
+      const existingBodyIds = new Set(adminDays.map(d=>`att_body_${d.id}`));
       openAttBodies.forEach(id=>{ if(!existingBodyIds.has(id)) openAttBodies.delete(id); });
-      attEl.innerHTML = days.map(day => {
+      attEl.innerHTML = adminDays.map(day => {
         const att = day.attendance || {};
         const dayGuests = day.guests || [];
         const attendingCount = members.filter(m=>(att[m.name]??true)).length + dayGuests.length;
@@ -5480,9 +5518,10 @@ onSnapshot(collection(db,'days'), snap => {
   const sel = document.getElementById('rndDayId');
   if (sel) {
     const cur = sel.value;
+    const rndDays = getAdminDays();
     sel.innerHTML = '<option value="">날짜 선택...</option>' +
-      days.map(d=>`<option value="${d.id}">${d.date}${d.place?' · '+d.place:''}</option>`).join('');
-    if (cur) sel.value = cur;
+      rndDays.map(d=>`<option value="${d.id}">${d.date}${d.place?' · '+d.place:''}</option>`).join('');
+    if (cur && rndDays.some(d=>d.id===cur)) sel.value = cur;
   }
   // 라운드 타입 선택 UI 초기화 (최초 1회만 — 사용자가 설정 중이면 덮어쓰지 않음)
   if (!document.getElementById('ct_0_0')) {
