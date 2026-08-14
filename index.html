@@ -4411,7 +4411,7 @@ function renderHomeTab() {
     const pairsSummary = rds.length
       ? `<span style="font-size:10px;color:#a78bfa;background:rgba(124,58,237,0.15);padding:2px 7px;border-radius:8px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
       : '';
-    return `<div onclick="homeGoTo('league')" style="cursor:pointer;background:linear-gradient(135deg,rgba(124,58,237,0.22) 0%,rgba(37,99,235,0.22) 100%);border:1.5px solid rgba(124,58,237,0.5);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:linear-gradient(135deg,rgba(124,58,237,0.22) 0%,rgba(37,99,235,0.22) 100%);border:1.5px solid rgba(124,58,237,0.5);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:11px;font-weight:800;color:#a78bfa;background:rgba(124,58,237,0.2);padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
         ${attendBadge}
@@ -4570,6 +4570,23 @@ window.homeGoTo = function(target) {
   } else {
     navTo(target);
   }
+};
+
+// 홈 "다음 게임" 카드 클릭 → 정규리그 탭 해당 날짜 아코디언 열고 스크롤
+window.goToGameDay = function(dayId) {
+  navTo('league');
+  setTimeout(function() {
+    const bracketBtn = document.querySelector('#tab-league .stab:nth-child(1)');
+    if (bracketBtn) switchSub('bracket', bracketBtn);
+    const bodyId = 'day_' + dayId;
+    const arrId = 'darr_' + dayId;
+    const body = document.getElementById(bodyId);
+    if (body && body.style.display === 'none') toggleR(bodyId, arrId);
+    setTimeout(function() {
+      const el = document.getElementById(bodyId);
+      if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 50);
+  }, 80);
 };
 
 function renderTodayBanner() {
