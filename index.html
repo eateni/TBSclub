@@ -310,6 +310,17 @@ body {
 }
 #introSkip:hover{ background:rgba(0,0,0,0.7); }
 
+/* ── 홈 바로가기 카테고리 카드 ── */
+@keyframes glowGold   { 0%,100%{box-shadow:0 2px 0 rgba(0,0,0,0.25)} 50%{box-shadow:0 2px 22px rgba(245,158,11,0.28),0 0 0 1px rgba(245,158,11,0.18)} }
+@keyframes glowGreen  { 0%,100%{box-shadow:0 2px 0 rgba(0,0,0,0.25)} 50%{box-shadow:0 2px 22px rgba(52,211,153,0.28),0 0 0 1px rgba(52,211,153,0.18)} }
+@keyframes glowPurple { 0%,100%{box-shadow:0 2px 0 rgba(0,0,0,0.25)} 50%{box-shadow:0 2px 22px rgba(167,139,250,0.28),0 0 0 1px rgba(167,139,250,0.18)} }
+.sc-card-record    { animation: glowGold   3.5s ease-in-out infinite; }
+.sc-card-match     { animation: glowGreen  3.5s ease-in-out infinite 0.8s; }
+.sc-card-community { animation: glowPurple 3.5s ease-in-out infinite 1.6s; }
+.sc-body { max-height:0; overflow:hidden; transition:max-height 0.38s cubic-bezier(0.4,0,0.2,1); }
+.sc-body.sc-open   { max-height:440px; }
+@keyframes scItemIn { from{opacity:0;transform:translateY(10px) scale(0.87)} to{opacity:1;transform:translateY(0) scale(1)} }
+
 </style>
 </head>
 <body>
@@ -1121,6 +1132,7 @@ let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let calSelectedDate = null;
 let schedulePage = 0;
+let openCategory = null; // 홈 바로가기 펼쳐진 카테고리 ID (null=모두 접힘)
 const SCHEDULE_PER_PAGE = 5;
 window.gotoSchedulePage = function(p){ schedulePage = p; renderSchedules(); const el = document.getElementById('scheduleList'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
 let couples = [];  // [{m, f}] 커플/부부
@@ -4449,17 +4461,40 @@ function renderHomeTab() {
       }).join('')
     : `<div style="font-size:12px;color:#4a8ab5;padding:4px 0">예정된 일정이 없어요</div>`;
 
-  // 바로가기 — 3카테고리 항상 펼쳐진 아이콘 그리드
-  const scBtn = (icon, name, desc, go) =>
-    `<button onclick="homeGoTo('${go}')" style="background:rgba(3,12,45,0.55);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:11px 10px;text-align:left;cursor:pointer;width:100%">
-      <div style="font-size:20px;margin-bottom:4px">${icon}</div>
-      <div style="font-size:12px;font-weight:800;color:#e8edf2;margin-bottom:2px">${name}</div>
-      <div style="font-size:10px;color:#4a8ab5;line-height:1.35">${desc}</div>
-    </button>`;
-  const scHead = label =>
-    `<div style="font-size:10px;font-weight:800;color:#60a5fa;letter-spacing:0.5px;margin-bottom:7px;padding-bottom:5px;border-bottom:1px solid rgba(50,110,200,0.18)">${label}</div>`;
-  const scGrid = (items, mb) =>
-    `<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;${mb?'margin-bottom:'+mb:''}">` + items + `</div>`;
+  // 바로가기 — 확장형 카테고리 카드
+  var CATS = [
+    { id:'record',    icon:'📊', label:'기록',     grad:'linear-gradient(135deg,rgba(120,85,10,0.28),rgba(245,158,11,0.1))',   border:'rgba(245,158,11,0.38)', cardCls:'sc-card-record',
+      items:[{icon:'🏆',name:'랭킹 순위',go:'ranking'},{icon:'📈',name:'내 성적',go:'analysis'},{icon:'📅',name:'기간 리포트',go:'terra'},{icon:'👫',name:'페어 랭킹',go:'pairs'}] },
+    { id:'match',     icon:'🎾', label:'경기',     grad:'linear-gradient(135deg,rgba(5,46,22,0.32),rgba(52,211,153,0.1))',    border:'rgba(52,211,153,0.38)', cardCls:'sc-card-match',
+      items:[{icon:'📋',name:'스코어보드',go:'league'},{icon:'✅',name:'출석체크',go:'schedule'},{icon:'🎉',name:'이벤트전',go:'event'}] },
+    { id:'community', icon:'💬', label:'커뮤니티', grad:'linear-gradient(135deg,rgba(40,10,80,0.32),rgba(167,139,250,0.1))', border:'rgba(167,139,250,0.38)', cardCls:'sc-card-community',
+      items:[{icon:'🍀',name:'오늘의 운세',go:'fortune'},{icon:'📰',name:'게시판',go:'board'},{icon:'📸',name:'사진/동영상',go:'photo'}] },
+  ];
+  var shortcutsHtml = CATS.map(function(cat) {
+    var isOpen = openCategory === cat.id;
+    var cols = cat.items.length % 2 === 0 ? 2 : 3;
+    var itemsHtml = cat.items.map(function(it) {
+      return '<button onclick="homeGoTo(\'' + it.go + '\')" class="sc-item"'
+        + ' style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 6px;cursor:pointer;text-align:center;width:100%">'
+        + '<div style="font-size:22px;margin-bottom:4px">' + it.icon + '</div>'
+        + '<div style="font-size:10px;font-weight:700;color:#e8edf2;line-height:1.3">' + it.name + '</div>'
+        + '</button>';
+    }).join('');
+    return '<div class="sc-card ' + cat.cardCls + '" style="background:' + cat.grad + ';border:1.5px solid ' + cat.border + ';border-radius:16px;overflow:hidden;margin-bottom:10px">'
+      + '<button onclick="toggleCategory(\'' + cat.id + '\')" style="width:100%;padding:16px 18px;background:transparent;border:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between">'
+      + '<div style="display:flex;align-items:center;gap:12px">'
+      + '<span style="font-size:28px">' + cat.icon + '</span>'
+      + '<div style="text-align:left">'
+      + '<div style="font-size:15px;font-weight:900;color:#e8edf2">' + cat.label + '</div>'
+      + '<div style="font-size:10px;color:rgba(200,220,255,0.55);margin-top:1px">' + cat.items.length + '개 바로가기</div>'
+      + '</div></div>'
+      + '<span class="sc-arrow" data-cat="' + cat.id + '" style="font-size:20px;color:rgba(200,220,255,0.5);display:inline-block;transition:transform 0.3s;' + (isOpen ? 'transform:rotate(90deg)' : '') + '">›</span>'
+      + '</button>'
+      + '<div id="sc-body-' + cat.id + '" class="sc-body' + (isOpen ? ' sc-open' : '') + '">'
+      + '<div style="padding:0 14px 14px;display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:8px">'
+      + itemsHtml
+      + '</div></div></div>';
+  }).join('');
 
   // 배치 순서: 웰컴배너 → 통계4칸 → 내 기록 → 다음게임(있을 때만) → 다가오는 일정 → 바로가기
   el.innerHTML = `
@@ -4508,32 +4543,8 @@ function renderHomeTab() {
         <button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#60a5fa;font-size:11px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>
       </div>
 
-      <!-- 바로가기 — 카테고리별 아이콘 그리드 -->
-      <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-        <div style="font-size:12px;font-weight:800;color:#e8edf2;margin-bottom:12px">⚡ 바로가기</div>
-        ${scHead('📊 기록')}
-        ${scGrid(
-          scBtn('🏆','랭킹 순위','이번 시즌 리그 순위','ranking') +
-          scBtn('📈','내 성적','개인별 게임 기록','analysis') +
-          scBtn('📅','기간 리포트','기간별 운동일·승률','terra') +
-          scBtn('👫','페어 랭킹','혼복·남복·여복 팀 기록','pairs'),
-          '14px'
-        )}
-        ${scHead('🎾 경기')}
-        ${scGrid(
-          scBtn('📋','스코어보드','라운드별 경기 대진','league') +
-          scBtn('✅','출석체크','모임 일정 확인·참석','schedule') +
-          scBtn('🎉','이벤트전','특별 이벤트 경기','event'),
-          '14px'
-        )}
-        ${scHead('💬 커뮤니티')}
-        ${scGrid(
-          scBtn('🍀','오늘의 운세','오늘 나의 테니스 운세','fortune') +
-          scBtn('📰','게시판','클럽 공지·소통','board') +
-          scBtn('📸','사진/동영상','경기 사진·영상 모음','photo'),
-          ''
-        )}
-      </div>
+      <!-- 바로가기 — 확장형 카테고리 카드 -->
+      ${shortcutsHtml}
     </div>`;
 }
 
@@ -4572,6 +4583,25 @@ window.homeGoTo = function(target) {
   } else {
     navTo(target);
   }
+};
+
+// 홈 바로가기 카테고리 카드 토글 (아코디언 + 하위 항목 stagger 애니)
+window.toggleCategory = function(cat) {
+  openCategory = (openCategory === cat) ? null : cat;
+  ['record', 'match', 'community'].forEach(function(id) {
+    var body  = document.getElementById('sc-body-' + id);
+    var arrow = document.querySelector('.sc-arrow[data-cat="' + id + '"]');
+    var on    = (openCategory === id);
+    if (body)  { on ? body.classList.add('sc-open') : body.classList.remove('sc-open'); }
+    if (arrow) { arrow.style.transform = on ? 'rotate(90deg)' : ''; }
+    if (on && body) {
+      body.querySelectorAll('.sc-item').forEach(function(el, i) {
+        el.style.animation = 'none';
+        el.offsetHeight; // force reflow
+        el.style.animation = 'scItemIn 0.22s ease-out ' + (i * 65) + 'ms both';
+      });
+    }
+  });
 };
 
 // 홈 "다음 게임" 카드 클릭 → 정규리그 탭 해당 날짜 아코디언 열고 스크롤
