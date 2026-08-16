@@ -2646,44 +2646,58 @@ function renderDays() {
         const scoreEl=m.done
           ?`<div class="m-score">${m.score1} : ${m.score2}</div>`
           :`<div class="m-score pend">예정</div>`;
-        const inputBtn=!m.done?`<div style="display:flex;gap:4px;margin-top:8px"><button class="btn-input" style="margin-top:0;flex:1" onclick="openScore('${day.id}','${rIdx}','${m.id}')">📝 결과 입력</button><button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#34d399" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button></div>`:'';
+        // 기본 노출: 결과 입력만
+        const basicInputBtn = !m.done
+          ? `<button class="btn-input" style="margin-top:0;flex:1" onclick="openScore('${day.id}','${rIdx}','${m.id}')">📝 결과 입력</button>`
+          : '';
+        // 확장 영역: 실시간 스코어
+        const liveBtn = !m.done
+          ? `<button class="btn-input" style="width:100%;margin-bottom:7px;border-color:rgba(52,211,153,0.4);color:#34d399" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button>`
+          : '';
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
         const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#60a5fa" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#a78bfa">[${m.tag}]</span>`:'';
         const mComments = m.comments || [];
         const commentOpts = [...members, ...guests].map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
-        const commentsHtml = `
-          <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-            ${mComments.map((c,ci)=>`
-              <div style="font-size:11px;color:#8aa5c4;margin-bottom:3px;display:flex;justify-content:space-between">
-                <span><b style="color:#60a5fa">${c.name}</b> ${c.text}</span>
-                ${isAdmin?`<button onclick="delMatchComment('${day.id}','${rIdx}','${m.id}',${ci})" style="background:none;border:none;color:#f87171;font-size:10px;cursor:pointer">×</button>`:''}
-              </div>`).join('')}
-            <div style="display:flex;gap:4px;margin-top:4px">
-              <select id="mcmt_who_${m.id}" class="row-sel" style="width:70px;font-size:10px;padding:5px"><option value="">이름</option>${commentOpts}</select>
-              <input id="mcmt_text_${m.id}" class="row-inp" placeholder="댓글..." style="flex:1;font-size:11px;padding:6px" onkeydown="if(event.key==='Enter')addMatchComment('${day.id}','${rIdx}','${m.id}')">
-            </div>
-          </div>`;
-        return `<div class="match-card">
-          <div class="match-ct"><span>${m.court||''} ${tagBadge}</span></div>
+        // 댓글 목록
+        const commentsListHtml = mComments.map((c,ci)=>`
+          <div style="font-size:11px;color:#8aa5c4;margin-bottom:3px;display:flex;justify-content:space-between">
+            <span><b style="color:#60a5fa">${c.name}</b> ${c.text}</span>
+            ${isAdmin?`<button onclick="delMatchComment('${day.id}','${rIdx}','${m.id}',${ci})" style="background:none;border:none;color:#f87171;font-size:10px;cursor:pointer">×</button>`:''}
+          </div>`).join('');
+        return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
+          <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">${m.court||''} ${tagBadge}</span></div>
           <div class="match-row">
             <div class="m-team ${w1?'win':''}">${(m.team1||[]).join(' / ')}</div>
             ${scoreEl}
             <div class="m-team ${w2?'win':''}">${(m.team2||[]).join(' / ')}</div>
-          </div>${inputBtn}${editBtn}${delBtn}
-          ${commentsHtml}
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;margin-top:8px">
+            ${basicInputBtn}${editBtn}${delBtn}
+            <button onclick="toggleMatchCard('${m.id}')" id="marr_${m.id}" style="margin-left:auto;background:none;border:1px solid rgba(50,110,200,0.22);border-radius:7px;color:#4a8ab5;font-size:12px;cursor:pointer;padding:2px 9px;transition:transform 0.2s;flex-shrink:0">⌄</button>
+          </div>
+          <div id="mex_${m.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+            ${liveBtn}
+            ${commentsListHtml}
+            <div style="display:flex;gap:4px;margin-top:4px">
+              <select id="mcmt_who_${m.id}" class="row-sel" style="width:70px;font-size:10px;padding:5px"><option value="">이름</option>${commentOpts}</select>
+              <input id="mcmt_text_${m.id}" class="row-inp" placeholder="댓글..." style="flex:1;font-size:11px;padding:6px" onkeydown="if(event.key==='Enter')addMatchComment('${day.id}','${rIdx}','${m.id}')">
+            </div>
+          </div>
         </div>`;
       }).join('');
       const addMatchBtn = isAdmin ? `<button class="btn-input" style="border-color:rgba(35,90,180,0.35);color:#4a8ab5" onclick="openAddMatch('${day.id}','${rIdx}')">+ 경기 직접 추가</button>` : '';
       const delRoundBtn = isAdmin ? `<button onclick="delRound('${day.id}','${rIdx}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:6px">삭제</button>` : '';
       const rid = `r_${day.id}_${rIdx}`;
       const aid = `a_${day.id}_${rIdx}`;
+      // 미완료 경기가 있는 라운드는 기본으로 펼침
+      const roundOpen = (r.matches||[]).some(m => !m.done && !m.isRally && m.tag !== '랠리');
       return `<div style="background:rgba(4,16,55,0.5);border-radius:10px;margin-bottom:8px;border:1px solid rgba(35,90,180,0.2);">
         <button style="width:100%;padding:11px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:600;font-size:13px;" onclick="toggleR('${rid}','${aid}')">
           <span>🎾 ${r.name} <span style="color:rgba(100,150,200,0.7);font-weight:400;font-size:11px">(${r.type})</span>${delRoundBtn}</span>
-          <span id="${aid}" style="color:#4a8ab5;transition:transform 0.2s">›</span>
+          <span id="${aid}" style="color:#4a8ab5;transition:transform 0.2s${roundOpen?';transform:rotate(90deg)':''}">›</span>
         </button>
-        <div id="${rid}" style="display:none;flex-direction:column;gap:6px;padding:0 10px 10px">
+        <div id="${rid}" style="${roundOpen?'display:flex':'display:none'};flex-direction:column;gap:6px;padding:0 10px 10px">
           ${matchesHtml}${addMatchBtn}
         </div>
       </div>`;
@@ -2699,7 +2713,7 @@ function renderDays() {
         <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;">
           <span>📅 ${dateStr}${day.place?` <span style="color:rgba(100,150,200,0.6);font-size:11px;font-weight:400">· ${day.place}</span>`:''}${attendStr}</span>
           <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료${resultStr} ${delDayBtn}</span>
-          ${totalMatches>0?`<div style="width:120px;height:4px;background:rgba(3,12,45,0.1);border-radius:2px;overflow:hidden;margin-top:2px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#34d399':'#60a5fa'};border-radius:2px;transition:width 0.4s"></div></div>`:''}
+          ${totalMatches>0?`<div style="width:100%;height:3px;background:rgba(35,90,180,0.15);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#34d399':'#60a5fa'};border-radius:2px;transition:width 0.5s"></div></div>`:''}
         </div>
         <span id="${dayArr}" style="color:#4a8ab5;transition:transform 0.2s">›</span>
       </button>
@@ -5210,6 +5224,15 @@ window.toggleR=function(bodyId,arrId){
   const open=el.style.display==='none';
   el.style.display=open?'flex':'none';
   if(arr)arr.style.transform=open?'rotate(90deg)':'';
+};
+// 코트 카드 2차 정보(실시간스코어·댓글) 펼침/접힘
+window.toggleMatchCard=function(mid){
+  const extra=document.getElementById('mex_'+mid);
+  const arrow=document.getElementById('marr_'+mid);
+  if(!extra)return;
+  const isOpen=extra.style.display!=='none';
+  extra.style.display=isOpen?'none':'block';
+  if(arrow)arrow.style.transform=isOpen?'':'rotate(180deg)';
 };
 window.toggleAtt=function(bodyId,arrId){
   const el=document.getElementById(bodyId),arr=document.getElementById(arrId);
