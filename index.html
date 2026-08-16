@@ -4898,7 +4898,27 @@ function renderSchedules() {
     const editBtn = canManage ? `<button onclick="openEditSchedule('${s.id}')" style="background:none;border:none;color:#93c5fd;font-size:11px;cursor:pointer;margin-right:8px">✏️ 수정</button>` : '';
     const delBtn = canManage ? `<button onclick="delSchedule('${s.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">🗑️ 삭제</button>` : '';
     const canSetPairs = isAdmin || (myClaim && myClaim !== 'pending');
-    const pairsResultHtml = (s.gamePairs && s.gamePairs.length) ? `<div style="margin-top:8px;font-size:11px;color:#e8edf2">${s.gamePairs.map(rd=>`<div style="color:#a78bfa;font-weight:700;margin-top:6px">${rd.round}라운드</div>${(rd.matches||[]).map(m=>`<div style="padding:3px 0">${m.court}코트(${m.type}) ${m.team1.join(' · ')} <b style="color:#a78bfa">${m.score1} : ${m.score2}</b> ${m.team2.join(' · ')}</div>`).join('')}`).join('')}</div>` : '';
+    const pairsResultHtml = (s.gamePairs && s.gamePairs.length) ? (function() {
+      var schId = s.id;
+      return '<div style="margin-top:8px">' + s.gamePairs.map(function(rd, rdIdx) {
+        var rdHtml = (rd.matches||[]).map(function(m, mIdx) {
+          var done = !!(m.score1||m.score2);
+          var w1 = done && m.score1 > m.score2, w2 = done && m.score2 > m.score1;
+          return '<div class="match-card" style="padding:10px 12px;margin-bottom:5px">'
+            + '<div style="font-size:10px;color:#4a8ab5;margin-bottom:3px">' + (m.court||'') + ' (' + (m.type||'') + ')</div>'
+            + '<div class="match-row">'
+            + '<div class="m-team ' + (w1?'win':'') + '">' + (m.team1||[]).join(' / ') + '</div>'
+            + (done ? '<div class="m-score">' + m.score1 + ' : ' + m.score2 + '</div>' : '<div class="m-score pend">예정</div>')
+            + '<div class="m-team ' + (w2?'win':'') + '">' + (m.team2||[]).join(' / ') + '</div>'
+            + '</div>'
+            + (!done ? '<div style="margin-top:8px"><button class="btn-input" style="margin-top:0;width:100%" onclick="openMeetupScore(\'' + schId + '\',' + rdIdx + ',' + mIdx + ')">📝 결과 입력</button></div>' : '')
+            + '</div>';
+        }).join('');
+        return '<div style="margin-bottom:8px">'
+          + '<div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:5px;padding-bottom:3px;border-bottom:1px solid rgba(167,139,250,0.2)">' + rd.round + '라운드</div>'
+          + rdHtml + '</div>';
+      }).join('') + '</div>';
+    })() : '';
     const meetupSection = s.isGameMeetup ? `
       <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:10px;margin-bottom:10px">
         <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:6px">🎾 게임모임</div>
@@ -5294,6 +5314,21 @@ window.openScore=function(dayId, rIdx, mId){
   document.getElementById('scoreModal').style.display='flex';
 };
 
+// 모임 대진표(schedules.gamePairs) 결과 입력
+window.openMeetupScore=function(schId, rdIdx, mIdx){
+  const sch=(schedules||[]).find(s=>s.id===schId);
+  if(!sch||!sch.gamePairs)return;
+  const rd=sch.gamePairs[rdIdx]; if(!rd)return;
+  const m=(rd.matches||[])[mIdx]; if(!m)return;
+  pendingScore={type:'gamePairs', schId, rdIdx:parseInt(rdIdx), mIdx:parseInt(mIdx)};
+  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#e8edf2">${(m.team1||[]).join(' / ')}</strong> vs <strong style="color:#e8edf2">${(m.team2||[]).join(' / ')}</strong>`;
+  document.getElementById('s1Label').textContent=(m.team1||[]).join('/')+' 스코어';
+  document.getElementById('s2Label').textContent=(m.team2||[]).join('/')+' 스코어';
+  document.getElementById('s1').value=''; document.getElementById('s2').value='';
+  document.getElementById('positionSelectors').innerHTML='';
+  document.getElementById('scoreModal').style.display='flex';
+};
+
 window.selectPos=function(playerKey, pos){
   const other=pos==='fore'?'back':'fore';
   const foreBt=document.getElementById(`pos_fore_${playerKey}`);
@@ -5313,6 +5348,18 @@ window.submitScore=async function(){
   if(!pendingScore)return;
   const s1=parseInt(document.getElementById('s1').value),s2=parseInt(document.getElementById('s2').value);
   if(isNaN(s1)||isNaN(s2)){alert('스코어를 입력해주세요');return;}
+  // gamePairs (schedules 컬렉션) 경로
+  if(pendingScore.type==='gamePairs'){
+    const sch=(schedules||[]).find(s=>s.id===pendingScore.schId);
+    if(!sch)return;
+    const pairs=JSON.parse(JSON.stringify(sch.gamePairs||[]));
+    const m=(pairs[pendingScore.rdIdx].matches||[])[pendingScore.mIdx];
+    if(!m)return;
+    m.score1=s1; m.score2=s2;
+    await updateDoc(doc(db,'schedules',pendingScore.schId),{gamePairs:pairs});
+    hide('scoreModal');
+    return;
+  }
   const day=days.find(d=>d.id===pendingScore.dayId);
   const rounds=[...(day.rounds||[])];
   const match=(rounds[pendingScore.rIdx].matches||[]).find(m=>m.id===pendingScore.mId);
