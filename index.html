@@ -4338,6 +4338,45 @@ window.shareKakao = function(id) {
 
 // ── 📌 오늘 일정 배너 (C안) ───────────────────────────────────────────
 let bannerSchId = null;
+// ── 홈 미니 캘린더 ─────────────────────────────────────────────────
+function renderMiniCalendar(year, month, attendedSet) {
+  var today = new Date();
+  var isThisMonth = (year === today.getFullYear() && month === today.getMonth());
+  var todayD = today.getDate();
+  var firstDay = new Date(year, month, 1).getDay(); // 0=일
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+  var DOW = ['일','월','화','수','목','금','토'];
+  var hdr = DOW.map(function(d, i) {
+    var c = i === 0 ? 'rgba(248,113,113,0.6)' : i === 6 ? 'rgba(96,165,250,0.6)' : 'rgba(200,220,255,0.35)';
+    return '<div style="font-size:7.5px;color:' + c + ';text-align:center;font-weight:700;padding-bottom:2px">' + d + '</div>';
+  }).join('');
+  var cells = '';
+  for (var e = 0; e < firstDay; e++) cells += '<div></div>';
+  for (var d = 1; d <= daysInMonth; d++) {
+    var att  = attendedSet.has(d);
+    var isT  = isThisMonth && d === todayD;
+    var col, bg, fw, ring;
+    if (att && isT) {
+      col = '#04150c'; bg = '#34d399'; fw = '900'; ring = '';
+    } else if (att) {
+      col = '#34d399'; bg = 'rgba(52,211,153,0.22)'; fw = '700'; ring = '';
+    } else if (isT) {
+      col = '#fff'; bg = 'transparent'; fw = '800'; ring = 'box-shadow:0 0 0 1.5px rgba(255,255,255,0.75);';
+    } else {
+      col = 'rgba(200,220,255,0.38)'; bg = 'transparent'; fw = '400'; ring = '';
+    }
+    cells += '<div style="font-size:9px;text-align:center;line-height:1">'
+      + '<div style="width:17px;height:17px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin:0 auto;background:' + bg + ';color:' + col + ';font-weight:' + fw + ';' + ring + '">' + d + '</div>'
+      + '</div>';
+  }
+  var ml = year + '.' + String(month + 1).padStart(2, '0');
+  return '<div style="flex-shrink:0;text-align:center">'
+    + '<div style="font-size:8px;color:rgba(200,220,255,0.45);margin-bottom:4px;letter-spacing:0.4px">' + ml + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(7,17px);gap:1px 0">'
+    + hdr + cells
+    + '</div></div>';
+}
+
 // ── 홈 탭 렌더 ────────────────────────────────────────────────────
 function renderHomeTab() {
   const el = document.getElementById('tab-home');
@@ -4352,6 +4391,22 @@ function renderHomeTab() {
   const isLoggedIn = myClaim && myClaim !== 'pending';
   const welcomeName = isLoggedIn ? `${myClaim.name}님 환영합니다 👋` : 'TBS HISTORY 👋';
   const subMsg = isLoggedIn ? '오늘도 좋은 경기 되세요!' : '로그인하면 내 기록을 확인할 수 있어요';
+
+  // 이번 달 출석일 집계 (days.attendance[name] !== false인 날짜)
+  const calY = now.getFullYear();
+  const calM = now.getMonth();
+  const calMStr = `${calY}-${String(calM+1).padStart(2,'0')}`;
+  const attendedSet = new Set();
+  if (isLoggedIn) {
+    days.forEach(function(day) {
+      if (!day.date || !day.date.startsWith(calMStr)) return;
+      const dayAtt = day.attendance || {};
+      if (dayAtt[myClaim.name] !== false) {
+        attendedSet.add(parseInt(day.date.slice(8, 10), 10));
+      }
+    });
+  }
+  const miniCalHtml = renderMiniCalendar(calY, calM, attendedSet);
 
   // 요약 통계
   const thisMonth = todayStr.slice(0,7);
@@ -4500,13 +4555,20 @@ function renderHomeTab() {
   el.innerHTML = `
     <div style="padding-top:12px">
       <!-- 웰컴 배너 -->
-      <div style="background:linear-gradient(135deg,#1e3a8a 0%,#1565c0 50%,#0891b2 100%);border-radius:18px;padding:20px 18px 18px;margin-bottom:12px;position:relative;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#1e3a8a 0%,#1565c0 50%,#0891b2 100%);border-radius:18px;padding:18px 16px 16px;margin-bottom:12px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-24px;right:-16px;font-size:90px;opacity:0.07;pointer-events:none;user-select:none">🎾</div>
-        <div style="font-size:19px;font-weight:900;color:#fff;margin-bottom:4px">${welcomeName}</div>
-        <div style="font-size:12px;color:rgba(200,225,255,0.8);margin-bottom:14px">${subMsg}</div>
-        <div style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.13);border-radius:20px;padding:5px 13px">
-          <span style="font-size:12px">📆</span>
-          <span style="font-size:12px;font-weight:700;color:#e0f2fe">오늘 ${todayLabel}</span>
+        <div style="display:flex;align-items:flex-start;gap:10px;position:relative">
+          <!-- 좌측: 인사말 -->
+          <div style="flex:1;min-width:0">
+            <div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${welcomeName}</div>
+            <div style="font-size:11px;color:rgba(200,225,255,0.8);margin-bottom:12px">${subMsg}</div>
+            <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.13);border-radius:20px;padding:4px 11px">
+              <span style="font-size:11px">📆</span>
+              <span style="font-size:11px;font-weight:700;color:#e0f2fe">오늘 ${todayLabel}</span>
+            </div>
+          </div>
+          <!-- 우측: 미니 캘린더 -->
+          ${miniCalHtml}
         </div>
       </div>
 
