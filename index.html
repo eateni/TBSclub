@@ -3455,28 +3455,38 @@ window.openEventDetail=function(evId){
     const matchCards=evMatches.length?evMatches.map((m,mi)=>{
       const done=m.ourScore!==null&&m.ourScore!==undefined;
       const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
-      const sc=won?'#34d399':lost?'#f87171':'#fbbf24';
-      return `<div style="background:rgba(3,12,45,0.5);border:1px solid rgba(35,90,180,0.3);border-radius:10px;padding:10px;margin-bottom:8px">
-        <div style="font-size:10px;color:#a78bfa;font-weight:700;margin-bottom:6px">매치 ${mi+1}</div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-          <span style="font-size:11px;color:#8aa5c4;width:36px">우리팀</span>
-          <span style="font-size:13px;font-weight:700;color:#e8edf2">${(m.ourPair||[]).join(' · ')}</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-          <span style="font-size:11px;color:#8aa5c4;width:36px">상대팀</span>
-          ${isAdmin?`<input id="evOpp1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
+      const scoreEl=done
+        ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${m.ourScore} : ${m.oppScore}</div>`
+        :`<div class="m-score pend">예정</div>`;
+      const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
+      const oppLabel=m.oppClub?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${m.oppClub}</span>`:oppRaw;
+      const inpId=`evInp_${mi}`;
+      const inputSec=isAdmin?`<div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+        <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
+        <div style="display:flex;gap:4px;margin-bottom:6px">
+          <input id="evOpp1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
           <input id="evOpp2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
           <input id="evOppClub_${mi}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${m.oppClub||''}">
-          `:`<span style="font-size:13px;font-weight:700;color:#e8edf2">${(m.oppPair||[]).join(' · ')}${m.oppClub?' ('+m.oppClub+')':''}</span>`}
         </div>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:11px;color:#8aa5c4">스코어</span>
-          ${isAdmin?`<input type="number" id="evS1_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.ourScore:''}">
+          <input type="number" id="evS1_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.ourScore:''}">
           <span style="color:#a78bfa">:</span>
           <input type="number" id="evS2_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.oppScore:''}">
           <button onclick="saveEvMatchDetail('${evId}',${mi})" style="padding:5px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">저장</button>
-          `:`<span style="font-size:14px;font-weight:800;color:${sc}">${done?m.ourScore+' : '+m.oppScore:'-'}</span>${done?`<span style="font-size:11px;font-weight:700;color:${sc}">(${won?'승':lost?'패':'무'})</span>`:''}`}
         </div>
+      </div>`:'';
+      return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
+        <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">매치 ${mi+1}</span></div>
+        <div class="match-row">
+          <div class="m-team ${won?'win':''}">${(m.ourPair||[]).join(' / ')}</div>
+          ${scoreEl}
+          <div class="m-team ${lost?'win':''}">${oppLabel}</div>
+        </div>
+        ${isAdmin?`<div style="display:flex;gap:5px;margin-top:8px">
+          <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>
+        </div>`:''}
+        ${inputSec}
       </div>`;
     }).join('')
     :'<div style="color:#4a8ab5;font-size:12px;padding:8px 0">매치 없음 — 페어 짜기로 생성하세요</div>';
@@ -3618,30 +3628,48 @@ function renderEvExchangePairResult(evId){
   const existing=ev?(ev.matches||[]):[];
   const cards=evExchangeGeneratedPairs.map((pair,i)=>{
     const ex=existing[i]||{};
-    return `<div style="background:rgba(3,12,45,0.5);border:1px solid rgba(35,90,180,0.3);border-radius:10px;padding:10px;margin-bottom:8px">
-      <div style="font-size:10px;color:#a78bfa;font-weight:700;margin-bottom:4px">매치 ${i+1} · 우리팀</div>
-      <div style="font-size:13px;font-weight:700;color:#e8edf2;margin-bottom:8px">${pair.join(' · ')}</div>
-      <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
-      <div style="display:flex;gap:4px;margin-bottom:6px">
-        <input id="evGenOpp1_${i}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(ex.oppPair||[])[0]||''}">
-        <input id="evGenOpp2_${i}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(ex.oppPair||[])[1]||''}">
-        <input id="evGenOppClub_${i}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${ex.oppClub||''}">
+    const done=ex.ourScore!==null&&ex.ourScore!==undefined;
+    const won=done&&ex.ourScore>ex.oppScore, lost=done&&ex.ourScore<ex.oppScore;
+    const scoreEl=done
+      ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${ex.ourScore} : ${ex.oppScore}</div>`
+      :`<div class="m-score pend">예정</div>`;
+    const oppRaw=(ex.oppPair||[]).join(' / ')||'미입력';
+    const oppLabel=ex.oppClub?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${ex.oppClub}</span>`:oppRaw;
+    const inpId=`evGenInp_${i}`;
+    return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
+      <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">매치 ${i+1}</span></div>
+      <div class="match-row">
+        <div class="m-team ${won?'win':''}">${pair.join(' / ')}</div>
+        ${scoreEl}
+        <div class="m-team ${lost?'win':''}">${oppLabel}</div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:11px;color:#8aa5c4">스코어</span>
-        <input type="number" id="evGenS1_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${ex.ourScore!==null&&ex.ourScore!==undefined?ex.ourScore:''}">
-        <span style="color:#a78bfa">:</span>
-        <input type="number" id="evGenS2_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${ex.oppScore!==null&&ex.oppScore!==undefined?ex.oppScore:''}">
+      <div style="display:flex;gap:5px;margin-top:8px">
+        <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>
+      </div>
+      <div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+        <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
+        <div style="display:flex;gap:4px;margin-bottom:6px">
+          <input id="evGenOpp1_${i}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(ex.oppPair||[])[0]||''}">
+          <input id="evGenOpp2_${i}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(ex.oppPair||[])[1]||''}">
+          <input id="evGenOppClub_${i}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${ex.oppClub||''}">
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:#8aa5c4">스코어</span>
+          <input type="number" id="evGenS1_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.ourScore:''}">
+          <span style="color:#a78bfa">:</span>
+          <input type="number" id="evGenS2_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.oppScore:''}">
+          <button onclick="saveEvMatchAndRefresh('${evId}',${i})" style="padding:5px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">저장</button>
+        </div>
       </div>
     </div>`;
   }).join('');
   document.getElementById('eventDetailContent').innerHTML=`
-    <div class="modal-title">🎲 페어 결과</div>
-    <div style="font-size:12px;color:#8aa5c4;margin-bottom:12px">상대팀·점수는 나중에 입력해도 됩니다</div>
+    <div class="modal-title">🤝 교류전 대진</div>
+    <div style="font-size:12px;color:#8aa5c4;margin-bottom:12px">📝 버튼으로 결과를 입력하세요</div>
     ${cards}
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="showEvExchangePairConfig('${evId}')" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 짜기</button>
-      <button onclick="saveEvExchangePairs('${evId}')" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">✅ 저장</button>
+      <button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">← 상세보기</button>
+      <button onclick="showEvExchangePairConfig('${evId}')" style="flex:1;padding:9px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:9px;color:#a78bfa;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 짜기</button>
     </div>`;
 }
 
@@ -3661,6 +3689,7 @@ window.saveEvExchangePairs=async function(evId){
     };
   });
   await updateDoc(doc(db,'events',evId),{matches});
+  const ev=events.find(e=>e.id===evId); if(ev) ev.matches=matches;
   openEventDetail(evId);
 };
 
@@ -3675,7 +3704,30 @@ window.saveEvMatchDetail=async function(evId,mi){
   const s2=document.getElementById(`evS2_${mi}`)?.value;
   matches[mi]={...matches[mi],oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:s1!==''?parseInt(s1):null,oppScore:s2!==''?parseInt(s2):null};
   await updateDoc(doc(db,'events',evId),{matches});
+  ev.matches=matches;
   openEventDetail(evId);
+};
+
+window.toggleEvMatchInput=function(id){
+  const el=document.getElementById(id); if(!el)return;
+  el.style.display=el.style.display==='none'?'block':'none';
+};
+
+window.saveEvMatchAndRefresh=async function(evId,mi){
+  const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const matches=evExchangeGeneratedPairs.map((pair,i)=>{
+    const prev=(ev.matches||[])[i]||{};
+    if(i!==mi)return{...prev,ourPair:pair};
+    const opp1=document.getElementById(`evGenOpp1_${mi}`)?.value.trim()||'';
+    const opp2=document.getElementById(`evGenOpp2_${mi}`)?.value.trim()||'';
+    const oppClub=document.getElementById(`evGenOppClub_${mi}`)?.value.trim()||'';
+    const s1=document.getElementById(`evGenS1_${mi}`)?.value;
+    const s2=document.getElementById(`evGenS2_${mi}`)?.value;
+    return{ourPair:pair,oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:s1!==''?parseInt(s1):null,oppScore:s2!==''?parseInt(s2):null};
+  });
+  await updateDoc(doc(db,'events',evId),{matches});
+  ev.matches=matches;
+  renderEvExchangePairResult(evId);
 };
 
 let adminGuestSortKey = null;
@@ -4729,6 +4781,28 @@ function renderHomeTab() {
     </div>`;
   })() : '';
 
+  // ── 다가오는 교류전 (오늘 이후 예정, 가장 가까운 1건) ──────────────
+  const nextExchangeEv=[...events]
+    .filter(e=>e.type==='exchange'&&e.status==='upcoming'&&e.date&&e.date>=todayStr)
+    .sort((a,b)=>a.date.localeCompare(b.date))[0]||null;
+  const nextEvCardHtml=nextExchangeEv?(()=>{
+    const e=nextExchangeEv;
+    const dd=new Date(e.date+'T00:00:00');
+    const dl=`${dd.getMonth()+1}/${dd.getDate()}(${weekdays[dd.getDay()]})`;
+    const partCount=(e.participants||[]).length;
+    return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:linear-gradient(135deg,rgba(16,80,50,0.32) 0%,rgba(5,46,22,0.22) 100%);border:1.5px solid rgba(52,211,153,0.45);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:3px 10px;border-radius:10px">🤝 다가오는 교류전</span>
+      </div>
+      <div style="font-size:16px;font-weight:900;color:#fbbf24;margin-bottom:4px">${dl}</div>
+      <div style="font-size:13px;font-weight:700;color:#e8edf2;margin-bottom:4px">${e.name}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${e.place?`<span style="font-size:11px;color:#60a5fa">📍 ${e.place}</span>`:''}
+        ${partCount?`<span style="font-size:11px;color:#34d399">👥 ${partCount}명 참가예정</span>`:''}
+      </div>
+    </div>`;
+  })():'';
+
   // ── "다가오는 일정": schedules 컬렉션 (캘린더 일정) ─────────────────
   const futureScheds = schedules
     .filter(s=>s.date&&s.date>=todayStr)
@@ -4834,6 +4908,9 @@ function renderHomeTab() {
       <!-- 관리자 다음 게임 카드 (isGameMeetup=true 일정 있을 때만) -->
       ${nextGameCardHtml}
 
+      <!-- 다가오는 교류전 (예정 상태 교류전이 있을 때만) -->
+      ${nextEvCardHtml}
+
       <!-- 다가오는 일정 (일반 회원 일정) -->
       <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
         <div style="font-size:11px;font-weight:800;color:#4a8ab5;margin-bottom:8px">📅 다가오는 일정</div>
@@ -4881,6 +4958,11 @@ window.homeGoTo = function(target) {
   } else {
     navTo(target);
   }
+};
+
+window.openEvDetailFromHome=function(evId){
+  navTo('event');
+  setTimeout(()=>openEventDetail(evId),80);
 };
 
 // 홈 바로가기 카테고리 카드 토글 (아코디언 + 하위 항목 stagger 애니)
