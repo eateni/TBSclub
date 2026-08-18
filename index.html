@@ -1128,6 +1128,8 @@ let boardPosts = [];
 let meetupCurrentScheduleId = null;
 let meetupCurrentRounds = [];
 let meetupConfig = { courts: 2, rounds: 1, types: {} };
+let evExchangeCurrentEvId = null;
+let evExchangeGeneratedPairs = [];
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let calSelectedDate = null;
@@ -3422,14 +3424,97 @@ window.filterEvent=function(type,btn){
 window.openEventDetail=function(evId){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const parts=ev.participants||[], results=ev.results||[];
-  const memberNames = members.map(m=>m.name);
+  const evMatches=ev.matches||[];
+
+  // 참가자 추가 드롭다운: 정회원 + 게스트 구분 표시
+  const memberOpts=members.map(m=>`<option value="${m.name}">${m.name} ${m.gender==='f'?'♀':'♂'}</option>`).join('');
+  const guestOpts=guests.map(g=>`<option value="${g.name}">${g.name} ${g.gender==='f'?'♀':'♂'} (게스트)</option>`).join('');
+  const partSel=isAdmin?`<div class="row-form" style="margin-top:10px">
+    <select class="row-inp" id="evPartSel">
+      <option value="">참가자 추가</option>
+      <optgroup label="🏅 정회원">${memberOpts}</optgroup>
+      ${guestOpts?`<optgroup label="👤 게스트">${guestOpts}</optgroup>`:''}
+    </select>
+    <button class="btn-add" onclick="addEvPart('${evId}')">추가</button>
+  </div>`:'';
   const partSec=`<div style="margin-bottom:16px">
     <div style="font-size:13px;font-weight:700;margin-bottom:8px">👥 참가자 (${parts.length}명)</div>
-    <div class="part-chips">${parts.map(p=>`<span class="part-chip">${p}</span>`).join('')||'<span style="color:#4a8ab5;font-size:12px">없음</span>'}</div>
-    ${isAdmin?`<div class="row-form" style="margin-top:10px"><select class="row-inp" id="evPartSel"><option value="">참가자 추가</option>${memberNames.map(m=>`<option>${m}</option>`).join('')}</select><button class="btn-add" onclick="addEvPart('${evId}')">추가</button></div>`:''}
+    <div class="part-chips">${parts.map(p=>{
+      const rmBtn=isAdmin?`<button onclick="removeEvPart('${evId}','${p.replace(/'/g,"\\'")}')"`+` style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:2px">×</button>`:'';
+      return `<span class="part-chip">${p}${rmBtn}</span>`;
+    }).join('')||'<span style="color:#4a8ab5;font-size:12px">없음</span>'}
+    </div>${partSel}
   </div>`;
-  const resSec=results.length?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 결과</div>${results.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a2a3a"><span>${['🥇','🥈','🥉'][i]||i+1+'위'}</span><span style="font-weight:700">${r.name}</span>${r.note?`<span style="font-size:11px;color:#4a8ab5">${r.note}</span>`:''}</div>`).join('')}</div>`:'';
-  const addRes=isAdmin?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏅 결과 추가</div><div class="row-form"><select class="row-inp" id="evResName"><option value="">선수</option>${parts.map(p=>`<option>${p}</option>`).join('')}</select><input class="row-inp" id="evResNote" placeholder="메모"><button class="btn-add" onclick="addEvResult('${evId}')">추가</button></div></div>`:'';
+
+  // ── 교류전 전용 섹션 ──
+  let exchangeSec='';
+  if(ev.type==='exchange'){
+    const pairBtn=isAdmin&&parts.length>=4
+      ?`<button onclick="showEvExchangePairConfig('${evId}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:12px">🎲 페어 짜기</button>`
+      :'';
+    const matchCards=evMatches.length?evMatches.map((m,mi)=>{
+      const done=m.ourScore!==null&&m.ourScore!==undefined;
+      const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
+      const sc=won?'#34d399':lost?'#f87171':'#fbbf24';
+      return `<div style="background:rgba(3,12,45,0.5);border:1px solid rgba(35,90,180,0.3);border-radius:10px;padding:10px;margin-bottom:8px">
+        <div style="font-size:10px;color:#a78bfa;font-weight:700;margin-bottom:6px">매치 ${mi+1}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="font-size:11px;color:#8aa5c4;width:36px">우리팀</span>
+          <span style="font-size:13px;font-weight:700;color:#e8edf2">${(m.ourPair||[]).join(' · ')}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <span style="font-size:11px;color:#8aa5c4;width:36px">상대팀</span>
+          ${isAdmin?`<input id="evOpp1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
+          <input id="evOpp2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
+          <input id="evOppClub_${mi}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${m.oppClub||''}">
+          `:`<span style="font-size:13px;font-weight:700;color:#e8edf2">${(m.oppPair||[]).join(' · ')}${m.oppClub?' ('+m.oppClub+')':''}</span>`}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:#8aa5c4">스코어</span>
+          ${isAdmin?`<input type="number" id="evS1_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.ourScore:''}">
+          <span style="color:#a78bfa">:</span>
+          <input type="number" id="evS2_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.oppScore:''}">
+          <button onclick="saveEvMatchDetail('${evId}',${mi})" style="padding:5px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">저장</button>
+          `:`<span style="font-size:14px;font-weight:800;color:${sc}">${done?m.ourScore+' : '+m.oppScore:'-'}</span>${done?`<span style="font-size:11px;font-weight:700;color:${sc}">(${won?'승':lost?'패':'무'})</span>`:''}`}
+        </div>
+      </div>`;
+    }).join('')
+    :'<div style="color:#4a8ab5;font-size:12px;padding:8px 0">매치 없음 — 페어 짜기로 생성하세요</div>';
+
+    // 개인 전적 (교류전 전용, 정규 시즌과 완전 분리)
+    const statRows=parts.map(p=>{
+      let w=0,l=0,d=0;
+      evMatches.forEach(m=>{
+        if((m.ourPair||[]).includes(p)&&m.ourScore!==null&&m.ourScore!==undefined){
+          if(m.ourScore>m.oppScore)w++;
+          else if(m.ourScore<m.oppScore)l++;
+          else d++;
+        }
+      });
+      const played=w+l+d;
+      if(!played)return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="flex:1;font-size:13px;font-weight:700">${p}</span><span style="font-size:11px;color:#4a8ab5">미경기</span></div>`;
+      return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)">
+        <span style="flex:1;font-size:13px;font-weight:700">${p}</span>
+        <span style="font-size:12px;font-weight:700;color:#34d399">${w}승</span>
+        ${d?`<span style="font-size:12px;font-weight:700;color:#fbbf24">${d}무</span>`:''}
+        <span style="font-size:12px;font-weight:700;color:#f87171">${l}패</span>
+      </div>`;
+    }).join('');
+
+    exchangeSec=`<div style="margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px">🎾 매치</div>
+      ${pairBtn}${matchCards}
+    </div>
+    ${parts.length?`<div style="margin-bottom:16px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">📊 개인 전적 <span style="font-size:10px;color:#4a8ab5;font-weight:400">(이번 교류전 전용 · 정규 시즌과 별개)</span></div>
+      ${statRows}
+    </div>`:''}`;
+  }
+
+  // 비교류전 결과 섹션
+  const resSec=ev.type!=='exchange'&&results.length?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 결과</div>${results.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a2a3a"><span>${['🥇','🥈','🥉'][i]||i+1+'위'}</span><span style="font-weight:700">${r.name}</span>${r.note?`<span style="font-size:11px;color:#4a8ab5">${r.note}</span>`:''}</div>`).join('')}</div>`:'';
+  const addRes=ev.type!=='exchange'&&isAdmin?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏅 결과 추가</div><div class="row-form"><select class="row-inp" id="evResName"><option value="">선수</option>${parts.map(p=>`<option>${p}</option>`).join('')}</select><input class="row-inp" id="evResNote" placeholder="메모"><button class="btn-add" onclick="addEvResult('${evId}')">추가</button></div></div>`:'';
+
   document.getElementById('eventDetailContent').innerHTML=`
     <div class="modal-title">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${ev.name}</div>
     <div style="margin-bottom:16px">
@@ -3437,7 +3522,7 @@ window.openEventDetail=function(evId){
       <span class="ev-status ${EV_STATUS_CLASS[ev.status]||''}" style="margin-left:8px;font-size:12px">● ${EV_STATUS_LABEL[ev.status]||''}</span>
       <div style="font-size:12px;color:#4a8ab5;margin-top:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
       ${ev.desc?`<div style="font-size:13px;color:#94a3b8;margin-top:8px;line-height:1.6">${ev.desc}</div>`:''}
-    </div>${partSec}${resSec}${addRes}
+    </div>${partSec}${exchangeSec}${resSec}${addRes}
     <div class="mft"><button class="btn-cancel" style="flex:1" onclick="hide('eventDetailModal')">닫기</button></div>`;
   document.getElementById('eventDetailModal').style.display='flex';
 };
@@ -3453,6 +3538,143 @@ window.addEvResult=async function(evId){
   if(!name)return;
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   await updateDoc(doc(db,'events',evId),{results:[...(ev.results||[]),{name,note}]});
+  openEventDetail(evId);
+};
+
+window.removeEvPart=async function(evId,name){
+  const ev=events.find(e=>e.id===evId); if(!ev)return;
+  await updateDoc(doc(db,'events',evId),{participants:(ev.participants||[]).filter(p=>p!==name)});
+  openEventDetail(evId);
+};
+
+// ── 교류전 페어 짜기 ──────────────────────────────────────────────────
+window.showEvExchangePairConfig=function(evId){
+  const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const parts=ev.participants||[];
+  evExchangeCurrentEvId=evId;
+  const nPairs=Math.floor(parts.length/2);
+  document.getElementById('eventDetailContent').innerHTML=`
+    <div class="modal-title">🎲 페어 짜기</div>
+    <div style="font-size:12px;color:#8aa5c4;margin-bottom:16px">참가자 ${parts.length}명 → ${nPairs}매치 예정</div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">기본 코트 타입</div>
+      <select id="evExCourtType" class="row-sel" style="width:100%;padding:8px">
+        <option value="혼복">혼복</option>
+        <option value="남복">남복</option>
+        <option value="여복">여복</option>
+        <option value="잡복">잡복</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">← 뒤로</button>
+      <button onclick="generateEvExchangePairs('${evId}')" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">🎲 생성</button>
+    </div>`;
+};
+
+window.generateEvExchangePairs=function(evId){
+  const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const parts=ev.participants||[];
+  const courtType=document.getElementById('evExCourtType')?.value||'혼복';
+  const allP=allPlayers();
+  const withGender=parts.map(n=>{
+    const found=allP.find(p=>p.name===n);
+    return {name:n,gender:found?(found.gender||'m'):'m'};
+  });
+  const allPastPairs=getPastPairs();
+  const emptySet=new Set();
+  let pairs=[];
+
+  if(courtType==='혼복'){
+    const mPool=shuffle(withGender.filter(p=>p.gender==='m').map(p=>p.name));
+    const fPool=shuffle(withGender.filter(p=>p.gender==='f').map(p=>p.name));
+    const mixCount=Math.min(mPool.length,fPool.length);
+    if(mixCount>=1){
+      const mixedPairs=makeMixedPairs(mPool.slice(0,mixCount),fPool.slice(0,mixCount),emptySet,allPastPairs,0,emptySet,[]);
+      mixedPairs.forEach(pr=>pairs.push(pr));
+    }
+    const remaining=[...mPool.slice(mixCount),...fPool.slice(mixCount)];
+    while(remaining.length>=2)pairs.push([remaining.shift(),remaining.shift()]);
+    if(remaining.length===1)pairs.push([remaining[0]]);
+  } else if(courtType==='남복'){
+    const pool=shuffle(withGender.filter(p=>p.gender==='m').map(p=>p.name));
+    while(pool.length>=2)pairs.push([pool.shift(),pool.shift()]);
+    if(pool.length===1)pairs.push([pool[0]]);
+  } else if(courtType==='여복'){
+    const pool=shuffle(withGender.filter(p=>p.gender==='f').map(p=>p.name));
+    while(pool.length>=2)pairs.push([pool.shift(),pool.shift()]);
+    if(pool.length===1)pairs.push([pool[0]]);
+  } else {
+    const pool=shuffle(withGender.map(p=>p.name));
+    while(pool.length>=2)pairs.push([pool.shift(),pool.shift()]);
+    if(pool.length===1)pairs.push([pool[0]]);
+  }
+
+  evExchangeGeneratedPairs=pairs;
+  renderEvExchangePairResult(evId);
+};
+
+function renderEvExchangePairResult(evId){
+  const ev=events.find(e=>e.id===evId);
+  const existing=ev?(ev.matches||[]):[];
+  const cards=evExchangeGeneratedPairs.map((pair,i)=>{
+    const ex=existing[i]||{};
+    return `<div style="background:rgba(3,12,45,0.5);border:1px solid rgba(35,90,180,0.3);border-radius:10px;padding:10px;margin-bottom:8px">
+      <div style="font-size:10px;color:#a78bfa;font-weight:700;margin-bottom:4px">매치 ${i+1} · 우리팀</div>
+      <div style="font-size:13px;font-weight:700;color:#e8edf2;margin-bottom:8px">${pair.join(' · ')}</div>
+      <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
+      <div style="display:flex;gap:4px;margin-bottom:6px">
+        <input id="evGenOpp1_${i}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(ex.oppPair||[])[0]||''}">
+        <input id="evGenOpp2_${i}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(ex.oppPair||[])[1]||''}">
+        <input id="evGenOppClub_${i}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${ex.oppClub||''}">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#8aa5c4">스코어</span>
+        <input type="number" id="evGenS1_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${ex.ourScore!==null&&ex.ourScore!==undefined?ex.ourScore:''}">
+        <span style="color:#a78bfa">:</span>
+        <input type="number" id="evGenS2_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${ex.oppScore!==null&&ex.oppScore!==undefined?ex.oppScore:''}">
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('eventDetailContent').innerHTML=`
+    <div class="modal-title">🎲 페어 결과</div>
+    <div style="font-size:12px;color:#8aa5c4;margin-bottom:12px">상대팀·점수는 나중에 입력해도 됩니다</div>
+    ${cards}
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button onclick="showEvExchangePairConfig('${evId}')" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 짜기</button>
+      <button onclick="saveEvExchangePairs('${evId}')" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">✅ 저장</button>
+    </div>`;
+}
+
+window.saveEvExchangePairs=async function(evId){
+  const matches=evExchangeGeneratedPairs.map((pair,i)=>{
+    const opp1=document.getElementById(`evGenOpp1_${i}`)?.value.trim()||'';
+    const opp2=document.getElementById(`evGenOpp2_${i}`)?.value.trim()||'';
+    const oppClub=document.getElementById(`evGenOppClub_${i}`)?.value.trim()||'';
+    const s1=document.getElementById(`evGenS1_${i}`)?.value;
+    const s2=document.getElementById(`evGenS2_${i}`)?.value;
+    return {
+      ourPair:pair,
+      oppPair:[opp1,opp2].filter(Boolean),
+      oppClub,
+      ourScore:s1!==''?parseInt(s1):null,
+      oppScore:s2!==''?parseInt(s2):null
+    };
+  });
+  await updateDoc(doc(db,'events',evId),{matches});
+  openEventDetail(evId);
+};
+
+window.saveEvMatchDetail=async function(evId,mi){
+  const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const matches=[...(ev.matches||[])];
+  if(!matches[mi])return;
+  const opp1=document.getElementById(`evOpp1_${mi}`)?.value.trim()||'';
+  const opp2=document.getElementById(`evOpp2_${mi}`)?.value.trim()||'';
+  const oppClub=document.getElementById(`evOppClub_${mi}`)?.value.trim()||'';
+  const s1=document.getElementById(`evS1_${mi}`)?.value;
+  const s2=document.getElementById(`evS2_${mi}`)?.value;
+  matches[mi]={...matches[mi],oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:s1!==''?parseInt(s1):null,oppScore:s2!==''?parseInt(s2):null};
+  await updateDoc(doc(db,'events',evId),{matches});
   openEventDetail(evId);
 };
 
