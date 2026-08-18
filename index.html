@@ -1134,6 +1134,7 @@ let evExchangeMode = false;
 let evExchangeAttendees = [];
 let evExchangeManualMode = false;
 let evExchangeEditIdx = new Set();
+let evExchangeCurrentInputs = {};
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let calSelectedDate = null;
@@ -3430,24 +3431,22 @@ window.openEventDetail=function(evId){
   const parts=ev.participants||[], results=ev.results||[];
   const evMatches=ev.matches||[];
 
-  // 참가자 추가 드롭다운: 정회원 + 게스트 구분 표시
-  const memberOpts=members.map(m=>`<option value="${m.name}">${m.name} ${m.gender==='f'?'♀':'♂'}</option>`).join('');
-  const guestOpts=guests.map(g=>`<option value="${g.name}">${g.name} ${g.gender==='f'?'♀':'♂'} (게스트)</option>`).join('');
-  const partSel=isAdmin?`<div class="row-form" style="margin-top:10px">
-    <select class="row-inp" id="evPartSel">
-      <option value="">참가자 추가</option>
-      <optgroup label="🏅 정회원">${memberOpts}</optgroup>
-      ${guestOpts?`<optgroup label="👤 게스트">${guestOpts}</optgroup>`:''}
-    </select>
-    <button class="btn-add" onclick="addEvPart('${evId}')">추가</button>
+  // 참가자 섹션: 체크리스트로 전환 (정회원 + 게스트 전체 표시)
+  const checklistHtml=isAdmin?`<div style="margin-top:10px">
+    <input id="evPartSearch_${evId}" type="text" class="row-inp" placeholder="🔍 이름 검색..."
+      style="width:100%;padding:7px;font-size:12px;margin-bottom:6px;box-sizing:border-box"
+      oninput="renderEvPartCheckList('${evId}')">
+    <div id="evPartCheckList_${evId}" style="max-height:210px;overflow-y:auto;border:1px solid rgba(35,90,180,0.2);border-radius:8px;padding:2px 8px">
+      ${buildEvPartCheckRows(evId,'',parts)}
+    </div>
   </div>`:'';
   const partSec=`<div style="margin-bottom:16px">
-    <div style="font-size:13px;font-weight:700;margin-bottom:8px">👥 참가자 (${parts.length}명)</div>
-    <div class="part-chips">${parts.map(p=>{
+    <div id="evPartCount_${evId}" style="font-size:13px;font-weight:700;margin-bottom:8px">👥 참가자 (${parts.length}명)</div>
+    <div id="evPartChips_${evId}" class="part-chips">${parts.map(p=>{
       const rmBtn=isAdmin?`<button onclick="removeEvPart('${evId}','${p.replace(/'/g,"\\'")}')"`+` style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:2px">×</button>`:'';
       return `<span class="part-chip">${p}${rmBtn}</span>`;
     }).join('')||'<span style="color:#4a8ab5;font-size:12px">없음</span>'}
-    </div>${partSel}
+    </div>${checklistHtml}
   </div>`;
 
   // ── 교류전 전용 섹션 ──
@@ -3550,8 +3549,75 @@ window.openEventDetail=function(evId){
   document.getElementById('eventDetailModal').style.display='flex';
 };
 
+function captureEvExchangeInputs() {
+  evExchangeCurrentInputs = {};
+  let mi = 0;
+  while (mi < 300) {
+    const el = document.getElementById(`evExOpp1_${mi}`);
+    if (!el) break;
+    evExchangeCurrentInputs[mi] = {
+      opp1: el.value,
+      opp2: document.getElementById(`evExOpp2_${mi}`)?.value || '',
+      oppClub: document.getElementById(`evExOppClub_${mi}`)?.value || '',
+      s1: document.getElementById(`evExS1_${mi}`)?.value || '',
+      s2: document.getElementById(`evExS2_${mi}`)?.value || ''
+    };
+    mi++;
+  }
+}
+
+function buildEvPartCheckRows(evId, filter, currentParts) {
+  const lf = filter.toLowerCase();
+  const allPeople = [
+    ...members.map(m => ({ name: m.name, gender: m.gender, guest: false })),
+    ...guests.map(g => ({ name: g.name, gender: g.gender, guest: true }))
+  ].filter(p => !lf || p.name.toLowerCase().includes(lf));
+  if (!allPeople.length) return '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">검색 결과 없음</div>';
+  return allPeople.map(p => {
+    const inParts = currentParts.includes(p.name);
+    const safe = p.name.replace(/'/g, "\\'");
+    const gColor = p.gender === 'f' ? 'color:#f9a8d4' : 'color:#93c5fd';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(35,90,180,0.1)">
+      <span style="font-size:13px;font-weight:600;color:#e8edf2">
+        <span style="${gColor}">${p.gender==='f'?'♀':'♂'}</span> ${p.name}${p.guest?'<span style="font-size:9px;color:#34d399;margin-left:3px">게스트</span>':''}
+      </span>
+      <button onclick="toggleEvPart('${evId}','${safe}')"
+        style="padding:4px 12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
+          background:${inParts?'rgba(52,211,153,0.85)':'rgba(3,12,45,0.8)'};color:${inParts?'#0a1628':'#4a8ab5'}">
+        ${inParts?'✅ 참석':'참석'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+window.renderEvPartCheckList = function(evId) {
+  const ev = events.find(e => e.id === evId); if (!ev) return;
+  const el = document.getElementById(`evPartCheckList_${evId}`); if (!el) return;
+  const filter = document.getElementById(`evPartSearch_${evId}`)?.value || '';
+  el.innerHTML = buildEvPartCheckRows(evId, filter, ev.participants || []);
+};
+
+window.toggleEvPart = async function(evId, name) {
+  const ev = events.find(e => e.id === evId); if (!ev) return;
+  const parts = [...(ev.participants || [])];
+  const idx = parts.indexOf(name);
+  if (idx >= 0) parts.splice(idx, 1); else parts.push(name);
+  await updateDoc(doc(db, 'events', evId), { participants: parts });
+  ev.participants = parts;
+  const chipsEl = document.getElementById(`evPartChips_${evId}`);
+  if (chipsEl) {
+    chipsEl.innerHTML = parts.map(p => {
+      const s = p.replace(/'/g, "\\'");
+      return `<span class="part-chip">${p}<button onclick="removeEvPart('${evId}','${s}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:2px">×</button></span>`;
+    }).join('') || '<span style="color:#4a8ab5;font-size:12px">없음</span>';
+  }
+  const countEl = document.getElementById(`evPartCount_${evId}`);
+  if (countEl) countEl.textContent = `👥 참가자 (${parts.length}명)`;
+  renderEvPartCheckList(evId);
+};
+
 window.addEvPart=async function(evId){
-  const name=document.getElementById('evPartSel').value; if(!name)return;
+  const name=document.getElementById('evPartSel')?.value; if(!name)return;
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   await updateDoc(doc(db,'events',evId),{participants:[...new Set([...(ev.participants||[]),name])]});
   openEventDetail(evId);
@@ -4460,6 +4526,7 @@ window.meetupGenerate = function() {
   meetupCurrentRounds = rounds;
   evExchangeManualMode = false;
   evExchangeEditIdx = new Set();
+  evExchangeCurrentInputs = {};
   renderMeetupResultStep();
 };
 
@@ -4473,6 +4540,7 @@ window.meetupGenerateManual = function() {
   }
   evExchangeManualMode = true;
   evExchangeEditIdx = new Set();
+  evExchangeCurrentInputs = {};
   let globalIdx = 0;
   const rounds = [];
   for (let r = 1; r <= meetupConfig.rounds; r++) {
@@ -4527,14 +4595,23 @@ function renderMeetupResultStep() {
               </div>
             </div>`;
           }
+          // 재렌더 전 captureEvExchangeInputs로 저장한 사용자 입력값 우선 사용
+          const inp = evExchangeCurrentInputs[idx] || {};
           const done = ex.ourScore !== null && ex.ourScore !== undefined;
           const won = done && ex.ourScore > ex.oppScore;
           const lost = done && ex.ourScore < ex.oppScore;
           const scoreEl = done
             ? `<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${ex.ourScore} : ${ex.oppScore}</div>`
             : `<div class="m-score pend">예정</div>`;
-          const oppRaw = (ex.oppPair||[]).join(' / ')||'미입력';
-          const oppLabel = ex.oppClub ? `${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${ex.oppClub}</span>` : oppRaw;
+          const preOpp1 = inp.opp1 !== undefined ? inp.opp1 : ((ex.oppPair||[])[0]||'');
+          const preOpp2 = inp.opp2 !== undefined ? inp.opp2 : ((ex.oppPair||[])[1]||'');
+          const preOppClub = inp.oppClub !== undefined ? inp.oppClub : (ex.oppClub||'');
+          const preS1 = inp.s1 !== undefined ? inp.s1 : (done ? ex.ourScore : '');
+          const preS2 = inp.s2 !== undefined ? inp.s2 : (done ? ex.oppScore : '');
+          const dispOpp1 = preOpp1 || (ex.oppPair||[])[0] || '';
+          const dispOpp2 = preOpp2 || (ex.oppPair||[])[1] || '';
+          const oppRaw = [dispOpp1,dispOpp2].filter(Boolean).join(' / ')||'미입력';
+          const oppLabel = (preOppClub||ex.oppClub) ? `${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${preOppClub||ex.oppClub}</span>` : oppRaw;
           const inpId = `evExInp_${idx}`;
           return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
             <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">매치 ${idx+1}</span></div>
@@ -4550,15 +4627,15 @@ function renderMeetupResultStep() {
             <div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
               <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
               <div style="display:flex;gap:4px;margin-bottom:6px">
-                <input id="evExOpp1_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(ex.oppPair||[])[0]||''}">
-                <input id="evExOpp2_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(ex.oppPair||[])[1]||''}">
-                <input id="evExOppClub_${idx}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${ex.oppClub||''}">
+                <input id="evExOpp1_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${preOpp1}">
+                <input id="evExOpp2_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${preOpp2}">
+                <input id="evExOppClub_${idx}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${preOppClub}">
               </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <span style="font-size:11px;color:#8aa5c4">스코어</span>
-                <input type="number" id="evExS1_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.ourScore:''}">
+                <input type="number" id="evExS1_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${preS1}">
                 <span style="color:#a78bfa">:</span>
-                <input type="number" id="evExS2_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.oppScore:''}">
+                <input type="number" id="evExS2_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${preS2}">
               </div>
             </div>
           </div>`;
@@ -4622,10 +4699,12 @@ window.confirmEvExchangeEdit = function(ri, mci, ti, idx) {
   if (ti === 0) rd.matches[mci].team1 = [p1, p2];
   else rd.matches[mci].team2 = [p1, p2];
   evExchangeEditIdx.delete(idx);
+  captureEvExchangeInputs();
   renderMeetupResultStep();
 };
 
 window.startEvExchangeEdit = function(ri, mci, ti, idx) {
+  captureEvExchangeInputs();
   evExchangeEditIdx.add(idx);
   renderMeetupResultStep();
 };
@@ -4661,6 +4740,7 @@ window.saveMeetupPairs = async function() {
 window.closeMeetupPairModal = function() {
   evExchangeMode = false;
   evExchangeAttendees = [];
+  evExchangeCurrentInputs = {};
   document.getElementById('meetupPairModalTitle').textContent = '🎲 게임모임 페어 짜기';
   hide('meetupPairModal');
 };
@@ -4692,11 +4772,15 @@ window.saveEvExchangeMeetup = async function() {
     }
   }
   const evId = evExchangeCurrentEvId;
-  await updateDoc(doc(db, 'events', evId), { matches });
-  const ev = events.find(e => e.id === evId);
-  if (ev) ev.matches = matches;
-  closeMeetupPairModal();
-  openEventDetail(evId);
+  try {
+    await updateDoc(doc(db, 'events', evId), { matches });
+    const ev = events.find(e => e.id === evId);
+    if (ev) ev.matches = matches;
+    closeMeetupPairModal();
+    openEventDetail(evId);
+  } catch(e) {
+    alert('저장 실패: ' + (e.message || e.code || e));
+  }
 };
 
 window.setAttend = async function(id, status) {
