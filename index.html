@@ -1028,12 +1028,12 @@ body {
   <div class="modal-bottom" id="eventDetailContent"></div>
 </div>
 
-<div class="overlay" id="meetupPairModal" style="display:none" onclick="if(event.target.id==='meetupPairModal')hide('meetupPairModal')">
+<div class="overlay" id="meetupPairModal" style="display:none" onclick="if(event.target.id==='meetupPairModal')closeMeetupPairModal()">
   <div class="modal" style="max-width:420px">
-    <div class="modal-title">🎲 게임모임 페어 짜기</div>
+    <div class="modal-title" id="meetupPairModalTitle">🎲 게임모임 페어 짜기</div>
     <div id="meetupPairBody"></div>
     <div class="mft">
-      <button class="btn-cancel" onclick="hide('meetupPairModal')">닫기</button>
+      <button class="btn-cancel" onclick="closeMeetupPairModal()">닫기</button>
     </div>
   </div>
 </div>
@@ -1130,6 +1130,8 @@ let meetupCurrentRounds = [];
 let meetupConfig = { courts: 2, rounds: 1, types: {} };
 let evExchangeCurrentEvId = null;
 let evExchangeGeneratedPairs = [];
+let evExchangeMode = false;
+let evExchangeAttendees = [];
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let calSelectedDate = null;
@@ -3561,24 +3563,18 @@ window.removeEvPart=async function(evId,name){
 window.showEvExchangePairConfig=function(evId){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const parts=ev.participants||[];
+  if(parts.length<4){alert('참가자 4명 이상이어야 페어를 짤 수 있어요');return;}
   evExchangeCurrentEvId=evId;
-  const nPairs=Math.floor(parts.length/2);
-  document.getElementById('eventDetailContent').innerHTML=`
-    <div class="modal-title">🎲 페어 짜기</div>
-    <div style="font-size:12px;color:#8aa5c4;margin-bottom:16px">참가자 ${parts.length}명 → ${nPairs}매치 예정</div>
-    <div style="margin-bottom:12px">
-      <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">기본 코트 타입</div>
-      <select id="evExCourtType" class="row-sel" style="width:100%;padding:8px">
-        <option value="혼복">혼복</option>
-        <option value="남복">남복</option>
-        <option value="여복">여복</option>
-        <option value="잡복">잡복</option>
-      </select>
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">← 뒤로</button>
-      <button onclick="generateEvExchangePairs('${evId}')" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">🎲 생성</button>
-    </div>`;
+  evExchangeMode=true;
+  const allP=allPlayers();
+  evExchangeAttendees=parts.map(n=>{
+    const found=allP.find(p=>p.name===n);
+    return{name:n,gender:found?(found.gender||'m'):'m'};
+  });
+  meetupConfig={courts:Math.max(1,Math.min(4,Math.floor(parts.length/4))),rounds:1,types:{}};
+  document.getElementById('meetupPairModalTitle').textContent='🤝 교류전 페어 짜기';
+  renderMeetupConfigStep();
+  document.getElementById('meetupPairModal').style.display='flex';
 };
 
 window.generateEvExchangePairs=function(evId){
@@ -4338,14 +4334,19 @@ window.meetupGenerate = function() {
     }
   }
 
-  const sch = schedules.find(s => s.id === meetupCurrentScheduleId);
-  const attend = sch ? sch.attend || {} : {};
-  const attendeeNames = Object.entries(attend).filter(([_, v]) => v === '참석').map(([n]) => n);
-  const allP = allPlayers();
-  const attendeesWithGender = attendeeNames.map(n => {
-    const found = allP.find(p => p.name === n);
-    return { name: n, gender: found ? found.gender : 'm' };
-  });
+  let attendeesWithGender;
+  if (evExchangeMode) {
+    attendeesWithGender = evExchangeAttendees;
+  } else {
+    const sch = schedules.find(s => s.id === meetupCurrentScheduleId);
+    const attend = sch ? sch.attend || {} : {};
+    const attendeeNames = Object.entries(attend).filter(([_, v]) => v === '참석').map(([n]) => n);
+    const allP = allPlayers();
+    attendeesWithGender = attendeeNames.map(n => {
+      const found = allP.find(p => p.name === n);
+      return { name: n, gender: found ? found.gender : 'm' };
+    });
+  }
 
   const allPastPairs = getPastPairs();
   const allPastOpp = getPastOpponents();
@@ -4433,6 +4434,63 @@ window.meetupGenerate = function() {
 
 function renderMeetupResultStep() {
   const body = document.getElementById('meetupPairBody');
+
+  if (evExchangeMode) {
+    const ev = events.find(e => e.id === evExchangeCurrentEvId);
+    const existing = ev ? (ev.matches || []) : [];
+    let mi = 0;
+    const html = meetupCurrentRounds.map(rd => {
+      const matchCards = rd.matches.map(m => {
+        return [m.team1, m.team2].map(pair => {
+          const idx = mi;
+          const ex = existing[idx] || {};
+          mi++;
+          const done = ex.ourScore !== null && ex.ourScore !== undefined;
+          const won = done && ex.ourScore > ex.oppScore;
+          const lost = done && ex.ourScore < ex.oppScore;
+          const scoreEl = done
+            ? `<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${ex.ourScore} : ${ex.oppScore}</div>`
+            : `<div class="m-score pend">예정</div>`;
+          const oppRaw = (ex.oppPair||[]).join(' / ')||'미입력';
+          const oppLabel = ex.oppClub ? `${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${ex.oppClub}</span>` : oppRaw;
+          const inpId = `evExInp_${idx}`;
+          return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
+            <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">매치 ${idx+1}</span></div>
+            <div class="match-row">
+              <div class="m-team ${won?'win':''}">${pair.join(' / ')}</div>
+              ${scoreEl}
+              <div class="m-team ${lost?'win':''}">${oppLabel}</div>
+            </div>
+            <div style="display:flex;gap:5px;margin-top:8px">
+              <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>
+            </div>
+            <div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+              <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
+              <div style="display:flex;gap:4px;margin-bottom:6px">
+                <input id="evExOpp1_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(ex.oppPair||[])[0]||''}">
+                <input id="evExOpp2_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(ex.oppPair||[])[1]||''}">
+                <input id="evExOppClub_${idx}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${ex.oppClub||''}">
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-size:11px;color:#8aa5c4">스코어</span>
+                <input type="number" id="evExS1_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.ourScore:''}">
+                <span style="color:#a78bfa">:</span>
+                <input type="number" id="evExS2_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.oppScore:''}">
+              </div>
+            </div>
+          </div>`;
+        }).join('');
+      }).join('');
+      return `<div style="font-size:12px;color:#a78bfa;font-weight:700;margin:10px 0 6px">${rd.round}라운드</div>${matchCards}`;
+    }).join('');
+    body.innerHTML = `${html}
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button onclick="meetupBackToTypeStep()" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 설정</button>
+        <button onclick="saveEvExchangeMeetup()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">✅ 저장</button>
+      </div>`;
+    return;
+  }
+
   const html = meetupCurrentRounds.map(rd => `
     <div style="font-size:12px;color:#a78bfa;font-weight:700;margin:10px 0 6px">${rd.round}라운드</div>
     ${rd.matches.map((m, mi) => `
@@ -4484,6 +4542,43 @@ window.saveMeetupPairs = async function() {
 
   alert('✅ 저장 완료! 참여자 개인 기록에도 반영됐어요.');
   hide('meetupPairModal');
+};
+
+window.closeMeetupPairModal = function() {
+  evExchangeMode = false;
+  evExchangeAttendees = [];
+  document.getElementById('meetupPairModalTitle').textContent = '🎲 게임모임 페어 짜기';
+  hide('meetupPairModal');
+};
+
+window.saveEvExchangeMeetup = async function() {
+  const matches = [];
+  let mi = 0;
+  for (const rd of meetupCurrentRounds) {
+    for (const m of rd.matches) {
+      for (const pair of [m.team1, m.team2]) {
+        const opp1 = document.getElementById(`evExOpp1_${mi}`)?.value.trim()||'';
+        const opp2 = document.getElementById(`evExOpp2_${mi}`)?.value.trim()||'';
+        const oppClub = document.getElementById(`evExOppClub_${mi}`)?.value.trim()||'';
+        const s1 = document.getElementById(`evExS1_${mi}`)?.value;
+        const s2 = document.getElementById(`evExS2_${mi}`)?.value;
+        matches.push({
+          ourPair: pair,
+          oppPair: [opp1, opp2].filter(Boolean),
+          oppClub,
+          ourScore: s1 !== '' && s1 !== undefined ? parseInt(s1) : null,
+          oppScore: s2 !== '' && s2 !== undefined ? parseInt(s2) : null
+        });
+        mi++;
+      }
+    }
+  }
+  const evId = evExchangeCurrentEvId;
+  await updateDoc(doc(db, 'events', evId), { matches });
+  const ev = events.find(e => e.id === evId);
+  if (ev) ev.matches = matches;
+  closeMeetupPairModal();
+  openEventDetail(evId);
 };
 
 window.setAttend = async function(id, status) {
