@@ -3614,7 +3614,6 @@ window.openEventDetail=function(evId){
 
   document.getElementById('eventDetailContent').innerHTML=`
     <div class="modal-title">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${ev.name}</div>
-    ${ev.oppClub?`<div style="font-size:12px;color:#60a5fa;font-weight:700;margin-top:-6px;margin-bottom:10px">vs ${ev.oppClub}</div>`:''}
     <div style="margin-bottom:16px">
       <span class="ev-type-badge ${EV_TYPE_BADGE[ev.type]||''}">${EV_TYPE_LABEL[ev.type]||ev.type}</span>
       <span class="ev-status ${EV_STATUS_CLASS[ev.status]||''}" style="margin-left:8px;font-size:12px">● ${EV_STATUS_LABEL[ev.status]||''}</span>
@@ -5269,7 +5268,7 @@ function renderHomeTab() {
         <span style="font-size:10px;color:#a78bfa">${evLabel}</span>
       </div>
       <div style="font-size:16px;font-weight:900;color:#fbbf24;margin-bottom:4px">${dl}</div>
-      <div style="font-size:13px;font-weight:700;color:#e8edf2;margin-bottom:4px">${e.name}${e.oppClub?` <span style="font-size:11px;color:#60a5fa;font-weight:400">vs ${e.oppClub}</span>`:''}</div>
+      <div style="font-size:13px;font-weight:700;color:#e8edf2;margin-bottom:4px">${e.name}</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${e.place?`<span style="font-size:11px;color:#60a5fa">📍 ${e.place}</span>`:''}
         ${partCount?`<span style="font-size:11px;color:#34d399">👥 ${partCount}명 참가예정</span>`:''}
