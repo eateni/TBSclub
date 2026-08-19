@@ -3769,32 +3769,39 @@ window.saveEvExchangePairs=async function(evId){
 window.saveEvMatchDetail=async function(evId,mi){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const matches=[...(ev.matches||[])];
-  if(!matches[mi])return;
+  if(!matches[mi]){alert('매치 데이터를 찾을 수 없어요 (mi='+mi+')');return;}
   const s1=document.getElementById(`evS1_${mi}`)?.value;
   const s2=document.getElementById(`evS2_${mi}`)?.value;
   matches[mi]={...matches[mi],ourScore:s1!==''&&s1!==undefined?parseInt(s1):null,oppScore:s2!==''&&s2!==undefined?parseInt(s2):null};
-  await updateDoc(doc(db,'events',evId),{matches});
-  ev.matches=matches;
-  openEventDetail(evId);
+  try{
+    await updateDoc(doc(db,'events',evId),{matches});
+    ev.matches=matches;
+    openEventDetail(evId);
+  }catch(e){
+    alert('스코어 저장 실패: '+e.code+'\nFirestore rules에서 events 쓰기 권한을 확인하세요.');
+  }
 };
 
 window.saveEvOppOnly=async function(evId,mi){
   if(!auth.currentUser){
-    try{ await signInAnonymously(auth); }catch(e){ /* ignore, try write anyway */ }
+    try{ await signInAnonymously(auth); }catch(e){ console.warn('Anonymous auth failed:', e.code); }
   }
-  const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const ev=events.find(e=>e.id===evId);
+  if(!ev){alert('이벤트를 찾을 수 없어요 (id='+evId+')');return;}
   const matches=[...(ev.matches||[])];
-  if(!matches[mi])return;
+  if(!matches[mi]){alert('매치 데이터를 찾을 수 없어요 (mi='+mi+', total='+matches.length+')');return;}
   const opp1=document.getElementById(`evOppOnly1_${mi}`)?.value.trim()||'';
   const opp2=document.getElementById(`evOppOnly2_${mi}`)?.value.trim()||'';
   const oppClub=document.getElementById(`evOppClubOnly_${mi}`)?.value.trim()||'';
+  console.log('[saveEvOppOnly] mi='+mi+', opp1='+opp1+', opp2='+opp2+', auth='+!!auth.currentUser);
   matches[mi]={...matches[mi],oppPair:[opp1,opp2].filter(Boolean),oppClub};
   try{
     await updateDoc(doc(db,'events',evId),{matches});
     ev.matches=matches;
     openEventDetail(evId);
   }catch(e){
-    alert('저장 실패 — Firestore 권한 설정 필요: '+e.code);
+    console.error('[saveEvOppOnly] Firestore error:', e);
+    alert('저장 실패 ('+e.code+')\n\n해결 방법: Firebase Console → Firestore → Rules에서\nevents 컬렉션 update 권한을 허용해주세요.\n\n에러: '+e.message);
   }
 };
 
@@ -3919,9 +3926,10 @@ function renderAdmin(){
 
       const headers = [
         ['name','이름'], ['games','경기'], ['attendance','출석'], ['wins','승'], ['draws','무'], ['losses','패'],
-        ['wr','승률'], ['scored','득점'], ['conceded','실점'], ['diff','득실'],
+        ['wr','승률'], ['scored','득점'], ['conceded','실점'], ['diff','득실'], ['_action',''],
       ];
       const headHtml = headers.map(([k,label]) => {
+        if(k==='_action') return `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600"></th>`;
         const active = adminGuestSortKey === k;
         const arrow = active ? (adminGuestSortDir === 1 ? ' ▲' : ' ▼') : '';
         return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#34d399':'#4a8ab5'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
@@ -3952,9 +3960,11 @@ function renderAdmin(){
               <td style="text-align:center;padding:4px 6px">${d.scored}</td>
               <td style="text-align:center;padding:4px 6px">${d.conceded}</td>
               <td style="text-align:center;padding:4px 6px;font-weight:700">${d.diff>=0?'+':''}${d.diff}</td>
+              <td></td>
             </tr>`;
           }).join('');
           const t = r.gd.total;
+          const safeN=r.name.replace(/'/g,"\\'");
           const totalRow = `<tr style="font-weight:800;background:rgba(52,211,153,0.08)">
             <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
             <td style="text-align:center;padding:4px 6px;color:#34d399">총계</td>
@@ -3967,11 +3977,14 @@ function renderAdmin(){
             <td style="text-align:center;padding:4px 6px">${t.scored}</td>
             <td style="text-align:center;padding:4px 6px">${t.conceded}</td>
             <td style="text-align:center;padding:4px 6px;font-weight:700">${t.diff>=0?'+':''}${t.diff}</td>
+            <td style="text-align:center;padding:4px 6px"><button onclick="promoteGuest('${safeN}')" style="padding:3px 8px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#34d399;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">⬆️ 정회원</button></td>
           </tr>`;
           return seasonRows + totalRow;
         }).join('');
       } else {
-        rowsHtml = rows.map(r => `<tr>
+        rowsHtml = rows.map(r => {
+          const safeN=r.name.replace(/'/g,"\\'");
+          return `<tr>
           <td style="padding:5px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
           <td style="text-align:center;padding:5px 6px">${r.games}</td>
           <td style="text-align:center;padding:5px 6px;color:#fbbf24">${r.attendance}일</td>
@@ -3982,15 +3995,18 @@ function renderAdmin(){
           <td style="text-align:center;padding:5px 6px">${r.scored}</td>
           <td style="text-align:center;padding:5px 6px">${r.conceded}</td>
           <td style="text-align:center;padding:5px 6px;font-weight:700">${r.diff>=0?'+':''}${r.diff}</td>
-        </tr>`).join('');
+          <td style="text-align:center;padding:5px 6px"><button onclick="promoteGuest('${safeN}')" style="padding:3px 8px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#34d399;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">⬆️ 정회원</button></td>
+        </tr>`;
+        }).join('');
       }
 
       const titleLabel = adminGuestViewMode === 'bySeason' ? '📈 게스트 상세 성적 (시즌별)' : '📈 게스트 상세 성적 (전체 시즌 합산)';
-      const colSpan = adminGuestViewMode === 'bySeason' ? 11 : 10;
+      const colSpan = adminGuestViewMode === 'bySeason' ? 12 : 11;
       const seasonHeadExtra = adminGuestViewMode === 'bySeason'
         ? `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600">시즌</th>` : '';
       const headRow = adminGuestViewMode === 'bySeason'
         ? `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600">이름</th>${seasonHeadExtra}` + headers.slice(1).map(([k,label]) => {
+            if(k==='_action') return `<th style="text-align:center;padding:5px 6px"></th>`;
             const active = adminGuestSortKey === k;
             const arrow = active ? (adminGuestSortDir === 1 ? ' ▲' : ' ▼') : '';
             return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#34d399':'#4a8ab5'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
@@ -6166,11 +6182,14 @@ window.renameMember = async function(oldName){
 window.promoteGuest = async function(name){
   const g = guests.find(x=>x.name===name);
   if (!g) return;
-  if (!confirm(`"${name}"을(를) 정규회원으로 전환할까요?\n\n* 과거 경기 기록이 모두 정규 통계에 반영돼요\n* 랭킹/성적표에 정식으로 나타나요`)) return;
-  // 게스트 목록에서 제거 + 회원 목록에 추가
-  await setDoc(doc(db,'club','guests'),{list:guests.filter(x=>x.name!==name)});
-  await setDoc(doc(db,'club','members'),{list:[...members,{name:g.name,gender:g.gender}]});
-  alert(`✅ "${name}"이(가) 정규회원이 됐어요!`);
+  if (!confirm(`게스트 → 정규회원으로 전환하시겠습니까?\n\n이름: ${name}\n\n* 기존 경기 기록은 그대로 유지됩니다\n* 정규 랭킹/성적표에 정식으로 나타나요`)) return;
+  try{
+    await setDoc(doc(db,'club','guests'),{list:guests.filter(x=>x.name!==name)});
+    await setDoc(doc(db,'club','members'),{list:[...members,{name:g.name,gender:g.gender}]});
+    alert(`✅ "${name}"이(가) 정규회원이 됐어요!\n기존 경기 기록은 모두 유지됩니다.`);
+  }catch(e){
+    alert('전환 실패: '+e.code);
+  }
 };
 
 // ── 정규회원 → 게스트 전환 ──
