@@ -3557,6 +3557,18 @@ window.openEventDetail=function(evId){
       </div>
       <button onclick="saveEvOppOnly('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">저장</button>
     </div>`;
+    const existPos=m.positions||{};
+    const ourPair=m.ourPair||[];
+    const oppPair=m.oppPair||[];
+    const posSec=`<div style="margin-top:8px">
+      <div style="font-size:10px;color:#4a8ab5;margin-bottom:4px">🎾 포지션 <span style="font-size:9px">(선택사항)</span></div>
+      <div style="font-size:10px;color:#e8edf2;font-weight:600;margin-bottom:2px">우리팀</div>
+      ${ourPair[0]!==undefined?renderPosRow(ourPair[0]||'선수1',`evPos_${mi}_our_0`,`evPos_${mi}_our_1`,existPos[ourPair[0]]||''):''}
+      ${ourPair[1]!==undefined?renderPosRow(ourPair[1]||'선수2',`evPos_${mi}_our_1`,`evPos_${mi}_our_0`,existPos[ourPair[1]]||''):''}
+      <div style="font-size:10px;color:#e8edf2;font-weight:600;margin-top:4px;margin-bottom:2px">상대팀</div>
+      ${renderPosRow(oppPair[0]||'상대1',`evPos_${mi}_opp_0`,`evPos_${mi}_opp_1`,existPos[oppPair[0]]||'')}
+      ${renderPosRow(oppPair[1]||'상대2',`evPos_${mi}_opp_1`,`evPos_${mi}_opp_0`,existPos[oppPair[1]]||'')}
+    </div>`;
     const inputSec=isAdmin?`<div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-size:11px;color:#8aa5c4">스코어</span>
@@ -3565,6 +3577,7 @@ window.openEventDetail=function(evId){
         <input type="number" id="evS2_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.oppScore:''}">
         <button onclick="saveEvMatchDetail('${evId}',${mi})" style="padding:5px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">저장</button>
       </div>
+      ${posSec}
     </div>`:'';
     return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
       <div class="match-row">
@@ -3617,18 +3630,19 @@ function captureEvExchangeInputs() {
 
 function buildEvPartCheckRows(evId, filter, currentParts) {
   const lf = filter.toLowerCase();
-  const allPeople = [
-    ...members.map(m => ({ name: m.name, gender: m.gender, guest: false })),
-    ...guests.map(g => ({ name: g.name, gender: g.gender, guest: true }))
-  ].filter(p => !lf || p.name.toLowerCase().includes(lf));
-  if (!allPeople.length) return '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">검색 결과 없음</div>';
-  return allPeople.map(p => {
+  const memberList = members.map(m => ({ name: m.name, gender: m.gender }))
+    .filter(p => !lf || p.name.toLowerCase().includes(lf));
+  const guestList = guests.map(g => ({ name: g.name, gender: g.gender }))
+    .filter(p => !lf || p.name.toLowerCase().includes(lf));
+  if (!memberList.length && !guestList.length)
+    return '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">검색 결과 없음</div>';
+  const renderRow = p => {
     const inParts = currentParts.includes(p.name);
     const safe = p.name.replace(/'/g, "\\'");
     const gColor = p.gender === 'f' ? 'color:#f9a8d4' : 'color:#93c5fd';
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(35,90,180,0.1)">
       <span style="font-size:13px;font-weight:600;color:#e8edf2">
-        <span style="${gColor}">${p.gender==='f'?'♀':'♂'}</span> ${p.name}${p.guest?'<span style="font-size:9px;color:#34d399;margin-left:3px">게스트</span>':''}
+        <span style="${gColor}">${p.gender==='f'?'♀':'♂'}</span> ${p.name}
       </span>
       <button onclick="toggleEvPart('${evId}','${safe}')"
         style="padding:4px 12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
@@ -3636,7 +3650,17 @@ function buildEvPartCheckRows(evId, filter, currentParts) {
         ${inParts?'✅ 참석':'참석'}
       </button>
     </div>`;
-  }).join('');
+  };
+  let html = '';
+  if (memberList.length) {
+    html += `<div style="font-size:10px;color:#a78bfa;font-weight:700;padding:6px 0 2px;letter-spacing:0.5px">🏅 정회원</div>`;
+    html += memberList.map(renderRow).join('');
+  }
+  if (guestList.length) {
+    html += `<div style="font-size:10px;color:#34d399;font-weight:700;padding:6px 0 2px${memberList.length?';margin-top:4px;border-top:1px solid rgba(35,90,180,0.2)':''}">👤 게스트</div>`;
+    html += guestList.map(renderRow).join('');
+  }
+  return html;
 }
 
 window.renderEvPartCheckList = function(evId) {
@@ -3821,7 +3845,24 @@ window.saveEvMatchDetail=async function(evId,mi){
   if(!matches[mi]){alert('매치 데이터를 찾을 수 없어요 (mi='+mi+')');return;}
   const s1=document.getElementById(`evS1_${mi}`)?.value;
   const s2=document.getElementById(`evS2_${mi}`)?.value;
-  matches[mi]={...matches[mi],ourScore:s1!==''&&s1!==undefined?parseInt(s1):null,oppScore:s2!==''&&s2!==undefined?parseInt(s2):null};
+  const positions={...(matches[mi].positions||{})};
+  (matches[mi].ourPair||[]).forEach((name,i)=>{
+    if(!name)return;
+    const key=`evPos_${mi}_our_${i}`;
+    const fb=document.getElementById(`pos_fore_${key}`);
+    const bb=document.getElementById(`pos_back_${key}`);
+    if(fb?.dataset?.selected==='1')positions[name]='fore';
+    else if(bb?.dataset?.selected==='1')positions[name]='back';
+  });
+  (matches[mi].oppPair||[]).forEach((name,i)=>{
+    if(!name)return;
+    const key=`evPos_${mi}_opp_${i}`;
+    const fb=document.getElementById(`pos_fore_${key}`);
+    const bb=document.getElementById(`pos_back_${key}`);
+    if(fb?.dataset?.selected==='1')positions[name]='fore';
+    else if(bb?.dataset?.selected==='1')positions[name]='back';
+  });
+  matches[mi]={...matches[mi],ourScore:s1!==''&&s1!==undefined?parseInt(s1):null,oppScore:s2!==''&&s2!==undefined?parseInt(s2):null,positions};
   try{
     await updateDoc(doc(db,'events',evId),{matches});
     ev.matches=matches;
@@ -5964,22 +6005,18 @@ window.openScore=function(dayId, rIdx, mId){
   document.getElementById('s1Label').textContent=(match.team1||[]).join('/')+' 스코어';
   document.getElementById('s2Label').textContent=(match.team2||[]).join('/')+' 스코어';
   document.getElementById('s1').value=''; document.getElementById('s2').value='';
-  // 포지션 선택 UI
+  // 포지션 선택 UI (팀별 그룹, 상호배타)
   const existPos=match.positions||{};
-  document.getElementById('positionSelectors').innerHTML=allP.map(p=>`
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:13px;font-weight:600;min-width:50px;color:#e8edf2">${p}</span>
-      <div style="display:flex;gap:6px;flex:1">
-        <button id="pos_fore_${p.replace(/\s/g,'_')}" onclick="selectPos('${p.replace(/\s/g,'_')}','fore')"
-          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='fore'?'#ef4444':'rgba(35,90,180,0.35)'};background:${existPos[p]==='fore'?'rgba(239,68,68,0.25)':'rgba(3,12,45,0.85)'};color:${existPos[p]==='fore'?'#f87171':'#4a8ab5'};font-size:12px;font-weight:700;cursor:pointer">
-          🔴 포(Fore)
-        </button>
-        <button id="pos_back_${p.replace(/\s/g,'_')}" onclick="selectPos('${p.replace(/\s/g,'_')}','back')"
-          style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='back'?'#3b82f6':'rgba(35,90,180,0.35)'};background:${existPos[p]==='back'?'rgba(59,130,246,0.25)':'rgba(3,12,45,0.85)'};color:${existPos[p]==='back'?'#60a5fa':'#4a8ab5'};font-size:12px;font-weight:700;cursor:pointer">
-          🔵 백(Back)
-        </button>
-      </div>
-    </div>`).join('');
+  const teamGroups=[{label:(match.team1||[]).join('/')+'팀',players:match.team1||[]},{label:(match.team2||[]).join('/')+'팀',players:match.team2||[]}];
+  document.getElementById('positionSelectors').innerHTML=teamGroups.map(({label,players})=>{
+    const fp=players.filter(Boolean);
+    if(!fp.length)return '';
+    const [p0,p1]=fp;
+    const k0=(p0||'').replace(/\s/g,'_'), k1=(p1||'').replace(/\s/g,'_');
+    return `<div style="font-size:10px;color:#4a8ab5;font-weight:600;margin:5px 0 3px">${label}</div>`
+      +(p0?renderPosRow(p0,k0,p1?k1:'',existPos[p0]||''):'')
+      +(p1?renderPosRow(p1,k1,p0?k0:'',existPos[p1]||''):'');
+  }).join('');
   document.getElementById('scoreModal').style.display='flex';
 };
 
@@ -5994,14 +6031,42 @@ window.openMeetupScore=function(schId, rdIdx, mIdx){
   document.getElementById('s1Label').textContent=(m.team1||[]).join('/')+' 스코어';
   document.getElementById('s2Label').textContent=(m.team2||[]).join('/')+' 스코어';
   document.getElementById('s1').value=''; document.getElementById('s2').value='';
-  document.getElementById('positionSelectors').innerHTML='';
+  const mupExistPos=m.positions||{};
+  const mupTeamGroups=[{label:(m.team1||[]).join('/')+'팀',players:m.team1||[]},{label:(m.team2||[]).join('/')+'팀',players:m.team2||[]}];
+  document.getElementById('positionSelectors').innerHTML=mupTeamGroups.map(({label,players})=>{
+    const fp=players.filter(Boolean);
+    if(!fp.length)return '';
+    const [p0,p1]=fp;
+    const k0=(p0||'').replace(/\s/g,'_'), k1=(p1||'').replace(/\s/g,'_');
+    return `<div style="font-size:10px;color:#4a8ab5;font-weight:600;margin:5px 0 3px">${label}</div>`
+      +(p0?renderPosRow(p0,k0,p1?k1:'',mupExistPos[p0]||''):'')
+      +(p1?renderPosRow(p1,k1,p0?k0:'',mupExistPos[p1]||''):'');
+  }).join('');
   document.getElementById('scoreModal').style.display='flex';
 };
 
-window.selectPos=function(playerKey, pos){
-  const other=pos==='fore'?'back':'fore';
+function renderPosRow(label, key, partnerKey, existPos) {
+  const isF=existPos==='fore', isB=existPos==='back';
+  const pArg=partnerKey?`,'${partnerKey}'`:'';
+  return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+    <span style="font-size:11px;min-width:44px;max-width:56px;font-weight:600;color:#e8edf2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${label}">${label}</span>
+    <button id="pos_fore_${key}" onclick="selectPos('${key}','fore'${pArg})"
+      data-selected="${isF?'1':'0'}"
+      style="flex:1;padding:5px 0;border-radius:7px;border:1px solid ${isF?'#ef4444':'rgba(35,90,180,0.35)'};background:${isF?'rgba(239,68,68,0.25)':'rgba(3,12,45,0.85)'};color:${isF?'#f87171':'#4a8ab5'};font-size:11px;font-weight:700;cursor:pointer">
+      🔴 포
+    </button>
+    <button id="pos_back_${key}" onclick="selectPos('${key}','back'${pArg})"
+      data-selected="${isB?'1':'0'}"
+      style="flex:1;padding:5px 0;border-radius:7px;border:1px solid ${isB?'#3b82f6':'rgba(35,90,180,0.35)'};background:${isB?'rgba(59,130,246,0.25)':'rgba(3,12,45,0.85)'};color:${isB?'#60a5fa':'#4a8ab5'};font-size:11px;font-weight:700;cursor:pointer">
+      🔵 백
+    </button>
+  </div>`;
+}
+
+window.selectPos=function(playerKey, pos, partnerKey){
   const foreBt=document.getElementById(`pos_fore_${playerKey}`);
   const backBt=document.getElementById(`pos_back_${playerKey}`);
+  if(!foreBt||!backBt)return;
   if(pos==='fore'){
     foreBt.style.borderColor='#ef4444';foreBt.style.background='rgba(239,68,68,0.25)';foreBt.style.color='#f87171';
     backBt.style.borderColor='rgba(35,90,180,0.35)';backBt.style.background='rgba(3,12,45,0.85)';backBt.style.color='#4a8ab5';
@@ -6011,6 +6076,7 @@ window.selectPos=function(playerKey, pos){
   }
   foreBt.dataset.selected=(pos==='fore')?'1':'0';
   backBt.dataset.selected=(pos==='back')?'1':'0';
+  if(partnerKey)selectPos(partnerKey, pos==='fore'?'back':'fore');
 };
 
 window.submitScore=async function(){
@@ -6025,6 +6091,16 @@ window.submitScore=async function(){
     const m=(pairs[pendingScore.rdIdx].matches||[])[pendingScore.mIdx];
     if(!m)return;
     m.score1=s1; m.score2=s2;
+    const gpAllP=[...(m.team1||[]),...(m.team2||[])].filter(Boolean);
+    const gpPos={...(m.positions||{})};
+    gpAllP.forEach(p=>{
+      const key=p.replace(/\s/g,'_');
+      const fb=document.getElementById(`pos_fore_${key}`);
+      const bb=document.getElementById(`pos_back_${key}`);
+      if(fb?.dataset?.selected==='1')gpPos[p]='fore';
+      else if(bb?.dataset?.selected==='1')gpPos[p]='back';
+    });
+    m.positions=gpPos;
     await updateDoc(doc(db,'schedules',pendingScore.schId),{gamePairs:pairs});
     hide('scoreModal');
     return;
