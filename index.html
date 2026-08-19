@@ -1005,9 +1005,13 @@ body {
   <div class="modal-bottom">
     <div class="modal-title">🎉 이벤트 추가</div>
     <div class="mf-full"><label>종류</label>
-      <select id="evType"><option value="exchange">교류전</option><option value="monthly">월례대회</option><option value="special">특별전</option></select>
+      <select id="evType" onchange="toggleEvOppClubField(this.value)"><option value="exchange">교류전</option><option value="monthly">월례대회</option><option value="special">특별전</option></select>
     </div>
     <div class="mf-full"><label>이벤트 이름</label><input id="evName" placeholder="예: 4월 월례대회"></div>
+    <div class="mf-full" id="evOppClubRow">
+      <label>상대 클럽명 <span style="font-size:10px;color:#4a8ab5">(교류전)</span></label>
+      <input id="evOppClub" placeholder="예: 능곡 신생팀">
+    </div>
     <div class="mg">
       <div class="mf"><label>날짜</label><input type="date" id="evDate"></div>
       <div class="mf"><label>장소</label><input id="evPlace" placeholder="예: 부천 테니스장"></div>
@@ -3455,53 +3459,51 @@ window.openEventDetail=function(evId){
     const pairBtn=isAdmin&&parts.length>=4
       ?`<button onclick="showEvExchangePairConfig('${evId}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:12px">🎲 페어 짜기</button>`
       :'';
-    const matchCards=evMatches.length?evMatches.map((m,mi)=>{
-      const done=m.ourScore!==null&&m.ourScore!==undefined;
-      const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
-      const scoreEl=done
-        ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${m.ourScore} : ${m.oppScore}</div>`
-        :`<div class="m-score pend">예정</div>`;
-      const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
-      const oppLabel=m.oppClub?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${m.oppClub}</span>`:oppRaw;
-      const hasOpp=(m.oppPair||[]).filter(Boolean).length>0;
-      const oppInpId=`evOppInp_${mi}`;
-      const inpId=`evInp_${mi}`;
-      // 상대팀 입력 - 로그인 불필요, 누구나 가능
-      const oppOnlySec=`<div id="${oppInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-        <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀 이름</div>
-        <div style="display:flex;gap:4px;margin-bottom:8px">
-          <input id="evOppOnly1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
-          <input id="evOppOnly2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
-          <input id="evOppClubOnly_${mi}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${m.oppClub||''}">
-        </div>
-        <button onclick="saveEvOppOnly('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">저장</button>
-      </div>`;
-      // 결과(스코어) 입력 - 관리자 전용
-      const inputSec=isAdmin?`<div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;color:#8aa5c4">스코어</span>
-          <input type="number" id="evS1_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.ourScore:''}">
-          <span style="color:#a78bfa">:</span>
-          <input type="number" id="evS2_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.oppScore:''}">
-          <button onclick="saveEvMatchDetail('${evId}',${mi})" style="padding:5px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">저장</button>
-        </div>
-      </div>`:'';
-      return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
-        <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">매치 ${mi+1}</span></div>
-        <div class="match-row">
-          <div class="m-team ${won?'win':''}">${(m.ourPair||[]).join(' / ')}</div>
-          ${scoreEl}
-          <div class="m-team ${lost?'win':''}">${oppLabel}</div>
-        </div>
-        <div style="display:flex;gap:5px;margin-top:8px">
-          <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${hasOpp?'상대팀 수정':'상대팀 입력'}</button>
-          ${isAdmin?`<button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>`:''}
-        </div>
-        ${oppOnlySec}
-        ${inputSec}
-      </div>`;
-    }).join('')
-    :'<div style="color:#4a8ab5;font-size:12px;padding:8px 0">매치 없음 — 페어 짜기로 생성하세요</div>';
+    let matchCards;
+    if(!evMatches.length){
+      matchCards='<div style="color:#4a8ab5;font-size:12px;padding:8px 0">매치 없음 — 페어 짜기로 생성하세요</div>';
+    } else {
+      const hasRoundInfo=evMatches.some(m=>m.round!==undefined);
+      if(!hasRoundInfo){
+        // 하위 호환: round 정보 없으면 flat 표시
+        matchCards=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'')).join('');
+      } else {
+        // round/court 그룹 표시
+        const roundMap={};
+        evMatches.forEach((m,mi)=>{
+          const r=m.round||1, c=m.court||1;
+          if(!roundMap[r])roundMap[r]={};
+          if(!roundMap[r][c])roundMap[r][c]={type:m.courtType||'',entries:[]};
+          roundMap[r][c].entries.push({m,mi});
+        });
+        const roundNums=Object.keys(roundMap).map(Number).sort((a,b)=>a-b);
+        matchCards=roundNums.map((rNum,rIdx)=>{
+          const courtMap=roundMap[rNum];
+          const courtNums=Object.keys(courtMap).map(Number).sort((a,b)=>a-b);
+          const courtsHtml=courtNums.map(cNum=>{
+            const {type,entries}=courtMap[cNum];
+            const typeLabel=type?` · ${type}`:'';
+            const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'')).join('');
+            return `<div style="margin-bottom:4px">
+              <div style="font-size:10px;color:#a78bfa;font-weight:700;padding:4px 0 2px">${cNum}코트${typeLabel}</div>
+              ${cardsHtml}
+            </div>`;
+          }).join('');
+          const roundId=`evRd_${evId}_${rNum}`;
+          const arrId=`evRdArr_${evId}_${rNum}`;
+          const isOpen=rIdx===0;
+          return `<div style="background:rgba(4,16,55,0.5);border-radius:10px;margin-bottom:8px;border:1px solid rgba(35,90,180,0.2)">
+            <button style="width:100%;padding:10px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:700;font-size:13px;" onclick="toggleR('${roundId}','${arrId}')">
+              <span>🎾 ${rNum}라운드</span>
+              <span id="${arrId}" style="color:#4a8ab5;transition:transform 0.2s${isOpen?';transform:rotate(90deg)':''}">›</span>
+            </button>
+            <div id="${roundId}" style="${isOpen?'display:flex':'display:none'};flex-direction:column;gap:0;padding:0 10px 10px">
+              ${courtsHtml}
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
 
     // 개인 전적 (교류전 전용, 정규 시즌과 완전 분리)
     const statRows=parts.map(p=>{
@@ -3533,12 +3535,59 @@ window.openEventDetail=function(evId){
     </div>`:''}`;
   }
 
+  function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub) {
+    const done=m.ourScore!==null&&m.ourScore!==undefined;
+    const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
+    const scoreEl=done
+      ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${m.ourScore} : ${m.oppScore}</div>`
+      :`<div class="m-score pend">예정</div>`;
+    const clubForDisplay=m.oppClub||defaultOppClub||'';
+    const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
+    const oppLabel=clubForDisplay?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${clubForDisplay}</span>`:oppRaw;
+    const hasOpp=(m.oppPair||[]).filter(Boolean).length>0;
+    const oppInpId=`evOppInp_${mi}`;
+    const inpId=`evInp_${mi}`;
+    const defaultClub=m.oppClub||defaultOppClub||'';
+    const oppOnlySec=`<div id="${oppInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+      <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀 이름</div>
+      <div style="display:flex;gap:4px;margin-bottom:8px">
+        <input id="evOppOnly1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
+        <input id="evOppOnly2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
+        <input id="evOppClubOnly_${mi}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${defaultClub}">
+      </div>
+      <button onclick="saveEvOppOnly('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+    </div>`;
+    const inputSec=isAdmin?`<div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#8aa5c4">스코어</span>
+        <input type="number" id="evS1_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.ourScore:''}">
+        <span style="color:#a78bfa">:</span>
+        <input type="number" id="evS2_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.oppScore:''}">
+        <button onclick="saveEvMatchDetail('${evId}',${mi})" style="padding:5px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">저장</button>
+      </div>
+    </div>`:'';
+    return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
+      <div class="match-row">
+        <div class="m-team ${won?'win':''}">${(m.ourPair||[]).join(' / ')}</div>
+        ${scoreEl}
+        <div class="m-team ${lost?'win':''}">${oppLabel}</div>
+      </div>
+      <div style="display:flex;gap:5px;margin-top:8px">
+        <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${hasOpp?'상대팀 수정':'상대팀 입력'}</button>
+        ${isAdmin?`<button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>`:''}
+      </div>
+      ${oppOnlySec}
+      ${inputSec}
+    </div>`;
+  }
+
   // 비교류전 결과 섹션
   const resSec=ev.type!=='exchange'&&results.length?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 결과</div>${results.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a2a3a"><span>${['🥇','🥈','🥉'][i]||i+1+'위'}</span><span style="font-weight:700">${r.name}</span>${r.note?`<span style="font-size:11px;color:#4a8ab5">${r.note}</span>`:''}</div>`).join('')}</div>`:'';
   const addRes=ev.type!=='exchange'&&isAdmin?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏅 결과 추가</div><div class="row-form"><select class="row-inp" id="evResName"><option value="">선수</option>${parts.map(p=>`<option>${p}</option>`).join('')}</select><input class="row-inp" id="evResNote" placeholder="메모"><button class="btn-add" onclick="addEvResult('${evId}')">추가</button></div></div>`:'';
 
   document.getElementById('eventDetailContent').innerHTML=`
     <div class="modal-title">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${ev.name}</div>
+    ${ev.type==='exchange'&&ev.oppClub?`<div style="font-size:12px;color:#60a5fa;font-weight:700;margin-top:-6px;margin-bottom:10px">vs ${ev.oppClub}</div>`:''}
     <div style="margin-bottom:16px">
       <span class="ev-type-badge ${EV_TYPE_BADGE[ev.type]||''}">${EV_TYPE_LABEL[ev.type]||ev.type}</span>
       <span class="ev-status ${EV_STATUS_CLASS[ev.status]||''}" style="margin-left:8px;font-size:12px">● ${EV_STATUS_LABEL[ev.status]||''}</span>
@@ -4781,7 +4830,10 @@ window.saveEvExchangeMeetup = async function() {
           oppPair: [opp1, opp2].filter(Boolean),
           oppClub,
           ourScore: s1 !== '' && s1 !== undefined ? parseInt(s1) : null,
-          oppScore: s2 !== '' && s2 !== undefined ? parseInt(s2) : null
+          oppScore: s2 !== '' && s2 !== undefined ? parseInt(s2) : null,
+          round: rd.round,
+          court: m.court,
+          courtType: m.type
         });
         mi++;
       }
@@ -6048,19 +6100,30 @@ window.delDay=async function(dayId){
 };
 
 // 이벤트
-window.openEventModal=()=>document.getElementById('eventModal').style.display='flex';
+window.openEventModal=function(){
+  const type=document.getElementById('evType')?.value||'exchange';
+  const row=document.getElementById('evOppClubRow');
+  if(row)row.style.display=type==='exchange'?'block':'none';
+  document.getElementById('eventModal').style.display='flex';
+};
+window.toggleEvOppClubField=function(type){
+  const row=document.getElementById('evOppClubRow');
+  if(row)row.style.display=type==='exchange'?'block':'none';
+};
 window.submitEvent=async function(){
   const name=document.getElementById('evName').value.trim();
   if(!name){alert('이름을 입력해주세요');return;}
+  const evType=document.getElementById('evType').value;
   await addDoc(collection(db,'events'),{
-    type:document.getElementById('evType').value, name,
+    type:evType, name,
     date:document.getElementById('evDate').value,
     place:document.getElementById('evPlace').value,
     desc:document.getElementById('evDesc').value,
+    oppClub:evType==='exchange'?(document.getElementById('evOppClub')?.value.trim()||''):'',
     status:document.getElementById('evStatus').value,
     participants:[],results:[],createdAt:serverTimestamp()
   });
-  ['evName','evDate','evPlace','evDesc'].forEach(id=>document.getElementById(id).value='');
+  ['evName','evDate','evPlace','evDesc','evOppClub'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   hide('eventModal');
 };
 window.delEvent=async function(evId){
