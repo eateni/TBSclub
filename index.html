@@ -4614,6 +4614,43 @@ window.meetupGenerate = function() {
     });
   }
 
+  // 교류전: 코트당 우리팀 페어 1개 생성 (정규 대진과 달리 team1만 사용)
+  if (evExchangeMode) {
+    const exRounds = [];
+    for (let r = 1; r <= meetupConfig.rounds; r++) {
+      const ctMap = {};
+      for (let c = 1; c <= meetupConfig.courts; c++) {
+        ctMap[c] = meetupConfig.types[`r${r}_c${c}`] || '혼복';
+      }
+      const mP = shuffle(attendeesWithGender.filter(p => p.gender === 'm').map(p => p.name));
+      const fP = shuffle(attendeesWithGender.filter(p => p.gender === 'f').map(p => p.name));
+      const exMatches = [];
+      for (let c = 1; c <= meetupConfig.courts; c++) {
+        const type = ctMap[c];
+        let pair = null;
+        if (type === '남복') {
+          if (mP.length >= 2) pair = [mP.shift(), mP.shift()];
+        } else if (type === '여복') {
+          if (fP.length >= 2) pair = [fP.shift(), fP.shift()];
+        } else { // 혼복 / 잡복: M+F 우선
+          if (mP.length >= 1 && fP.length >= 1) { pair = [mP.shift(), fP.shift()]; }
+          else if (mP.length >= 2) { pair = [mP.shift(), mP.shift()]; }
+          else if (fP.length >= 2) { pair = [fP.shift(), fP.shift()]; }
+        }
+        if (pair) exMatches.push({ court: c, type, team1: pair, team2: null, score1: '', score2: '' });
+      }
+      const waiting = [...mP, ...fP];
+      if (waiting.length > 0) exMatches.push({ court: 0, type: '대기', team1: waiting, team2: null });
+      exRounds.push({ round: r, matches: exMatches });
+    }
+    meetupCurrentRounds = exRounds;
+    evExchangeManualMode = false;
+    evExchangeEditIdx = new Set();
+    evExchangeCurrentInputs = {};
+    renderMeetupResultStep();
+    return;
+  }
+
   const allPastPairs = getPastPairs();
   const allPastOpp = getPastOpponents();
   const emptyBanSet = new Set();
@@ -4718,9 +4755,15 @@ window.meetupGenerateManual = function() {
     const matches = [];
     for (let c = 1; c <= meetupConfig.courts; c++) {
       const type = meetupConfig.types[`r${r}_c${c}`] || '혼복';
-      matches.push({ court: c, type, team1: [null, null], team2: [null, null] });
-      evExchangeEditIdx.add(globalIdx++);
-      evExchangeEditIdx.add(globalIdx++);
+      if (evExchangeMode) {
+        // 교류전: 코트당 1페어 슬롯
+        matches.push({ court: c, type, team1: [null, null], team2: null });
+        evExchangeEditIdx.add(globalIdx++);
+      } else {
+        matches.push({ court: c, type, team1: [null, null], team2: [null, null] });
+        evExchangeEditIdx.add(globalIdx++);
+        evExchangeEditIdx.add(globalIdx++);
+      }
     }
     rounds.push({ round: r, matches });
   }
@@ -4738,79 +4781,83 @@ function renderMeetupResultStep() {
     let mi = 0;
     const html = meetupCurrentRounds.map((rd, ri) => {
       const matchCards = rd.matches.map((m, mci) => {
-        return [
-          { pair: m.team1, ti: 0 },
-          { pair: m.team2, ti: 1 }
-        ].map(({ pair, ti }) => {
-          const idx = mi;
-          const ex = existing[idx] || {};
-          mi++;
-          const isEdit = evExchangeEditIdx.has(idx) || !pair || pair.some(p => !p);
-          if (isEdit) {
-            const opts1 = evExchangeAttendees.map(a =>
-              `<option value="${a.name}" ${a.name===(pair&&pair[0])?'selected':''}>${a.name}</option>`
-            ).join('');
-            const opts2 = evExchangeAttendees.map(a =>
-              `<option value="${a.name}" ${a.name===(pair&&pair[1])?'selected':''}>${a.name}</option>`
-            ).join('');
-            return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
-              <div class="match-ct" style="margin-bottom:6px"><span style="font-size:10px;color:#f59e0b">매치 ${idx+1} ✏️ 직접 배정</span></div>
-              <div style="display:flex;gap:6px;align-items:center">
-                <select id="evExPairSel1_${idx}" class="row-sel" style="flex:1;padding:6px;font-size:12px">
-                  <option value="">선수1</option>${opts1}
-                </select>
-                <select id="evExPairSel2_${idx}" class="row-sel" style="flex:1;padding:6px;font-size:12px">
-                  <option value="">선수2</option>${opts2}
-                </select>
-                <button onclick="confirmEvExchangeEdit(${ri},${mci},${ti},${idx})" style="padding:7px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:13px;font-weight:700;cursor:pointer">✅</button>
-              </div>
-            </div>`;
-          }
-          // 재렌더 전 captureEvExchangeInputs로 저장한 사용자 입력값 우선 사용
-          const inp = evExchangeCurrentInputs[idx] || {};
-          const done = ex.ourScore !== null && ex.ourScore !== undefined;
-          const won = done && ex.ourScore > ex.oppScore;
-          const lost = done && ex.ourScore < ex.oppScore;
-          const scoreEl = done
-            ? `<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${ex.ourScore} : ${ex.oppScore}</div>`
-            : `<div class="m-score pend">예정</div>`;
-          const preOpp1 = inp.opp1 !== undefined ? inp.opp1 : ((ex.oppPair||[])[0]||'');
-          const preOpp2 = inp.opp2 !== undefined ? inp.opp2 : ((ex.oppPair||[])[1]||'');
-          const preOppClub = inp.oppClub !== undefined ? inp.oppClub : (ex.oppClub||'');
-          const preS1 = inp.s1 !== undefined ? inp.s1 : (done ? ex.ourScore : '');
-          const preS2 = inp.s2 !== undefined ? inp.s2 : (done ? ex.oppScore : '');
-          const dispOpp1 = preOpp1 || (ex.oppPair||[])[0] || '';
-          const dispOpp2 = preOpp2 || (ex.oppPair||[])[1] || '';
-          const oppRaw = [dispOpp1,dispOpp2].filter(Boolean).join(' / ')||'미입력';
-          const oppLabel = (preOppClub||ex.oppClub) ? `${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${preOppClub||ex.oppClub}</span>` : oppRaw;
-          const inpId = `evExInp_${idx}`;
+        // 대기 표시
+        if (m.type === '대기') {
+          return `<div style="padding:8px 12px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
+            <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(52,211,153,0.15);color:#34d399;white-space:nowrap">⏳ 대기</span>
+            <span style="font-size:12px;color:#34d399;font-weight:600">${m.team1.join(', ')}</span>
+          </div>`;
+        }
+        // 교류전: 코트당 1카드 (team1 = 우리팀 페어)
+        const pair = m.team1;
+        const idx = mi;
+        const ex = existing[idx] || {};
+        mi++;
+        const isEdit = evExchangeEditIdx.has(idx) || !pair || pair.some(p => !p);
+        if (isEdit) {
+          const opts1 = evExchangeAttendees.map(a =>
+            `<option value="${a.name}" ${a.name===(pair&&pair[0])?'selected':''}>${a.name}</option>`
+          ).join('');
+          const opts2 = evExchangeAttendees.map(a =>
+            `<option value="${a.name}" ${a.name===(pair&&pair[1])?'selected':''}>${a.name}</option>`
+          ).join('');
           return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
-            <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">매치 ${idx+1}</span></div>
-            <div class="match-row">
-              <div class="m-team ${won?'win':''}">${pair.join(' / ')}</div>
-              ${scoreEl}
-              <div class="m-team ${lost?'win':''}">${oppLabel}</div>
-            </div>
-            <div style="display:flex;gap:5px;margin-top:8px">
-              <button onclick="startEvExchangeEdit(${ri},${mci},${ti},${idx})" style="padding:5px 8px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:7px;color:#93c5fd;font-size:11px;font-weight:700;cursor:pointer">✏️ 수정</button>
-              <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>
-            </div>
-            <div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-              <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
-              <div style="display:flex;gap:4px;margin-bottom:6px">
-                <input id="evExOpp1_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${preOpp1}">
-                <input id="evExOpp2_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${preOpp2}">
-                <input id="evExOppClub_${idx}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${preOppClub}">
-              </div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span style="font-size:11px;color:#8aa5c4">스코어</span>
-                <input type="number" id="evExS1_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${preS1}">
-                <span style="color:#a78bfa">:</span>
-                <input type="number" id="evExS2_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${preS2}">
-              </div>
+            <div class="match-ct" style="margin-bottom:6px"><span style="font-size:10px;color:#f59e0b">매치 ${idx+1} · ${m.court}코트 ✏️ 직접 배정</span></div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <select id="evExPairSel1_${idx}" class="row-sel" style="flex:1;padding:6px;font-size:12px">
+                <option value="">선수1</option>${opts1}
+              </select>
+              <select id="evExPairSel2_${idx}" class="row-sel" style="flex:1;padding:6px;font-size:12px">
+                <option value="">선수2</option>${opts2}
+              </select>
+              <button onclick="confirmEvExchangeEdit(${ri},${mci},0,${idx})" style="padding:7px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:13px;font-weight:700;cursor:pointer">✅</button>
             </div>
           </div>`;
-        }).join('');
+        }
+        // 재렌더 전 captureEvExchangeInputs로 저장한 사용자 입력값 우선 사용
+        const inp = evExchangeCurrentInputs[idx] || {};
+        const done = ex.ourScore !== null && ex.ourScore !== undefined;
+        const won = done && ex.ourScore > ex.oppScore;
+        const lost = done && ex.ourScore < ex.oppScore;
+        const scoreEl = done
+          ? `<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${ex.ourScore} : ${ex.oppScore}</div>`
+          : `<div class="m-score pend">예정</div>`;
+        const preOpp1 = inp.opp1 !== undefined ? inp.opp1 : ((ex.oppPair||[])[0]||'');
+        const preOpp2 = inp.opp2 !== undefined ? inp.opp2 : ((ex.oppPair||[])[1]||'');
+        const preOppClub = inp.oppClub !== undefined ? inp.oppClub : (ex.oppClub||'');
+        const preS1 = inp.s1 !== undefined ? inp.s1 : (done ? ex.ourScore : '');
+        const preS2 = inp.s2 !== undefined ? inp.s2 : (done ? ex.oppScore : '');
+        const dispOpp1 = preOpp1 || (ex.oppPair||[])[0] || '';
+        const dispOpp2 = preOpp2 || (ex.oppPair||[])[1] || '';
+        const oppRaw = [dispOpp1,dispOpp2].filter(Boolean).join(' / ')||'미입력';
+        const oppLabel = (preOppClub||ex.oppClub) ? `${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${preOppClub||ex.oppClub}</span>` : oppRaw;
+        const inpId = `evExInp_${idx}`;
+        return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
+          <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">매치 ${idx+1} · ${m.court}코트</span></div>
+          <div class="match-row">
+            <div class="m-team ${won?'win':''}">${pair.join(' / ')}</div>
+            ${scoreEl}
+            <div class="m-team ${lost?'win':''}">${oppLabel}</div>
+          </div>
+          <div style="display:flex;gap:5px;margin-top:8px">
+            <button onclick="startEvExchangeEdit(${ri},${mci},0,${idx})" style="padding:5px 8px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:7px;color:#93c5fd;font-size:11px;font-weight:700;cursor:pointer">✏️ 수정</button>
+            <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>
+          </div>
+          <div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+            <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
+            <div style="display:flex;gap:4px;margin-bottom:6px">
+              <input id="evExOpp1_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${preOpp1}">
+              <input id="evExOpp2_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${preOpp2}">
+              <input id="evExOppClub_${idx}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${preOppClub}">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:11px;color:#8aa5c4">스코어</span>
+              <input type="number" id="evExS1_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${preS1}">
+              <span style="color:#a78bfa">:</span>
+              <input type="number" id="evExS2_${idx}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${preS2}">
+            </div>
+          </div>
+        </div>`;
       }).join('');
       return `<div style="font-size:12px;color:#a78bfa;font-weight:700;margin:10px 0 6px">${rd.round}라운드</div>${matchCards}`;
     }).join('');
@@ -4855,6 +4902,7 @@ window.confirmEvExchangeEdit = function(ri, mci, ti, idx) {
   const rd = meetupCurrentRounds[ri];
   const usedInRound = new Set();
   rd.matches.forEach((m, mi2) => {
+    if (m.type === '대기') return; // 대기 인원은 배정 가능 상태
     const otherTeamInSame = mi2 === mci ? (ti === 0 ? m.team2 : m.team1) : null;
     if (mi2 !== mci) {
       (m.team1||[]).forEach(p => p && usedInRound.add(p));
@@ -4925,24 +4973,23 @@ window.saveEvExchangeMeetup = async function() {
   let mi = 0;
   for (const rd of meetupCurrentRounds) {
     for (const m of rd.matches) {
-      for (const pair of [m.team1, m.team2]) {
-        const opp1 = document.getElementById(`evExOpp1_${mi}`)?.value.trim()||'';
-        const opp2 = document.getElementById(`evExOpp2_${mi}`)?.value.trim()||'';
-        const oppClub = document.getElementById(`evExOppClub_${mi}`)?.value.trim()||'';
-        const s1 = document.getElementById(`evExS1_${mi}`)?.value;
-        const s2 = document.getElementById(`evExS2_${mi}`)?.value;
-        matches.push({
-          ourPair: pair,
-          oppPair: [opp1, opp2].filter(Boolean),
-          oppClub,
-          ourScore: s1 !== '' && s1 !== undefined ? parseInt(s1) : null,
-          oppScore: s2 !== '' && s2 !== undefined ? parseInt(s2) : null,
-          round: rd.round,
-          court: m.court,
-          courtType: m.type
-        });
-        mi++;
-      }
+      if (m.type === '대기') continue; // 대기 인원은 저장 제외
+      const opp1 = document.getElementById(`evExOpp1_${mi}`)?.value.trim()||'';
+      const opp2 = document.getElementById(`evExOpp2_${mi}`)?.value.trim()||'';
+      const oppClub = document.getElementById(`evExOppClub_${mi}`)?.value.trim()||'';
+      const s1 = document.getElementById(`evExS1_${mi}`)?.value;
+      const s2 = document.getElementById(`evExS2_${mi}`)?.value;
+      matches.push({
+        ourPair: m.team1,
+        oppPair: [opp1, opp2].filter(Boolean),
+        oppClub,
+        ourScore: s1 !== '' && s1 !== undefined ? parseInt(s1) : null,
+        oppScore: s2 !== '' && s2 !== undefined ? parseInt(s2) : null,
+        round: rd.round,
+        court: m.court,
+        courtType: m.type
+      });
+      mi++;
     }
   }
   const evId = evExchangeCurrentEvId;
