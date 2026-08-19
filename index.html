@@ -3592,28 +3592,6 @@ window.openEventDetail=function(evId){
       </div>
       <button onclick="saveEvOppOnly('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">저장</button>
     </div>`;
-    const existPos=m.positions||{};
-    const ourPair=m.ourPair||[];
-    const oppPair=m.oppPair||[];
-    const posSec=`<div style="margin-top:8px">
-      <div style="font-size:10px;color:#4a8ab5;margin-bottom:4px">🎾 포지션 <span style="font-size:9px">(선택사항)</span></div>
-      <div style="font-size:10px;color:#e8edf2;font-weight:600;margin-bottom:2px">우리팀</div>
-      ${ourPair[0]!==undefined?renderPosRow(ourPair[0]||'선수1',`evPos_${mi}_our_0`,`evPos_${mi}_our_1`,existPos[ourPair[0]]||''):''}
-      ${ourPair[1]!==undefined?renderPosRow(ourPair[1]||'선수2',`evPos_${mi}_our_1`,`evPos_${mi}_our_0`,existPos[ourPair[1]]||''):''}
-      <div style="font-size:10px;color:#e8edf2;font-weight:600;margin-top:4px;margin-bottom:2px">상대팀</div>
-      ${renderPosRow(oppPair[0]||'상대1',`evPos_${mi}_opp_0`,`evPos_${mi}_opp_1`,existPos[oppPair[0]]||'')}
-      ${renderPosRow(oppPair[1]||'상대2',`evPos_${mi}_opp_1`,`evPos_${mi}_opp_0`,existPos[oppPair[1]]||'')}
-    </div>`;
-    const inputSec=isAdmin?`<div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-      <div style="display:flex;align-items:center;gap:8px">
-        <span style="font-size:11px;color:#8aa5c4">스코어</span>
-        <input type="number" id="evS1_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.ourScore:''}">
-        <span style="color:#a78bfa">:</span>
-        <input type="number" id="evS2_${mi}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?m.oppScore:''}">
-        <button onclick="saveEvMatchDetail('${evId}',${mi})" style="padding:5px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">저장</button>
-      </div>
-      ${posSec}
-    </div>`:'';
     const delBtn=isAdmin?`<button onclick="deleteEvMatch('${evId}',${mi})" title="매치 삭제" style="position:absolute;top:5px;right:6px;background:none;border:none;color:rgba(248,113,113,0.4);font-size:15px;line-height:1;cursor:pointer;padding:2px 4px">×</button>`:'';
     return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px;position:relative">
       ${delBtn}
@@ -3624,10 +3602,9 @@ window.openEventDetail=function(evId){
       </div>
       <div style="display:flex;gap:5px;margin-top:8px">
         <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${hasOpp?'상대팀 수정':'상대팀 입력'}</button>
-        ${isAdmin?`<button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>`:''}
+        ${isAdmin?`<button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button>`:''}
       </div>
       ${oppOnlySec}
-      ${inputSec}
     </div>`;
   }
 
@@ -6170,6 +6147,37 @@ window.selectPos=function(playerKey, pos, partnerKey){
   if(partnerKey)selectPos(partnerKey, pos==='fore'?'back':'fore');
 };
 
+window.openEvScore=function(evId, mi){
+  const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const m=(ev.matches||[])[parseInt(mi)]; if(!m)return;
+  pendingScore={type:'evMatch', evId, mi:parseInt(mi)};
+  const ourStr=(m.ourPair||[]).filter(Boolean).join(' / ')||'우리팀';
+  const oppStr=(m.oppPair||[]).filter(Boolean).join(' / ')||'상대팀';
+  const clubLabel=m.oppClub||(ev.oppClub||'');
+  document.getElementById('scoreInfo').innerHTML=
+    `<strong style="color:#e8edf2">${ourStr}</strong> <span style="color:#4a8ab5">vs</span> <strong style="color:#60a5fa">${oppStr}${clubLabel?` <span style="font-size:10px;color:#4a8ab5">(${clubLabel})</span>`:''}</strong>`;
+  document.getElementById('s1Label').textContent='우리팀 스코어';
+  document.getElementById('s2Label').textContent='상대팀 스코어';
+  const done=m.ourScore!==null&&m.ourScore!==undefined;
+  document.getElementById('s1').value=done?m.ourScore:'';
+  document.getElementById('s2').value=done?m.oppScore:'';
+  const existPos=m.positions||{};
+  const evTeamGroups=[
+    {label:'우리팀',players:m.ourPair||[]},
+    {label:'상대팀',players:m.oppPair||[]}
+  ];
+  document.getElementById('positionSelectors').innerHTML=evTeamGroups.map(({label,players})=>{
+    const fp=players.filter(Boolean);
+    if(!fp.length)return '';
+    const [p0,p1]=fp;
+    const k0=(p0||'').replace(/\s/g,'_'), k1=(p1||'').replace(/\s/g,'_');
+    return `<div style="font-size:10px;color:#4a8ab5;font-weight:600;margin:5px 0 3px">${label}</div>`
+      +(p0?renderPosRow(p0,k0,p1?k1:'',existPos[p0]||''):'')
+      +(p1?renderPosRow(p1,k1,p0?k0:'',existPos[p1]||''):'');
+  }).join('');
+  document.getElementById('scoreModal').style.display='flex';
+};
+
 window.submitScore=async function(){
   if(!pendingScore)return;
   const s1=parseInt(document.getElementById('s1').value),s2=parseInt(document.getElementById('s2').value);
@@ -6194,6 +6202,28 @@ window.submitScore=async function(){
     m.positions=gpPos;
     await updateDoc(doc(db,'schedules',pendingScore.schId),{gamePairs:pairs});
     hide('scoreModal');
+    return;
+  }
+  if(pendingScore.type==='evMatch'){
+    const {evId,mi}=pendingScore;
+    const ev=events.find(e=>e.id===evId); if(!ev)return;
+    const matches=[...(ev.matches||[])];
+    const m=matches[mi]; if(!m)return;
+    const evPos={...(m.positions||{})};
+    [...(m.ourPair||[]),...(m.oppPair||[])].filter(Boolean).forEach(name=>{
+      const key=name.replace(/\s/g,'_');
+      const fb=document.getElementById(`pos_fore_${key}`);
+      const bb=document.getElementById(`pos_back_${key}`);
+      if(fb?.dataset?.selected==='1')evPos[name]='fore';
+      else if(bb?.dataset?.selected==='1')evPos[name]='back';
+    });
+    matches[mi]={...m,ourScore:s1,oppScore:s2,positions:evPos};
+    try{
+      await updateDoc(doc(db,'events',evId),{matches});
+      ev.matches=matches;
+    }catch(e){alert('저장 실패: '+e.code);return;}
+    hide('scoreModal');
+    openEventDetail(evId);
     return;
   }
   const day=days.find(d=>d.id===pendingScore.dayId);
