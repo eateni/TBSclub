@@ -38,6 +38,7 @@ body::before {
 .u-badge { font-size:11px; padding:4px 10px; border-radius:20px; font-weight:700; }
 .badge-admin { background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); }
 .badge-guest { background:rgba(20,50,100,0.5); color:#4a8ab5; border:1px solid rgba(30,80,150,0.25); font-size:10px; }
+.badge-member { background:rgba(52,211,153,0.12); color:#34d399; border:1px solid rgba(52,211,153,0.3); font-size:10px; }
 .btn-admin-toggle { background:#1e40af; border:none; color:#fff; font-size:12px; font-weight:700; padding:6px 12px; cursor:pointer; border-radius:8px; display:flex; align-items:center; gap:4px; }
 .btn-logout { background:transparent; border:1px solid rgba(248,113,113,0.3); border-radius:8px; color:#f87171; font-size:11px; padding:5px 10px; cursor:pointer; }
 .main-tabs { display:none !important; }
@@ -374,7 +375,7 @@ body {
         <div class="header-btn-row" style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
           <button id="myDashboardBtn" class="u-badge badge-guest" style="cursor:pointer;border:none;background:rgba(35,90,180,0.2);font-size:11px;padding:5px 9px;">회원가입</button>
           <span class="u-badge badge-guest" id="uBadge" style="font-size:11px;padding:5px 9px;">👤 게스트</span>
-          <button class="btn-admin-toggle" onclick="openAdminLogin()" title="로그인" style="font-size:11px;padding:5px 9px;">🔑 로그인</button>
+          <button id="loginBtn" class="btn-admin-toggle" onclick="openAdminLogin()" title="로그인" style="font-size:11px;padding:5px 9px;">🔑 로그인</button>
           <button class="btn-logout" id="logoutBtn" style="display:none" onclick="doLogout()">로그아웃</button>
         </div>
       </div>
@@ -3629,7 +3630,7 @@ window.openEventDetail=function(evId){
   document.getElementById('eventDetailModal').style.display='flex';
 };
 
-// 화면 B: 대진표 카드 (결과 입력 버튼 포함, 상대팀 편집 없음)
+// 화면 B: 대진표 카드 (결과 입력 + 상대팀 입력 — 누구나)
 function buildScoreboardCard(m, mi, evId) {
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
   const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
@@ -3639,6 +3640,17 @@ function buildScoreboardCard(m, mi, evId) {
   const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
   const oppLabel=m.oppClub?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${m.oppClub}</span>`:oppRaw;
   const courtLabel=m.court?`${m.court}코트${m.courtType?' · '+m.courtType:''}`:''
+  const hasOpp=(m.oppPair||[]).filter(Boolean).length>0;
+  const oppInpId=`evOppSbInp_${mi}`;
+  const oppOnlySec=`<div id="${oppInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+    <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀 이름</div>
+    <div style="display:flex;gap:4px;margin-bottom:6px">
+      <input id="evSbOpp1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
+      <input id="evSbOpp2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
+      <input id="evSbOppClub_${mi}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${m.oppClub||''}">
+    </div>
+    <button onclick="saveEvSbOpp('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+  </div>`;
   return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
     ${courtLabel?`<div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">${courtLabel}</span></div>`:''}
     <div class="match-row">
@@ -3646,7 +3658,11 @@ function buildScoreboardCard(m, mi, evId) {
       ${scoreEl}
       <div class="m-team ${lost?'win':''}">${oppLabel}</div>
     </div>
-    <div style="margin-top:8px"><button class="btn-input" style="margin-top:0;width:100%" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button></div>
+    <div style="display:flex;gap:5px;margin-top:8px">
+      <button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button>
+      <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#34d399" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${hasOpp?'상대 수정':'상대 입력'}</button>
+    </div>
+    ${oppOnlySec}
   </div>`;
 }
 
@@ -3859,6 +3875,7 @@ window.saveAddEvMatch=async function(){
   const roundMatches=matches.filter(m=>(m.round||1)===roundNum);
   const nextCourt=(roundMatches.length>0?Math.max(...roundMatches.map(m=>m.court||0)):0)+1;
   matches.push({ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:''});
+  if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon:',e.code);}}
   try{
     await updateDoc(doc(db,'events',evId),{matches});
     ev.matches=matches;
@@ -4072,6 +4089,25 @@ window.saveEvOppOnly=async function(evId,mi){
   }catch(e){
     console.error('[saveEvOppOnly] Firestore error:', e);
     alert('저장 실패 ('+e.code+')\n\n해결 방법: Firebase Console → Firestore → Rules에서\nevents 컬렉션 update 권한을 허용해주세요.\n\n에러: '+e.message);
+  }
+};
+
+// 화면B(대진표) 상대팀 저장 — evSbOpp1/2/Club 입력 ID 사용, 저장 후 scoreboard 재렌더
+window.saveEvSbOpp=async function(evId,mi){
+  if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon:',e.code);}}
+  const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const matches=[...(ev.matches||[])];
+  if(!matches[mi]){alert('매치를 찾을 수 없어요');return;}
+  const opp1=document.getElementById(`evSbOpp1_${mi}`)?.value.trim()||'';
+  const opp2=document.getElementById(`evSbOpp2_${mi}`)?.value.trim()||'';
+  const oppClub=document.getElementById(`evSbOppClub_${mi}`)?.value.trim()||'';
+  matches[mi]={...matches[mi],oppPair:[opp1,opp2].filter(Boolean),oppClub};
+  try{
+    await updateDoc(doc(db,'events',evId),{matches});
+    ev.matches=matches;
+    openEvScoreboard(evId);
+  }catch(e){
+    alert('저장 실패 ('+e.code+')\n\nFirebase Console → Firestore → Rules에서 events 컬렉션 update를 허용해주세요.\n\n에러: '+e.message);
   }
 };
 
@@ -6775,7 +6811,8 @@ window.doAdminLogin=async function(){
   }
 };
 window.doLogout=async function(){
-  if(!confirm('관리자 모드에서 로그아웃 할까요?'))return;
+  const msg = isAdmin ? '관리자 모드에서 로그아웃 할까요?' : `${myClaim?.name||''}님, 로그아웃 할까요?`;
+  if(!confirm(msg))return;
   await signOut(auth);
   lastAuthUser = null;
   setAdminMode(false);
@@ -6988,6 +7025,26 @@ function updateSloganVisibility() {
 function renderMyDashboardState(){
   const btn = document.getElementById('myDashboardBtn');
   if (!btn) return;
+
+  // 정회원/게스트 로그인 시 헤더 버튼 전환 (관리자는 setAdminMode에서 처리)
+  if (!isAdmin) {
+    const memberLoggedIn = myClaim && myClaim !== 'pending';
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const uBadge = document.getElementById('uBadge');
+    if (loginBtn) loginBtn.style.display = memberLoggedIn ? 'none' : '';
+    if (logoutBtn) logoutBtn.style.display = memberLoggedIn ? 'block' : 'none';
+    if (uBadge) {
+      if (memberLoggedIn) {
+        uBadge.textContent = `✅ ${myClaim.name}`;
+        uBadge.className = 'u-badge badge-member';
+      } else {
+        uBadge.textContent = '👤 게스트';
+        uBadge.className = 'u-badge badge-guest';
+      }
+    }
+  }
+
   if (myClaim === 'pending') {
     btn.textContent = '⏳ 승인 대기중';
     btn.onclick = () => alert('관리자 승인을 기다리고 있어요.');
