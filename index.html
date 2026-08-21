@@ -3487,6 +3487,7 @@ window.openEventDetail=function(evId){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const parts=ev.participants||[], results=ev.results||[];
   const evMatches=ev.matches||[];
+  const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
 
   // 참가자 섹션: 체크리스트로 전환 (정회원 + 게스트 전체 표시)
   const checklistHtml=isAdmin?`<div style="margin-top:10px">
@@ -3512,7 +3513,7 @@ window.openEventDetail=function(evId){
     const pairBtn=isAdmin&&parts.length>=4
       ?`<button onclick="showEvExchangePairConfig('${evId}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:12px">🎲 페어 짜기</button>`
       :'';
-    const quickAddBtn=isAdmin
+    const quickAddBtn=isMember
       ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
       :'';
     let matchCards;
@@ -3546,7 +3547,7 @@ window.openEventDetail=function(evId){
               ${cardsHtml}
             </div>`;
           }).join('');
-          const roundAddBtn=isAdmin?`<button onclick="openAddEvMatch('${evId}',${rNum})" style="width:100%;padding:6px;margin-top:4px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`:'';
+          const roundAddBtn=isMember?`<button onclick="openAddEvMatch('${evId}',${rNum})" style="width:100%;padding:6px;margin-top:4px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`:'';
           const roundId=`evRd_${evId}_${rNum}`;
           const arrId=`evRdArr_${evId}_${rNum}`;
           const isOpen=rIdx===0;
@@ -3561,7 +3562,7 @@ window.openEventDetail=function(evId){
           </div>`;
         }).join('');
         // 새 라운드 즉석 추가 버튼
-        if(isAdmin)matchCards+=`<button onclick="openAddEvMatch('${evId}',${maxRound+1})" style="width:100%;padding:7px;margin-top:2px;background:rgba(52,211,153,0.1);border:1px dashed rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">➕ 새 라운드 매치 추가 (${maxRound+1}라운드)</button>`;
+        if(isMember)matchCards+=`<button onclick="openAddEvMatch('${evId}',${maxRound+1})" style="width:100%;padding:7px;margin-top:2px;background:rgba(52,211,153,0.1);border:1px dashed rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">➕ 새 라운드 매치 추가 (${maxRound+1}라운드)</button>`;
       }
     }
 
@@ -3645,7 +3646,7 @@ function buildScoreboardCard(m, mi, evId) {
       ${scoreEl}
       <div class="m-team ${lost?'win':''}">${oppLabel}</div>
     </div>
-    ${isAdmin?`<div style="margin-top:8px"><button class="btn-input" style="margin-top:0;width:100%" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button></div>`:''}
+    <div style="margin-top:8px"><button class="btn-input" style="margin-top:0;width:100%" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button></div>
   </div>`;
 }
 
@@ -3829,6 +3830,8 @@ window.addEvResult=async function(evId){
 };
 
 window.openAddEvMatch=function(evId,roundNum){
+  const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
+  if(!isMember){alert('로그인한 정회원만 즉석 매치를 추가할 수 있어요');return;}
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   pendingAddEvMatch={evId,roundNum:parseInt(roundNum)};
   document.getElementById('addEvMatchInfo').textContent=`${roundNum}라운드에 즉석 매치 추가`;
@@ -6472,6 +6475,7 @@ window.submitScore=async function(){
       else if(bb?.dataset?.selected==='1')evPos[name]='back';
     });
     matches[mi]={...m,ourScore:s1,oppScore:s2,positions:evPos};
+    if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon auth:',e.code);}}
     try{
       await updateDoc(doc(db,'events',evId),{matches});
       ev.matches=matches;
