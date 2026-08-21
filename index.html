@@ -3575,7 +3575,7 @@ window.openEventDetail=function(evId){
   }
 
   function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub) {
-    const done=m.ourScore!==null&&m.ourScore!==undefined;
+    const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
     const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
     const scoreEl=done
       ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${m.ourScore} : ${m.oppScore}</div>`
@@ -3630,7 +3630,7 @@ window.openEventDetail=function(evId){
 
 // 화면 B: 대진표 카드 (결과 입력 버튼 포함, 상대팀 편집 없음)
 function buildScoreboardCard(m, mi, evId) {
-  const done=m.ourScore!==null&&m.ourScore!==undefined;
+  const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
   const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
   const scoreEl=done
     ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${m.ourScore} : ${m.oppScore}</div>`
@@ -3687,11 +3687,24 @@ window.openEvScoreboard=function(evId){
     }
   }
 
+  // 참석자별 배정 경기 수 (결과 입력 여부와 무관)
+  const gameCntMap={};
+  parts.forEach(p=>{gameCntMap[p]=0;});
+  evMatches.forEach(m=>{(m.ourPair||[]).forEach(p=>{if(p in gameCntMap)gameCntMap[p]++;});});
+  const gameCntSorted=[...parts].sort((a,b)=>gameCntMap[a]-gameCntMap[b]);
+  const gameCntRows=gameCntSorted.map(p=>`<span style="white-space:nowrap"><span style="font-weight:700;color:#e8edf2">${p}</span><span style="color:#a78bfa;font-size:11px"> ${gameCntMap[p]}경기</span></span>`).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
+  const gameCntSec=evMatches.length&&parts.length?`<div style="margin-bottom:16px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px">
+    <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">🎯 참석자별 경기 수</div>
+    <div style="font-size:12px;line-height:1.8;display:flex;flex-wrap:wrap;gap:2px 0">${gameCntRows}</div>
+  </div>`:'';
+
   const statRows=parts.map(p=>{
     let w=0,l=0,d=0;
     evMatches.forEach(m=>{
-      if((m.ourPair||[]).includes(p)&&m.ourScore!==null&&m.ourScore!==undefined){
-        if(m.ourScore>m.oppScore)w++; else if(m.ourScore<m.oppScore)l++; else d++;
+      const s1=m.ourScore, s2=m.oppScore;
+      const scored=s1!==null&&s1!==undefined&&s1!==''&&s2!==null&&s2!==undefined&&s2!=='';
+      if((m.ourPair||[]).includes(p)&&scored){
+        if(s1>s2)w++; else if(s1<s2)l++; else d++;
       }
     });
     const played=w+l+d;
@@ -3716,6 +3729,7 @@ window.openEvScoreboard=function(evId){
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">🎾 대진표</div>
       ${matchesHtml}
     </div>
+    ${gameCntSec}
     ${statSec}
     <div class="mft">
       ${isAdmin?`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">⚙️ 참가자/페어 관리</button>`:''}
@@ -3937,7 +3951,7 @@ function renderEvExchangePairResult(evId){
   const existing=ev?(ev.matches||[]):[];
   const cards=evExchangeGeneratedPairs.map((pair,i)=>{
     const ex=existing[i]||{};
-    const done=ex.ourScore!==null&&ex.ourScore!==undefined;
+    const done=ex.ourScore!==null&&ex.ourScore!==undefined&&ex.ourScore!==''&&ex.oppScore!==null&&ex.oppScore!==undefined&&ex.oppScore!=='';
     const won=done&&ex.ourScore>ex.oppScore, lost=done&&ex.ourScore<ex.oppScore;
     const scoreEl=done
       ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${ex.ourScore} : ${ex.oppScore}</div>`
@@ -4974,8 +4988,8 @@ function renderMeetupResultStep() {
         }
         // 재렌더 전 captureEvExchangeInputs로 저장한 사용자 입력값 우선 사용
         const inp = evExchangeCurrentInputs[idx] || {};
-        const inMemDone = m.score1 !== null && m.score1 !== undefined;
-        const exDone = ex.ourScore !== null && ex.ourScore !== undefined;
+        const inMemDone = m.score1 !== null && m.score1 !== undefined && m.score1 !== '';
+        const exDone = ex.ourScore !== null && ex.ourScore !== undefined && ex.ourScore !== '';
         const done = inMemDone || exDone;
         const sc1 = inMemDone ? m.score1 : ex.ourScore;
         const sc2 = inMemDone ? m.score2 : ex.oppScore;
@@ -5136,8 +5150,8 @@ window.saveEvExchangeMeetup = async function() {
         ourPair: m.team1,
         oppPair: [opp1, opp2].filter(Boolean),
         oppClub,
-        ourScore: m.score1 !== null && m.score1 !== undefined ? m.score1 : null,
-        oppScore: m.score2 !== null && m.score2 !== undefined ? m.score2 : null,
+        ourScore: (m.score1 !== null && m.score1 !== undefined && m.score1 !== '') ? m.score1 : null,
+        oppScore: (m.score2 !== null && m.score2 !== undefined && m.score2 !== '') ? m.score2 : null,
         round: rd.round,
         court: m.court,
         courtType: m.type
