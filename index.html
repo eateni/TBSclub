@@ -4687,32 +4687,92 @@ window.meetupGenerate = function() {
     });
   }
 
-  // 교류전: 코트당 우리팀 페어 1개 생성 (정규 대진과 달리 team1만 사용)
+  // 교류전: 코트당 우리팀 페어 1개 생성 (게임수 균등화 + 승률 기반 스네이크 밸런스)
   if (evExchangeMode) {
+    // 1. 정규 시즌 승률 조회 (전적 없는 참가자는 리그 평균으로 대체)
+    const statsArr = calcStats();
+    const wrLookup = {};
+    statsArr.forEach(s => { wrLookup[s.name] = s.games > 0 ? s.wr : undefined; });
+    const playedWrs = statsArr.filter(s => s.games > 0).map(s => s.wr);
+    const avgWr = playedWrs.length ? Math.round(playedWrs.reduce((a,b) => a+b, 0) / playedWrs.length) : 50;
+    const getWr = n => wrLookup[n] !== undefined ? wrLookup[n] : avgWr;
+
+    // 2. 라운드 간 게임수 추적 (균등화용)
+    const gameCnt = {};
+    attendeesWithGender.forEach(p => { gameCnt[p.name] = 0; });
+
     const exRounds = [];
     for (let r = 1; r <= meetupConfig.rounds; r++) {
       const ctMap = {};
       for (let c = 1; c <= meetupConfig.courts; c++) {
         ctMap[c] = meetupConfig.types[`r${r}_c${c}`] || '혼복';
       }
-      const mP = shuffle(attendeesWithGender.filter(p => p.gender === 'm').map(p => p.name));
-      const fP = shuffle(attendeesWithGender.filter(p => p.gender === 'f').map(p => p.name));
+
+      // 코트 유형 분류
+      const maleCts = [], femaleCts = [], mixedCts = [];
+      for (let c = 1; c <= meetupConfig.courts; c++) {
+        if (ctMap[c] === '남복') maleCts.push(c);
+        else if (ctMap[c] === '여복') femaleCts.push(c);
+        else mixedCts.push(c);
+      }
+
+      // 게임수 적은 선수 우선 선발 (동점이면 shuffle로 랜덤 결정)
+      const byGC = names => shuffle(names).sort((a, b) => (gameCnt[a]||0) - (gameCnt[b]||0));
+      const allM = byGC(attendeesWithGender.filter(p => p.gender === 'm').map(p => p.name));
+      const allF = byGC(attendeesWithGender.filter(p => p.gender === 'f').map(p => p.name));
+
+      // 코트 유형별로 필요한 선수 수만큼 선발 (게임수 적은 순)
+      const mForMale = allM.splice(0, maleCts.length * 2);
+      const fForFemale = allF.splice(0, femaleCts.length * 2);
+      const mForMix = allM.splice(0, mixedCts.length);
+      const fForMix = allF.splice(0, mixedCts.length);
+      // allM, allF에 남은 인원 = 이 라운드 대기자
+
+      // 스네이크 드래프트: 승률 내림차순 정렬 후 hi+lo 짝 맞춤
+      mForMale.sort((a, b) => getWr(b) - getWr(a));
+      fForFemale.sort((a, b) => getWr(b) - getWr(a));
+      mForMix.sort((a, b) => getWr(b) - getWr(a));   // M: 승률 내림차순
+      fForMix.sort((a, b) => getWr(a) - getWr(b));   // F: 승률 오름차순 → M[i](고승률)+F[i](저승률)
+
+      // [A,B,C,D] → [[A,D],[B,C]] 스네이크 페어
+      const snakePair = arr => {
+        const pairs = [], a = [...arr];
+        while (a.length >= 2) pairs.push([a.shift(), a.pop()]);
+        return pairs;
+      };
+      const malePairs = snakePair(mForMale);
+      const femalePairs = snakePair(fForFemale);
+
       const exMatches = [];
+      const assigned = new Set();
+      let maleI = 0, femI = 0, mixI = 0;
+
       for (let c = 1; c <= meetupConfig.courts; c++) {
         const type = ctMap[c];
         let pair = null;
         if (type === '남복') {
-          if (mP.length >= 2) pair = [mP.shift(), mP.shift()];
+          pair = malePairs[maleI++] || null;
         } else if (type === '여복') {
-          if (fP.length >= 2) pair = [fP.shift(), fP.shift()];
-        } else { // 혼복 / 잡복: M+F 우선
-          if (mP.length >= 1 && fP.length >= 1) { pair = [mP.shift(), fP.shift()]; }
-          else if (mP.length >= 2) { pair = [mP.shift(), mP.shift()]; }
-          else if (fP.length >= 2) { pair = [fP.shift(), fP.shift()]; }
+          pair = femalePairs[femI++] || null;
+        } else { // 혼복/잡복: M+F 우선, 부족하면 동성 페어
+          const m = mForMix[mixI], f = fForMix[mixI];
+          mixI++;
+          if (m && f) pair = [m, f];
+          else if (m && allF.length > 0) pair = [m, allF.shift()];
+          else if (f && allM.length > 0) pair = [allM.shift(), f];
+          else if (m && allM.length > 0) pair = [m, allM.shift()];
+          else if (f && allF.length > 0) pair = [f, allF.shift()];
+          else if (m) pair = [m];
+          else if (f) pair = [f];
         }
-        if (pair) exMatches.push({ court: c, type, team1: pair, team2: null, score1: '', score2: '' });
+        if (pair && pair.length > 0) {
+          exMatches.push({ court: c, type, team1: pair, team2: null, score1: '', score2: '' });
+          pair.forEach(p => { gameCnt[p] = (gameCnt[p]||0) + 1; assigned.add(p); });
+        }
       }
-      const waiting = [...mP, ...fP];
+
+      // 대기: 이 라운드에 배정되지 못한 선수
+      const waiting = attendeesWithGender.map(p => p.name).filter(n => !assigned.has(n));
       if (waiting.length > 0) exMatches.push({ court: 0, type: '대기', team1: waiting, team2: null });
       exRounds.push({ round: r, matches: exMatches });
     }
@@ -5213,7 +5273,8 @@ window.shareKakao = function(id) {
 // ── 📌 오늘 일정 배너 (C안) ───────────────────────────────────────────
 let bannerSchId = null;
 // ── 홈 미니 캘린더 ─────────────────────────────────────────────────
-function renderMiniCalendar(year, month, attendedSet) {
+function renderMiniCalendar(year, month, attendedSet, eventDaysMap) {
+  eventDaysMap = eventDaysMap || {};
   var today = new Date();
   var isThisMonth = (year === today.getFullYear() && month === today.getMonth());
   var todayD = today.getDate();
@@ -5225,9 +5286,10 @@ function renderMiniCalendar(year, month, attendedSet) {
     return '<div style="font-size:7.5px;color:' + c + ';text-align:center;font-weight:700;padding-bottom:2px">' + d + '</div>';
   }).join('');
   var cells = '';
-  for (var e = 0; e < firstDay; e++) cells += '<div></div>';
+  for (var e = 0; e < firstDay; e++) cells += '<div style="height:22px"></div>';
   for (var d = 1; d <= daysInMonth; d++) {
     var att  = attendedSet.has(d);
+    var isEv = !!eventDaysMap[d];
     var isT  = isThisMonth && d === todayD;
     var col, bg, fw, ring;
     if (att && isT) {
@@ -5239,8 +5301,11 @@ function renderMiniCalendar(year, month, attendedSet) {
     } else {
       col = 'rgba(200,220,255,0.38)'; bg = 'transparent'; fw = '400'; ring = '';
     }
+    var titleAttr = isEv ? ' title="🎉 ' + eventDaysMap[d].join(', ') + '"' : '';
+    var dotBg = isEv ? '#a78bfa' : 'transparent';
     cells += '<div style="font-size:9px;text-align:center;line-height:1">'
-      + '<div style="width:17px;height:17px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin:0 auto;background:' + bg + ';color:' + col + ';font-weight:' + fw + ';' + ring + '">' + d + '</div>'
+      + '<div' + titleAttr + ' style="width:17px;height:17px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin:0 auto;background:' + bg + ';color:' + col + ';font-weight:' + fw + ';' + ring + '">' + d + '</div>'
+      + '<div style="width:4px;height:4px;border-radius:50%;margin:1px auto 0;background:' + dotBg + '"></div>'
       + '</div>';
   }
   var ml = year + '.' + String(month + 1).padStart(2, '0');
@@ -5280,7 +5345,15 @@ function renderHomeTab() {
       }
     });
   }
-  const miniCalHtml = renderMiniCalendar(calY, calM, attendedSet);
+  // 이번 달 이벤트전 날짜 집계 (교류전/월례대회/특별전)
+  const eventDaysMap = {};
+  events.filter(e => ['exchange','monthly','special'].includes(e.type) && e.date && e.date.startsWith(calMStr))
+    .forEach(e => {
+      const d = parseInt(e.date.slice(8, 10), 10);
+      if (!eventDaysMap[d]) eventDaysMap[d] = [];
+      eventDaysMap[d].push(e.name || '이벤트전');
+    });
+  const miniCalHtml = renderMiniCalendar(calY, calM, attendedSet, eventDaysMap);
 
   // 요약 통계
   const thisMonth = todayStr.slice(0,7);
