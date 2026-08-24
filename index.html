@@ -1844,11 +1844,15 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
   const femaleCourts = usableCourtTypes.filter(t=>t==='여복').length;
 
   // typeHistory 균형 정렬 헬퍼 (하루 전체 섞기 시에만 활성화)
+  // 1순위: 휴식 많은 사람 먼저(코트 우선 배정), 2순위: 해당 타입 적게 배정된 사람 먼저
   const _thBs = typeHistory
-    ? (a,fr,k)=>[...a.filter(n=>fr.has(n)),...a.filter(n=>!fr.has(n)).sort((x,y)=>(typeHistory[x]?.[k]||0)-(typeHistory[y]?.[k]||0))]
+    ? (a,fr,k)=>[...a.filter(n=>fr.has(n)),...a.filter(n=>!fr.has(n)).sort((x,y)=>{
+        const rD=(typeHistory[y]?.휴식||0)-(typeHistory[x]?.휴식||0);
+        return rD!==0?rD:(typeHistory[x]?.[k]||0)-(typeHistory[y]?.[k]||0);
+      })]
     : null;
   if (_thBs) {
-    pool.forEach(p=>{if(!typeHistory[p.name])typeHistory[p.name]={혼복:0,남복:0,여복:0,잡복:0};});
+    pool.forEach(p=>{if(!typeHistory[p.name])typeHistory[p.name]={혼복:0,남복:0,여복:0,잡복:0,휴식:0};});
     const mF=new Set([...forcedMix.map(p=>p[0]),...forcedMale.flat()].filter(n=>mPool.includes(n)));
     const fF=new Set([...forcedMix.map(p=>p[1]),...forcedFemale.flat()].filter(n=>fPool.includes(n)));
     mPool=_thBs(mPool,mF,'혼복'); fPool=_thBs(fPool,fF,'혼복');
@@ -1936,6 +1940,10 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
       isRally: true
     });
   }
+  // 대기(휴식) 인원 추적 — 다음 라운드에서 코트 우선 배정을 위해
+  if (typeHistory) {
+    leftover.forEach(n=>{if(typeHistory[n])typeHistory[n].휴식++;});
+  }
 
   return matches;
 }
@@ -2013,10 +2021,11 @@ window.rollRound = function(rIdx) {
     const rd = generatedAllRounds[i];
     if (!rd) continue;
     (rd.matches||[]).forEach(m => {
-      if (!['혼복','남복','여복','잡복'].includes(m.tag)) return;
+      if (!['혼복','남복','여복','잡복','랠리'].includes(m.tag)) return;
       [...(m.team1||[]),...(m.team2||[])].forEach(n => {
-        if (!typeHistory[n]) typeHistory[n] = {혼복:0,남복:0,여복:0,잡복:0};
-        typeHistory[n][m.tag]++;
+        if (!typeHistory[n]) typeHistory[n] = {혼복:0,남복:0,여복:0,잡복:0,휴식:0};
+        if (m.tag==='랠리') typeHistory[n].휴식++;
+        else typeHistory[n][m.tag]++;
       });
     });
   }
