@@ -38,7 +38,7 @@ body::before {
 .u-badge { font-size:11px; padding:4px 10px; border-radius:20px; font-weight:700; }
 .badge-admin { background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); }
 .badge-guest { background:rgba(20,50,100,0.5); color:#64748B; border:1px solid rgba(30,80,150,0.25); font-size:10px; }
-.badge-member { background:rgba(52,211,153,0.12); color:#34d399; border:1px solid rgba(52,211,153,0.3); font-size:10px; }
+.badge-member { background:rgba(52,211,153,0.12); color:#059669; border:1px solid rgba(52,211,153,0.3); font-size:10px; }
 .btn-admin-toggle { background:#1e40af; border:none; color:#fff; font-size:12px; font-weight:700; padding:6px 12px; cursor:pointer; border-radius:8px; display:flex; align-items:center; gap:4px; }
 .btn-logout { background:transparent; border:1px solid rgba(248,113,113,0.3); border-radius:8px; color:#f87171; font-size:11px; padding:5px 10px; cursor:pointer; }
 .main-tabs { display:none !important; }
@@ -189,15 +189,15 @@ body::before {
 .event-card { background:#FFFFFF; border-radius:16px; border:1px solid #C8E0DE; overflow:hidden; }
 .event-banner { padding:18px 16px 12px; }
 .ev-type-badge { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:8px; }
-.badge-exchange{background:#7c3aed22;color:#a78bfa;border:1px solid #7c3aed44;}
-.badge-monthly{background:#34d39922;color:#34d399;border:1px solid #34d39944;}
+.badge-exchange{background:#7c3aed22;color:#6D28D9;border:1px solid #7c3aed44;}
+.badge-monthly{background:#34d39922;color:#059669;border:1px solid #34d39944;}
 .badge-special{background:#f8717122;color:#f87171;border:1px solid #f8717144;}
 .ev-name{font-size:17px;font-weight:900;color:#1E293B;margin-bottom:4px;}
 .ev-date{font-size:12px;color:#64748B;}
 .ev-desc{font-size:12px;color:#78909C;margin-top:6px;line-height:1.6;}
 .ev-footer{padding:12px 16px;border-top:1px solid #E0F2F1;display:flex;align-items:center;justify-content:space-between;}
 .ev-status{font-size:12px;font-weight:700;}
-.st-upcoming{color:#fbbf24;}.st-ongoing{color:#34d399;}.st-done{color:#64748B;}
+.st-upcoming{color:#D97706;}.st-ongoing{color:#059669;}.st-done{color:#64748B;}
 .btn-ev-detail{padding:7px 14px;background:#0D9488;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;}
 .ev-parts{padding:10px 16px;border-top:1px solid #E0F2F1;}
 .part-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
@@ -206,12 +206,12 @@ body::before {
 /* 관리자 */
 .admin-sec{background:#FFFFFF;border-radius:14px;padding:16px;border:1px solid #D1E7E5;margin-bottom:12px;backdrop-filter:blur(6px);}
 .admin-sec.guest-sec{border-color:rgba(52,211,153,0.35);background:#F0FBF8;}
-.admin-sec.guest-sec h3{color:#34d399;}
+.admin-sec.guest-sec h3{color:#059669;}
 .admin-sec h3{font-size:14px;font-weight:700;color:#1E293B;margin-bottom:12px;}
 .chips-wrap{display:flex;flex-wrap:wrap;gap:8px;}
 .chip{padding:6px 14px;background:rgba(4,16,55,0.8);border-radius:20px;font-size:13px;color:#78909C;border:1px solid #C8E0DE;display:flex;align-items:center;gap:6px;}
 .chip-guest{border-color:rgba(52,211,153,0.3);}
-.g-guest{color:#34d399;font-size:10px;font-weight:700;}
+.g-guest{color:#059669;font-size:10px;font-weight:700;}
 .chip-x{background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;padding:0;line-height:1;}
 .row-form{display:flex;gap:8px;margin-top:10px;}
 .row-inp{flex:1;padding:10px 12px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:10px;color:#1E293B;font-size:13px;outline:none;}
@@ -426,7 +426,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <span style="font-size:12px;color:#64748B;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
         <select id="seasonSelect" class="row-sel" style="flex:1;font-size:13px;padding:9px" onchange="changeViewSeason()"></select>
       </div>
-      <div id="seasonNote" style="display:none;margin-top:8px;font-size:11px;color:#fbbf24;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 10px"></div>
+      <div id="seasonNote" style="display:none;margin-top:8px;font-size:11px;color:#D97706;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 10px"></div>
       <div class="subtabs" style="margin-top:16px">
         <button class="stab active" onclick="switchSub('bracket',this)">대진표</button>
         <button class="stab" onclick="switchSub('ranking',this)">랭킹</button>
@@ -448,7 +448,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <div class="rank-list" id="rankList"></div>
       </div>
       <div id="sub-analysis" style="display:none">
-        <div class="sec-header" style="color:#a78bfa;margin-top:4px">📊 개인별 분석</div>
+        <div class="sec-header" style="color:#6D28D9;margin-top:4px">📊 개인별 분석</div>
         <!-- 회원 선택 -->
         <div style="margin-bottom:16px">
           <div style="font-size:11px;color:#64748B;margin-bottom:8px">분석할 회원 선택</div>
@@ -526,7 +526,7 @@ tr:nth-child(even){background:#F5FCFB;}
             <select id="schWriter" class="row-sel" style="width:100%;font-size:13px;padding:9px">
               <option value="">이름 선택</option>
             </select>
-            <div id="schWriterLockNotice" style="display:none;font-size:10px;color:#34d399;margin-top:4px">🔒 로그인한 본인 이름으로 자동 설정됨</div>
+            <div id="schWriterLockNotice" style="display:none;font-size:10px;color:#059669;margin-top:4px">🔒 로그인한 본인 이름으로 자동 설정됨</div>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
@@ -568,7 +568,7 @@ tr:nth-child(even){background:#F5FCFB;}
           </div>
           <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
             <input type="checkbox" id="schIsGameMeetup" style="width:16px;height:16px;cursor:pointer">
-            <label for="schIsGameMeetup" style="font-size:12px;color:#a78bfa;font-weight:700;cursor:pointer">🎾 게임모임으로 표시 (참석자끼리 페어를 짜서 게임할 수 있어요)</label>
+            <label for="schIsGameMeetup" style="font-size:12px;color:#6D28D9;font-weight:700;cursor:pointer">🎾 게임모임으로 표시 (참석자끼리 페어를 짜서 게임할 수 있어요)</label>
           </div>
           <button onclick="addSchedule()" class="btn-add" style="width:100%;margin-top:4px">📅 일정 등록</button>
         </div>
@@ -583,7 +583,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div style="margin-top:16px"></div>
       <div style="text-align:center;margin-bottom:20px">
         <div style="font-size:28px;margin-bottom:6px">🔮</div>
-        <div style="font-size:20px;font-weight:900;color:#a78bfa">오늘의 테니스 운세</div>
+        <div style="font-size:20px;font-weight:900;color:#6D28D9">오늘의 테니스 운세</div>
         <div style="font-size:11px;color:#64748B;margin-top:4px" id="fortuneDate"></div>
       </div>
 
@@ -615,7 +615,7 @@ tr:nth-child(even){background:#F5FCFB;}
     <!-- 이벤트전 -->
     <div id="tab-event" style="display:none">
       <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 14px">
-        <div class="sec-header" style="margin-bottom:0;color:#a78bfa">🎉 이벤트전</div>
+        <div class="sec-header" style="margin-bottom:0;color:#6D28D9">🎉 이벤트전</div>
         <button id="btnAddEvent" style="display:none;padding:8px 14px;background:#7c3aed;border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:700;cursor:pointer" onclick="openEventModal()">+ 추가</button>
       </div>
       <div class="subtabs" style="margin-bottom:16px">
@@ -686,7 +686,7 @@ tr:nth-child(even){background:#F5FCFB;}
           <div class="chips-wrap" id="guestChips"></div>
           <div id="guestStatsDetail"></div>
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(52,211,153,0.2)">
-            <div style="font-size:11px;color:#34d399;margin-bottom:8px">게스트 추가</div>
+            <div style="font-size:11px;color:#059669;margin-bottom:8px">게스트 추가</div>
             <div class="row-form">
               <input class="row-inp" id="newGuest" placeholder="이름 (예: 홍길동 게스트)" onkeydown="if(event.key==='Enter')addGuest()">
               <div class="gender-toggle">
@@ -875,7 +875,7 @@ tr:nth-child(even){background:#F5FCFB;}
   <div class="modal">
     <div class="modal-title">회원가입</div>
     <button type="button" onclick="doGoogleSignIn()" style="width:100%;padding:12px;margin-bottom:10px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">🔵 구글로 계속하기</button>
-    <div id="signupGoogleNotice" style="display:none;text-align:center;font-size:12px;color:#34d399;font-weight:700;margin-bottom:10px;padding:8px;background:rgba(52,211,153,0.1);border-radius:8px"></div>
+    <div id="signupGoogleNotice" style="display:none;text-align:center;font-size:12px;color:#059669;font-weight:700;margin-bottom:10px;padding:8px;background:rgba(52,211,153,0.1);border-radius:8px"></div>
     <div style="text-align:center;font-size:11px;color:#64748B;margin:8px 0">— 또는 이메일로 —</div>
     <div id="signupEmailPwFields">
       <input type="email" id="signupEmail" class="row-inp" placeholder="이메일" style="width:100%;margin-bottom:8px">
@@ -1088,13 +1088,13 @@ tr:nth-child(even){background:#F5FCFB;}
     <textarea id="editSchContent" class="row-inp" style="width:100%;min-height:60px;margin-bottom:8px"></textarea>
     <div style="display:flex;align-items:center;gap:8px;padding:6px 0 10px">
       <input type="checkbox" id="editSchIsGameMeetup" style="width:16px;height:16px">
-      <label for="editSchIsGameMeetup" style="font-size:12px;color:#a78bfa;font-weight:700;cursor:pointer">🎾 게임모임으로 표시</label>
+      <label for="editSchIsGameMeetup" style="font-size:12px;color:#6D28D9;font-weight:700;cursor:pointer">🎾 게임모임으로 표시</label>
     </div>
     <div style="font-size:11px;color:#64748B;margin:4px 0 6px">🙋 참석자 관리</div>
     <div id="editAttendList" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <select id="editAttendAddSel" class="row-sel" style="flex:1;font-size:12px;padding:7px"></select>
-      <button onclick="editAttendAdd()" style="padding:7px 12px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">추가</button>
+      <button onclick="editAttendAdd()" style="padding:7px 12px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#059669;font-size:12px;font-weight:700;cursor:pointer">추가</button>
     </div>
     <div class="mft">
       <button class="btn-cancel" onclick="hide('editScheduleModal')">취소</button>
@@ -1599,7 +1599,7 @@ function renderPairRanking() {
           <span style="font-size:11px;font-weight:800;color:${idx<3?'#f59e0b':'#4a8ab5'};width:20px">${idx+1}</span>
           <span style="font-size:13px;font-weight:700;color:#1E293B">${p.players.join(' · ')}</span>
         </div>
-        <div style="font-size:12px;color:#78909C">${p.wins}승 ${p.draws}무 ${p.losses}패 <span style="color:#34d399;font-weight:700">(${p.games?Math.round(p.wins/p.games*100):0}%)</span></div>
+        <div style="font-size:12px;color:#78909C">${p.wins}승 ${p.draws}무 ${p.losses}패 <span style="color:#059669;font-weight:700">(${p.games?Math.round(p.wins/p.games*100):0}%)</span></div>
       </div>`).join('') : '<div class="empty" style="padding:14px">데이터가 없어요</div>';
     return `
       <div class="admin-sec" style="margin-bottom:14px">
@@ -1970,7 +1970,7 @@ window.rollAllBalanced = function() {
     const ms = generatedAllRounds[r]?.matches || [];
     if (!ms.length) { el.innerHTML='<span style="color:#f87171">⚠️ 인원 부족</span>'; continue; }
     el.innerHTML = ms.map(m => m.isRally
-      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">⏳ 대기</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div><span style="color:#64748B;font-size:10px;margin-left:6px">${m.court}</span></div>`
+      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">⏳ 대기</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#059669">${m.team1.join(', ')}</div><span style="color:#64748B;font-size:10px;margin-left:6px">${m.court}</span></div>`
       : `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team1.join(' / ')}</div><span style="color:#64748B;font-size:10px;margin:0 6px">vs</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team2.join(' / ')}</div></div>`
     ).join('');
   }
@@ -2042,7 +2042,7 @@ window.rollRound = function(rIdx) {
       return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6">
         <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;
           background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">⏳ 대기</span>
-        <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div>
+        <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#059669">${m.team1.join(', ')}</div>
         <span style="color:#64748B;font-size:10px;margin-left:6px">${m.court}</span>
       </div>`;
     }
@@ -2168,7 +2168,7 @@ window.saveOneRound = async function(rIdx) {
   // 저장한 라운드 미리보기 초기화
   generatedAllRounds[rIdx] = { name:`${rIdx+1}라운드`, matches:[] };
   const el = document.getElementById(`rndPreview_${rIdx}`);
-  if (el) el.innerHTML = '<span style="color:#34d399;font-size:11px">✅ 저장 완료! 대진표 탭에서 확인하세요</span>';
+  if (el) el.innerHTML = '<span style="color:#059669;font-size:11px">✅ 저장 완료! 대진표 탭에서 확인하세요</span>';
   alert(`✅ ${rIdx+1}라운드 저장 완료!`);
 };
 
@@ -2677,8 +2677,8 @@ function renderDays() {
     });
     const resultStr = doneMatches > 0
       ? `<span style="font-size:10px;font-weight:700;margin-left:6px">
-          <span style="color:#34d399">${dayWins}승</span>
-          ${dayDraws>0?`<span style="color:#fbbf24"> ${dayDraws}무</span>`:''}
+          <span style="color:#059669">${dayWins}승</span>
+          ${dayDraws>0?`<span style="color:#D97706"> ${dayDraws}무</span>`:''}
           <span style="color:#f87171"> ${dayLosses}패</span>
          </span>`
       : '';
@@ -2699,9 +2699,9 @@ function renderDays() {
         if (m.isRally || m.tag === '랠리') {
           const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
           return `<div class="match-card" style="border-color:rgba(52,211,153,0.3);background:rgba(20,80,30,0.2)">
-            <div class="match-ct"><span style="color:#34d399">${m.court||''} <span style="font-size:10px;color:#34d399">[⏳ 대기]</span></span></div>
+            <div class="match-ct"><span style="color:#059669">${m.court||''} <span style="font-size:10px;color:#059669">[⏳ 대기]</span></span></div>
             <div style="text-align:center;padding:8px 4px">
-              <div style="font-weight:700;font-size:13px;color:#34d399;line-height:1.5">
+              <div style="font-weight:700;font-size:13px;color:#059669;line-height:1.5">
                 ${(m.team1||[]).join(' · ')}
               </div>
               <div style="font-size:10px;color:rgba(52,211,153,0.7);margin-top:4px">다음 라운드 대기</div>
@@ -2718,11 +2718,11 @@ function renderDays() {
           : '';
         // 확장 영역: 실시간 스코어
         const liveBtn = !m.done
-          ? `<button class="btn-input" style="width:100%;margin-bottom:7px;border-color:rgba(52,211,153,0.4);color:#34d399" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button>`
+          ? `<button class="btn-input" style="width:100%;margin-bottom:7px;border-color:rgba(52,211,153,0.4);color:#059669" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button>`
           : '';
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
         const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
-        const tagBadge=m.tag?`<span style="font-size:10px;color:#a78bfa">[${m.tag}]</span>`:'';
+        const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
         const mComments = m.comments || [];
         const commentOpts = [...members, ...guests].map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
         // 댓글 목록
@@ -2822,7 +2822,7 @@ function renderStats(stats) {
       <td style="color:#78909C">${s.scored}</td>
       <td style="color:#f87171">${s.conceded}</td>
       <td style="color:${s.diff>0?'#34d399':s.diff<0?'#f87171':'#94a3b8'}">${s.diff>=0?'+':''}${s.diff}</td>
-      <td style="color:#a78bfa;font-weight:700">${s.games}</td>
+      <td style="color:#6D28D9;font-weight:700">${s.games}</td>
       <td style="color:${isG?'#34d399':'#fbbf24'}">${s.attendance}일</td>
     </tr>`;
 
@@ -2837,7 +2837,7 @@ function renderStats(stats) {
 
   const guestRows = guestList.length
     ? `<tr><td colspan="10" style="padding:8px 6px;background:rgba(13,148,136,0.1);text-align:left">
-         <div style="font-size:10px;color:#34d399;font-weight:700;margin-bottom:6px">👤 게스트</div>
+         <div style="font-size:10px;color:#059669;font-weight:700;margin-bottom:6px">👤 게스트</div>
          <div style="display:flex;flex-wrap:wrap;gap:4px">${guestSortTabs}</div>
        </td></tr>`
       + guestList.map((s,i)=>rowHtml(s,true,i+1)).join('')
@@ -2878,9 +2878,9 @@ function renderRanking(stats) {
       <div style="flex:1">
         <div style="font-weight:800;font-size:15px">
           ${s.name} <span class="${s.gender==='f'?'g-f':'g-m'}">${s.gender==='f'?'♀':'♂'}</span>
-          ${isG?'<span style="font-size:10px;color:#34d399;margin-left:4px">게스트</span>':''}
+          ${isG?'<span style="font-size:10px;color:#059669;margin-left:4px">게스트</span>':''}
         </div>
-        <div style="font-size:11px;color:#64748B;margin-top:2px">${s.wins}승 ${s.draws}무 ${s.losses}패 · ${s.wr}% · <span style="color:#a78bfa">${s.games}게임</span></div>
+        <div style="font-size:11px;color:#64748B;margin-top:2px">${s.wins}승 ${s.draws}무 ${s.losses}패 · ${s.wr}% · <span style="color:#6D28D9">${s.games}게임</span></div>
         <div class="wr-bg" style="margin-top:4px"><div class="wr-bar" style="width:${s.wr}%;background:${s.wr>=70?'linear-gradient(90deg,#34d399,#10b981)':s.wr>=40?'linear-gradient(90deg,#fbbf24,#f59e0b)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
       </div>
       <div style="text-align:right">
@@ -2892,7 +2892,7 @@ function renderRanking(stats) {
         <div style="font-size:10px;color:#64748B">득실</div>
       </div>
       <div style="text-align:right;min-width:32px">
-        <div style="font-weight:700;font-size:14px;color:#fbbf24">${s.attendance}</div>
+        <div style="font-weight:700;font-size:14px;color:#D97706">${s.attendance}</div>
         <div style="font-size:10px;color:#64748B">출석일</div>
       </div>
     </div>`;
@@ -2906,7 +2906,7 @@ function renderRanking(stats) {
     }).join('');
 
   const guestHtml = guestList.length
-    ? `<div style="font-size:12px;color:#34d399;font-weight:700;margin:12px 0 6px;padding:6px 0;border-top:1px solid rgba(13,148,136,0.3)">👤 게스트 (시즌 ${viewSeason})</div>`
+    ? `<div style="font-size:12px;color:#059669;font-weight:700;margin:12px 0 6px;padding:6px 0;border-top:1px solid rgba(13,148,136,0.3)">👤 게스트 (시즌 ${viewSeason})</div>`
       + `<div style="display:flex;flex-wrap:wrap;margin-bottom:8px">${guestSortTabs}</div>`
       + guestList.map(s=>makeItem(s,true)).join('')
     : '';
@@ -3049,7 +3049,7 @@ window.renderAnalysisDetail = function() {
   el.innerHTML = `
     <!-- 종합 전적 -->
     <div style="background:rgba(20,80,30,0.3);border-radius:12px;padding:14px;border:1px solid rgba(52,211,153,0.3);margin-bottom:16px;text-align:center">
-      <span style="font-size:13px;font-weight:800;color:#34d399">🏅 ${name}님의 종합 전적${s.isGuest?' <span style="font-size:10px;color:#34d399">(게스트)</span>':''}</span><br>
+      <span style="font-size:13px;font-weight:800;color:#059669">🏅 ${name}님의 종합 전적${s.isGuest?' <span style="font-size:10px;color:#059669">(게스트)</span>':''}</span><br>
       <span style="font-size:12px;color:#78909C;margin-top:4px;display:block">${s.games}전 ${s.wins}승 ${s.draws}무 ${s.losses}패 (승률 ${s.wr}%) · 📅 출석 ${s.attendance}일</span>
     </div>
 
@@ -3093,7 +3093,7 @@ window.renderAnalysisDetail = function() {
       const resBg = {W:'rgba(52,211,153,0.2)',L:'rgba(248,113,113,0.2)',D:'rgba(251,191,36,0.2)'};
       const recentWr = last5.length>0?Math.round(last5.filter(x=>x.res==='W').length/last5.length*100):0;
       return `
-      <div style="font-size:14px;font-weight:800;color:#34d399;margin:20px 0 10px">📈 최근 폼</div>
+      <div style="font-size:14px;font-weight:800;color:#059669;margin:20px 0 10px">📈 최근 폼</div>
       <div style="background:#FFFFFF;border-radius:12px;padding:14px;border:1px solid #D1E7E5">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <div style="display:flex;gap:6px">
@@ -3140,7 +3140,7 @@ window.renderAnalysisDetail = function() {
           <div style="font-size:11px;color:#64748B;margin-top:2px">현재 ${streakText}</div>
         </div>
         <div style="background:#FFFFFF;border-radius:10px;padding:12px;text-align:center;border:1px solid rgba(52,211,153,0.25)">
-          <div style="font-size:22px;font-weight:900;color:#34d399">${maxWin}</div>
+          <div style="font-size:22px;font-weight:900;color:#059669">${maxWin}</div>
           <div style="font-size:11px;color:#64748B;margin-top:2px">최장 연승</div>
         </div>
         <div style="background:#FFFFFF;border-radius:10px;padding:12px;text-align:center;border:1px solid rgba(248,113,113,0.25)">
@@ -3170,7 +3170,7 @@ window.renderAnalysisDetail = function() {
       if (months.length < 2) return '';
       const maxGames = Math.max(...months.map(m=>monthly[m].games));
       return `
-      <div style="font-size:14px;font-weight:800;color:#a78bfa;margin:20px 0 10px">📅 월별 성적 추이</div>
+      <div style="font-size:14px;font-weight:800;color:#6D28D9;margin:20px 0 10px">📅 월별 성적 추이</div>
       <div style="background:#FFFFFF;border-radius:12px;padding:14px;border:1px solid #D1E7E5">
         ${months.map(mon => {
           const d=monthly[mon];
@@ -3189,8 +3189,8 @@ window.renderAnalysisDetail = function() {
           </div>`;
         }).join('')}
         <div style="display:flex;gap:12px;margin-top:6px;font-size:10px">
-          <span><span style="color:#34d399">■</span> 승</span>
-          <span><span style="color:#fbbf24">■</span> 무</span>
+          <span><span style="color:#059669">■</span> 승</span>
+          <span><span style="color:#D97706">■</span> 무</span>
           <span><span style="color:#f87171">■</span> 패</span>
         </div>
       </div>`;
@@ -3273,8 +3273,8 @@ window.renderAnalysisDetail = function() {
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center">
               <div style="display:flex;gap:8px;font-size:12px">
-                <span style="color:#34d399;font-weight:700">${d.wins}승</span>
-                ${d.draws>0?`<span style="color:#fbbf24;font-weight:700">${d.draws}무</span>`:''}
+                <span style="color:#059669;font-weight:700">${d.wins}승</span>
+                ${d.draws>0?`<span style="color:#D97706;font-weight:700">${d.draws}무</span>`:''}
                 <span style="color:#f87171;font-weight:700">${d.losses}패</span>
                 <span style="color:#64748B">${total}게임</span>
               </div>
@@ -3318,7 +3318,7 @@ window.renderAnalysisDetail = function() {
       const hasData = showTypes.some(([k])=>typeStats[k].games>0);
       if (!hasData) return '';
       return `
-      <div style="font-size:14px;font-weight:800;color:#a78bfa;margin:16px 0 10px">
+      <div style="font-size:14px;font-weight:800;color:#6D28D9;margin:16px 0 10px">
         ${s.gender==='m'?'🎾 남복 / 혼복 승률':'🎾 여복 / 혼복 승률'}
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
@@ -3517,7 +3517,7 @@ window.openEventDetail=function(evId){
       ?`<button onclick="showEvExchangePairConfig('${evId}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:12px">🎲 페어 짜기</button>`
       :'';
     const quickAddBtn=isMember
-      ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
+      ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
       :'';
     let matchCards;
     if(!evMatches.length){
@@ -3546,11 +3546,11 @@ window.openEventDetail=function(evId){
             const typeLabel=type?` · ${type}`:'';
             const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'')).join('');
             return `<div style="margin-bottom:4px">
-              <div style="font-size:10px;color:#a78bfa;font-weight:700;padding:4px 0 2px">${cNum}코트${typeLabel}</div>
+              <div style="font-size:10px;color:#6D28D9;font-weight:700;padding:4px 0 2px">${cNum}코트${typeLabel}</div>
               ${cardsHtml}
             </div>`;
           }).join('');
-          const roundAddBtn=isMember?`<button onclick="openAddEvMatch('${evId}',${rNum})" style="width:100%;padding:6px;margin-top:4px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`:'';
+          const roundAddBtn=isMember?`<button onclick="openAddEvMatch('${evId}',${rNum})" style="width:100%;padding:6px;margin-top:4px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`:'';
           const roundId=`evRd_${evId}_${rNum}`;
           const arrId=`evRdArr_${evId}_${rNum}`;
           const isOpen=rIdx===0;
@@ -3565,14 +3565,14 @@ window.openEventDetail=function(evId){
           </div>`;
         }).join('');
         // 새 라운드 즉석 추가 버튼
-        if(isMember)matchCards+=`<button onclick="openAddEvMatch('${evId}',${maxRound+1})" style="width:100%;padding:7px;margin-top:2px;background:rgba(52,211,153,0.1);border:1px dashed rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">➕ 새 라운드 매치 추가 (${maxRound+1}라운드)</button>`;
+        if(isMember)matchCards+=`<button onclick="openAddEvMatch('${evId}',${maxRound+1})" style="width:100%;padding:7px;margin-top:2px;background:rgba(52,211,153,0.1);border:1px dashed rgba(52,211,153,0.4);border-radius:8px;color:#059669;font-size:11px;font-weight:700;cursor:pointer">➕ 새 라운드 매치 추가 (${maxRound+1}라운드)</button>`;
       }
     }
 
     exchangeSec=`<div style="margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <div style="font-size:13px;font-weight:700">🎾 매치</div>
-        <button onclick="openEvScoreboard('${evId}')" style="padding:5px 12px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">🏸 대진표 보기</button>
+        <button onclick="openEvScoreboard('${evId}')" style="padding:5px 12px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#059669;font-size:11px;font-weight:700;cursor:pointer">🏸 대진표 보기</button>
       </div>
       ${pairBtn}${matchCards}
     </div>`;
@@ -3582,7 +3582,7 @@ window.openEventDetail=function(evId){
     const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
     const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
     const scoreEl=done
-      ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${m.ourScore} : ${m.oppScore}</div>`
+      ?`<div class="m-score" style="${won?'color:#059669':lost?'color:#f87171':'color:#D97706'}">${m.ourScore} : ${m.oppScore}</div>`
       :`<div class="m-score pend">예정</div>`;
     const clubForDisplay=m.oppClub||defaultOppClub||'';
     const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
@@ -3598,7 +3598,7 @@ window.openEventDetail=function(evId){
         <input id="evOppOnly2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
         <input id="evOppClubOnly_${mi}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${defaultClub}">
       </div>
-      <button onclick="saveEvOppOnly('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+      <button onclick="saveEvOppOnly('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#059669;font-size:12px;font-weight:700;cursor:pointer">저장</button>
     </div>`;
     const delBtn=isAdmin?`<button onclick="deleteEvMatch('${evId}',${mi})" title="매치 삭제" style="position:absolute;top:5px;right:6px;background:none;border:none;color:rgba(248,113,113,0.4);font-size:15px;line-height:1;cursor:pointer;padding:2px 4px">×</button>`:'';
     return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px;position:relative">
@@ -3640,7 +3640,7 @@ function buildScoreboardCard(m, mi, evId, parts, isMember) {
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
   const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
   const scoreEl=done
-    ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${m.ourScore} : ${m.oppScore}</div>`
+    ?`<div class="m-score" style="${won?'color:#059669':lost?'color:#f87171':'color:#D97706'}">${m.ourScore} : ${m.oppScore}</div>`
     :`<div class="m-score pend">예정</div>`;
   const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
   const clubDisplay=m.oppClub||evDefault;
@@ -3651,7 +3651,7 @@ function buildScoreboardCard(m, mi, evId, parts, isMember) {
   const pairInpId=`evPairInp_${mi}`;
   const pairOpts=(parts||[]).map(p=>`<option value="${p}"${(m.ourPair||[])[0]===p?' selected':''}>${p}</option>`).join('');
   const pairOpts2=(parts||[]).map(p=>`<option value="${p}"${(m.ourPair||[])[1]===p?' selected':''}>${p}</option>`).join('');
-  const doneWarn=done?`<div style="font-size:10px;color:#fbbf24;margin-bottom:5px;padding:4px 6px;background:rgba(251,191,36,0.1);border-radius:5px;border-left:2px solid rgba(251,191,36,0.4)">⚠️ 결과가 입력된 매치입니다. 수정 시 점수가 초기화됩니다.</div>`:'';
+  const doneWarn=done?`<div style="font-size:10px;color:#D97706;margin-bottom:5px;padding:4px 6px;background:rgba(251,191,36,0.1);border-radius:5px;border-left:2px solid rgba(251,191,36,0.4)">⚠️ 결과가 입력된 매치입니다. 수정 시 점수가 초기화됩니다.</div>`:'';
   const pairInpSec=isMember?`<div id="${pairInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(192,132,252,0.2)">
     ${doneWarn}<div style="font-size:10px;color:#c084fc;font-weight:700;margin-bottom:4px">우리팀 선수 재선택</div>
     <div style="display:flex;gap:4px;margin-bottom:6px">
@@ -3667,7 +3667,7 @@ function buildScoreboardCard(m, mi, evId, parts, isMember) {
       <input id="evSbOpp2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
       <input id="evSbOppClub_${mi}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${m.oppClub||evDefault}">
     </div>
-    <button onclick="saveEvSbOpp('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">저장</button>
+    <button onclick="saveEvSbOpp('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#059669;font-size:12px;font-weight:700;cursor:pointer">저장</button>
   </div>`;
   return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
     ${courtLabel?`<div class="match-ct" style="margin-bottom:6px"><span style="font-size:14px;color:#7dd3fc;font-weight:700">${courtLabel}</span></div>`:''}
@@ -3678,7 +3678,7 @@ function buildScoreboardCard(m, mi, evId, parts, isMember) {
     </div>
     <div style="display:flex;gap:5px;margin-top:8px">
       <button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button>
-      <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#34d399" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${hasOpp?'상대 수정':'상대 입력'}</button>
+      <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#059669" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${hasOpp?'상대 수정':'상대 입력'}</button>
       ${isMember?`<button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(192,132,252,0.4);color:#c084fc" onclick="toggleEvMatchInput('${pairInpId}')">✏️ 페어 수정</button>`:''}
     </div>
     ${oppOnlySec}
@@ -3696,14 +3696,14 @@ window.openEvScoreboard=function(evId){
   let matchesHtml='';
   if(!evMatches.length){
     const noMatchAddBtn=isMember
-      ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:8px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
+      ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:8px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
       :'';
     matchesHtml=`<div style="color:#64748B;font-size:12px;padding:12px 0;text-align:center">아직 매치가 없어요.<br>이벤트 관리 화면에서 페어를 짜주세요.</div>${noMatchAddBtn}`;
   } else {
     const hasRoundInfo=evMatches.some(m=>m.round!==undefined);
     if(!hasRoundInfo){
       const quickAddBtn=isMember
-        ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
+        ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
         :'';
       matchesHtml=evMatches.map((m,mi)=>buildScoreboardCard(m,mi,evId,parts,isMember)).join('')+quickAddBtn;
     } else {
@@ -3721,18 +3721,18 @@ window.openEvScoreboard=function(evId){
         const waiting=parts.filter(p=>!entries.some(({m})=>(m.ourPair||[]).includes(p)));
         const waitHtml=waiting.length
           ?`<div style="padding:8px 12px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
-              <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(52,211,153,0.15);color:#34d399;white-space:nowrap">⏳ 대기</span>
-              <span style="font-size:12px;color:#34d399;font-weight:600">${waiting.join(', ')}</span>
+              <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(52,211,153,0.15);color:#059669;white-space:nowrap">⏳ 대기</span>
+              <span style="font-size:12px;color:#059669;font-weight:600">${waiting.join(', ')}</span>
             </div>`:'';
         const roundAddBtn=isMember
-          ?`<button onclick="openAddEvMatch('${evId}',${rNum})" style="width:100%;padding:6px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
+          ?`<button onclick="openAddEvMatch('${evId}',${rNum})" style="width:100%;padding:6px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
           :'';
         return `<div style="margin-bottom:16px">
           <div style="font-size:17px;color:#c084fc;font-weight:800;margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid rgba(192,132,252,0.35)">${rNum}라운드</div>
           ${cardsHtml}${waitHtml}${roundAddBtn}
         </div>`;
       }).join('');
-      if(isMember&&maxRoundSb>0) matchesHtml+=`<button onclick="openAddEvMatch('${evId}',${maxRoundSb+1})" style="width:100%;padding:7px;margin-top:4px;background:rgba(52,211,153,0.1);border:1px dashed rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">➕ 새 라운드 매치 추가 (${maxRoundSb+1}라운드)</button>`;
+      if(isMember&&maxRoundSb>0) matchesHtml+=`<button onclick="openAddEvMatch('${evId}',${maxRoundSb+1})" style="width:100%;padding:7px;margin-top:4px;background:rgba(52,211,153,0.1);border:1px dashed rgba(52,211,153,0.4);border-radius:8px;color:#059669;font-size:11px;font-weight:700;cursor:pointer">➕ 새 라운드 매치 추가 (${maxRoundSb+1}라운드)</button>`;
     }
   }
 
@@ -3752,10 +3752,10 @@ window.openEvScoreboard=function(evId){
   const gameCntSorted=[...parts].sort((a,b)=>gameCntMap[a]-gameCntMap[b]);
   const gameCntRows=gameCntSorted.map(p=>{
     const types=['혼복','남복','여복'].filter(t=>gameTypeCnt[p][t]>0).map(t=>`<span style="color:${t==='혼복'?'#a78bfa':t==='남복'?'#60a5fa':'#f472b6'}">${GTS[t]}${gameTypeCnt[p][t]}</span>`).join('<span style="color:rgba(150,150,200,0.4)">·</span>');
-    return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${p}</span><span style="color:#a78bfa;font-size:11px"> ${gameCntMap[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
+    return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${p}</span><span style="color:#6D28D9;font-size:11px"> ${gameCntMap[p]}경기</span>${types?`<span style="font-size:10px;color:#94A3B8">(${types})</span>`:''}</span>`;
   }).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
   const gameCntSec=evMatches.length&&parts.length?`<div style="margin-bottom:16px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px">
-    <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">🎯 참석자별 경기 수</div>
+    <div style="font-size:11px;font-weight:700;color:#6D28D9;margin-bottom:6px">🎯 참석자별 경기 수</div>
     <div style="font-size:12px;line-height:2;display:flex;flex-wrap:wrap;gap:2px 0">${gameCntRows}</div>
   </div>`:'';
 
@@ -3772,8 +3772,8 @@ window.openEvScoreboard=function(evId){
     if(!played)return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="flex:1;font-size:13px;font-weight:700">${p}</span><span style="font-size:11px;color:#64748B">미경기</span></div>`;
     return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #EEF7F6">
       <span style="flex:1;font-size:13px;font-weight:700">${p}</span>
-      <span style="font-size:12px;font-weight:700;color:#34d399">${w}승</span>
-      ${d?`<span style="font-size:12px;font-weight:700;color:#fbbf24">${d}무</span>`:''}
+      <span style="font-size:12px;font-weight:700;color:#059669">${w}승</span>
+      ${d?`<span style="font-size:12px;font-weight:700;color:#D97706">${d}무</span>`:''}
       <span style="font-size:12px;font-weight:700;color:#f87171">${l}패</span>
     </div>`;
   }).join('');
@@ -3841,11 +3841,11 @@ function buildEvPartCheckRows(evId, filter, currentParts) {
   };
   let html = '';
   if (memberList.length) {
-    html += `<div style="font-size:10px;color:#a78bfa;font-weight:700;padding:6px 0 2px;letter-spacing:0.5px">🏅 정회원</div>`;
+    html += `<div style="font-size:10px;color:#6D28D9;font-weight:700;padding:6px 0 2px;letter-spacing:0.5px">🏅 정회원</div>`;
     html += memberList.map(renderRow).join('');
   }
   if (guestList.length) {
-    html += `<div style="font-size:10px;color:#34d399;font-weight:700;padding:6px 0 2px${memberList.length?';margin-top:4px;border-top:1px solid #E8F4F3':''}">👤 게스트</div>`;
+    html += `<div style="font-size:10px;color:#059669;font-weight:700;padding:6px 0 2px${memberList.length?';margin-top:4px;border-top:1px solid #E8F4F3':''}">👤 게스트</div>`;
     html += guestList.map(renderRow).join('');
   }
   return html;
@@ -4020,7 +4020,7 @@ function renderEvExchangePairResult(evId){
     const done=ex.ourScore!==null&&ex.ourScore!==undefined&&ex.ourScore!==''&&ex.oppScore!==null&&ex.oppScore!==undefined&&ex.oppScore!=='';
     const won=done&&ex.ourScore>ex.oppScore, lost=done&&ex.ourScore<ex.oppScore;
     const scoreEl=done
-      ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${ex.ourScore} : ${ex.oppScore}</div>`
+      ?`<div class="m-score" style="${won?'color:#059669':lost?'color:#f87171':'color:#D97706'}">${ex.ourScore} : ${ex.oppScore}</div>`
       :`<div class="m-score pend">예정</div>`;
     const oppRaw=(ex.oppPair||[]).join(' / ')||'미입력';
     const oppLabel=ex.oppClub?`${oppRaw}<br><span style="font-size:9px;color:#2563EB">${ex.oppClub}</span>`:oppRaw;
@@ -4045,9 +4045,9 @@ function renderEvExchangePairResult(evId){
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:11px;color:#78909C">스코어</span>
           <input type="number" id="evGenS1_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.ourScore:''}">
-          <span style="color:#a78bfa">:</span>
+          <span style="color:#6D28D9">:</span>
           <input type="number" id="evGenS2_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.oppScore:''}">
-          <button onclick="saveEvMatchAndRefresh('${evId}',${i})" style="padding:5px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">저장</button>
+          <button onclick="saveEvMatchAndRefresh('${evId}',${i})" style="padding:5px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#059669;font-size:11px;font-weight:700;cursor:pointer">저장</button>
         </div>
       </div>
     </div>`;
@@ -4058,7 +4058,7 @@ function renderEvExchangePairResult(evId){
     ${cards}
     <div style="display:flex;gap:8px;margin-top:10px">
       <button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">← 상세보기</button>
-      <button onclick="showEvExchangePairConfig('${evId}')" style="flex:1;padding:9px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:9px;color:#a78bfa;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 짜기</button>
+      <button onclick="showEvExchangePairConfig('${evId}')" style="flex:1;padding:9px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:9px;color:#6D28D9;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 짜기</button>
     </div>`;
 }
 
@@ -4255,7 +4255,7 @@ function renderAdmin(){
           <button onclick="renameMember('${m.name}')" title="이름 변경"
             style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="demoteMember('${m.name}')" title="게스트로 전환"
-            style="background:none;border:none;color:#fbbf24;font-size:12px;cursor:pointer;padding:0 2px">⬇️</button>
+            style="background:none;border:none;color:#D97706;font-size:12px;cursor:pointer;padding:0 2px">⬇️</button>
           <button class="chip-x" onclick="delMember('${m.name}')">×</button>
         </span>`).join('')
     : '<span style="color:#64748B;font-size:12px">등록된 회원 없음</span>';
@@ -4270,7 +4270,7 @@ function renderAdmin(){
           <button onclick="renameGuest('${g.name}')" title="이름 변경"
             style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="promoteGuest('${g.name}')" title="정규회원으로 전환"
-            style="background:none;border:none;color:#34d399;font-size:12px;cursor:pointer;padding:0 2px">⬆️</button>
+            style="background:none;border:none;color:#059669;font-size:12px;cursor:pointer;padding:0 2px">⬆️</button>
           <button class="chip-x" onclick="delGuest('${g.name}')">×</button>
         </span>`).join('')
     : '<span style="color:#64748B;font-size:12px">등록된 게스트 없음</span>';
@@ -4330,9 +4330,9 @@ function renderAdmin(){
               <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
               <td style="text-align:center;padding:4px 6px;color:#64748B">S${s}</td>
               <td style="text-align:center;padding:4px 6px">${d.games}</td>
-              <td style="text-align:center;padding:4px 6px;color:#fbbf24">${sAtt}일</td>
-              <td style="text-align:center;padding:4px 6px;color:#34d399">${d.wins}</td>
-              <td style="text-align:center;padding:4px 6px;color:#fbbf24">${d.draws}</td>
+              <td style="text-align:center;padding:4px 6px;color:#D97706">${sAtt}일</td>
+              <td style="text-align:center;padding:4px 6px;color:#059669">${d.wins}</td>
+              <td style="text-align:center;padding:4px 6px;color:#D97706">${d.draws}</td>
               <td style="text-align:center;padding:4px 6px;color:#f87171">${d.losses}</td>
               <td style="text-align:center;padding:4px 6px">${d.wr}%</td>
               <td style="text-align:center;padding:4px 6px">${d.scored}</td>
@@ -4345,17 +4345,17 @@ function renderAdmin(){
           const safeN=r.name.replace(/'/g,"\\'");
           const totalRow = `<tr style="font-weight:800;background:rgba(52,211,153,0.08)">
             <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
-            <td style="text-align:center;padding:4px 6px;color:#34d399">총계</td>
+            <td style="text-align:center;padding:4px 6px;color:#059669">총계</td>
             <td style="text-align:center;padding:4px 6px">${t.games}</td>
-            <td style="text-align:center;padding:4px 6px;color:#fbbf24">${r.att.total}일</td>
-            <td style="text-align:center;padding:4px 6px;color:#34d399">${t.wins}</td>
-            <td style="text-align:center;padding:4px 6px;color:#fbbf24">${t.draws}</td>
+            <td style="text-align:center;padding:4px 6px;color:#D97706">${r.att.total}일</td>
+            <td style="text-align:center;padding:4px 6px;color:#059669">${t.wins}</td>
+            <td style="text-align:center;padding:4px 6px;color:#D97706">${t.draws}</td>
             <td style="text-align:center;padding:4px 6px;color:#f87171">${t.losses}</td>
             <td style="text-align:center;padding:4px 6px">${t.wr}%</td>
             <td style="text-align:center;padding:4px 6px">${t.scored}</td>
             <td style="text-align:center;padding:4px 6px">${t.conceded}</td>
             <td style="text-align:center;padding:4px 6px;font-weight:700">${t.diff>=0?'+':''}${t.diff}</td>
-            <td style="text-align:center;padding:4px 6px"><button onclick="promoteGuest('${safeN}')" style="padding:3px 8px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#34d399;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">⬆️ 정회원</button></td>
+            <td style="text-align:center;padding:4px 6px"><button onclick="promoteGuest('${safeN}')" style="padding:3px 8px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">⬆️ 정회원</button></td>
           </tr>`;
           return seasonRows + totalRow;
         }).join('');
@@ -4365,15 +4365,15 @@ function renderAdmin(){
           return `<tr>
           <td style="padding:5px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
           <td style="text-align:center;padding:5px 6px">${r.games}</td>
-          <td style="text-align:center;padding:5px 6px;color:#fbbf24">${r.attendance}일</td>
-          <td style="text-align:center;padding:5px 6px;color:#34d399">${r.wins}</td>
-          <td style="text-align:center;padding:5px 6px;color:#fbbf24">${r.draws}</td>
+          <td style="text-align:center;padding:5px 6px;color:#D97706">${r.attendance}일</td>
+          <td style="text-align:center;padding:5px 6px;color:#059669">${r.wins}</td>
+          <td style="text-align:center;padding:5px 6px;color:#D97706">${r.draws}</td>
           <td style="text-align:center;padding:5px 6px;color:#f87171">${r.losses}</td>
           <td style="text-align:center;padding:5px 6px">${r.wr}%</td>
           <td style="text-align:center;padding:5px 6px">${r.scored}</td>
           <td style="text-align:center;padding:5px 6px">${r.conceded}</td>
           <td style="text-align:center;padding:5px 6px;font-weight:700">${r.diff>=0?'+':''}${r.diff}</td>
-          <td style="text-align:center;padding:5px 6px"><button onclick="promoteGuest('${safeN}')" style="padding:3px 8px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#34d399;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">⬆️ 정회원</button></td>
+          <td style="text-align:center;padding:5px 6px"><button onclick="promoteGuest('${safeN}')" style="padding:3px 8px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">⬆️ 정회원</button></td>
         </tr>`;
         }).join('');
       }
@@ -4394,7 +4394,7 @@ function renderAdmin(){
       guestStatsEl.innerHTML = !rows.length
         ? toggleBar + '<div style="color:#64748B;font-size:12px;margin-top:10px">아직 완료된 게스트 경기가 없어요</div>'
         : `${toggleBar}
-        <div style="font-size:11px;color:#34d399;margin-bottom:6px">${titleLabel}</div>
+        <div style="font-size:11px;color:#059669;margin-bottom:6px">${titleLabel}</div>
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse;font-size:11.5px">
             <thead><tr>${headRow}</tr></thead>
@@ -4471,7 +4471,7 @@ function renderAdmin(){
         // 게스트 행
         const guestRows = guests.length ? `
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(52,211,153,0.2)">
-            <div style="font-size:11px;color:#34d399;margin-bottom:6px">👤 게스트 참석</div>
+            <div style="font-size:11px;color:#059669;margin-bottom:6px">👤 게스트 참석</div>
             ${guests.map(g => {
               const joined = dayGuests.includes(g.name);
               return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">
@@ -4493,7 +4493,7 @@ function renderAdmin(){
             <div style="display:flex;align-items:center;gap:8px">
               <span style="font-size:13px;font-weight:800;color:#f59e0b">📅 ${dateStr}${day.place?' · '+day.place:''}</span>
               <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;
-                background:rgba(5,150,105,0.2);color:#34d399;border:1px solid rgba(52,211,153,0.3)">
+                background:rgba(5,150,105,0.2);color:#059669;border:1px solid rgba(52,211,153,0.3)">
                 참석 ${attendingCount}명
               </span>
             </div>
@@ -4513,12 +4513,12 @@ function renderAdmin(){
   const doneM=days.reduce((a,d)=>(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).filter(m=>m.done).length,a),0);
   document.getElementById('leagueStat').innerHTML=`
     <div class="stat-row"><span style="color:#64748B">정규 회원</span><span style="font-weight:700">${members.length}명 (남${members.filter(m=>m.gender==='m').length}/여${members.filter(m=>m.gender==='f').length})</span></div>
-    <div class="stat-row"><span style="color:#34d399">게스트</span><span style="font-weight:700;color:#34d399">${guests.length}명</span></div>
+    <div class="stat-row"><span style="color:#059669">게스트</span><span style="font-weight:700;color:#059669">${guests.length}명</span></div>
     <div class="stat-row"><span style="color:#64748B">날짜 그룹</span><span style="font-weight:700">${days.length}일</span></div>
     <div class="stat-row"><span style="color:#64748B">총 라운드</span><span style="font-weight:700">${totalR}라운드</span></div>
-    <div class="stat-row"><span style="color:#64748B">완료 경기</span><span style="font-weight:700;color:#34d399">${doneM}경기</span></div>
-    <div class="stat-row"><span style="color:#64748B">예정 경기</span><span style="font-weight:700;color:#fbbf24">${totalM-doneM}경기</span></div>
-    <div class="stat-row"><span style="color:#64748B">이벤트</span><span style="font-weight:700;color:#a78bfa">${events.length}개</span></div>`;
+    <div class="stat-row"><span style="color:#64748B">완료 경기</span><span style="font-weight:700;color:#059669">${doneM}경기</span></div>
+    <div class="stat-row"><span style="color:#64748B">예정 경기</span><span style="font-weight:700;color:#D97706">${totalM-doneM}경기</span></div>
+    <div class="stat-row"><span style="color:#64748B">이벤트</span><span style="font-weight:700;color:#6D28D9">${events.length}개</span></div>`;
 }
 
 // 탭
@@ -4770,7 +4770,7 @@ function renderMeetupTypeStep() {
   const body = document.getElementById('meetupPairBody');
   let rows = '';
   for (let r = 1; r <= meetupConfig.rounds; r++) {
-    rows += `<div style="font-size:12px;color:#a78bfa;font-weight:700;margin:8px 0 4px">${r}라운드</div>`;
+    rows += `<div style="font-size:12px;color:#6D28D9;font-weight:700;margin:8px 0 4px">${r}라운드</div>`;
     for (let c = 1; c <= meetupConfig.courts; c++) {
       const key = `r${r}_c${c}`;
       const cur = meetupConfig.types[key] || '혼복';
@@ -4787,7 +4787,7 @@ function renderMeetupTypeStep() {
     <div style="display:flex;gap:8px;margin-top:8px">
       <button onclick="meetupBackToConfigStep()" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">← 뒤로</button>
       <button onclick="meetupGenerate()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">🎲 ${evExchangeMode?'자동 생성':'게임 생성'}</button>
-      ${evExchangeMode?`<button onclick="meetupGenerateManual()" style="flex:1;padding:9px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:9px;color:#34d399;font-size:12px;font-weight:800;cursor:pointer">✏️ 직접 배정</button>`:''}
+      ${evExchangeMode?`<button onclick="meetupGenerateManual()" style="flex:1;padding:9px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:9px;color:#059669;font-size:12px;font-weight:800;cursor:pointer">✏️ 직접 배정</button>`:''}
     </div>`;
 }
 
@@ -5097,8 +5097,8 @@ function renderMeetupResultStep() {
         // 대기 표시
         if (m.type === '대기') {
           return `<div style="padding:8px 12px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
-            <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(52,211,153,0.15);color:#34d399;white-space:nowrap">⏳ 대기</span>
-            <span style="font-size:12px;color:#34d399;font-weight:600">${m.team1.join(', ')}</span>
+            <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(52,211,153,0.15);color:#059669;white-space:nowrap">⏳ 대기</span>
+            <span style="font-size:12px;color:#059669;font-weight:600">${m.team1.join(', ')}</span>
           </div>`;
         }
         // 교류전: 코트당 1카드 (team1 = 우리팀 페어)
@@ -5123,7 +5123,7 @@ function renderMeetupResultStep() {
               <select id="evExPairSel2_${idx}" class="row-sel" style="flex:1;padding:6px;font-size:12px">
                 <option value="">선수2</option>${opts2}
               </select>
-              <button onclick="confirmEvExchangeEdit(${ri},${mci},0,${idx})" style="padding:7px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:13px;font-weight:700;cursor:pointer">✅</button>
+              <button onclick="confirmEvExchangeEdit(${ri},${mci},0,${idx})" style="padding:7px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#059669;font-size:13px;font-weight:700;cursor:pointer">✅</button>
             </div>
           </div>`;
         }
@@ -5137,7 +5137,7 @@ function renderMeetupResultStep() {
         const won = done && sc1 > sc2;
         const lost = done && sc1 < sc2;
         const scoreEl = done
-          ? `<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${sc1} : ${sc2}</div>`
+          ? `<div class="m-score" style="${won?'color:#059669':lost?'color:#f87171':'color:#D97706'}">${sc1} : ${sc2}</div>`
           : `<div class="m-score pend">예정</div>`;
         const preOpp1 = inp.opp1 !== undefined ? inp.opp1 : ((ex.oppPair||[])[0]||'');
         const preOpp2 = inp.opp2 !== undefined ? inp.opp2 : ((ex.oppPair||[])[1]||'');
@@ -5169,7 +5169,7 @@ function renderMeetupResultStep() {
           </div>
         </div>`;
       }).join('');
-      return `<div style="font-size:12px;color:#a78bfa;font-weight:700;margin:10px 0 6px">${rd.round}라운드</div>${matchCards}`;
+      return `<div style="font-size:12px;color:#6D28D9;font-weight:700;margin:10px 0 6px">${rd.round}라운드</div>${matchCards}`;
     }).join('');
     const _gcEx={},_gtEx={};
     evExchangeAttendees.forEach(a=>{_gcEx[a.name]=0;_gtEx[a.name]={혼복:0,남복:0,여복:0};});
@@ -5180,31 +5180,31 @@ function renderMeetupResultStep() {
     const _GTS={'혼복':'혼','남복':'남','여복':'여'};
     const _gcRowsEx=evExchangeAttendees.map(a=>a.name).sort((a,b)=>_gcEx[a]-_gcEx[b]).map(p=>{
       const types=['혼복','남복','여복'].filter(t=>_gtEx[p][t]>0).map(t=>`<span style="color:${t==='혼복'?'#a78bfa':t==='남복'?'#60a5fa':'#f472b6'}">${_GTS[t]}${_gtEx[p][t]}</span>`).join('<span style="color:rgba(150,150,200,0.4)">·</span>');
-      return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${p}</span><span style="color:#a78bfa;font-size:11px"> ${_gcEx[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
+      return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${p}</span><span style="color:#6D28D9;font-size:11px"> ${_gcEx[p]}경기</span>${types?`<span style="font-size:10px;color:#94A3B8">(${types})</span>`:''}</span>`;
     }).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
-    const _gcSecEx=`<div style="margin:10px 0 6px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px"><div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">🎯 참석자별 경기 수</div><div style="font-size:12px;line-height:2;display:flex;flex-wrap:wrap;gap:2px 0">${_gcRowsEx}</div></div>`;
-    body.innerHTML = `<div style="margin-bottom:10px;padding:8px 12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:9px;font-size:11px;font-weight:700;color:#fbbf24">⚠️ 아직 저장되지 않았습니다. 저장 버튼을 눌러야 대진표가 확정됩니다.</div>${html}${_gcSecEx}
+    const _gcSecEx=`<div style="margin:10px 0 6px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px"><div style="font-size:11px;font-weight:700;color:#6D28D9;margin-bottom:6px">🎯 참석자별 경기 수</div><div style="font-size:12px;line-height:2;display:flex;flex-wrap:wrap;gap:2px 0">${_gcRowsEx}</div></div>`;
+    body.innerHTML = `<div style="margin-bottom:10px;padding:8px 12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:9px;font-size:11px;font-weight:700;color:#D97706">⚠️ 아직 저장되지 않았습니다. 저장 버튼을 눌러야 대진표가 확정됩니다.</div>${html}${_gcSecEx}
       <div style="display:flex;gap:6px;margin-top:10px">
         <button onclick="meetupBackToTypeStep()" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 설정</button>
-        <button onclick="meetupGenerate()" style="flex:1;padding:9px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.4);border-radius:9px;color:#34d399;font-size:12px;font-weight:800;cursor:pointer">🎲 재생성</button>
+        <button onclick="meetupGenerate()" style="flex:1;padding:9px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.4);border-radius:9px;color:#059669;font-size:12px;font-weight:800;cursor:pointer">🎲 재생성</button>
         <button onclick="saveEvExchangeMeetup()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">✅ 저장</button>
       </div>`;
     return;
   }
 
   const html = meetupCurrentRounds.map(rd => `
-    <div style="font-size:12px;color:#a78bfa;font-weight:700;margin:10px 0 6px">${rd.round}라운드</div>
+    <div style="font-size:12px;color:#6D28D9;font-weight:700;margin:10px 0 6px">${rd.round}라운드</div>
     ${rd.matches.map((m, mi) => `
       <div style="background:#F5FAFA;border-radius:10px;padding:10px;margin-bottom:6px">
         <div style="font-size:10px;color:#78909C;margin-bottom:4px">${m.court}코트 · ${m.type}</div>
         <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1E293B">
           <span style="flex:1;text-align:right;font-weight:700">${m.team1.join(' · ')}</span>
           <input type="number" id="meetupS1_${rd.round}_${mi}" min="0" placeholder="0" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700">
-          <span style="color:#a78bfa">:</span>
+          <span style="color:#6D28D9">:</span>
           <input type="number" id="meetupS2_${rd.round}_${mi}" min="0" placeholder="0" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700">
           <span style="flex:1;font-weight:700">${m.team2.join(' · ')}</span>
         </div>
-        <div style="text-align:center;font-size:9px;color:#a78bfa;margin-top:4px">↑ 여기에 경기 후 스코어를 입력하세요</div>
+        <div style="text-align:center;font-size:9px;color:#6D28D9;margin-top:4px">↑ 여기에 경기 후 스코어를 입력하세요</div>
       </div>`).join('')}
   `).join('');
   const _gcR={},_gtR={};
@@ -5217,13 +5217,13 @@ function renderMeetupResultStep() {
   const _GTS2={'혼복':'혼','남복':'남','여복':'여'};
   const _gcRowsR=Object.keys(_gcR).sort((a,b)=>_gcR[a]-_gcR[b]).map(p=>{
     const types=['혼복','남복','여복'].filter(t=>_gtR[p][t]>0).map(t=>`<span style="color:${t==='혼복'?'#a78bfa':t==='남복'?'#60a5fa':'#f472b6'}">${_GTS2[t]}${_gtR[p][t]}</span>`).join('<span style="color:rgba(150,150,200,0.4)">·</span>');
-    return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${p}</span><span style="color:#a78bfa;font-size:11px"> ${_gcR[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
+    return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${p}</span><span style="color:#6D28D9;font-size:11px"> ${_gcR[p]}경기</span>${types?`<span style="font-size:10px;color:#94A3B8">(${types})</span>`:''}</span>`;
   }).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
-  const _gcSecR=`<div style="margin:10px 0 6px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px"><div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">🎯 참석자별 경기 수</div><div style="font-size:12px;line-height:2;display:flex;flex-wrap:wrap;gap:2px 0">${_gcRowsR}</div></div>`;
-  body.innerHTML = `<div style="margin-bottom:10px;padding:8px 12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:9px;font-size:11px;font-weight:700;color:#fbbf24">⚠️ 아직 저장되지 않았습니다. 저장 버튼을 눌러야 대진표가 확정됩니다.</div>${html}${_gcSecR}
+  const _gcSecR=`<div style="margin:10px 0 6px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px"><div style="font-size:11px;font-weight:700;color:#6D28D9;margin-bottom:6px">🎯 참석자별 경기 수</div><div style="font-size:12px;line-height:2;display:flex;flex-wrap:wrap;gap:2px 0">${_gcRowsR}</div></div>`;
+  body.innerHTML = `<div style="margin-bottom:10px;padding:8px 12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:9px;font-size:11px;font-weight:700;color:#D97706">⚠️ 아직 저장되지 않았습니다. 저장 버튼을 눌러야 대진표가 확정됩니다.</div>${html}${_gcSecR}
     <div style="display:flex;gap:6px;margin-top:10px">
       <button onclick="meetupBackToTypeStep()" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 설정</button>
-      <button onclick="meetupGenerate()" style="flex:1;padding:9px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.4);border-radius:9px;color:#34d399;font-size:12px;font-weight:800;cursor:pointer">🎲 재생성</button>
+      <button onclick="meetupGenerate()" style="flex:1;padding:9px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.4);border-radius:9px;color:#059669;font-size:12px;font-weight:800;cursor:pointer">🎲 재생성</button>
       <button onclick="saveMeetupPairs()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">✅ 저장</button>
     </div>`;
 }
@@ -5559,10 +5559,10 @@ function renderMiniCalendar(year, month, attendedSet, eventDaysMap) {
   var DOW = ['일','월','화','수','목','금','토'];
   var hdr = DOW.map(function(d, i) {
     var c = i === 0 ? 'rgba(248,113,113,0.6)' : i === 6 ? 'rgba(96,165,250,0.6)' : 'rgba(200,220,255,0.35)';
-    return '<div style="font-size:7.5px;color:' + c + ';text-align:center;font-weight:700;padding-bottom:2px">' + d + '</div>';
+    return '<div style="font-size:9.5px;color:' + c + ';text-align:center;font-weight:700;padding-bottom:3px">' + d + '</div>';
   }).join('');
   var cells = '';
-  for (var e = 0; e < firstDay; e++) cells += '<div style="height:22px"></div>';
+  for (var e = 0; e < firstDay; e++) cells += '<div style="height:24px"></div>';
   for (var d = 1; d <= daysInMonth; d++) {
     var att  = attendedSet.has(d);
     var isEv = !!eventDaysMap[d];
@@ -5586,14 +5586,14 @@ function renderMiniCalendar(year, month, attendedSet, eventDaysMap) {
       col = 'rgba(200,220,255,0.38)'; bg = 'transparent'; fw = '400'; ring = '';
     }
     var titleAttr = isEv ? ' title="🎉 ' + eventDaysMap[d].join(', ') + '"' : '';
-    cells += '<div style="font-size:9px;text-align:center;line-height:1;margin-bottom:1px">'
-      + '<div' + titleAttr + ' style="width:17px;height:17px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin:0 auto;background:' + bg + ';color:' + col + ';font-weight:' + fw + ';' + ring + '">' + d + '</div>'
+    cells += '<div style="font-size:11px;text-align:center;line-height:1;margin-bottom:2px">'
+      + '<div' + titleAttr + ' style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin:0 auto;background:' + bg + ';color:' + col + ';font-weight:' + fw + ';' + ring + '">' + d + '</div>'
       + '</div>';
   }
   var ml = year + '.' + String(month + 1).padStart(2, '0');
   return '<div style="flex-shrink:0;text-align:center">'
-    + '<div style="font-size:8px;color:rgba(200,220,255,0.45);margin-bottom:4px;letter-spacing:0.4px">' + ml + '</div>'
-    + '<div style="display:grid;grid-template-columns:repeat(7,17px);gap:1px 0">'
+    + '<div style="font-size:10px;color:rgba(200,220,255,0.5);margin-bottom:5px;letter-spacing:0.4px">' + ml + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(7,22px);gap:2px 0">'
     + hdr + cells
     + '</div></div>';
 }
@@ -5655,7 +5655,7 @@ function renderHomeTab() {
       ? `<div style="text-align:center">
            <div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:4px">
              <div style="font-size:22px;font-weight:900;color:#f59e0b">${me.pts}점</div>
-             ${myRank>0?`<div style="font-size:11px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">${myRank}위</div>`:''}
+             ${myRank>0?`<div style="font-size:11px;font-weight:800;color:#059669;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">${myRank}위</div>`:''}
            </div>
            <div style="font-size:14px;color:#2563EB;margin-bottom:3px">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
            <div style="font-size:13px;color:#78909C">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
@@ -5697,29 +5697,29 @@ function renderHomeTab() {
     const attendBadge = myAtt === false
       ? `<span style="font-size:12px;font-weight:700;color:#f87171;background:rgba(248,113,113,0.15);padding:2px 8px;border-radius:10px">❌ 불참</span>`
       : isLoggedIn
-      ? `<span style="font-size:12px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">✅ 참석</span>`
+      ? `<span style="font-size:12px;font-weight:700;color:#059669;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">✅ 참석</span>`
       : '';
     // 라운드/경기 요약
     const rds = d.rounds || [];
     const totalM = rds.reduce((a,r)=>a+(r.matches||[]).length, 0);
     const doneM = rds.reduce((a,r)=>a+(r.matches||[]).filter(m=>m.done).length, 0);
     const pairsSummary = rds.length
-      ? `<span style="font-size:12px;color:#a78bfa;background:rgba(124,58,237,0.15);padding:2px 7px;border-radius:8px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
+      ? `<span style="font-size:12px;color:#6D28D9;background:rgba(124,58,237,0.15);padding:2px 7px;border-radius:8px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
       : '';
     return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:linear-gradient(135deg,rgba(124,58,237,0.22) 0%,rgba(37,99,235,0.22) 100%);border:1.5px solid rgba(124,58,237,0.5);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:13px;font-weight:800;color:#a78bfa;background:rgba(124,58,237,0.2);padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
+        <span style="font-size:13px;font-weight:800;color:#6D28D9;background:rgba(124,58,237,0.2);padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
         ${attendBadge}
       </div>
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-        <span style="font-size:16px;font-weight:900;color:#fbbf24">${dl}</span>
-        <span style="font-size:13px;color:#34d399">✅ ${totalAttend}명 참석</span>
+        <span style="font-size:16px;font-weight:900;color:#D97706">${dl}</span>
+        <span style="font-size:13px;color:#059669">✅ ${totalAttend}명 참석</span>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
         ${d.place?`<span style="font-size:13px;color:#2563EB">📍 ${d.place}</span>`:''}
         ${pairsSummary}
       </div>
-      <div><span id="wxBadgeGame" style="font-size:17px;color:#e2e8f0;font-weight:700"></span></div>
+      <div><span id="wxBadgeGame" style="font-size:17px;color:#64748B;font-weight:700"></span></div>
     </div>`;
   })() : '';
 
@@ -5735,20 +5735,59 @@ function renderHomeTab() {
     const evLabel=EV_TYPE_EMOJI[e.type]?(EV_TYPE_EMOJI[e.type]+' '+(EV_TYPE_LABEL[e.type]||e.type)):'🎉 이벤트전';
     return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:linear-gradient(135deg,rgba(16,80,50,0.32) 0%,rgba(5,46,22,0.22) 100%);border:1.5px solid rgba(52,211,153,0.45);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:13px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:3px 10px;border-radius:10px">🎉 다가오는 이벤트전</span>
-        <span style="font-size:12px;color:#a78bfa">${evLabel}</span>
+        <span style="font-size:13px;font-weight:800;color:#059669;background:rgba(52,211,153,0.15);padding:3px 10px;border-radius:10px">🎉 다가오는 이벤트전</span>
+        <span style="font-size:12px;color:#6D28D9">${evLabel}</span>
       </div>
-      <div style="font-size:16px;font-weight:900;color:#fbbf24;margin-bottom:4px">${dl}</div>
+      <div style="font-size:16px;font-weight:900;color:#D97706;margin-bottom:4px">${dl}</div>
       <div style="font-size:15px;font-weight:700;color:#1E293B;margin-bottom:4px">
         ${e.name}${e.oppClub?` <span style="font-size:13px;font-weight:600;color:#2563EB;background:rgba(96,165,250,0.12);padding:2px 7px;border-radius:8px">${e.oppClub}</span>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
         ${e.place?`<span style="font-size:13px;color:#2563EB">📍 ${e.place}</span>`:''}
-        ${partCount?`<span style="font-size:13px;color:#34d399">👥 ${partCount}명 참가예정</span>`:''}
+        ${partCount?`<span style="font-size:13px;color:#059669">👥 ${partCount}명 참가예정</span>`:''}
       </div>
-      <div><span id="wxBadgeEv" style="font-size:17px;color:#e2e8f0;font-weight:700"></span></div>
+      <div><span id="wxBadgeEv" style="font-size:17px;color:#64748B;font-weight:700"></span></div>
     </div>`;
   })():'';
+
+  // ── 웰컴 배너 하단 일정 요약 (배너는 진한 배경 — 흰색/밝은 텍스트) ──
+  let bannerSummaryHtml = '';
+  {
+    const bParts = [];
+    if (nextGameDay) {
+      const _d = nextGameDay;
+      const _dd = new Date(_d.date+'T00:00:00');
+      const _dl = `${_dd.getMonth()+1}/${_dd.getDate()}(${weekdays[_dd.getDay()]})`;
+      const _att = _d.attendance || {};
+      const _aM = members.filter(m => _att[m.name] !== false).length;
+      const _aG = guests.filter(g => (_d.guests||[]).includes(g.name)).length;
+      const _tot = _aM + _aG;
+      bParts.push(`<div style="display:flex;align-items:center;gap:6px;font-size:12.5px;min-width:0">
+        <span>🎾</span>
+        <span style="color:#fde68a;font-weight:800;flex-shrink:0">${_dl}</span>
+        <span style="color:rgba(255,255,255,0.9)">${_tot}명 참석</span>
+        ${_d.place?`<span style="color:rgba(200,230,255,0.7);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📍 ${_d.place}</span>`:''}
+      </div>`);
+    }
+    if (nextExchangeEv) {
+      const _e = nextExchangeEv;
+      const _dd = new Date(_e.date+'T00:00:00');
+      const _dl = `${_dd.getMonth()+1}/${_dd.getDate()}(${weekdays[_dd.getDay()]})`;
+      const _nm = _e.name + (_e.oppClub ? ` vs ${_e.oppClub}` : '');
+      bParts.push(`<div style="display:flex;align-items:center;gap:6px;font-size:12.5px;min-width:0">
+        <span>🎉</span>
+        <span style="color:#a5f3fc;font-weight:800;flex-shrink:0">${_dl}</span>
+        <span style="color:rgba(255,255,255,0.9);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_nm}</span>
+      </div>`);
+    }
+    if (bParts.length) {
+      bannerSummaryHtml = `
+        <div style="border-top:1px solid rgba(255,255,255,0.18);margin-top:12px;padding-top:10px;display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.5px;margin-bottom:1px">다가오는 일정</div>
+          ${bParts.join('')}
+        </div>`;
+    }
+  }
 
   // ── "다가오는 일정": schedules 컬렉션 (캘린더 일정) ─────────────────
   const futureScheds = schedules
@@ -5764,12 +5803,12 @@ function renderHomeTab() {
         const yes=Object.values(s.attend||{}).filter(v=>v==='참석').length;
         return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;padding:10px 0;border-bottom:1px solid rgba(50,110,200,0.1)">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
-            <span style="font-size:14px;font-weight:800;color:#fbbf24">${dl}${s.time?' '+s.time:''}</span>
-            <span style="font-size:12px;color:#34d399">✅ ${yes}명</span>
+            <span style="font-size:14px;font-weight:800;color:#D97706">${dl}${s.time?' '+s.time:''}</span>
+            <span style="font-size:12px;color:#059669">✅ ${yes}명</span>
             ${s.place?`<span style="font-size:12px;color:#64748B">📍 ${s.place}</span>`:''}
           </div>
           <div style="font-size:13px;color:#78909C;line-height:1.4;margin-bottom:4px">${(s.content||'').slice(0,45)}</div>
-          <div><span id="wxBadgeSched_${i}" style="font-size:15px;color:#e2e8f0;font-weight:700"></span></div>
+          <div><span id="wxBadgeSched_${i}" style="font-size:15px;color:#64748B;font-weight:700"></span></div>
         </div>`;
       }).join('')
     : `<div style="font-size:14px;color:#64748B;padding:4px 0">예정된 일정이 없어요</div>`;
@@ -5799,9 +5838,9 @@ function renderHomeTab() {
       + '<span style="font-size:28px">' + cat.icon + '</span>'
       + '<div style="text-align:left">'
       + '<div style="font-size:15px;font-weight:900;color:#1E293B">' + cat.label + '</div>'
-      + '<div style="font-size:12px;color:rgba(200,220,255,0.55);margin-top:1px">' + cat.items.length + '개 바로가기</div>'
+      + '<div style="font-size:12px;color:#64748B;margin-top:1px">' + cat.items.length + '개 바로가기</div>'
       + '</div></div>'
-      + '<span class="sc-arrow" data-cat="' + cat.id + '" style="font-size:20px;color:rgba(200,220,255,0.5);display:inline-block;transition:transform 0.3s;' + (isOpen ? 'transform:rotate(90deg)' : '') + '">›</span>'
+      + '<span class="sc-arrow" data-cat="' + cat.id + '" style="font-size:20px;color:#64748B;display:inline-block;transition:transform 0.3s;' + (isOpen ? 'transform:rotate(90deg)' : '') + '">›</span>'
       + '</button>'
       + '<div id="sc-body-' + cat.id + '" class="sc-body' + (isOpen ? ' sc-open' : '') + '">'
       + '<div style="padding:0 14px 14px;display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:8px">'
@@ -5828,6 +5867,7 @@ function renderHomeTab() {
           <!-- 우측: 미니 캘린더 -->
           ${miniCalHtml}
         </div>
+        ${bannerSummaryHtml}
       </div>
 
       <!-- 요약 통계 4칸 -->
@@ -5837,11 +5877,11 @@ function renderHomeTab() {
           <div style="font-size:11px;color:#64748B;margin-top:2px">정규회원</div>
         </div>
         <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
-          <div style="font-size:18px;font-weight:900;color:#a78bfa">${guests.length}</div>
+          <div style="font-size:18px;font-weight:900;color:#6D28D9">${guests.length}</div>
           <div style="font-size:11px;color:#64748B;margin-top:2px">게스트</div>
         </div>
         <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
-          <div style="font-size:18px;font-weight:900;color:#34d399">${monthMatchCount}</div>
+          <div style="font-size:18px;font-weight:900;color:#059669">${monthMatchCount}</div>
           <div style="font-size:11px;color:#64748B;margin-top:2px">이달 경기</div>
         </div>
         <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
@@ -6000,7 +6040,7 @@ function renderTodayBanner() {
           <span style="font-size:13px;color:#fff">📍 ${target.place || '장소 미정'}</span>
           <span style="font-size:11px;color:rgba(150,210,255,0.85)">✅ 참석 ${yes}명</span>
         </div>
-        <div style="font-size:12px;color:rgba(3,12,45,0.82);margin-top:5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc}</div>
+        <div style="font-size:12px;color:rgba(200,225,255,0.8);margin-top:5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc}</div>
       </div>
       <div style="display:flex;gap:7px;margin-top:10px">
         <button onclick="openSchedule()" style="flex:1;background:rgba(96,165,250,0.18);color:#1D6FB8;border:1px solid rgba(96,165,250,0.4);border-radius:9px;padding:7px 0;font-size:12px;font-weight:700;cursor:pointer">자세히 / 참석체크</button>
@@ -6107,7 +6147,7 @@ function renderCalendar(){
 
   const filterChip = calSelectedDate
     ? `<div style="margin-top:10px;display:flex;align-items:center;gap:6px">
-         <span style="font-size:11px;color:#fbbf24;font-weight:700">📅 ${calSelectedDate} 일정만 보는 중</span>
+         <span style="font-size:11px;color:#D97706;font-weight:700">📅 ${calSelectedDate} 일정만 보는 중</span>
          <button onclick="clearCalFilter()" style="font-size:11px;color:#64748B;background:none;border:none;cursor:pointer;text-decoration:underline">전체보기</button>
        </div>` : '';
 
@@ -6174,13 +6214,13 @@ function renderSchedules() {
             + '</div>';
         }).join('');
         return '<div style="margin-bottom:8px">'
-          + '<div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:5px;padding-bottom:3px;border-bottom:1px solid rgba(167,139,250,0.2)">' + rd.round + '라운드</div>'
+          + '<div style="font-size:11px;color:#6D28D9;font-weight:700;margin-bottom:5px;padding-bottom:3px;border-bottom:1px solid rgba(167,139,250,0.2)">' + rd.round + '라운드</div>'
           + rdHtml + '</div>';
       }).join('') + '</div>';
     })() : '';
     const meetupSection = s.isGameMeetup ? `
       <div style="background:rgba(167,139,250,0.1);border:1px solid rgba(167,139,250,0.3);border-radius:10px;padding:10px;margin-bottom:10px">
-        <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:6px">🎾 게임모임</div>
+        <div style="font-size:11px;color:#6D28D9;font-weight:700;margin-bottom:6px">🎾 게임모임</div>
         ${canSetPairs
           ? `<button onclick="openMeetupPairModal('${s.id}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">🎲 페어 짜기</button>`
           : `<div style="font-size:11px;color:#78909C">정회원만 페어를 짤 수 있어요</div>`}
@@ -6215,18 +6255,18 @@ function renderSchedules() {
 
       <!-- 참석 여부 -->
       <div style="background:#FAFEFF;border-radius:10px;padding:12px;margin-bottom:10px">
-        <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:8px">🙋 참석 여부 체크</div>
+        <div style="font-size:11px;color:#6D28D9;font-weight:700;margin-bottom:8px">🙋 참석 여부 체크</div>
         <select id="att_who_${s.id}" class="row-sel" style="width:100%;font-size:12px;padding:7px;margin-bottom:8px" onchange="document.getElementById('att_who_custom_${s.id}').style.display=(this.value==='__custom__')?'block':'none'">${opts}</select>
-        <input type="text" id="att_who_custom_${s.id}" placeholder="이름을 입력하세요" style="display:none;width:100%;font-size:12px;padding:7px;margin-bottom:8px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:8px;color:#fff;box-sizing:border-box">
+        <input type="text" id="att_who_custom_${s.id}" placeholder="이름을 입력하세요" style="display:none;width:100%;font-size:12px;padding:7px;margin-bottom:8px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:8px;color:#1E293B;box-sizing:border-box">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-          <button onclick="setAttend('${s.id}','참석')" style="padding:8px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">⭕ 참석</button>
+          <button onclick="setAttend('${s.id}','참석')" style="padding:8px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#059669;font-size:12px;font-weight:700;cursor:pointer">⭕ 참석</button>
           <button onclick="setAttend('${s.id}','불참')" style="padding:8px;background:rgba(248,113,113,0.2);border:1px solid rgba(248,113,113,0.4);border-radius:8px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer">❌ 불참</button>
-          <button onclick="setAttend('${s.id}','미정')" style="padding:8px;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.4);border-radius:8px;color:#fbbf24;font-size:12px;font-weight:700;cursor:pointer">❔ 미정</button>
+          <button onclick="setAttend('${s.id}','미정')" style="padding:8px;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.4);border-radius:8px;color:#D97706;font-size:12px;font-weight:700;cursor:pointer">❔ 미정</button>
         </div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:11px">
-          <div><span style="color:#34d399;font-weight:700">⭕ 참석 ${yes.length}</span> <span style="color:#1E293B">${yes.join(', ')}</span></div>
+          <div><span style="color:#059669;font-weight:700">⭕ 참석 ${yes.length}</span> <span style="color:#1E293B">${yes.join(', ')}</span></div>
           <div><span style="color:#f87171;font-weight:700">❌ 불참 ${no.length}</span> <span style="color:#8aa">${no.join(', ')}</span></div>
-          <div><span style="color:#fbbf24;font-weight:700">❔ 미정 ${maybe.length}</span> <span style="color:#8aa">${maybe.join(', ')}</span></div>
+          <div><span style="color:#D97706;font-weight:700">❔ 미정 ${maybe.length}</span> <span style="color:#8aa">${maybe.join(', ')}</span></div>
         </div>
       </div>
 
@@ -6236,7 +6276,7 @@ function renderSchedules() {
         ${comments.map((c,i)=>`
           <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(50,110,200,0.15)">
             <div style="flex:1">
-              <span style="font-size:12px;font-weight:700;color:#a78bfa">${c.name}</span>
+              <span style="font-size:12px;font-weight:700;color:#6D28D9">${c.name}</span>
               <span style="font-size:12px;color:#1E293B;margin-left:6px">${c.text}</span>
             </div>
             ${isAdmin?`<button onclick="delComment('${s.id}',${i})" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;flex-shrink:0">×</button>`:''}
@@ -6285,7 +6325,7 @@ window.getFortune = function() {
   if(!birth){ alert('생년월일을 입력해주세요'); return; }
 
   const el = document.getElementById('fortuneResult');
-  el.innerHTML = `<div style="text-align:center;padding:20px;color:#a78bfa">
+  el.innerHTML = `<div style="text-align:center;padding:20px;color:#6D28D9">
     <div style="font-size:28px;margin-bottom:8px">🔮</div>
     <div style="font-size:13px">사주를 분석하는 중...</div>
   </div>`;
@@ -6435,7 +6475,7 @@ window.getFortune = function() {
       <div style="display:flex;flex-direction:column;gap:10px">
         <!-- 사주 분석 -->
         <div style="background:rgba(124,58,237,0.15);border-radius:10px;padding:12px;border-left:3px solid #a78bfa">
-          <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:6px">
+          <div style="font-size:11px;color:#6D28D9;font-weight:700;margin-bottom:6px">
             ✨ 일간 ${일간}(${오행한자[일간오행]}) · 오늘 ${오늘간}${오늘지}(${오행한자[오늘오행]})
           </div>
           <div style="font-size:12px;color:#c4b5fd;line-height:1.6">
@@ -6446,7 +6486,7 @@ window.getFortune = function() {
 
         <!-- 게임운 -->
         <div style="background:#F5FAFA;border-radius:10px;padding:12px">
-          <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:6px">🎾 게임운</div>
+          <div style="font-size:11px;color:#6D28D9;font-weight:700;margin-bottom:6px">🎾 게임운</div>
           <div style="font-size:13px;color:#1E293B;line-height:1.6">${pick(관계별게임운[관계])}</div>
         </div>
 
@@ -6458,7 +6498,7 @@ window.getFortune = function() {
 
         <!-- 조언 -->
         <div style="background:#F5FAFA;border-radius:10px;padding:12px">
-          <div style="font-size:11px;color:#34d399;font-weight:700;margin-bottom:6px">💡 오행 기반 조언</div>
+          <div style="font-size:11px;color:#059669;font-weight:700;margin-bottom:6px">💡 오행 기반 조언</div>
           <div style="font-size:13px;color:#1E293B;line-height:1.6">${pick(조언풀[일간오행])}</div>
         </div>
 
@@ -7214,7 +7254,7 @@ function renderMyRecordCard(){
     <div style="text-align:center;margin-bottom:10px">
       <div style="display:flex;align-items:center;justify-content:center;gap:6px">
         <div style="font-size:20px;font-weight:900;color:#f59e0b">${me.pts}점</div>
-        ${myRank>0?`<div style="font-size:11px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">${myRank}위</div>`:''}
+        ${myRank>0?`<div style="font-size:11px;font-weight:800;color:#059669;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">${myRank}위</div>`:''}
       </div>
       <div style="font-size:12px;color:#64748B">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
       <div style="font-size:11px;color:#78909C;margin-top:2px">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
