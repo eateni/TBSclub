@@ -8,7 +8,7 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  color: #e8edf2; min-height: 100vh;
+  color: #1E293B; min-height: 100vh;
   background:
     repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 60px),
     repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 60px),
@@ -37,28 +37,28 @@ body::before {
 .header-right { display:flex; align-items:center; gap:7px; flex-shrink:0; padding-top:2px; }
 .u-badge { font-size:11px; padding:4px 10px; border-radius:20px; font-weight:700; }
 .badge-admin { background:rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3); }
-.badge-guest { background:rgba(20,50,100,0.5); color:#4a8ab5; border:1px solid rgba(30,80,150,0.25); font-size:10px; }
+.badge-guest { background:rgba(20,50,100,0.5); color:#64748B; border:1px solid rgba(30,80,150,0.25); font-size:10px; }
 .badge-member { background:rgba(52,211,153,0.12); color:#34d399; border:1px solid rgba(52,211,153,0.3); font-size:10px; }
 .btn-admin-toggle { background:#1e40af; border:none; color:#fff; font-size:12px; font-weight:700; padding:6px 12px; cursor:pointer; border-radius:8px; display:flex; align-items:center; gap:4px; }
 .btn-logout { background:transparent; border:1px solid rgba(248,113,113,0.3); border-radius:8px; color:#f87171; font-size:11px; padding:5px 10px; cursor:pointer; }
 .main-tabs { display:none !important; }
 .tab-btn { flex:1; padding:10px 0; border-radius:8px; border:none; cursor:pointer; font-weight:700; font-size:13px; transition:all 0.2s; }
 .tab-btn.active { background:rgba(37,99,235,0.88); color:#fff; box-shadow:0 2px 8px rgba(37,99,235,0.35); }
-.tab-btn:not(.active) { background:transparent; color:rgba(130,180,230,0.6); }
+.tab-btn:not(.active) { background:transparent; color:rgba(30,60,90,0.5); }
 
 .content { padding:16px 16px 100px; max-width:640px; margin:0 auto; padding-bottom:84px; }
 
 .bottom-nav {
   position:fixed; left:0; right:0; bottom:0; z-index:500;
   display:flex; justify-content:space-around; align-items:center;
-  background:rgba(3,12,45,0.97);
-  border-top:1px solid rgba(35,90,180,0.35);
+  background:rgba(255,255,255,0.97);
+  border-top:1px solid rgba(0,0,0,0.1);
   padding:6px 0 calc(6px + env(safe-area-inset-bottom));
   backdrop-filter:blur(8px);
 }
 .bn-btn {
   background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:2px;
-  color:#4a8ab5; font-size:10px; font-weight:700; cursor:pointer; flex:1; padding:4px 0;
+  color:#64748B; font-size:10px; font-weight:700; cursor:pointer; flex:1; padding:4px 0;
 }
 .bn-btn .bn-icon { font-size:20px; line-height:1; }
 .bn-btn.active { color:#f59e0b; }
@@ -68,20 +68,20 @@ body::before {
   display:flex; align-items:flex-end;
 }
 .more-menu-sheet {
-  width:100%; background:#0a1a4a; border-radius:18px 18px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+  width:100%; background:#FFFFFF; border-radius:18px 18px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom));
   border-top:1px solid rgba(245,158,11,0.3);
 }
-.more-menu-title { font-size:13px; font-weight:800; color:#4a8ab5; margin-bottom:10px; }
+.more-menu-title { font-size:13px; font-weight:800; color:#64748B; margin-bottom:10px; }
 .more-menu-item {
   display:block; width:100%; text-align:left; padding:14px 10px; background:none; border:none;
-  border-bottom:1px solid rgba(35,90,180,0.2); color:#e8edf2; font-size:15px; font-weight:700; cursor:pointer;
+  border-bottom:1px solid #E8F4F3; color:#1E293B; font-size:15px; font-weight:700; cursor:pointer;
 }
 .more-menu-item:last-child { border-bottom:none; }
 
-.subtabs { display:flex; gap:4px; background:#0a1a4a; border-radius:10px; padding:4px; margin-bottom:18px; }
+.subtabs { display:flex; gap:4px; background:#FFFFFF; border-radius:10px; padding:4px; margin-bottom:18px; }
 .stab { flex:1; padding:8px 0; border-radius:7px; border:none; cursor:pointer; font-weight:600; font-size:12px; transition:all 0.2s; }
-.stab.active { background:#1e3a5f; color:#60a5fa; }
-.stab:not(.active) { background:transparent; color:#4a8ab5; }
+.stab.active { background:#0D9488; color:#fff; }
+.stab:not(.active) { background:transparent; color:#64748B; }
 
 .sec-header { font-size:18px; font-weight:800; text-align:center; margin-bottom:14px; }
 .rank-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:22px; }
@@ -89,20 +89,20 @@ body::before {
 .rc1{background:linear-gradient(135deg,#f59e0b,#d97706);}
 .rc2{background:linear-gradient(135deg,#94a3b8,#4a8ab5);}
 .rc3{background:linear-gradient(135deg,#b45309,#92400e);}
-.rcN{background:#0a1a4a;border:1px solid #1e3a5f;}
+.rcN{background:#FFFFFF;border:1px solid #C8E0DE;}
 
 .round-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
-.round-card { background:#0a1a4a; border-radius:12px; overflow:hidden; border:1px solid #1e3a5f; box-shadow:0 2px 12px rgba(0,0,0,0.4); }
-.round-hdr { width:100%; padding:14px 16px; background:transparent; border:none; color:#e8edf2; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; font-size:14px; }
+.round-card { background:#FFFFFF; border-radius:12px; overflow:hidden; border:1px solid #C8E0DE; box-shadow:0 2px 12px rgba(0,0,0,0.4); }
+.round-hdr { width:100%; padding:14px 16px; background:transparent; border:none; color:#1E293B; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; font-size:14px; }
 .round-body { padding:0 12px 12px; display:flex; flex-direction:column; gap:8px; }
-.match-card { background:#0f1923; border-radius:10px; padding:12px; border:1px solid #1e3a5f; box-shadow:0 1px 8px rgba(0,0,0,0.35); }
-.match-ct { font-size:10px; color:#4a8ab5; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
+.match-card { background:#F8FFFE; border-radius:10px; padding:12px; border:1px solid #C8E0DE; box-shadow:0 1px 8px rgba(0,0,0,0.35); }
+.match-ct { font-size:10px; color:#64748B; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
 .match-row { display:flex; align-items:center; justify-content:space-between; }
-.m-team { flex:1; text-align:center; font-weight:700; font-size:13px; color:#e8edf2; line-height:1.4; }
-.m-team.win { color:#60a5fa; }
-.m-score { padding:4px 10px; background:#1e3a5f; border-radius:8px; margin:0 6px; min-width:58px; text-align:center; font-weight:900; font-size:15px; color:#f59e0b; white-space:nowrap; }
-.m-score.pend { font-size:11px; color:#4a8ab5; font-weight:400; }
-.btn-input { margin-top:8px; width:100%; padding:8px; background:#1e3a5f; border:1px dashed #60a5fa; border-radius:8px; color:#60a5fa; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
+.m-team { flex:1; text-align:center; font-weight:700; font-size:13px; color:#1E293B; line-height:1.4; }
+.m-team.win { color:#2563EB; }
+.m-score { padding:4px 10px; background:#E0F2F1; border-radius:8px; margin:0 6px; min-width:58px; text-align:center; font-weight:900; font-size:15px; color:#B45309; white-space:nowrap; }
+.m-score.pend { font-size:11px; color:#64748B; font-weight:400; }
+.btn-input { margin-top:8px; width:100%; padding:8px; background:#E8F4F3; border:1px dashed #0D9488; border-radius:8px; color:#0D9488; font-size:12px; font-weight:600; cursor:pointer; white-space:nowrap; }
 .btn-del-sm { background:none; border:none; color:#f87171; cursor:pointer; font-size:11px; flex-shrink:0; }
 
 /* ── 실시간 스코어 오버레이 ── */
@@ -181,118 +181,102 @@ body::before {
 .ls-match-end-banner { margin:10px 14px 0; padding:11px; border-radius:10px; background:rgba(245,158,11,0.12); border:1.5px solid rgba(245,158,11,0.4); text-align:center; font-size:13px; color:#fbbf24; font-weight:700; flex-shrink:0; }
 
 /* 성별 배지 */
-.g-m { color:#60a5fa; font-size:10px; font-weight:700; }
+.g-m { color:#2563EB; font-size:10px; font-weight:700; }
 .g-f { color:#f472b6; font-size:10px; font-weight:700; }
 
 /* 이벤트 */
 .event-list { display:flex; flex-direction:column; gap:12px; }
-.event-card { background:#0a1a4a; border-radius:16px; border:1px solid #1e3a5f; overflow:hidden; }
+.event-card { background:#FFFFFF; border-radius:16px; border:1px solid #C8E0DE; overflow:hidden; }
 .event-banner { padding:18px 16px 12px; }
 .ev-type-badge { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; margin-bottom:8px; }
 .badge-exchange{background:#7c3aed22;color:#a78bfa;border:1px solid #7c3aed44;}
 .badge-monthly{background:#34d39922;color:#34d399;border:1px solid #34d39944;}
 .badge-special{background:#f8717122;color:#f87171;border:1px solid #f8717144;}
-.ev-name{font-size:17px;font-weight:900;color:#fff;margin-bottom:4px;}
-.ev-date{font-size:12px;color:#4a8ab5;}
-.ev-desc{font-size:12px;color:#94a3b8;margin-top:6px;line-height:1.6;}
-.ev-footer{padding:12px 16px;border-top:1px solid #1e3a5f;display:flex;align-items:center;justify-content:space-between;}
+.ev-name{font-size:17px;font-weight:900;color:#1E293B;margin-bottom:4px;}
+.ev-date{font-size:12px;color:#64748B;}
+.ev-desc{font-size:12px;color:#78909C;margin-top:6px;line-height:1.6;}
+.ev-footer{padding:12px 16px;border-top:1px solid #E0F2F1;display:flex;align-items:center;justify-content:space-between;}
 .ev-status{font-size:12px;font-weight:700;}
-.st-upcoming{color:#fbbf24;}.st-ongoing{color:#34d399;}.st-done{color:#4a8ab5;}
-.btn-ev-detail{padding:7px 14px;background:#1e3a5f;border:none;border-radius:8px;color:#60a5fa;font-size:12px;font-weight:600;cursor:pointer;}
-.ev-parts{padding:10px 16px;border-top:1px solid #1e3a5f;}
+.st-upcoming{color:#fbbf24;}.st-ongoing{color:#34d399;}.st-done{color:#64748B;}
+.btn-ev-detail{padding:7px 14px;background:#0D9488;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;}
+.ev-parts{padding:10px 16px;border-top:1px solid #E0F2F1;}
 .part-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
-.part-chip{font-size:12px;padding:4px 12px;background:#0f1923;border-radius:20px;color:#94a3b8;border:1px solid #1e3a5f;}
+.part-chip{font-size:12px;padding:4px 12px;background:#F8FFFE;border-radius:20px;color:#78909C;border:1px solid #C8E0DE;}
 
 /* 관리자 */
-.admin-sec{background:rgba(8,28,75,0.75);border-radius:14px;padding:16px;border:1px solid rgba(50,110,200,0.25);margin-bottom:12px;backdrop-filter:blur(6px);}
-.admin-sec.guest-sec{border-color:rgba(52,211,153,0.35);background:rgba(4,35,25,0.7);}
+.admin-sec{background:#FFFFFF;border-radius:14px;padding:16px;border:1px solid #D1E7E5;margin-bottom:12px;backdrop-filter:blur(6px);}
+.admin-sec.guest-sec{border-color:rgba(52,211,153,0.35);background:#F0FBF8;}
 .admin-sec.guest-sec h3{color:#34d399;}
-.admin-sec h3{font-size:14px;font-weight:700;color:#e8edf2;margin-bottom:12px;}
+.admin-sec h3{font-size:14px;font-weight:700;color:#1E293B;margin-bottom:12px;}
 .chips-wrap{display:flex;flex-wrap:wrap;gap:8px;}
-.chip{padding:6px 14px;background:rgba(4,16,55,0.8);border-radius:20px;font-size:13px;color:#94a3b8;border:1px solid rgba(35,90,180,0.25);display:flex;align-items:center;gap:6px;}
+.chip{padding:6px 14px;background:rgba(4,16,55,0.8);border-radius:20px;font-size:13px;color:#78909C;border:1px solid #C8E0DE;display:flex;align-items:center;gap:6px;}
 .chip-guest{border-color:rgba(52,211,153,0.3);}
 .g-guest{color:#34d399;font-size:10px;font-weight:700;}
 .chip-x{background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;padding:0;line-height:1;}
 .row-form{display:flex;gap:8px;margin-top:10px;}
-.row-inp{flex:1;padding:10px 12px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:13px;outline:none;}
-.row-inp:focus{border-color:#60a5fa;}
-.row-sel{padding:10px 12px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:13px;outline:none;}
+.row-inp{flex:1;padding:10px 12px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:10px;color:#1E293B;font-size:13px;outline:none;}
+.row-inp:focus{border-color:#2563EB;}
+.row-sel{padding:10px 12px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:10px;color:#1E293B;font-size:13px;outline:none;}
 .btn-add{padding:10px 16px;background:#60a5fa;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
 .btn-green{padding:10px 16px;background:#34d399;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
 .btn-teal{padding:10px 16px;background:#0d9488;border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;}
-.stat-row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid #1a2a3a;}
+.stat-row{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid #EEF7F6;}
 .stat-row:last-child{border-bottom:none;}
 
 .sec-title{font-size:15px;font-weight:800;margin-bottom:10px;}
-.tbl-wrap{background:#0a1a4a;border-radius:12px;overflow:hidden;border:1px solid #1e3a5f;margin-bottom:22px;overflow-x:auto;}
+.tbl-wrap{background:#FFFFFF;border-radius:12px;overflow:hidden;border:1px solid #C8E0DE;margin-bottom:22px;overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:12px;min-width:300px;}
-thead tr{background:#0f1923;}
-th{padding:10px 6px;text-align:center;font-weight:600;color:#4a8ab5;border-bottom:1px solid #1e3a5f;white-space:nowrap;}
-td{padding:10px 6px;text-align:center;border-bottom:1px solid #1a2a3a;}
+thead tr{background:#F8FFFE;}
+th{padding:10px 6px;text-align:center;font-weight:600;color:#64748B;border-bottom:1px solid #E0F2F1;white-space:nowrap;}
+td{padding:10px 6px;text-align:center;border-bottom:1px solid #EEF7F6;}
 tr:last-child td{border-bottom:none;}
-tr:nth-child(even){background:#0f192322;}
+tr:nth-child(even){background:#F5FCFB;}
 
 .rank-list{display:flex;flex-direction:column;gap:8px;}
-.rank-item{background:#162030;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;border:1px solid #1e3a5f;}
+.rank-item{background:#FFFFFF;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;border:1px solid #C8E0DE;}
 .rank-item.top{border-color:#f59e0b44;}
 .rank-circle{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:#fff;flex-shrink:0;}
-.wr-bg{height:6px;background:#0f1923;border-radius:3px;overflow:hidden;margin-top:4px;}
+.wr-bg{height:6px;background:#D1E7E5;border-radius:3px;overflow:hidden;margin-top:4px;}
 .wr-bar{height:100%;border-radius:3px;transition:width 0.5s;}
 
 /* 자동 페어링 결과 미리보기 */
-.pairing-preview { background:#0f1923; border-radius:10px; padding:12px; margin-top:10px; border:1px solid #1e3a5f; }
-.pairing-match { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #1a2a3a; font-size:13px; }
+.pairing-preview { background:#F8FFFE; border-radius:10px; padding:12px; margin-top:10px; border:1px solid #C8E0DE; }
+.pairing-match { display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #EEF7F6; font-size:13px; }
 .pairing-match:last-child { border-bottom:none; }
-.pairing-vs { color:#4a8ab5; font-size:11px; margin:0 8px; }
+.pairing-vs { color:#64748B; font-size:11px; margin:0 8px; }
 
 /* 모달 */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px;}
-.modal{background:#0a1a4a;border-radius:20px;padding:24px 20px 28px;width:100%;max-width:400px;border:1px solid #1e3a5f;max-height:90vh;overflow-y:auto;}
+.modal{background:#FFFFFF;border-radius:20px;padding:24px 20px 28px;width:100%;max-width:400px;border:1px solid #C8E0DE;max-height:90vh;overflow-y:auto;}
 .overlay-bottom{position:fixed;inset:0;background:rgba(0,0,0,0.78);display:flex;align-items:flex-end;justify-content:center;z-index:200;}
-.modal-bottom{background:#0a1a4a;border-radius:20px 20px 0 0;padding:24px 20px 44px;width:100%;max-width:480px;border:1px solid #1e3a5f;max-height:90vh;overflow-y:auto;}
+.modal-bottom{background:#FFFFFF;border-radius:20px 20px 0 0;padding:24px 20px 44px;width:100%;max-width:480px;border:1px solid #C8E0DE;max-height:90vh;overflow-y:auto;}
 .modal-title{font-size:16px;font-weight:800;margin-bottom:18px;}
 .mg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
-.mf label{font-size:11px;color:#4a8ab5;display:block;margin-bottom:5px;}
-.mf select,.mf input{width:100%;padding:10px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:13px;outline:none;}
+.mf label{font-size:11px;color:#64748B;display:block;margin-bottom:5px;}
+.mf select,.mf input{width:100%;padding:10px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:10px;color:#1E293B;font-size:13px;outline:none;}
 .mf-full{margin-bottom:12px;}
-.mf-full label{font-size:11px;color:#4a8ab5;display:block;margin-bottom:5px;}
-.mf-full input,.mf-full select,.mf-full textarea{width:100%;padding:10px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:13px;outline:none;}
+.mf-full label{font-size:11px;color:#64748B;display:block;margin-bottom:5px;}
+.mf-full input,.mf-full select,.mf-full textarea{width:100%;padding:10px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:10px;color:#1E293B;font-size:13px;outline:none;}
 .mf-full textarea{resize:none;height:70px;}
 .mft{display:flex;gap:8px;margin-top:16px;}
-.btn-cancel{flex:1;padding:13px;background:#0f1923;border:1px solid #1e3a5f;border-radius:12px;color:#6b8cae;font-size:14px;font-weight:600;cursor:pointer;}
+.btn-cancel{flex:1;padding:13px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:12px;color:#64748B;font-size:14px;font-weight:600;cursor:pointer;}
 .btn-ok{flex:2;padding:13px;background:#60a5fa;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
 .btn-ok-green{flex:2;padding:13px;background:#34d399;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
 
-.loading{text-align:center;padding:50px 20px;color:#4a8ab5;font-size:14px;}
-.empty{text-align:center;padding:40px 20px;color:#4a8ab5;}
-.f-input{width:100%;padding:12px 14px;background:#0f1923;border:1px solid #1e3a5f;border-radius:10px;color:#e8edf2;font-size:14px;margin-bottom:12px;outline:none;}
-.f-input:focus{border-color:#60a5fa;}
+.loading{text-align:center;padding:50px 20px;color:#64748B;font-size:14px;}
+.empty{text-align:center;padding:40px 20px;color:#64748B;}
+.f-input{width:100%;padding:12px 14px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:10px;color:#1E293B;font-size:14px;margin-bottom:12px;outline:none;}
+.f-input:focus{border-color:#2563EB;}
 .err{color:#f87171;font-size:12px;margin-bottom:8px;text-align:center;min-height:16px;}
 
 /* 성별 토글 */
 .gender-toggle { display:flex; gap:6px; }
-.g-btn { padding:8px 14px; border-radius:8px; border:1px solid rgba(35,90,180,0.35); cursor:pointer; font-size:13px; font-weight:700; background:rgba(3,12,45,0.85); }
-.g-btn.m.active { background:rgba(15,50,140,0.85); color:#60a5fa; border-color:#60a5fa; }
+.g-btn { padding:8px 14px; border-radius:8px; border:1px solid #B8D8D5; cursor:pointer; font-size:13px; font-weight:700; background:#E8F4F3; }
+.g-btn.m.active { background:rgba(15,50,140,0.85); color:#2563EB; border-color:#2563EB; }
 .g-btn.f.active { background:rgba(80,15,80,0.85); color:#f472b6; border-color:#be185d; }
-.g-btn:not(.active) { color:#4a8ab5; }
+.g-btn:not(.active) { color:#64748B; }
 
-/* ── TBS CLUB 엠블럼 배경 ── */
-body {
-  background-color: #1d4225;
-  background-image:
-    /* 가독성용 어두운 오버레이 */
-    linear-gradient(180deg, rgba(6,16,10,0.82) 0%, rgba(8,20,12,0.50) 42%, rgba(6,14,9,0.86) 100%),
-    /* 잔디 깎은 줄무늬 (윔블던 스타일) */
-    repeating-linear-gradient(90deg,
-      rgba(255,255,255,0.055) 0, rgba(255,255,255,0.055) 52px,
-      rgba(0,0,0,0.07) 52px, rgba(0,0,0,0.07) 104px),
-    /* 잔디 베이스 */
-    radial-gradient(ellipse at 50% 20%, #3f8049 0%, #2d6037 48%, #1d4225 100%);
-  background-size: cover;
-  background-attachment: fixed;
-  background-repeat: no-repeat;
-  background-position: center;
-}
+/* ── (라이트 테마: 첫 번째 body 규칙의 민트 그라데이션 사용) ── */
 
 /* ── 🎬 영상 인트로 (하루 1회) ── */
 #introScreen{
@@ -439,7 +423,7 @@ body {
     <div id="tab-league" style="display:none">
       <!-- 시즌 선택 -->
       <div style="margin-top:16px;display:flex;align-items:center;gap:8px">
-        <span style="font-size:12px;color:#4a8ab5;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
+        <span style="font-size:12px;color:#64748B;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
         <select id="seasonSelect" class="row-sel" style="flex:1;font-size:13px;padding:9px" onchange="changeViewSeason()"></select>
       </div>
       <div id="seasonNote" style="display:none;margin-top:8px;font-size:11px;color:#fbbf24;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:8px 10px"></div>
@@ -460,14 +444,14 @@ body {
         </div>
       </div>
       <div id="sub-ranking" style="display:none">
-        <div class="sec-header" style="color:#60a5fa;margin-top:4px">🏅 전체 랭킹</div>
+        <div class="sec-header" style="color:#2563EB;margin-top:4px">🏅 전체 랭킹</div>
         <div class="rank-list" id="rankList"></div>
       </div>
       <div id="sub-analysis" style="display:none">
         <div class="sec-header" style="color:#a78bfa;margin-top:4px">📊 개인별 분석</div>
         <!-- 회원 선택 -->
         <div style="margin-bottom:16px">
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">분석할 회원 선택</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:8px">분석할 회원 선택</div>
           <select id="analysisSelect" class="row-sel" style="width:100%;font-size:14px;padding:12px" onchange="renderAnalysisDetail()">
             <option value="">회원을 선택하세요</option>
           </select>
@@ -498,14 +482,14 @@ body {
       <!-- 내 기록 -->
       <div id="terra-myrecords">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <div style="font-size:15px;font-weight:800;color:#e8edf2">⚡ 내 게임 기록</div>
+          <div style="font-size:15px;font-weight:800;color:#1E293B">⚡ 내 게임 기록</div>
           <button onclick="openTerraModal()"
             style="padding:8px 14px;background:rgba(234,179,8,0.85);border:none;border-radius:10px;color:#000;font-size:12px;font-weight:700;cursor:pointer">+ 경기 추가</button>
         </div>
 
         <!-- 회원 선택 (비로그인용) -->
         <div style="margin-bottom:14px">
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">내 이름 선택</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:6px">내 이름 선택</div>
           <select id="terraMyName" class="row-sel" style="width:100%;font-size:14px;padding:11px" onchange="renderTerraMyRecords()">
             <option value="">이름을 선택하세요</option>
           </select>
@@ -515,13 +499,13 @@ body {
 
       <!-- 전체 기록 -->
       <div id="terra-all" style="display:none">
-        <div style="font-size:15px;font-weight:800;color:#e8edf2;margin-bottom:12px">📋 전체 게임 기록</div>
+        <div style="font-size:15px;font-weight:800;color:#1E293B;margin-bottom:12px">📋 전체 게임 기록</div>
         <div id="terraAllList"><div class="loading">불러오는 중...</div></div>
       </div>
 
       <!-- 통계 -->
       <div id="terra-stats" style="display:none">
-        <div style="font-size:15px;font-weight:800;color:#e8edf2;margin-bottom:12px">📊 게임 기록 통계</div>
+        <div style="font-size:15px;font-weight:800;color:#1E293B;margin-bottom:12px">📊 게임 기록 통계</div>
         <div id="terraStatsList"><div class="loading">불러오는 중...</div></div>
       </div>
     </div>
@@ -531,14 +515,14 @@ body {
       <div style="margin-top:16px"></div>
 
       <!-- 월 캘린더 -->
-      <div id="scheduleCalendar" style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:14px;margin-bottom:16px"></div>
+      <div id="scheduleCalendar" style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:14px;margin-bottom:16px"></div>
 
       <!-- 새 일정 작성 -->
-      <div style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:16px;margin-bottom:16px">
-        <div style="font-size:14px;font-weight:800;color:#60a5fa;margin-bottom:12px">✏️ 새 일정 올리기</div>
+      <div style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:16px;margin-bottom:16px">
+        <div style="font-size:14px;font-weight:800;color:#2563EB;margin-bottom:12px">✏️ 새 일정 올리기</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div>
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">작성자</div>
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px">작성자</div>
             <select id="schWriter" class="row-sel" style="width:100%;font-size:13px;padding:9px">
               <option value="">이름 선택</option>
             </select>
@@ -546,11 +530,11 @@ body {
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
             <div>
-              <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">날짜</div>
+              <div style="font-size:11px;color:#64748B;margin-bottom:4px">날짜</div>
               <input type="date" id="schDate" class="row-inp" style="width:100%;font-size:13px;padding:9px">
             </div>
             <div>
-              <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">시간</div>
+              <div style="font-size:11px;color:#64748B;margin-bottom:4px">시간</div>
               <select id="schTime" class="row-sel" style="width:100%;font-size:13px;padding:9px">
                 <option value="">시간 선택</option>
                 <option value="오전 6시">오전 6시</option>
@@ -575,11 +559,11 @@ body {
             </div>
           </div>
           <div>
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">장소</div>
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px">장소</div>
             <input id="schPlace" class="row-inp" placeholder="예: 포동 테니스장" style="width:100%;font-size:13px;padding:9px">
           </div>
           <div>
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">내용</div>
+            <div style="font-size:11px;color:#64748B;margin-bottom:4px">내용</div>
             <textarea id="schContent" class="row-inp" placeholder="예: 주말 번개 모임! 끝나고 저녁 같이 먹어요" style="width:100%;font-size:13px;padding:9px;min-height:60px;resize:vertical;font-family:inherit"></textarea>
           </div>
           <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
@@ -600,12 +584,12 @@ body {
       <div style="text-align:center;margin-bottom:20px">
         <div style="font-size:28px;margin-bottom:6px">🔮</div>
         <div style="font-size:20px;font-weight:900;color:#a78bfa">오늘의 테니스 운세</div>
-        <div style="font-size:11px;color:#4a8ab5;margin-top:4px" id="fortuneDate"></div>
+        <div style="font-size:11px;color:#64748B;margin-top:4px" id="fortuneDate"></div>
       </div>
 
       <!-- 회원 선택 -->
       <div style="margin-bottom:12px">
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">내 이름 선택</div>
+        <div style="font-size:11px;color:#64748B;margin-bottom:6px">내 이름 선택</div>
         <select id="fortuneNameSel" class="row-sel" style="width:100%;font-size:14px;padding:11px">
           <option value="">이름을 선택하세요</option>
         </select>
@@ -613,11 +597,11 @@ body {
 
       <!-- 생년월일 입력 -->
       <div style="margin-bottom:16px">
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">생년월일 입력 <span style="color:#4a8ab5">(운세 정확도 향상)</span></div>
+        <div style="font-size:11px;color:#64748B;margin-bottom:6px">생년월일 입력 <span style="color:#64748B">(운세 정확도 향상)</span></div>
         <input type="date" id="fortuneBirth" class="row-inp"
           style="width:100%;font-size:14px;padding:11px"
           placeholder="생년월일">
-        <div style="font-size:10px;color:#4a8ab5;margin-top:4px">* 저장되지 않아요. 매번 입력하거나 기억해두세요 😊</div>
+        <div style="font-size:10px;color:#64748B;margin-top:4px">* 저장되지 않아요. 매번 입력하거나 기억해두세요 😊</div>
       </div>
 
       <button onclick="getFortune()"
@@ -682,8 +666,8 @@ body {
         <div class="admin-sec">
           <h3>👥 정규 회원 목록</h3>
           <div class="chips-wrap" id="memberChips"></div>
-          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">새 회원 추가</div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid #E0F2F1">
+            <div style="font-size:11px;color:#64748B;margin-bottom:8px">새 회원 추가</div>
             <div class="row-form">
               <input class="row-inp" id="newMember" placeholder="이름" onkeydown="if(event.key==='Enter')addMember()">
               <div class="gender-toggle">
@@ -717,10 +701,10 @@ body {
         <!-- 커플/부부 설정 -->
         <div class="admin-sec">
           <h3>💑 커플/부부 설정</h3>
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">혼복 시 같은 팀으로 배정되지 않아요</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:10px">혼복 시 같은 팀으로 배정되지 않아요</div>
           <div class="chips-wrap" id="coupleChips"></div>
-          <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">커플 추가 (남 + 여)</div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid #E0F2F1">
+            <div style="font-size:11px;color:#64748B;margin-bottom:6px">커플 추가 (남 + 여)</div>
             <div class="row-form">
               <select class="row-inp" id="coupleM" style="flex:1">
                 <option value="">남자 선택</option>
@@ -738,45 +722,45 @@ body {
         <!-- 일자별 금지/지정 페어 -->
         <div class="admin-sec">
           <h3>🗓️ 일자별 금지/지정 페어</h3>
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">선택한 날짜의 페어링에만 적용돼요 · 🚫금지=같은 팀 안 됨 · 📌지정=같은 팀으로 묶기</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:10px">선택한 날짜의 페어링에만 적용돼요 · 🚫금지=같은 팀 안 됨 · 📌지정=같은 팀으로 묶기</div>
           <select class="row-inp" id="datePairSel" style="width:100%;margin-bottom:12px" onchange="changeDatePairSel()">
             <option value="">날짜 선택...</option>
           </select>
-          <div id="datePairBody"><div style="color:#4a8ab5;font-size:12px">날짜를 선택하세요</div></div>
+          <div id="datePairBody"><div style="color:#64748B;font-size:12px">날짜를 선택하세요</div></div>
         </div>
 
         <!-- 시즌 관리 -->
         <div class="admin-sec">
           <h3>🗓️ 시즌 관리</h3>
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">현재 <b id="curSeasonLabel">시즌 1</b> 진행 중 · 마감하면 기록이 보존되고 새 시즌부터 랭킹이 새로 집계돼요</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:10px">현재 <b id="curSeasonLabel">시즌 1</b> 진행 중 · 마감하면 기록이 보존되고 새 시즌부터 랭킹이 새로 집계돼요</div>
           <button class="btn-add" style="width:100%;background:#f59e0b;color:#1a120a;font-weight:800" onclick="startNewSeason()">🏁 이번 시즌 마감하고 새 시즌 시작</button>
         </div>
       </div>
 
       <div id="adminGroup-schedule" style="display:none">
         <!-- 어드민 시즌 필터 -->
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:rgba(8,28,75,0.6);border-radius:10px;padding:10px 14px;border:1px solid rgba(50,110,200,0.2)">
-          <span style="font-size:12px;color:#4a8ab5;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;background:#F5FAFA;border-radius:10px;padding:10px 14px;border:1px solid rgba(50,110,200,0.2)">
+          <span style="font-size:12px;color:#64748B;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
           <select id="adminDaySeasonSel" class="row-sel" style="flex:1;font-size:12px;padding:6px" onchange="changeAdminDaySeason()"></select>
         </div>
         <!-- 날짜별 참석자 관리 -->
         <div class="admin-sec">
           <h3>📋 날짜별 참석자 관리</h3>
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">참석/불참 설정 후 페어링 생성 시 자동 반영돼요</div>
-          <div id="attendanceSection"><div style="color:#4a8ab5;font-size:12px">날짜 그룹을 먼저 추가해주세요</div></div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:10px">참석/불참 설정 후 페어링 생성 시 자동 반영돼요</div>
+          <div id="attendanceSection"><div style="color:#64748B;font-size:12px">날짜 그룹을 먼저 추가해주세요</div></div>
         </div>
 
         <!-- 날짜 그룹 추가 -->
         <div class="admin-sec">
           <h3>📅 날짜 그룹 추가</h3>
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">날짜별로 묶어서 그 안에 라운드를 추가해요</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:8px">날짜별로 묶어서 그 안에 라운드를 추가해요</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
             <div>
-              <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">날짜</div>
+              <div style="font-size:11px;color:#64748B;margin-bottom:5px">날짜</div>
               <input type="date" class="row-inp" id="dayDate" style="width:100%">
             </div>
             <div>
-              <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">장소 (선택)</div>
+              <div style="font-size:11px;color:#64748B;margin-bottom:5px">장소 (선택)</div>
               <input class="row-inp" id="dayPlace" placeholder="예: 부천테니스장" style="width:100%">
             </div>
           </div>
@@ -786,11 +770,11 @@ body {
         <!-- 라운드 자동 생성 -->
         <div class="admin-sec">
           <h3>🏆 라운드 자동 생성</h3>
-          <div style="font-size:11px;color:#4a8ab5;margin-bottom:12px">날짜 선택 → 라운드별 코트 방식 설정 → 라운드마다 개별로 섞기</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:12px">날짜 선택 → 라운드별 코트 방식 설정 → 라운드마다 개별로 섞기</div>
 
           <!-- 날짜 선택 -->
           <div style="margin-bottom:10px">
-            <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">📅 날짜 그룹 선택</div>
+            <div style="font-size:11px;color:#64748B;margin-bottom:5px">📅 날짜 그룹 선택</div>
             <select class="row-sel" id="rndDayId" style="width:100%" onchange="onRndDayChange()">
               <option value="">날짜 선택...</option>
             </select>
@@ -799,7 +783,7 @@ body {
           <!-- 라운드 수 + 코트 수 -->
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
             <div>
-              <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">총 라운드 수</div>
+              <div style="font-size:11px;color:#64748B;margin-bottom:5px">총 라운드 수</div>
               <select class="row-sel" id="totalRounds" style="width:100%" onchange="rndConfigChanged()">
                 <option value="2">2라운드</option>
                 <option value="3" selected>3라운드</option>
@@ -811,7 +795,7 @@ body {
               </select>
             </div>
             <div>
-              <div style="font-size:11px;color:#4a8ab5;margin-bottom:5px">코트 수</div>
+              <div style="font-size:11px;color:#64748B;margin-bottom:5px">코트 수</div>
               <select class="row-sel" id="rndCourts" style="width:100%" onchange="rndConfigChanged()">
                 <option value="2" selected>2코트</option>
                 <option value="3">3코트</option>
@@ -851,7 +835,7 @@ body {
 <div class="overlay-bottom" id="terraModal" style="display:none" onclick="if(event.target.id==='terraModal')hide('terraModal')">
   <div class="modal-bottom">
     <div class="modal-title">⚡ 개인별 게임 기록 경기 추가</div>
-    <div style="font-size:11px;color:#4a8ab5;margin-bottom:14px">본인이 참여한 외부 경기를 기록해요</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:14px">본인이 참여한 외부 경기를 기록해요</div>
 
     <div class="mf-full"><label>내 이름</label>
       <select id="terra_me"><option value="">선택</option></select>
@@ -892,13 +876,13 @@ body {
     <div class="modal-title">회원가입</div>
     <button type="button" onclick="doGoogleSignIn()" style="width:100%;padding:12px;margin-bottom:10px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">🔵 구글로 계속하기</button>
     <div id="signupGoogleNotice" style="display:none;text-align:center;font-size:12px;color:#34d399;font-weight:700;margin-bottom:10px;padding:8px;background:rgba(52,211,153,0.1);border-radius:8px"></div>
-    <div style="text-align:center;font-size:11px;color:#4a8ab5;margin:8px 0">— 또는 이메일로 —</div>
+    <div style="text-align:center;font-size:11px;color:#64748B;margin:8px 0">— 또는 이메일로 —</div>
     <div id="signupEmailPwFields">
       <input type="email" id="signupEmail" class="row-inp" placeholder="이메일" style="width:100%;margin-bottom:8px">
       <input type="password" id="signupPw" class="row-inp" placeholder="비밀번호(6자 이상)" style="width:100%;margin-bottom:8px">
       <input type="password" id="signupPw2" class="row-inp" placeholder="비밀번호 확인" style="width:100%;margin-bottom:8px">
     </div>
-    <label style="font-size:12px;color:#4a8ab5;display:block;margin-top:10px">본인 이름</label>
+    <label style="font-size:12px;color:#64748B;display:block;margin-top:10px">본인 이름</label>
     <select id="signupNameSelect" class="row-sel" style="width:100%;margin-bottom:8px" onchange="onSignupNameChange()">
       <option value="">선택하세요</option>
       <option value="__new__">➕ 명단에 없어요 (새 이름으로 등록)</option>
@@ -910,7 +894,7 @@ body {
       </select>
     </div>
     <div id="signupNicknameWrap" style="display:none">
-      <label style="font-size:12px;color:#4a8ab5;display:block">닉네임으로 표시하고 싶으신가요? (선택)</label>
+      <label style="font-size:12px;color:#64748B;display:block">닉네임으로 표시하고 싶으신가요? (선택)</label>
       <input type="text" id="signupNickname" class="row-inp" placeholder="예: 종첸 (비워두면 원래 이름 그대로)" style="width:100%;margin-bottom:8px">
     </div>
     <button onclick="doSignup()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a120a;border:none;border-radius:10px;font-weight:800;cursor:pointer">가입 신청</button>
@@ -929,9 +913,9 @@ body {
 <div class="overlay" id="adminLoginModal" style="display:none" onclick="if(event.target.id==='adminLoginModal')hide('adminLoginModal')">
   <div class="modal">
     <div class="modal-title">🔑 로그인</div>
-    <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">이메일</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:6px">이메일</div>
     <input class="f-input" id="adminEmail" type="email" placeholder="이메일" onkeydown="if(event.key==='Enter')doAdminLogin()">
-    <div style="font-size:11px;color:#4a8ab5;margin-bottom:6px">비밀번호</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:6px">비밀번호</div>
     <input class="f-input" id="adminPw" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doAdminLogin()">
     <div class="err" id="adminLoginErr"></div>
     <div class="mft">
@@ -945,13 +929,13 @@ body {
 <div class="overlay-bottom" id="scoreEditModal" style="display:none" onclick="if(event.target.id==='scoreEditModal')hide('scoreEditModal')">
   <div class="modal-bottom">
     <div class="modal-title">✏️ 경기 결과 수정</div>
-    <div id="scoreEditInfo" style="font-size:13px;color:#94a3b8;margin-bottom:14px;line-height:1.6"></div>
+    <div id="scoreEditInfo" style="font-size:13px;color:#78909C;margin-bottom:14px;line-height:1.6"></div>
     <div class="mg">
       <div class="mf"><label id="se1Label">팀1 스코어</label><input type="number" id="se1" min="0" placeholder="0"></div>
       <div class="mf"><label id="se2Label">팀2 스코어</label><input type="number" id="se2" min="0" placeholder="0"></div>
     </div>
     <div style="margin-bottom:14px">
-      <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">🎾 포지션 수정</div>
+      <div style="font-size:11px;color:#64748B;margin-bottom:8px">🎾 포지션 수정</div>
       <div id="scoreEditPositions" style="display:flex;flex-direction:column;gap:6px"></div>
     </div>
     <div class="mft">
@@ -965,14 +949,14 @@ body {
 <div class="overlay-bottom" id="scoreModal" style="display:none;z-index:400" onclick="if(event.target.id==='scoreModal')hide('scoreModal')">
   <div class="modal-bottom">
     <div class="modal-title">⚡ 경기 결과 입력</div>
-    <div id="scoreInfo" style="font-size:13px;color:#94a3b8;margin-bottom:14px;line-height:1.6"></div>
+    <div id="scoreInfo" style="font-size:13px;color:#78909C;margin-bottom:14px;line-height:1.6"></div>
     <div class="mg">
       <div class="mf"><label id="s1Label">팀1 스코어</label><input type="number" id="s1" min="0" placeholder="0"></div>
       <div class="mf"><label id="s2Label">팀2 스코어</label><input type="number" id="s2" min="0" placeholder="0"></div>
     </div>
     <!-- 포지션 선택 (선택사항) -->
     <div style="margin-bottom:14px">
-      <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">🎾 나의 포지션 <span style="color:#4a8ab5;font-size:10px">(선택사항 - 나중에도 입력 가능)</span></div>
+      <div style="font-size:11px;color:#64748B;margin-bottom:8px">🎾 나의 포지션 <span style="color:#64748B;font-size:10px">(선택사항 - 나중에도 입력 가능)</span></div>
       <div id="positionSelectors" style="display:flex;flex-direction:column;gap:6px"></div>
     </div>
     <div class="mft">
@@ -986,7 +970,7 @@ body {
 <div class="overlay-bottom" id="matchModal" style="display:none" onclick="if(event.target.id==='matchModal')hide('matchModal')">
   <div class="modal-bottom">
     <div class="modal-title">+ 경기 직접 추가</div>
-    <div id="matchRoundLabel" style="font-size:12px;color:#4a8ab5;margin-bottom:12px"></div>
+    <div id="matchRoundLabel" style="font-size:12px;color:#64748B;margin-bottom:12px"></div>
     <div class="mg">
       <div class="mf"><label>팀1 선수1</label><select id="t1p1"></select></div>
       <div class="mf"><label>팀1 선수2</label><select id="t1p2"></select></div>
@@ -1005,16 +989,16 @@ body {
 <div class="overlay-bottom" id="addEvMatchModal" style="display:none;z-index:300" onclick="if(event.target.id==='addEvMatchModal')hide('addEvMatchModal')">
   <div class="modal-bottom">
     <div class="modal-title">➕ 즉석 매치 추가</div>
-    <div id="addEvMatchInfo" style="font-size:11px;color:#4a8ab5;margin-bottom:10px"></div>
+    <div id="addEvMatchInfo" style="font-size:11px;color:#64748B;margin-bottom:10px"></div>
     <div style="margin-bottom:10px">
-      <label style="font-size:11px;color:#8aa5c4">우리팀 (2명 선택)</label>
+      <label style="font-size:11px;color:#78909C">우리팀 (2명 선택)</label>
       <div class="mg" style="margin-top:4px">
         <div class="mf"><select id="addEvM1" class="row-inp"></select></div>
         <div class="mf"><select id="addEvM2" class="row-inp"></select></div>
       </div>
     </div>
     <div style="margin-bottom:14px">
-      <label style="font-size:11px;color:#8aa5c4">상대팀 (이름 입력, 선택사항)</label>
+      <label style="font-size:11px;color:#78909C">상대팀 (이름 입력, 선택사항)</label>
       <div class="mg" style="margin-top:4px">
         <div class="mf"><input id="addEvO1" class="row-inp" placeholder="상대1 이름"></div>
         <div class="mf"><input id="addEvO2" class="row-inp" placeholder="상대2 이름"></div>
@@ -1037,7 +1021,7 @@ body {
     </div>
     <div class="mf-full"><label>이벤트 이름</label><input id="evName" placeholder="예: 4월 월례대회"></div>
     <div class="mf-full" id="evOppClubRow">
-      <label>상대 클럽명 <span style="font-size:10px;color:#4a8ab5">(교류전)</span></label>
+      <label>상대 클럽명 <span style="font-size:10px;color:#64748B">(교류전)</span></label>
       <input id="evOppClub" placeholder="예: 능곡 신생팀">
     </div>
     <div class="mg">
@@ -1074,9 +1058,9 @@ body {
   <div class="modal">
     <div class="modal-title">✏️ 일정 수정</div>
     <input type="hidden" id="editSchId">
-    <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">날짜</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:4px">날짜</div>
     <input type="date" id="editSchDate" class="row-inp" style="width:100%;margin-bottom:8px">
-    <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">시간</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:4px">시간</div>
     <select id="editSchTime" class="row-sel" style="width:100%;margin-bottom:8px">
       <option value="">시간 선택</option>
       <option value="오전 6시">오전 6시</option>
@@ -1098,15 +1082,15 @@ body {
       <option value="오후 10시">오후 10시</option>
       <option value="오후 11시">오후 11시</option>
     </select>
-    <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">장소</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:4px">장소</div>
     <input id="editSchPlace" class="row-inp" style="width:100%;margin-bottom:8px">
-    <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">내용</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:4px">내용</div>
     <textarea id="editSchContent" class="row-inp" style="width:100%;min-height:60px;margin-bottom:8px"></textarea>
     <div style="display:flex;align-items:center;gap:8px;padding:6px 0 10px">
       <input type="checkbox" id="editSchIsGameMeetup" style="width:16px;height:16px">
       <label for="editSchIsGameMeetup" style="font-size:12px;color:#a78bfa;font-weight:700;cursor:pointer">🎾 게임모임으로 표시</label>
     </div>
-    <div style="font-size:11px;color:#4a8ab5;margin:4px 0 6px">🙋 참석자 관리</div>
+    <div style="font-size:11px;color:#64748B;margin:4px 0 6px">🙋 참석자 관리</div>
     <div id="editAttendList" style="max-height:200px;overflow-y:auto;margin-bottom:10px"></div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
       <select id="editAttendAddSel" class="row-sel" style="flex:1;font-size:12px;padding:7px"></select>
@@ -1610,12 +1594,12 @@ function renderPairRanking() {
     list.sort((a,b) => b.wins - a.wins || (b.wins/(b.games||1)) - (a.wins/(a.games||1)));
     const top = list.slice(0, 10);
     const rows = top.length ? top.map((p, idx) => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid rgba(35,90,180,0.15)">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid #EEF7F6">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:11px;font-weight:800;color:${idx<3?'#f59e0b':'#4a8ab5'};width:20px">${idx+1}</span>
-          <span style="font-size:13px;font-weight:700;color:#e8edf2">${p.players.join(' · ')}</span>
+          <span style="font-size:13px;font-weight:700;color:#1E293B">${p.players.join(' · ')}</span>
         </div>
-        <div style="font-size:12px;color:#8aa5c4">${p.wins}승 ${p.draws}무 ${p.losses}패 <span style="color:#34d399;font-weight:700">(${p.games?Math.round(p.wins/p.games*100):0}%)</span></div>
+        <div style="font-size:12px;color:#78909C">${p.wins}승 ${p.draws}무 ${p.losses}패 <span style="color:#34d399;font-weight:700">(${p.games?Math.round(p.wins/p.games*100):0}%)</span></div>
       </div>`).join('') : '<div class="empty" style="padding:14px">데이터가 없어요</div>';
     return `
       <div class="admin-sec" style="margin-bottom:14px">
@@ -1697,7 +1681,7 @@ function updateRoundTypeSelectors() {
   const defaultCourtTypes = ['혼복','혼복','남복','여복'];
 
   el.innerHTML = Array.from({length:nR}, (_,r) => `
-    <div style="background:rgba(4,16,55,0.6);border-radius:10px;padding:12px;border:1px solid rgba(35,90,180,0.25)">
+    <div style="background:#F5FAFA;border-radius:10px;padding:12px;border:1px solid #C8E0DE">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;font-weight:800;color:#f59e0b">🏆 ${r+1}라운드</span>
         <div style="display:flex;gap:5px">
@@ -1719,9 +1703,9 @@ function updateRoundTypeSelectors() {
       <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
         ${Array.from({length:nC}, (_,c) => `
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:11px;color:#4a8ab5;min-width:38px;font-weight:600">${COURT_NAMES[c]}</span>
+            <span style="font-size:11px;color:#64748B;min-width:38px;font-weight:600">${COURT_NAMES[c]}</span>
             <select id="ct_${r}_${c}" onchange="onCourtTypeChange(${r})"
-              style="flex:1;padding:7px 10px;background:rgba(3,12,45,0.85);border:1px solid rgba(35,90,180,0.35);border-radius:8px;color:#e8edf2;font-size:12px;outline:none">
+              style="flex:1;padding:7px 10px;background:#E8F4F3;border:1px solid #B8D8D5;border-radius:8px;color:#1E293B;font-size:12px;outline:none">
               ${TYPE_OPTS.map(t=>`<option value="${t}" ${(prev[`${r}_${c}`]||defaultCourtTypes[c]||'혼복')===t?'selected':''}>${t}</option>`).join('')}
             </select>
           </div>`).join('')}
@@ -1730,7 +1714,7 @@ function updateRoundTypeSelectors() {
       <div id="manualArea_${r}" style="display:none;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:12px;margin-bottom:8px">
         <div style="font-size:11px;color:#f59e0b;font-weight:700;margin-bottom:8px">✋ ${r+1}라운드 수동 페어 설정</div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-          <span style="font-size:11px;color:#4a8ab5;min-width:38px">코트</span>
+          <span style="font-size:11px;color:#64748B;min-width:38px">코트</span>
           <select id="mc_court_${r}" class="row-sel" style="flex:1;padding:7px;font-size:12px">
             ${Array.from({length:nC},(_,c)=>`<option value="${COURT_NAMES[c]}">${COURT_NAMES[c]}</option>`).join('')}
           </select>
@@ -1747,7 +1731,7 @@ function updateRoundTypeSelectors() {
         <button onclick="addManualToRound(${r})" class="btn-green" style="width:100%;font-size:12px;padding:9px">+ 이 코트 경기 추가</button>
       </div>
       <!-- 미리보기 영역 -->
-      <div id="rndPreview_${r}" style="font-size:11px;color:#4a8ab5;padding:4px 0">🎲 섞기 또는 ✋ 수동으로 대진을 만들고 💾 저장하세요</div>
+      <div id="rndPreview_${r}" style="font-size:11px;color:#64748B;padding:4px 0">🎲 섞기 또는 ✋ 수동으로 대진을 만들고 💾 저장하세요</div>
     </div>`).join('');
 
   // 수동 셀렉터 채우기
@@ -1986,8 +1970,8 @@ window.rollAllBalanced = function() {
     const ms = generatedAllRounds[r]?.matches || [];
     if (!ms.length) { el.innerHTML='<span style="color:#f87171">⚠️ 인원 부족</span>'; continue; }
     el.innerHTML = ms.map(m => m.isRally
-      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">⏳ 대기</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div><span style="color:#4a8ab5;font-size:10px;margin-left:6px">${m.court}</span></div>`
-      : `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team1.join(' / ')}</div><span style="color:#4a8ab5;font-size:10px;margin:0 6px">vs</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team2.join(' / ')}</div></div>`
+      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">⏳ 대기</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div><span style="color:#64748B;font-size:10px;margin-left:6px">${m.court}</span></div>`
+      : `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team1.join(' / ')}</div><span style="color:#64748B;font-size:10px;margin:0 6px">vs</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team2.join(' / ')}</div></div>`
     ).join('');
   }
 };
@@ -2055,19 +2039,19 @@ window.rollRound = function(rIdx) {
 
   el.innerHTML = matches.map(m => {
     if (m.isRally) {
-      return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)">
+      return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6">
         <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;
           background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">⏳ 대기</span>
         <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#34d399">${m.team1.join(', ')}</div>
-        <span style="color:#4a8ab5;font-size:10px;margin-left:6px">${m.court}</span>
+        <span style="color:#64748B;font-size:10px;margin-left:6px">${m.court}</span>
       </div>`;
     }
-    return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)">
+    return `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6">
       <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;
         background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span>
-      <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team1.join(' / ')}</div>
-      <span style="color:#4a8ab5;font-size:10px;margin:0 6px">vs</span>
-      <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#e8edf2">${m.team2.join(' / ')}</div>
+      <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team1.join(' / ')}</div>
+      <span style="color:#64748B;font-size:10px;margin:0 6px">vs</span>
+      <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team2.join(' / ')}</div>
     </div>`;
   }).join('');
 };
@@ -2146,17 +2130,17 @@ function renderRoundPreview(rIdx) {
     const isRest = m.isRally || m.tag==='휴식';
     if (isRest) {
       return `<div style="padding:6px 0;border-bottom:1px solid rgba(50,110,200,0.12)">
-        <span style="color:#94a3b8;font-size:11px;font-weight:700">💤 휴식</span>
-        <span style="color:#94a3b8;font-size:12px;margin-left:6px">${[...(m.team1||[]),...(m.team2||[])].join(', ')}</span>
+        <span style="color:#78909C;font-size:11px;font-weight:700">💤 휴식</span>
+        <span style="color:#78909C;font-size:12px;margin-left:6px">${[...(m.team1||[]),...(m.team2||[])].join(', ')}</span>
       </div>`;
     }
     const tagColor = {'혼복':'#a78bfa','남복':'#60a5fa','여복':'#f472b6'}[m.tag]||'#a78bfa';
     const manualMark = m.tag2==='수동'||r.matches.tag==='수동' ? '' : '';
     return `<div style="padding:6px 0;border-bottom:1px solid rgba(50,110,200,0.12);font-size:12px">
       <span style="color:${tagColor};font-weight:700;font-size:10px">[${m.court}·${m.tag}]</span>
-      <span style="color:#e8edf2;font-weight:700;margin-left:4px">${(m.team1||[]).join('/')}</span>
-      <span style="color:#4a8ab5;margin:0 4px">vs</span>
-      <span style="color:#e8edf2;font-weight:700">${(m.team2||[]).join('/')}</span>
+      <span style="color:#1E293B;font-weight:700;margin-left:4px">${(m.team1||[]).join('/')}</span>
+      <span style="color:#64748B;margin:0 4px">vs</span>
+      <span style="color:#1E293B;font-weight:700">${(m.team2||[]).join('/')}</span>
     </div>`;
   }).join('');
 }
@@ -2224,7 +2208,7 @@ window.saveAllRounds = async function() {
   generatedAllRounds = [];
   for (let r=0; r<nR; r++) {
     const el = document.getElementById(`rndPreview_${r}`);
-    if (el) el.innerHTML = '<span style="color:#4a8ab5;font-size:11px">🎲 섞기를 눌러 대진을 생성해요</span>';
+    if (el) el.innerHTML = '<span style="color:#64748B;font-size:11px">🎲 섞기를 눌러 대진을 생성해요</span>';
   }
   alert(`✅ ${newRounds.length}개 라운드 저장 완료!`);
 };
@@ -2266,14 +2250,14 @@ window.renderTerraMyRecords = function() {
   const summary = mine.length ? `
     <div style="background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.3);border-radius:12px;padding:14px;margin-bottom:14px;display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;text-align:center">
       ${[['⚡','총경기',mine.length,'#fbbf24'],['🏆','승',wins,'#34d399'],['❌','패',losses,'#f87171'],['📊','승률',wr+'%',wr>=50?'#34d399':'#f87171']].map(([ic,lb,vl,cl])=>`
-      <div style="background:rgba(3,12,45,0.5);border-radius:8px;padding:8px 4px">
-        <div>${ic}</div><div style="font-size:15px;font-weight:800;color:${cl}">${vl}</div><div style="font-size:10px;color:#4a8ab5">${lb}</div>
+      <div style="background:#F5FAFA;border-radius:8px;padding:8px 4px">
+        <div>${ic}</div><div style="font-size:15px;font-weight:800;color:${cl}">${vl}</div><div style="font-size:10px;color:#64748B">${lb}</div>
       </div>`).join('')}
     </div>` : '';
 
   el.innerHTML = summary + (mine.length
     ? mine.map(r => terraRecordCard(r, true)).join('')
-    : '<div class="empty">아직 기록이 없어요<br><small style="color:#4a8ab5">위의 + 경기 추가를 눌러 기록해요</small></div>');
+    : '<div class="empty">아직 기록이 없어요<br><small style="color:#64748B">위의 + 경기 추가를 눌러 기록해요</small></div>');
 };
 
 // 전체 기록 렌더
@@ -2298,10 +2282,10 @@ function terraRecordCard(r, showEdit) {
   const delBtn = (isAdmin||(r.player===document.getElementById('terraMyName')?.value))
     ? `<button onclick="deleteTerraRecord('${r.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">✕</button>` : '';
 
-  return `<div style="background:rgba(8,28,75,0.75);border-radius:12px;padding:14px;border:1px solid rgba(50,110,200,0.25);margin-bottom:8px;border-left:3px solid ${resultColor}">
+  return `<div style="background:#FFFFFF;border-radius:12px;padding:14px;border:1px solid #D1E7E5;margin-bottom:8px;border-left:3px solid ${resultColor}">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
       <div>
-        <span style="font-size:12px;color:#4a8ab5">${r.date||''}</span>
+        <span style="font-size:12px;color:#64748B">${r.date||''}</span>
         ${posIcon?`<span style="font-size:11px;margin-left:8px">${posIcon}</span>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:8px">
@@ -2311,18 +2295,18 @@ function terraRecordCard(r, showEdit) {
     </div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
       <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;color:#e8edf2">${r.player}${r.partner?' / '+r.partner:''}</div>
-        <div style="font-size:11px;color:#4a8ab5">우리팀</div>
+        <div style="font-size:13px;font-weight:700;color:#1E293B">${r.player}${r.partner?' / '+r.partner:''}</div>
+        <div style="font-size:11px;color:#64748B">우리팀</div>
       </div>
       <div style="font-size:18px;font-weight:900;color:#f59e0b;padding:4px 12px;background:rgba(15,50,120,0.5);border-radius:8px">
         ${r.s1} : ${r.s2}
       </div>
       <div style="flex:1;text-align:right">
-        <div style="font-size:13px;font-weight:700;color:#94a3b8">${r.opp||'상대팀'}</div>
-        <div style="font-size:11px;color:#4a8ab5">상대팀</div>
+        <div style="font-size:13px;font-weight:700;color:#78909C">${r.opp||'상대팀'}</div>
+        <div style="font-size:11px;color:#64748B">상대팀</div>
       </div>
     </div>
-    ${r.memo?`<div style="font-size:11px;color:#4a8ab5;padding:6px 10px;background:rgba(3,12,45,0.4);border-radius:6px">💬 ${r.memo}</div>`:''}
+    ${r.memo?`<div style="font-size:11px;color:#64748B;padding:6px 10px;background:#FAFEFF;border-radius:6px">💬 ${r.memo}</div>`:''}
   </div>`;
 }
 
@@ -2351,25 +2335,25 @@ function renderTerraStats() {
     const foreTotal=p.fore.w+p.fore.l, backTotal=p.back.w+p.back.l;
     const foreWr=foreTotal>0?Math.round(p.fore.w/foreTotal*100):'-';
     const backWr=backTotal>0?Math.round(p.back.w/backTotal*100):'-';
-    return `<div style="background:rgba(8,28,75,0.75);border-radius:12px;padding:14px;border:1px solid rgba(50,110,200,0.25);margin-bottom:10px">
+    return `<div style="background:#FFFFFF;border-radius:12px;padding:14px;border:1px solid #D1E7E5;margin-bottom:10px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div style="font-weight:800;font-size:15px">${p.name}</div>
         <div style="text-align:right">
           <div style="font-weight:900;font-size:16px;color:${wr>=50?'#34d399':'#f87171'}">${wr}%</div>
-          <div style="font-size:10px;color:#4a8ab5">${p.games}게임 ${p.wins}승 ${p.losses}패</div>
+          <div style="font-size:10px;color:#64748B">${p.games}게임 ${p.wins}승 ${p.losses}패</div>
         </div>
       </div>
       <div class="wr-bg"><div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#34d399,#10b981)':wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
       ${(foreTotal+backTotal)>0?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
         <div style="background:rgba(239,68,68,0.1);border-radius:8px;padding:8px;text-align:center;border:1px solid rgba(239,68,68,0.2)">
           <div style="font-size:11px;color:#f87171;margin-bottom:2px">🔴 포(Fore)</div>
-          <div style="font-weight:800;font-size:14px;color:#e8edf2">${typeof foreWr==='number'?foreWr+'%':'-'}</div>
-          <div style="font-size:10px;color:#4a8ab5">${p.fore.w}승 ${p.fore.l}패</div>
+          <div style="font-weight:800;font-size:14px;color:#1E293B">${typeof foreWr==='number'?foreWr+'%':'-'}</div>
+          <div style="font-size:10px;color:#64748B">${p.fore.w}승 ${p.fore.l}패</div>
         </div>
         <div style="background:rgba(59,130,246,0.1);border-radius:8px;padding:8px;text-align:center;border:1px solid rgba(59,130,246,0.2)">
-          <div style="font-size:11px;color:#60a5fa;margin-bottom:2px">🔵 백(Back)</div>
-          <div style="font-weight:800;font-size:14px;color:#e8edf2">${typeof backWr==='number'?backWr+'%':'-'}</div>
-          <div style="font-size:10px;color:#4a8ab5">${p.back.w}승 ${p.back.l}패</div>
+          <div style="font-size:11px;color:#2563EB;margin-bottom:2px">🔵 백(Back)</div>
+          <div style="font-weight:800;font-size:14px;color:#1E293B">${typeof backWr==='number'?backWr+'%':'-'}</div>
+          <div style="font-size:10px;color:#64748B">${p.back.w}승 ${p.back.l}패</div>
         </div>
       </div>`:''}
     </div>`;
@@ -2432,7 +2416,7 @@ window.openScoreEdit = function(dayId, rIdx, mId) {
   const match=(round?.matches||[]).find(m=>m.id===mId); if(!match)return;
   pendingScoreEdit={dayId, rIdx:parseInt(rIdx), mId};
   document.getElementById('scoreEditInfo').innerHTML=
-    `<strong style="color:#e8edf2">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#e8edf2">${(match.team2||[]).join(' / ')}</strong>`;
+    `<strong style="color:#1E293B">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#1E293B">${(match.team2||[]).join(' / ')}</strong>`;
   document.getElementById('se1Label').textContent=(match.team1||[]).join('/')+' 스코어';
   document.getElementById('se2Label').textContent=(match.team2||[]).join('/')+' 스코어';
   document.getElementById('se1').value=match.score1??'';
@@ -2441,7 +2425,7 @@ window.openScoreEdit = function(dayId, rIdx, mId) {
   const existPos=match.positions||{};
   document.getElementById('scoreEditPositions').innerHTML=allP.map(p=>`
     <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:13px;font-weight:600;min-width:50px;color:#e8edf2">${p}</span>
+      <span style="font-size:13px;font-weight:600;min-width:50px;color:#1E293B">${p}</span>
       <div style="display:flex;gap:6px;flex:1">
         <button id="epos_fore_${p.replace(/\s/g,'_')}" onclick="selectEditPos('${p.replace(/\s/g,'_')}','fore')"
           style="flex:1;padding:7px 0;border-radius:8px;border:1px solid ${existPos[p]==='fore'?'#ef4444':'rgba(35,90,180,0.35)'};background:${existPos[p]==='fore'?'rgba(239,68,68,0.25)':'rgba(3,12,45,0.85)'};color:${existPos[p]==='fore'?'#f87171':'#4a8ab5'};font-size:12px;font-weight:700;cursor:pointer">🔴 포</button>
@@ -2456,10 +2440,10 @@ window.selectEditPos = function(playerKey, pos) {
   const bb=document.getElementById(`epos_back_${playerKey}`);
   if(pos==='fore'){
     fb.style.cssText+=';border-color:#ef4444;background:rgba(239,68,68,0.25);color:#f87171';
-    bb.style.cssText+=';border-color:rgba(35,90,180,0.35);background:rgba(3,12,45,0.85);color:#4a8ab5';
+    bb.style.cssText+=';border-color:rgba(35,90,180,0.35);background:#E8F4F3;color:#64748B';
   }else{
-    bb.style.cssText+=';border-color:#3b82f6;background:rgba(59,130,246,0.25);color:#60a5fa';
-    fb.style.cssText+=';border-color:rgba(35,90,180,0.35);background:rgba(3,12,45,0.85);color:#4a8ab5';
+    bb.style.cssText+=';border-color:#3b82f6;background:rgba(59,130,246,0.25);color:#2563EB';
+    fb.style.cssText+=';border-color:rgba(35,90,180,0.35);background:#E8F4F3;color:#64748B';
   }
   fb.dataset.selected=(pos==='fore')?'1':'0';
   bb.dataset.selected=(pos==='back')?'1':'0';
@@ -2513,7 +2497,7 @@ function renderDatePairs(){
     pairDays.map(d=>`<option value="${d.id}">${d.date}${d.place?' · '+d.place:''}</option>`).join('');
   if(cur && pairDays.some(d=>d.id===cur)) sel.value = cur;
   const dayId = sel.value;
-  if(!dayId){ body.innerHTML = '<div style="color:#4a8ab5;font-size:12px">날짜를 선택하세요</div>'; return; }
+  if(!dayId){ body.innerHTML = '<div style="color:#64748B;font-size:12px">날짜를 선택하세요</div>'; return; }
   const day = days.find(d=>d.id===dayId) || {};
   const ban = Array.isArray(day.banPairs)?day.banPairs:[];
   const fix = Array.isArray(day.fixPairs)?day.fixPairs:[];
@@ -2521,8 +2505,8 @@ function renderDatePairs(){
   const opts = '<option value="">선수 선택</option>' +
     att.map(p=>`<option value="${p.name}">${p.name}${p.gender==='f'?' (여)':''}</option>`).join('');
   const chip = (p,kind)=>`<span class="chip" style="border-color:${kind==='ban'?'rgba(239,68,68,0.45)':'rgba(96,165,250,0.45)'}"><span style="color:${kind==='ban'?'#f87171':'#60a5fa'}">${kind==='ban'?'🚫':'📌'}</span> ${p.a} &amp; ${p.b}<button class="chip-x" onclick="deleteDayPair('${dayId}','${kind}','${p.a}','${p.b}')">×</button></span>`;
-  const banChips = ban.length ? ban.map(p=>chip(p,'ban')).join('') : '<span style="color:#4a8ab5;font-size:12px">없음</span>';
-  const fixChips = fix.length ? fix.map(p=>chip(p,'fix')).join('') : '<span style="color:#4a8ab5;font-size:12px">없음</span>';
+  const banChips = ban.length ? ban.map(p=>chip(p,'ban')).join('') : '<span style="color:#64748B;font-size:12px">없음</span>';
+  const fixChips = fix.length ? fix.map(p=>chip(p,'fix')).join('') : '<span style="color:#64748B;font-size:12px">없음</span>';
   body.innerHTML = `
     <div style="margin-bottom:14px">
       <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:6px">🚫 금지 페어 (같은 팀 안 됨)</div>
@@ -2533,8 +2517,8 @@ function renderDatePairs(){
         <button class="btn-add" onclick="addDayPair('ban')">추가</button>
       </div>
     </div>
-    <div style="padding-top:12px;border-top:1px solid rgba(35,90,180,0.25)">
-      <div style="font-size:12px;font-weight:700;color:#60a5fa;margin-bottom:6px">📌 지정 페어 (같은 팀으로 묶기)</div>
+    <div style="padding-top:12px;border-top:1px solid #E0F2F1">
+      <div style="font-size:12px;font-weight:700;color:#2563EB;margin-bottom:6px">📌 지정 페어 (같은 팀으로 묶기)</div>
       <div class="chips-wrap">${fixChips}</div>
       <div class="row-form" style="margin-top:8px">
         <select class="row-inp" id="fixA" style="flex:1">${opts}</select>
@@ -2671,7 +2655,7 @@ function renderTop3(stats) {
 function renderDays() {
   const el = document.getElementById('roundList');
   const seasonDays = days.filter(d=>(d.season||1)===viewSeason);
-  if (!seasonDays.length) { el.innerHTML = `<div class="empty">시즌 ${viewSeason}에 등록된 경기가 없어요<br><small style="color:#4a8ab5">${viewSeason===currentSeason?'관리자가 날짜를 추가하면 여기에 표시돼요':'지난 시즌 기록이 없습니다'}</small></div>`; return; }
+  if (!seasonDays.length) { el.innerHTML = `<div class="empty">시즌 ${viewSeason}에 등록된 경기가 없어요<br><small style="color:#64748B">${viewSeason===currentSeason?'관리자가 날짜를 추가하면 여기에 표시돼요':'지난 시즌 기록이 없습니다'}</small></div>`; return; }
 
   const sorted = [...seasonDays].sort((a,b)=>(b.date||'')>(a.date||'')?1:(b.date||'')<(a.date||'')?-1:0);
 
@@ -2737,18 +2721,18 @@ function renderDays() {
           ? `<button class="btn-input" style="width:100%;margin-bottom:7px;border-color:rgba(52,211,153,0.4);color:#34d399" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button>`
           : '';
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
-        const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#60a5fa" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
+        const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#a78bfa">[${m.tag}]</span>`:'';
         const mComments = m.comments || [];
         const commentOpts = [...members, ...guests].map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
         // 댓글 목록
         const commentsListHtml = mComments.map((c,ci)=>`
-          <div style="font-size:11px;color:#8aa5c4;margin-bottom:3px;display:flex;justify-content:space-between">
-            <span><b style="color:#60a5fa">${c.name}</b> ${c.text}</span>
+          <div style="font-size:11px;color:#78909C;margin-bottom:3px;display:flex;justify-content:space-between">
+            <span><b style="color:#2563EB">${c.name}</b> ${c.text}</span>
             ${isAdmin?`<button onclick="delMatchComment('${day.id}','${rIdx}','${m.id}',${ci})" style="background:none;border:none;color:#f87171;font-size:10px;cursor:pointer">×</button>`:''}
           </div>`).join('');
         return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
-          <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">${m.court||''} ${tagBadge}</span></div>
+          <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#64748B">${m.court||''} ${tagBadge}</span></div>
           <div class="match-row">
             <div class="m-team ${w1?'win':''}">${(m.team1||[]).join(' / ')}</div>
             ${scoreEl}
@@ -2756,7 +2740,7 @@ function renderDays() {
           </div>
           <div style="display:flex;align-items:center;gap:5px;margin-top:8px">
             ${basicInputBtn}${editBtn}${delBtn}
-            <button onclick="toggleMatchCard('${m.id}')" id="marr_${m.id}" style="margin-left:auto;background:none;border:1px solid rgba(50,110,200,0.22);border-radius:7px;color:#4a8ab5;font-size:12px;cursor:pointer;padding:2px 9px;transition:transform 0.2s;flex-shrink:0">⌄</button>
+            <button onclick="toggleMatchCard('${m.id}')" id="marr_${m.id}" style="margin-left:auto;background:none;border:1px solid rgba(50,110,200,0.22);border-radius:7px;color:#64748B;font-size:12px;cursor:pointer;padding:2px 9px;transition:transform 0.2s;flex-shrink:0">⌄</button>
           </div>
           <div id="mex_${m.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
             ${liveBtn}
@@ -2768,16 +2752,16 @@ function renderDays() {
           </div>
         </div>`;
       }).join('');
-      const addMatchBtn = isAdmin ? `<button class="btn-input" style="border-color:rgba(35,90,180,0.35);color:#4a8ab5" onclick="openAddMatch('${day.id}','${rIdx}')">+ 경기 직접 추가</button>` : '';
+      const addMatchBtn = isAdmin ? `<button class="btn-input" style="border-color:rgba(35,90,180,0.35);color:#64748B" onclick="openAddMatch('${day.id}','${rIdx}')">+ 경기 직접 추가</button>` : '';
       const delRoundBtn = isAdmin ? `<button onclick="delRound('${day.id}','${rIdx}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:6px">삭제</button>` : '';
       const rid = `r_${day.id}_${rIdx}`;
       const aid = `a_${day.id}_${rIdx}`;
       // 미완료 경기가 있는 라운드는 기본으로 펼침
       const roundOpen = (r.matches||[]).some(m => !m.done && !m.isRally && m.tag !== '랠리');
-      return `<div style="background:rgba(4,16,55,0.5);border-radius:10px;margin-bottom:8px;border:1px solid rgba(35,90,180,0.2);">
-        <button style="width:100%;padding:11px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:600;font-size:13px;" onclick="toggleR('${rid}','${aid}')">
+      return `<div style="background:#FAFEFE;border-radius:10px;margin-bottom:8px;border:1px solid #D1E7E5;">
+        <button style="width:100%;padding:11px 14px;background:transparent;border:none;color:#1E293B;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:600;font-size:13px;" onclick="toggleR('${rid}','${aid}')">
           <span>🎾 ${r.name} <span style="color:rgba(100,150,200,0.7);font-weight:400;font-size:11px">(${r.type})</span>${delRoundBtn}</span>
-          <span id="${aid}" style="color:#4a8ab5;transition:transform 0.2s${roundOpen?';transform:rotate(90deg)':''}">›</span>
+          <span id="${aid}" style="color:#64748B;transition:transform 0.2s${roundOpen?';transform:rotate(90deg)':''}">›</span>
         </button>
         <div id="${rid}" style="${roundOpen?'display:flex':'display:none'};flex-direction:column;gap:6px;padding:0 10px 10px">
           ${matchesHtml}${addMatchBtn}
@@ -2797,10 +2781,10 @@ function renderDays() {
           <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료${resultStr} ${delDayBtn}</span>
           ${totalMatches>0?`<div style="width:100%;height:3px;background:rgba(35,90,180,0.15);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#34d399':'#60a5fa'};border-radius:2px;transition:width 0.5s"></div></div>`:''}
         </div>
-        <span id="${dayArr}" style="color:#4a8ab5;transition:transform 0.2s">›</span>
+        <span id="${dayArr}" style="color:#64748B;transition:transform 0.2s">›</span>
       </button>
       <div class="round-body" id="${dayId}" style="display:none">
-        ${roundsHtml || '<div style="color:#4a8ab5;font-size:13px;padding:8px 0">아직 라운드가 없어요</div>'}
+        ${roundsHtml || '<div style="color:#64748B;font-size:13px;padding:8px 0">아직 라운드가 없어요</div>'}
       </div>
     </div>`;
   }).join('');
@@ -2832,10 +2816,10 @@ function renderStats(stats) {
     <tr>
       <td style="font-weight:700;color:${isG?'#34d399':s.rank<=3?'#f59e0b':'#4a8ab5'}">${isG?gRank:s.rank}</td>
       <td style="font-weight:700">${s.name} <span class="${s.gender==='f'?'g-f':'g-m'}">${s.gender==='f'?'♀':'♂'}</span></td>
-      <td style="font-weight:800;color:#60a5fa">${s.pts}</td>
-      <td style="color:#94a3b8">${s.wins}-${s.draws}-${s.losses}</td>
+      <td style="font-weight:800;color:#2563EB">${s.pts}</td>
+      <td style="color:#78909C">${s.wins}-${s.draws}-${s.losses}</td>
       <td style="color:${s.wr>=70?'#34d399':s.wr>=40?'#fbbf24':'#f87171'}">${s.wr}%</td>
-      <td style="color:#94a3b8">${s.scored}</td>
+      <td style="color:#78909C">${s.scored}</td>
       <td style="color:#f87171">${s.conceded}</td>
       <td style="color:${s.diff>0?'#34d399':s.diff<0?'#f87171':'#94a3b8'}">${s.diff>=0?'+':''}${s.diff}</td>
       <td style="color:#a78bfa;font-weight:700">${s.games}</td>
@@ -2896,20 +2880,20 @@ function renderRanking(stats) {
           ${s.name} <span class="${s.gender==='f'?'g-f':'g-m'}">${s.gender==='f'?'♀':'♂'}</span>
           ${isG?'<span style="font-size:10px;color:#34d399;margin-left:4px">게스트</span>':''}
         </div>
-        <div style="font-size:11px;color:#4a8ab5;margin-top:2px">${s.wins}승 ${s.draws}무 ${s.losses}패 · ${s.wr}% · <span style="color:#a78bfa">${s.games}게임</span></div>
+        <div style="font-size:11px;color:#64748B;margin-top:2px">${s.wins}승 ${s.draws}무 ${s.losses}패 · ${s.wr}% · <span style="color:#a78bfa">${s.games}게임</span></div>
         <div class="wr-bg" style="margin-top:4px"><div class="wr-bar" style="width:${s.wr}%;background:${s.wr>=70?'linear-gradient(90deg,#34d399,#10b981)':s.wr>=40?'linear-gradient(90deg,#fbbf24,#f59e0b)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
       </div>
       <div style="text-align:right">
-        <div style="font-weight:900;font-size:20px;color:#60a5fa">${s.pts}</div>
-        <div style="font-size:10px;color:#4a8ab5">승점</div>
+        <div style="font-weight:900;font-size:20px;color:#2563EB">${s.pts}</div>
+        <div style="font-size:10px;color:#64748B">승점</div>
       </div>
       <div style="text-align:right;min-width:36px">
         <div style="font-weight:700;font-size:14px;color:${s.diff>=0?'#34d399':'#f87171'}">${s.diff>=0?'+':''}${s.diff}</div>
-        <div style="font-size:10px;color:#4a8ab5">득실</div>
+        <div style="font-size:10px;color:#64748B">득실</div>
       </div>
       <div style="text-align:right;min-width:32px">
         <div style="font-weight:700;font-size:14px;color:#fbbf24">${s.attendance}</div>
-        <div style="font-size:10px;color:#4a8ab5">출석일</div>
+        <div style="font-size:10px;color:#64748B">출석일</div>
       </div>
     </div>`;
 
@@ -3026,15 +3010,15 @@ window.renderAnalysisDetail = function() {
   const worstOpp = opps.filter(p=>p.wr<50).sort((a,b)=>a.wr-b.wr).slice(0,3); // 잘 지는 상대 (천적)
 
   const pairCard = (p, label) => `
-    <div style="background:rgba(4,16,55,0.7);border-radius:10px;padding:10px 12px;border:1px solid rgba(35,90,180,0.2);margin-bottom:6px">
+    <div style="background:#EFF8F7;border-radius:10px;padding:10px 12px;border:1px solid #D1E7E5;margin-bottom:6px">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <div>
           <span style="font-size:13px;font-weight:700">${label} ${p.name}</span>
-          <span style="font-size:11px;color:#4a8ab5;margin-left:8px">${p.games}경기</span>
+          <span style="font-size:11px;color:#64748B;margin-left:8px">${p.games}경기</span>
         </div>
         <div style="text-align:right">
           <span style="font-weight:800;font-size:14px;color:${p.wr>=50?'#34d399':'#f87171'}">${p.wr}%</span>
-          <span style="font-size:11px;color:#4a8ab5;margin-left:6px">${p.wins}승${p.losses}패 / 득실 ${p.diff>=0?'+':''}${p.diff}</span>
+          <span style="font-size:11px;color:#64748B;margin-left:6px">${p.wins}승${p.losses}패 / 득실 ${p.diff>=0?'+':''}${p.diff}</span>
         </div>
       </div>
       <div class="wr-bg" style="margin-top:6px"><div class="wr-bar" style="width:${p.wr}%;background:${p.wr>=70?'linear-gradient(90deg,#34d399,#10b981)':p.wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
@@ -3045,17 +3029,17 @@ window.renderAnalysisDetail = function() {
     const wr = p.games>0 ? Math.round(p.wins/p.games*100) : 0;
     const diff = p.scored-p.conceded;
     return p.games===0
-      ? `<div style="background:rgba(4,16,55,0.5);border-radius:10px;padding:12px;border:1px dashed rgba(35,90,180,0.2);text-align:center;color:#4a8ab5;font-size:12px">${icon} ${label} — 아직 포지션 기록 없음</div>`
-      : `<div style="background:rgba(4,16,55,0.7);border-radius:10px;padding:12px;border:1px solid ${color}44;margin-bottom:8px">
+      ? `<div style="background:#FAFEFE;border-radius:10px;padding:12px;border:1px dashed rgba(35,90,180,0.2);text-align:center;color:#64748B;font-size:12px">${icon} ${label} — 아직 포지션 기록 없음</div>`
+      : `<div style="background:#EFF8F7;border-radius:10px;padding:12px;border:1px solid ${color}44;margin-bottom:8px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
             <span style="font-size:14px;font-weight:700">${icon} ${label}</span>
-            <span style="font-size:12px;color:#4a8ab5">${p.games}경기</span>
+            <span style="font-size:12px;color:#64748B">${p.games}경기</span>
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px">
             ${[['승률',wr+'%',wr>=50?'#34d399':'#f87171'],['승-패',p.wins+'-'+p.losses,'#94a3b8'],['득점',p.scored,'#60a5fa'],['득실',(diff>=0?'+':'')+diff,diff>=0?'#34d399':'#f87171']].map(([lb,vl,cl])=>`
-            <div style="text-align:center;background:rgba(3,12,45,0.6);border-radius:8px;padding:7px 4px">
+            <div style="text-align:center;background:#EFF8F7;border-radius:8px;padding:7px 4px">
               <div style="font-size:14px;font-weight:800;color:${cl}">${vl}</div>
-              <div style="font-size:10px;color:#4a8ab5;margin-top:2px">${lb}</div>
+              <div style="font-size:10px;color:#64748B;margin-top:2px">${lb}</div>
             </div>`).join('')}
           </div>
           <div class="wr-bg" style="margin-top:8px"><div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#34d399,#10b981)':wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
@@ -3066,14 +3050,14 @@ window.renderAnalysisDetail = function() {
     <!-- 종합 전적 -->
     <div style="background:rgba(20,80,30,0.3);border-radius:12px;padding:14px;border:1px solid rgba(52,211,153,0.3);margin-bottom:16px;text-align:center">
       <span style="font-size:13px;font-weight:800;color:#34d399">🏅 ${name}님의 종합 전적${s.isGuest?' <span style="font-size:10px;color:#34d399">(게스트)</span>':''}</span><br>
-      <span style="font-size:12px;color:#94a3b8;margin-top:4px;display:block">${s.games}전 ${s.wins}승 ${s.draws}무 ${s.losses}패 (승률 ${s.wr}%) · 📅 출석 ${s.attendance}일</span>
+      <span style="font-size:12px;color:#78909C;margin-top:4px;display:block">${s.games}전 ${s.wins}승 ${s.draws}무 ${s.losses}패 (승률 ${s.wr}%) · 📅 출석 ${s.attendance}일</span>
     </div>
 
     <!-- 기본 스탯 -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:20px">
       ${[['🏆','승',s.wins,'#34d399'],['🤝','무',s.draws,'#fbbf24'],['❌','패',s.losses,'#f87171'],['⚡','득실',(s.diff>=0?'+':'')+s.diff,s.diff>=0?'#60a5fa':'#f87171']].map(([ic,lb,vl,cl])=>`
-      <div style="text-align:center;background:rgba(8,28,75,0.75);border-radius:10px;padding:10px 4px;border:1px solid rgba(50,110,200,0.25)">
-        <div>${ic}</div><div style="font-size:16px;font-weight:800;color:${cl};margin-top:2px">${vl}</div><div style="font-size:10px;color:#4a8ab5">${lb}</div>
+      <div style="text-align:center;background:#FFFFFF;border-radius:10px;padding:10px 4px;border:1px solid #D1E7E5">
+        <div>${ic}</div><div style="font-size:16px;font-weight:800;color:${cl};margin-top:2px">${vl}</div><div style="font-size:10px;color:#64748B">${lb}</div>
       </div>`).join('')}
     </div>
 
@@ -3110,14 +3094,14 @@ window.renderAnalysisDetail = function() {
       const recentWr = last5.length>0?Math.round(last5.filter(x=>x.res==='W').length/last5.length*100):0;
       return `
       <div style="font-size:14px;font-weight:800;color:#34d399;margin:20px 0 10px">📈 최근 폼</div>
-      <div style="background:rgba(8,28,75,0.75);border-radius:12px;padding:14px;border:1px solid rgba(50,110,200,0.25)">
+      <div style="background:#FFFFFF;border-radius:12px;padding:14px;border:1px solid #D1E7E5">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
           <div style="display:flex;gap:6px">
             ${last5.map(r=>`<div style="width:36px;height:36px;border-radius:8px;background:${resBg[r.res]};border:1px solid ${resColor[r.res]}40;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:14px;color:${resColor[r.res]}">${r.res}</div>`).join('')}
           </div>
           <div style="margin-left:8px">
-            <div style="font-size:13px;font-weight:700;color:#e8edf2">최근 ${last5.length}경기</div>
-            <div style="font-size:11px;color:#4a8ab5">${last5.filter(x=>x.res==='W').length}승 ${last5.filter(x=>x.res==='D').length}무 ${last5.filter(x=>x.res==='L').length}패 · ${recentWr}%</div>
+            <div style="font-size:13px;font-weight:700;color:#1E293B">최근 ${last5.length}경기</div>
+            <div style="font-size:11px;color:#64748B">${last5.filter(x=>x.res==='W').length}승 ${last5.filter(x=>x.res==='D').length}무 ${last5.filter(x=>x.res==='L').length}패 · ${recentWr}%</div>
           </div>
         </div>
         <div class="wr-bg"><div class="wr-bar" style="width:${recentWr}%;background:${recentWr>=70?'linear-gradient(90deg,#34d399,#10b981)':recentWr>=40?'linear-gradient(90deg,#fbbf24,#f59e0b)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
@@ -3151,17 +3135,17 @@ window.renderAnalysisDetail = function() {
       return `
       <div style="font-size:14px;font-weight:800;color:#f59e0b;margin:20px 0 10px">🔥 연승/연패 기록</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-        <div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:12px;text-align:center;border:1px solid ${streakColor}44">
+        <div style="background:#FFFFFF;border-radius:10px;padding:12px;text-align:center;border:1px solid ${streakColor}44">
           <div style="font-size:22px;font-weight:900;color:${streakColor}">${curStreak}</div>
-          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">현재 ${streakText}</div>
+          <div style="font-size:11px;color:#64748B;margin-top:2px">현재 ${streakText}</div>
         </div>
-        <div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:12px;text-align:center;border:1px solid rgba(52,211,153,0.25)">
+        <div style="background:#FFFFFF;border-radius:10px;padding:12px;text-align:center;border:1px solid rgba(52,211,153,0.25)">
           <div style="font-size:22px;font-weight:900;color:#34d399">${maxWin}</div>
-          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">최장 연승</div>
+          <div style="font-size:11px;color:#64748B;margin-top:2px">최장 연승</div>
         </div>
-        <div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:12px;text-align:center;border:1px solid rgba(248,113,113,0.25)">
+        <div style="background:#FFFFFF;border-radius:10px;padding:12px;text-align:center;border:1px solid rgba(248,113,113,0.25)">
           <div style="font-size:22px;font-weight:900;color:#f87171">${maxLoss}</div>
-          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">최장 연패</div>
+          <div style="font-size:11px;color:#64748B;margin-top:2px">최장 연패</div>
         </div>
       </div>`;
     })()}
@@ -3187,17 +3171,17 @@ window.renderAnalysisDetail = function() {
       const maxGames = Math.max(...months.map(m=>monthly[m].games));
       return `
       <div style="font-size:14px;font-weight:800;color:#a78bfa;margin:20px 0 10px">📅 월별 성적 추이</div>
-      <div style="background:rgba(8,28,75,0.75);border-radius:12px;padding:14px;border:1px solid rgba(50,110,200,0.25)">
+      <div style="background:#FFFFFF;border-radius:12px;padding:14px;border:1px solid #D1E7E5">
         ${months.map(mon => {
           const d=monthly[mon];
           const wr=d.games>0?Math.round(d.wins/d.games*100):0;
           const monLabel=mon.slice(0,4)+'년 '+parseInt(mon.slice(5))+'월';
           return `<div style="margin-bottom:10px">
             <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px">
-              <span style="color:#e8edf2;font-weight:600">${monLabel}</span>
-              <span style="color:#4a8ab5">${d.wins}승 ${d.draws}무 ${d.losses}패 · <span style="color:${wr>=50?'#34d399':'#f87171'};font-weight:700">${wr}%</span></span>
+              <span style="color:#1E293B;font-weight:600">${monLabel}</span>
+              <span style="color:#64748B">${d.wins}승 ${d.draws}무 ${d.losses}패 · <span style="color:${wr>=50?'#34d399':'#f87171'};font-weight:700">${wr}%</span></span>
             </div>
-            <div style="display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;background:rgba(3,12,45,0.5)">
+            <div style="display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden;background:#F5FAFA">
               <div style="width:${d.games>0?Math.round(d.wins/d.games*100):0}%;background:#34d399;transition:width 0.5s"></div>
               <div style="width:${d.games>0?Math.round(d.draws/d.games*100):0}%;background:#fbbf24;transition:width 0.5s"></div>
               <div style="width:${d.games>0?Math.round(d.losses/d.games*100):0}%;background:#f87171;transition:width 0.5s"></div>
@@ -3232,22 +3216,22 @@ window.renderAnalysisDetail = function() {
       const rounds = Object.keys(byRound).sort((a,b)=>parseInt(a)-parseInt(b));
       if (rounds.length < 2) return '';
       return `
-      <div style="font-size:14px;font-weight:800;color:#60a5fa;margin:20px 0 10px">⏱️ 라운드별 강세</div>
-      <div style="background:rgba(8,28,75,0.75);border-radius:12px;padding:14px;border:1px solid rgba(50,110,200,0.25)">
+      <div style="font-size:14px;font-weight:800;color:#2563EB;margin:20px 0 10px">⏱️ 라운드별 강세</div>
+      <div style="background:#FFFFFF;border-radius:12px;padding:14px;border:1px solid #D1E7E5">
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:8px">
           ${rounds.map(rk => {
             const d=byRound[rk];
             const wr=d.games>0?Math.round(d.wins/d.games*100):0;
             const barColor=wr>=70?'#34d399':wr>=50?'#60a5fa':wr>=30?'#fbbf24':'#f87171';
-            return `<div style="text-align:center;background:rgba(3,12,45,0.6);border-radius:10px;padding:10px 6px;border:1px solid ${barColor}33">
-              <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">${rk}</div>
+            return `<div style="text-align:center;background:#EFF8F7;border-radius:10px;padding:10px 6px;border:1px solid ${barColor}33">
+              <div style="font-size:11px;color:#64748B;margin-bottom:4px">${rk}</div>
               <div style="font-size:18px;font-weight:900;color:${barColor}">${wr}%</div>
-              <div style="font-size:10px;color:#4a8ab5;margin-top:2px">${d.wins}승${d.losses}패</div>
+              <div style="font-size:10px;color:#64748B;margin-top:2px">${d.wins}승${d.losses}패</div>
               <div class="wr-bg" style="margin-top:4px"><div class="wr-bar" style="width:${wr}%;background:${barColor}"></div></div>
             </div>`;
           }).join('')}
         </div>
-        <div style="font-size:10px;color:#4a8ab5;margin-top:10px">* 체력이 좋을수록 후반 라운드 승률이 높아요</div>
+        <div style="font-size:10px;color:#64748B;margin-top:10px">* 체력이 좋을수록 후반 라운드 승률이 높아요</div>
       </div>`;
     })()}
 
@@ -3282,7 +3266,7 @@ window.renderAnalysisDetail = function() {
           const total = d.wins+d.losses+d.draws;
           const wr = total>0?Math.round(d.wins/total*100):0;
           const diff = d.scored-d.conceded;
-          return `<div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:11px 14px;border:1px solid rgba(50,110,200,0.25);border-left:3px solid ${wr>=50?'#34d399':'#f87171'}">
+          return `<div style="background:#FFFFFF;border-radius:10px;padding:11px 14px;border:1px solid #D1E7E5;border-left:3px solid ${wr>=50?'#34d399':'#f87171'}">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
               <span style="font-size:12px;font-weight:700;color:#f59e0b">📅 ${d.label}</span>
               <span style="font-size:13px;font-weight:900;color:${wr>=50?'#34d399':'#f87171'}">${wr}%</span>
@@ -3292,7 +3276,7 @@ window.renderAnalysisDetail = function() {
                 <span style="color:#34d399;font-weight:700">${d.wins}승</span>
                 ${d.draws>0?`<span style="color:#fbbf24;font-weight:700">${d.draws}무</span>`:''}
                 <span style="color:#f87171;font-weight:700">${d.losses}패</span>
-                <span style="color:#4a8ab5">${total}게임</span>
+                <span style="color:#64748B">${total}게임</span>
               </div>
               <span style="font-size:11px;color:${diff>=0?'#34d399':'#f87171'}">득실 ${diff>=0?'+':''}${diff}</span>
             </div>
@@ -3305,8 +3289,8 @@ window.renderAnalysisDetail = function() {
     })()}
 
     <!-- 🎾 포지션별 득실 분석 -->
-    <div style="font-size:14px;font-weight:800;color:#60a5fa;margin:16px 0 10px">🎾 포지션별 득실 분석</div>
-    <div style="font-size:11px;color:#4a8ab5;margin-bottom:10px">점수 입력 시 포(Fore)/백(Back) 선택하면 자동 집계돼요</div>
+    <div style="font-size:14px;font-weight:800;color:#2563EB;margin:16px 0 10px">🎾 포지션별 득실 분석</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:10px">점수 입력 시 포(Fore)/백(Back) 선택하면 자동 집계돼요</div>
     ${posCard('fore','포(Fore)','#ef4444','🔴')}
     ${posCard('back','백(Back)','#3b82f6','🔵')}
 
@@ -3341,13 +3325,13 @@ window.renderAnalysisDetail = function() {
         ${showTypes.map(([key,label,color,bg])=>{
           const d=typeStats[key];
           const wr=d.games>0?Math.round(d.wins/d.games*100):0;
-          return `<div style="background:rgba(8,28,75,0.75);border-radius:10px;padding:12px;border:1px solid ${color}44">
+          return `<div style="background:#FFFFFF;border-radius:10px;padding:12px;border:1px solid ${color}44">
             <div style="display:flex;justify-content:space-between;margin-bottom:6px">
               <span style="font-size:12px;font-weight:700;color:${color}">${label}</span>
-              <span style="font-size:11px;color:#4a8ab5">${d.games}게임</span>
+              <span style="font-size:11px;color:#64748B">${d.games}게임</span>
             </div>
             <div style="font-size:22px;font-weight:900;color:${wr>=50?'#34d399':'#f87171'};margin-bottom:4px">${wr}%</div>
-            <div style="font-size:11px;color:#4a8ab5">${d.wins}승 ${d.draws}무 ${d.losses}패</div>
+            <div style="font-size:11px;color:#64748B">${d.wins}승 ${d.draws}무 ${d.losses}패</div>
             <div class="wr-bg" style="margin-top:6px"><div class="wr-bar" style="width:${wr}%;background:${wr>=70?'linear-gradient(90deg,#34d399,#10b981)':wr>=50?'linear-gradient(90deg,#60a5fa,#3b82f6)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
           </div>`;
         }).join('')}
@@ -3380,30 +3364,30 @@ window.renderAnalysisDetail = function() {
             });
           });
         });
-        return `<div style="background:rgba(4,16,55,0.7);border-radius:10px;overflow:hidden;border:1px solid rgba(35,90,180,0.25)">
+        return `<div style="background:#EFF8F7;border-radius:10px;overflow:hidden;border:1px solid #C8E0DE">
           <button onclick="toggleAtt('${pid}','${pid}_arr')"
-            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#1E293B;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-size:13px;font-weight:700">${p.name}</span>
-              <span style="font-size:12px;color:#4a8ab5">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
+              <span style="font-size:12px;color:#64748B">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
               <span style="font-size:12px;color:${p.diff>=0?'#34d399':'#f87171'}">득실 ${p.diff>=0?'+':''}${p.diff}</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
               <span style="font-size:13px;font-weight:800;color:${p.wr>=50?'#34d399':'#f87171'}">${p.wr}%</span>
-              <span id="${pid}_arr" style="color:#4a8ab5;transition:transform 0.2s">›</span>
+              <span id="${pid}_arr" style="color:#64748B;transition:transform 0.2s">›</span>
             </div>
           </button>
           <div id="${pid}" style="display:none;padding:0 14px 12px">
             ${matchDetails.length ? matchDetails.map(md=>`
               <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid rgba(35,90,180,0.15);font-size:12px">
-                <div style="color:#4a8ab5;min-width:60px">${md.date||'날짜미상'}</div>
-                <div style="flex:1;color:#94a3b8;text-align:center;font-size:11px">vs ${md.opp}</div>
+                <div style="color:#64748B;min-width:60px">${md.date||'날짜미상'}</div>
+                <div style="flex:1;color:#78909C;text-align:center;font-size:11px">vs ${md.opp}</div>
                 <div style="font-weight:800;font-size:13px;color:#f59e0b;margin:0 8px">${md.mySc}:${md.oppSc}</div>
                 <div style="font-weight:700;padding:2px 10px;border-radius:8px;
                   background:${md.res==='승'?'rgba(52,211,153,0.15)':md.res==='패'?'rgba(248,113,113,0.15)':'rgba(251,191,36,0.15)'};
                   color:${md.res==='승'?'#34d399':md.res==='패'?'#f87171':'#fbbf24'}">${md.res}</div>
               </div>`).join('')
-            : '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
+            : '<div style="color:#64748B;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
           </div>
         </div>`;
       }).join('')}
@@ -3433,30 +3417,30 @@ window.renderAnalysisDetail = function() {
             });
           });
         });
-        return `<div style="background:rgba(4,16,55,0.7);border-radius:10px;overflow:hidden;border:1px solid rgba(35,90,180,0.25)">
+        return `<div style="background:#EFF8F7;border-radius:10px;overflow:hidden;border:1px solid #C8E0DE">
           <button onclick="toggleAtt('${oid}','${oid}_arr')"
-            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#1E293B;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
             <div style="display:flex;align-items:center;gap:10px">
               <span style="font-size:13px;font-weight:700">${p.name}</span>
-              <span style="font-size:12px;color:#4a8ab5">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
+              <span style="font-size:12px;color:#64748B">${p.wins}승 ${p.draws}무 ${p.losses}패</span>
               <span style="font-size:12px;color:${p.diff>=0?'#34d399':'#f87171'}">득실 ${p.diff>=0?'+':''}${p.diff}</span>
             </div>
             <div style="display:flex;align-items:center;gap:8px">
               <span style="font-size:13px;font-weight:800;color:${p.wr>=50?'#34d399':'#f87171'}">${p.wr}%</span>
-              <span id="${oid}_arr" style="color:#4a8ab5;transition:transform 0.2s">›</span>
+              <span id="${oid}_arr" style="color:#64748B;transition:transform 0.2s">›</span>
             </div>
           </button>
           <div id="${oid}" style="display:none;padding:0 14px 12px">
             ${matchDetails.length ? matchDetails.map(md=>`
               <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-top:1px solid rgba(35,90,180,0.15);font-size:12px">
-                <div style="color:#4a8ab5;min-width:60px">${md.date||'날짜미상'}</div>
-                <div style="flex:1;color:#94a3b8;text-align:center;font-size:11px">파트너: ${md.myTeam||'없음'}</div>
+                <div style="color:#64748B;min-width:60px">${md.date||'날짜미상'}</div>
+                <div style="flex:1;color:#78909C;text-align:center;font-size:11px">파트너: ${md.myTeam||'없음'}</div>
                 <div style="font-weight:800;font-size:13px;color:#f59e0b;margin:0 8px">${md.mySc}:${md.oppSc}</div>
                 <div style="font-weight:700;padding:2px 10px;border-radius:8px;
                   background:${md.res==='승'?'rgba(52,211,153,0.15)':md.res==='패'?'rgba(248,113,113,0.15)':'rgba(251,191,36,0.15)'};
                   color:${md.res==='승'?'#34d399':md.res==='패'?'#f87171':'#fbbf24'}">${md.res}</div>
               </div>`).join('')
-            : '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
+            : '<div style="color:#64748B;font-size:12px;padding:8px 0">상세 기록 없음</div>'}
           </div>
         </div>`;
       }).join('')}
@@ -3478,7 +3462,7 @@ function renderEvents() {
   if(!filtered.length){el.innerHTML='<div class="empty">아직 이벤트가 없어요</div>';return;}
   el.innerHTML=filtered.map(ev=>{
     const parts=ev.participants||[];
-    const partHtml=parts.length?`<div class="ev-parts"><div style="font-size:11px;color:#4a8ab5">참가자 (${parts.length}명)</div><div class="part-chips">${parts.map(p=>`<span class="part-chip">${p}</span>`).join('')}</div></div>`:'';
+    const partHtml=parts.length?`<div class="ev-parts"><div style="font-size:11px;color:#64748B">참가자 (${parts.length}명)</div><div class="part-chips">${parts.map(p=>`<span class="part-chip">${p}</span>`).join('')}</div></div>`:'';
     const delBtn=isAdmin?`<button onclick="delEvent('${ev.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">삭제</button>`:'';
     return `<div class="event-card">
       <div class="event-banner">
@@ -3513,7 +3497,7 @@ window.openEventDetail=function(evId){
     <input id="evPartSearch_${evId}" type="text" class="row-inp" placeholder="🔍 이름 검색..."
       style="width:100%;padding:7px;font-size:12px;margin-bottom:6px;box-sizing:border-box"
       oninput="renderEvPartCheckList('${evId}')">
-    <div id="evPartCheckList_${evId}" style="max-height:210px;overflow-y:auto;border:1px solid rgba(35,90,180,0.2);border-radius:8px;padding:2px 8px">
+    <div id="evPartCheckList_${evId}" style="max-height:210px;overflow-y:auto;border:1px solid #D1E7E5;border-radius:8px;padding:2px 8px">
       ${buildEvPartCheckRows(evId,'',parts)}
     </div>
   </div>`:'';
@@ -3522,7 +3506,7 @@ window.openEventDetail=function(evId){
     <div id="evPartChips_${evId}" class="part-chips">${parts.map(p=>{
       const rmBtn=isAdmin?`<button onclick="removeEvPart('${evId}','${p.replace(/'/g,"\\'")}')"`+` style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:2px">×</button>`:'';
       return `<span class="part-chip">${p}${rmBtn}</span>`;
-    }).join('')||'<span style="color:#4a8ab5;font-size:12px">없음</span>'}
+    }).join('')||'<span style="color:#64748B;font-size:12px">없음</span>'}
     </div>${checklistHtml}
   </div>`;
 
@@ -3537,7 +3521,7 @@ window.openEventDetail=function(evId){
       :'';
     let matchCards;
     if(!evMatches.length){
-      matchCards=`<div style="color:#4a8ab5;font-size:12px;padding:8px 0">매치 없음 — 페어 짜기 또는 즉석 추가로 생성하세요</div>${quickAddBtn}`;
+      matchCards=`<div style="color:#64748B;font-size:12px;padding:8px 0">매치 없음 — 페어 짜기 또는 즉석 추가로 생성하세요</div>${quickAddBtn}`;
     } else {
       const hasRoundInfo=evMatches.some(m=>m.round!==undefined);
       if(!hasRoundInfo){
@@ -3570,10 +3554,10 @@ window.openEventDetail=function(evId){
           const roundId=`evRd_${evId}_${rNum}`;
           const arrId=`evRdArr_${evId}_${rNum}`;
           const isOpen=rIdx===0;
-          return `<div style="background:rgba(4,16,55,0.5);border-radius:10px;margin-bottom:8px;border:1px solid rgba(35,90,180,0.2)">
-            <button style="width:100%;padding:10px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:700;font-size:13px;" onclick="toggleR('${roundId}','${arrId}')">
+          return `<div style="background:#FAFEFE;border-radius:10px;margin-bottom:8px;border:1px solid #D1E7E5">
+            <button style="width:100%;padding:10px 14px;background:transparent;border:none;color:#1E293B;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:700;font-size:13px;" onclick="toggleR('${roundId}','${arrId}')">
               <span>🎾 ${rNum}라운드</span>
-              <span id="${arrId}" style="color:#4a8ab5;transition:transform 0.2s${isOpen?';transform:rotate(90deg)':''}">›</span>
+              <span id="${arrId}" style="color:#64748B;transition:transform 0.2s${isOpen?';transform:rotate(90deg)':''}">›</span>
             </button>
             <div id="${roundId}" style="${isOpen?'display:flex':'display:none'};flex-direction:column;gap:0;padding:0 10px 10px">
               ${courtsHtml}${roundAddBtn}
@@ -3602,13 +3586,13 @@ window.openEventDetail=function(evId){
       :`<div class="m-score pend">예정</div>`;
     const clubForDisplay=m.oppClub||defaultOppClub||'';
     const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
-    const oppLabel=clubForDisplay?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${clubForDisplay}</span>`:oppRaw;
+    const oppLabel=clubForDisplay?`${oppRaw}<br><span style="font-size:9px;color:#2563EB">${clubForDisplay}</span>`:oppRaw;
     const hasOpp=(m.oppPair||[]).filter(Boolean).length>0;
     const oppInpId=`evOppInp_${mi}`;
     const inpId=`evInp_${mi}`;
     const defaultClub=m.oppClub||defaultOppClub||'';
     const oppOnlySec=`<div id="${oppInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-      <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀 이름</div>
+      <div style="font-size:10px;color:#2563EB;font-weight:700;margin-bottom:4px">상대팀 이름</div>
       <div style="display:flex;gap:4px;margin-bottom:8px">
         <input id="evOppOnly1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
         <input id="evOppOnly2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
@@ -3632,19 +3616,19 @@ window.openEventDetail=function(evId){
   }
 
   // 비교류전 결과 섹션
-  const resSec=ev.type!=='exchange'&&results.length?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 결과</div>${results.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #1a2a3a"><span>${['🥇','🥈','🥉'][i]||i+1+'위'}</span><span style="font-weight:700">${r.name}</span>${r.note?`<span style="font-size:11px;color:#4a8ab5">${r.note}</span>`:''}</div>`).join('')}</div>`:'';
+  const resSec=ev.type!=='exchange'&&results.length?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 결과</div>${results.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #EEF7F6"><span>${['🥇','🥈','🥉'][i]||i+1+'위'}</span><span style="font-weight:700">${r.name}</span>${r.note?`<span style="font-size:11px;color:#64748B">${r.note}</span>`:''}</div>`).join('')}</div>`:'';
   const addRes=ev.type!=='exchange'&&isAdmin?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏅 결과 추가</div><div class="row-form"><select class="row-inp" id="evResName"><option value="">선수</option>${parts.map(p=>`<option>${p}</option>`).join('')}</select><input class="row-inp" id="evResNote" placeholder="메모"><button class="btn-add" onclick="addEvResult('${evId}')">추가</button></div></div>`:'';
 
   const _ec2=document.getElementById('eventDetailContent');
   _ec2.style.background='';
   _ec2.innerHTML=`
     <div class="modal-title">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${ev.name}</div>
-    ${ev.oppClub?`<div style="font-size:12px;color:#60a5fa;margin-top:-6px;margin-bottom:10px">${ev.oppClub}</div>`:''}
+    ${ev.oppClub?`<div style="font-size:12px;color:#2563EB;margin-top:-6px;margin-bottom:10px">${ev.oppClub}</div>`:''}
     <div style="margin-bottom:16px">
       <span class="ev-type-badge ${EV_TYPE_BADGE[ev.type]||''}">${EV_TYPE_LABEL[ev.type]||ev.type}</span>
       <span class="ev-status ${EV_STATUS_CLASS[ev.status]||''}" style="margin-left:8px;font-size:12px">● ${EV_STATUS_LABEL[ev.status]||''}</span>
-      <div style="font-size:12px;color:#4a8ab5;margin-top:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
-      ${ev.desc?`<div style="font-size:13px;color:#94a3b8;margin-top:8px;line-height:1.6">${ev.desc}</div>`:''}
+      <div style="font-size:12px;color:#64748B;margin-top:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
+      ${ev.desc?`<div style="font-size:13px;color:#78909C;margin-top:8px;line-height:1.6">${ev.desc}</div>`:''}
     </div>${partSec}${exchangeSec}${resSec}${addRes}
     <div class="mft"><button class="btn-cancel" style="flex:1" onclick="hide('eventDetailModal')">닫기</button></div>`;
   document.getElementById('eventDetailModal').style.display='flex';
@@ -3660,7 +3644,7 @@ function buildScoreboardCard(m, mi, evId, parts, isMember) {
     :`<div class="m-score pend">예정</div>`;
   const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
   const clubDisplay=m.oppClub||evDefault;
-  const oppLabel=clubDisplay?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${clubDisplay}</span>`:oppRaw;
+  const oppLabel=clubDisplay?`${oppRaw}<br><span style="font-size:9px;color:#2563EB">${clubDisplay}</span>`:oppRaw;
   const courtLabel=m.court?`${m.court}코트${m.courtType?' · '+m.courtType:''}`:''
   const hasOpp=(m.oppPair||[]).filter(Boolean).length>0;
   const oppInpId=`evOppSbInp_${mi}`;
@@ -3677,7 +3661,7 @@ function buildScoreboardCard(m, mi, evId, parts, isMember) {
     <button onclick="saveEvPairEdit('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(192,132,252,0.15);border:1px solid rgba(192,132,252,0.4);border-radius:7px;color:#c084fc;font-size:12px;font-weight:700;cursor:pointer">저장</button>
   </div>`:'';
   const oppOnlySec=`<div id="${oppInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-    <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀 이름</div>
+    <div style="font-size:10px;color:#2563EB;font-weight:700;margin-bottom:4px">상대팀 이름</div>
     <div style="display:flex;gap:4px;margin-bottom:6px">
       <input id="evSbOpp1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
       <input id="evSbOpp2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
@@ -3714,7 +3698,7 @@ window.openEvScoreboard=function(evId){
     const noMatchAddBtn=isMember
       ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:8px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
       :'';
-    matchesHtml=`<div style="color:#4a8ab5;font-size:12px;padding:12px 0;text-align:center">아직 매치가 없어요.<br>이벤트 관리 화면에서 페어를 짜주세요.</div>${noMatchAddBtn}`;
+    matchesHtml=`<div style="color:#64748B;font-size:12px;padding:12px 0;text-align:center">아직 매치가 없어요.<br>이벤트 관리 화면에서 페어를 짜주세요.</div>${noMatchAddBtn}`;
   } else {
     const hasRoundInfo=evMatches.some(m=>m.round!==undefined);
     if(!hasRoundInfo){
@@ -3768,7 +3752,7 @@ window.openEvScoreboard=function(evId){
   const gameCntSorted=[...parts].sort((a,b)=>gameCntMap[a]-gameCntMap[b]);
   const gameCntRows=gameCntSorted.map(p=>{
     const types=['혼복','남복','여복'].filter(t=>gameTypeCnt[p][t]>0).map(t=>`<span style="color:${t==='혼복'?'#a78bfa':t==='남복'?'#60a5fa':'#f472b6'}">${GTS[t]}${gameTypeCnt[p][t]}</span>`).join('<span style="color:rgba(150,150,200,0.4)">·</span>');
-    return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#e8edf2">${p}</span><span style="color:#a78bfa;font-size:11px"> ${gameCntMap[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
+    return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${p}</span><span style="color:#a78bfa;font-size:11px"> ${gameCntMap[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
   }).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
   const gameCntSec=evMatches.length&&parts.length?`<div style="margin-bottom:16px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px">
     <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">🎯 참석자별 경기 수</div>
@@ -3785,8 +3769,8 @@ window.openEvScoreboard=function(evId){
       }
     });
     const played=w+l+d;
-    if(!played)return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)"><span style="flex:1;font-size:13px;font-weight:700">${p}</span><span style="font-size:11px;color:#4a8ab5">미경기</span></div>`;
-    return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)">
+    if(!played)return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="flex:1;font-size:13px;font-weight:700">${p}</span><span style="font-size:11px;color:#64748B">미경기</span></div>`;
+    return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #EEF7F6">
       <span style="flex:1;font-size:13px;font-weight:700">${p}</span>
       <span style="font-size:12px;font-weight:700;color:#34d399">${w}승</span>
       ${d?`<span style="font-size:12px;font-weight:700;color:#fbbf24">${d}무</span>`:''}
@@ -3794,16 +3778,16 @@ window.openEvScoreboard=function(evId){
     </div>`;
   }).join('');
   const statSec=parts.length?`<div style="margin-bottom:16px">
-    <div style="font-size:13px;font-weight:700;margin-bottom:6px">📊 개인 전적 <span style="font-size:10px;color:#4a8ab5;font-weight:400">(이번 이벤트전)</span></div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:6px">📊 개인 전적 <span style="font-size:10px;color:#64748B;font-weight:400">(이번 이벤트전)</span></div>
     ${statRows}
   </div>`:'';
 
   const _ec=document.getElementById('eventDetailContent');
-  _ec.style.background='linear-gradient(160deg,#0d2e3a 0%,#1a4450 50%,#0d2e3a 100%)';
+  _ec.style.background='';
   _ec.innerHTML=`
     <div class="modal-title">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${ev.name}</div>
-    ${ev.oppClub?`<div style="font-size:12px;color:#60a5fa;margin-top:-6px;margin-bottom:10px">${ev.oppClub}</div>`:''}
-    <div style="font-size:12px;color:#4a8ab5;margin-bottom:14px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
+    ${ev.oppClub?`<div style="font-size:12px;color:#2563EB;margin-top:-6px;margin-bottom:10px">${ev.oppClub}</div>`:''}
+    <div style="font-size:12px;color:#64748B;margin-bottom:14px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
     <div style="margin-bottom:16px">
       <div style="font-size:13px;font-weight:700;margin-bottom:8px">🎾 대진표</div>
       ${matchesHtml}
@@ -3811,7 +3795,7 @@ window.openEvScoreboard=function(evId){
     ${gameCntSec}
     ${statSec}
     <div class="mft">
-      ${isAdmin?`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">⚙️ 참가자/페어 관리</button>`:''}
+      ${isAdmin?`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">⚙️ 참가자/페어 관리</button>`:''}
       <button class="btn-cancel" style="flex:1" onclick="hide('eventDetailModal')">닫기</button>
     </div>`;
   document.getElementById('eventDetailModal').style.display='flex';
@@ -3839,13 +3823,13 @@ function buildEvPartCheckRows(evId, filter, currentParts) {
   const guestList = guests.map(g => ({ name: g.name, gender: g.gender }))
     .filter(p => !lf || p.name.toLowerCase().includes(lf));
   if (!memberList.length && !guestList.length)
-    return '<div style="color:#4a8ab5;font-size:12px;padding:8px 0">검색 결과 없음</div>';
+    return '<div style="color:#64748B;font-size:12px;padding:8px 0">검색 결과 없음</div>';
   const renderRow = p => {
     const inParts = currentParts.includes(p.name);
     const safe = p.name.replace(/'/g, "\\'");
-    const gColor = p.gender === 'f' ? 'color:#f9a8d4' : 'color:#93c5fd';
+    const gColor = p.gender === 'f' ? 'color:#f9a8d4' : 'color:#1D6FB8';
     return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(35,90,180,0.1)">
-      <span style="font-size:13px;font-weight:600;color:#e8edf2">
+      <span style="font-size:13px;font-weight:600;color:#1E293B">
         <span style="${gColor}">${p.gender==='f'?'♀':'♂'}</span> ${p.name}
       </span>
       <button onclick="toggleEvPart('${evId}','${safe}')"
@@ -3861,7 +3845,7 @@ function buildEvPartCheckRows(evId, filter, currentParts) {
     html += memberList.map(renderRow).join('');
   }
   if (guestList.length) {
-    html += `<div style="font-size:10px;color:#34d399;font-weight:700;padding:6px 0 2px${memberList.length?';margin-top:4px;border-top:1px solid rgba(35,90,180,0.2)':''}">👤 게스트</div>`;
+    html += `<div style="font-size:10px;color:#34d399;font-weight:700;padding:6px 0 2px${memberList.length?';margin-top:4px;border-top:1px solid #E8F4F3':''}">👤 게스트</div>`;
     html += guestList.map(renderRow).join('');
   }
   return html;
@@ -3886,7 +3870,7 @@ window.toggleEvPart = async function(evId, name) {
     chipsEl.innerHTML = parts.map(p => {
       const s = p.replace(/'/g, "\\'");
       return `<span class="part-chip">${p}<button onclick="removeEvPart('${evId}','${s}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:2px">×</button></span>`;
-    }).join('') || '<span style="color:#4a8ab5;font-size:12px">없음</span>';
+    }).join('') || '<span style="color:#64748B;font-size:12px">없음</span>';
   }
   const countEl = document.getElementById(`evPartCount_${evId}`);
   if (countEl) countEl.textContent = `👥 참가자 (${parts.length}명)`;
@@ -4039,10 +4023,10 @@ function renderEvExchangePairResult(evId){
       ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${ex.ourScore} : ${ex.oppScore}</div>`
       :`<div class="m-score pend">예정</div>`;
     const oppRaw=(ex.oppPair||[]).join(' / ')||'미입력';
-    const oppLabel=ex.oppClub?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${ex.oppClub}</span>`:oppRaw;
+    const oppLabel=ex.oppClub?`${oppRaw}<br><span style="font-size:9px;color:#2563EB">${ex.oppClub}</span>`:oppRaw;
     const inpId=`evGenInp_${i}`;
     return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
-      <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">매치 ${i+1}</span></div>
+      <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#64748B">매치 ${i+1}</span></div>
       <div class="match-row">
         <div class="m-team ${won?'win':''}">${pair.join(' / ')}</div>
         ${scoreEl}
@@ -4052,14 +4036,14 @@ function renderEvExchangePairResult(evId){
         <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>
       </div>
       <div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-        <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
+        <div style="font-size:10px;color:#2563EB;font-weight:700;margin-bottom:4px">상대팀</div>
         <div style="display:flex;gap:4px;margin-bottom:6px">
           <input id="evGenOpp1_${i}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(ex.oppPair||[])[0]||''}">
           <input id="evGenOpp2_${i}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(ex.oppPair||[])[1]||''}">
           <input id="evGenOppClub_${i}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${ex.oppClub||''}">
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:11px;color:#8aa5c4">스코어</span>
+          <span style="font-size:11px;color:#78909C">스코어</span>
           <input type="number" id="evGenS1_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.ourScore:''}">
           <span style="color:#a78bfa">:</span>
           <input type="number" id="evGenS2_${i}" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700" placeholder="0" value="${done?ex.oppScore:''}">
@@ -4070,10 +4054,10 @@ function renderEvExchangePairResult(evId){
   }).join('');
   document.getElementById('eventDetailContent').innerHTML=`
     <div class="modal-title">🤝 교류전 대진</div>
-    <div style="font-size:12px;color:#8aa5c4;margin-bottom:12px">📝 버튼으로 결과를 입력하세요</div>
+    <div style="font-size:12px;color:#78909C;margin-bottom:12px">📝 버튼으로 결과를 입력하세요</div>
     ${cards}
     <div style="display:flex;gap:8px;margin-top:10px">
-      <button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">← 상세보기</button>
+      <button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">← 상세보기</button>
       <button onclick="showEvExchangePairConfig('${evId}')" style="flex:1;padding:9px;background:rgba(167,139,250,0.3);border:1px solid rgba(167,139,250,0.5);border-radius:9px;color:#a78bfa;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 짜기</button>
     </div>`;
 }
@@ -4245,14 +4229,14 @@ function renderAdmin(){
       <div class="admin-sec" style="border-color:rgba(245,158,11,0.4);background:rgba(40,30,0,0.5)">
         <h3>🆕 가입 승인 대기 (${pendingSignups.length})</h3>
         ${pendingSignups.map(r => `
-          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid rgba(35,90,180,0.2)">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #E8F4F3">
             <div>
               <div style="font-weight:700">
                 ${r.claimedName} ${r.gender==='f'?'♀':'♂'}
                 ${r.isNewName?'<span style="color:#f59e0b;font-size:11px">(신규)</span>':''}
-                ${r.nickname?`<span style="color:#60a5fa;font-size:11px"> → "${r.nickname}"으로 표시 희망</span>`:''}
+                ${r.nickname?`<span style="color:#2563EB;font-size:11px"> → "${r.nickname}"으로 표시 희망</span>`:''}
               </div>
-              <div style="font-size:11px;color:#4a8ab5">${r.email}</div>
+              <div style="font-size:11px;color:#64748B">${r.email}</div>
             </div>
             <div style="display:flex;gap:6px">
               <button onclick="approveSignup('${r.id}')" style="padding:6px 12px;background:#34d399;color:#04150c;border:none;border-radius:8px;font-weight:700;cursor:pointer">승인</button>
@@ -4269,12 +4253,12 @@ function renderAdmin(){
           <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span>
           ${m.name}
           <button onclick="renameMember('${m.name}')" title="이름 변경"
-            style="background:none;border:none;color:#60a5fa;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
+            style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="demoteMember('${m.name}')" title="게스트로 전환"
             style="background:none;border:none;color:#fbbf24;font-size:12px;cursor:pointer;padding:0 2px">⬇️</button>
           <button class="chip-x" onclick="delMember('${m.name}')">×</button>
         </span>`).join('')
-    : '<span style="color:#4a8ab5;font-size:12px">등록된 회원 없음</span>';
+    : '<span style="color:#64748B;font-size:12px">등록된 회원 없음</span>';
 
   // ── 게스트 칩 (버그 수정) ──
   document.getElementById('guestChips').innerHTML = guests.length
@@ -4284,12 +4268,12 @@ function renderAdmin(){
           <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span>
           ${g.name}
           <button onclick="renameGuest('${g.name}')" title="이름 변경"
-            style="background:none;border:none;color:#60a5fa;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
+            style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="promoteGuest('${g.name}')" title="정규회원으로 전환"
             style="background:none;border:none;color:#34d399;font-size:12px;cursor:pointer;padding:0 2px">⬆️</button>
           <button class="chip-x" onclick="delGuest('${g.name}')">×</button>
         </span>`).join('')
-    : '<span style="color:#4a8ab5;font-size:12px">등록된 게스트 없음</span>';
+    : '<span style="color:#64748B;font-size:12px">등록된 게스트 없음</span>';
 
   // ── 게스트 상세 성적 (합산/시즌별 토글, 정렬 가능) ──
   const guestStatsEl = document.getElementById('guestStatsDetail');
@@ -4323,7 +4307,7 @@ function renderAdmin(){
         ['wr','승률'], ['scored','득점'], ['conceded','실점'], ['diff','득실'], ['_action',''],
       ];
       const headHtml = headers.map(([k,label]) => {
-        if(k==='_action') return `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600"></th>`;
+        if(k==='_action') return `<th style="text-align:center;padding:5px 6px;color:#64748B;font-weight:600"></th>`;
         const active = adminGuestSortKey === k;
         const arrow = active ? (adminGuestSortDir === 1 ? ' ▲' : ' ▼') : '';
         return `<th onclick="setAdminGuestSort('${k}')" style="text-align:center;padding:5px 6px;color:${active?'#34d399':'#4a8ab5'};font-weight:${active?800:600};cursor:pointer;user-select:none;white-space:nowrap">${label}${arrow}</th>`;
@@ -4344,7 +4328,7 @@ function renderAdmin(){
             const sAtt = r.att.bySeason[s] || 0;
             return `<tr>
               <td style="padding:4px 6px;color:${r.gender==='f'?'#f472b6':'#60a5fa'}">${r.gender==='f'?'♀':'♂'} ${r.name}</td>
-              <td style="text-align:center;padding:4px 6px;color:#4a8ab5">S${s}</td>
+              <td style="text-align:center;padding:4px 6px;color:#64748B">S${s}</td>
               <td style="text-align:center;padding:4px 6px">${d.games}</td>
               <td style="text-align:center;padding:4px 6px;color:#fbbf24">${sAtt}일</td>
               <td style="text-align:center;padding:4px 6px;color:#34d399">${d.wins}</td>
@@ -4397,9 +4381,9 @@ function renderAdmin(){
       const titleLabel = adminGuestViewMode === 'bySeason' ? '📈 게스트 상세 성적 (시즌별)' : '📈 게스트 상세 성적 (전체 시즌 합산)';
       const colSpan = adminGuestViewMode === 'bySeason' ? 12 : 11;
       const seasonHeadExtra = adminGuestViewMode === 'bySeason'
-        ? `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600">시즌</th>` : '';
+        ? `<th style="text-align:center;padding:5px 6px;color:#64748B;font-weight:600">시즌</th>` : '';
       const headRow = adminGuestViewMode === 'bySeason'
-        ? `<th style="text-align:center;padding:5px 6px;color:#4a8ab5;font-weight:600">이름</th>${seasonHeadExtra}` + headers.slice(1).map(([k,label]) => {
+        ? `<th style="text-align:center;padding:5px 6px;color:#64748B;font-weight:600">이름</th>${seasonHeadExtra}` + headers.slice(1).map(([k,label]) => {
             if(k==='_action') return `<th style="text-align:center;padding:5px 6px"></th>`;
             const active = adminGuestSortKey === k;
             const arrow = active ? (adminGuestSortDir === 1 ? ' ▲' : ' ▼') : '';
@@ -4408,7 +4392,7 @@ function renderAdmin(){
         : headHtml;
 
       guestStatsEl.innerHTML = !rows.length
-        ? toggleBar + '<div style="color:#4a8ab5;font-size:12px;margin-top:10px">아직 완료된 게스트 경기가 없어요</div>'
+        ? toggleBar + '<div style="color:#64748B;font-size:12px;margin-top:10px">아직 완료된 게스트 경기가 없어요</div>'
         : `${toggleBar}
         <div style="font-size:11px;color:#34d399;margin-bottom:6px">${titleLabel}</div>
         <div style="overflow-x:auto">
@@ -4429,7 +4413,7 @@ function renderAdmin(){
             <span style="color:#f472b6">💑</span> ${c.m} & ${c.f}
             <button class="chip-x" onclick="deleteCouple('${c.m}','${c.f}')">×</button>
           </span>`).join('')
-      : '<span style="color:#4a8ab5;font-size:12px">등록된 커플/부부 없음</span>';
+      : '<span style="color:#64748B;font-size:12px">등록된 커플/부부 없음</span>';
   }
   // 커플 셀렉터 옵션 업데이트
   const mSel=document.getElementById('coupleM'), fSel=document.getElementById('coupleF');
@@ -4450,10 +4434,10 @@ function renderAdmin(){
   if (attEl) {
     const adminDays = getAdminDays();
     if (!days.length) {
-      attEl.innerHTML = '<div style="color:#4a8ab5;font-size:12px">날짜 그룹을 먼저 추가해주세요</div>';
+      attEl.innerHTML = '<div style="color:#64748B;font-size:12px">날짜 그룹을 먼저 추가해주세요</div>';
     } else if (!adminDays.length) {
       const s = adminDaySeason ?? currentSeason;
-      attEl.innerHTML = `<div style="color:#4a8ab5;font-size:12px">시즌 ${s}에 등록된 날짜가 없어요</div>`;
+      attEl.innerHTML = `<div style="color:#64748B;font-size:12px">시즌 ${s}에 등록된 날짜가 없어요</div>`;
     } else {
       const existingBodyIds = new Set(adminDays.map(d=>`att_body_${d.id}`));
       openAttBodies.forEach(id=>{ if(!existingBodyIds.has(id)) openAttBodies.delete(id); });
@@ -4469,8 +4453,8 @@ function renderAdmin(){
         // 정규회원 행
         const memberRows = members.map(m => {
           const status = att[m.name] ?? true;
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid rgba(35,90,180,0.12)">
-            <span style="font-size:13px;font-weight:600;color:#e8edf2">
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #EEF7F6">
+            <span style="font-size:13px;font-weight:600;color:#1E293B">
               <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span> ${m.name}
             </span>
             <div style="display:flex;gap:6px">
@@ -4491,7 +4475,7 @@ function renderAdmin(){
             ${guests.map(g => {
               const joined = dayGuests.includes(g.name);
               return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">
-                <span style="font-size:13px;color:#e8edf2">
+                <span style="font-size:13px;color:#1E293B">
                   <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span> ${g.name}
                 </span>
                 <button onclick="toggleDayGuest('${day.id}','${g.name}')"
@@ -4503,9 +4487,9 @@ function renderAdmin(){
             }).join('')}
           </div>` : '';
 
-        return `<div style="background:rgba(4,16,55,0.6);border-radius:10px;border:1px solid rgba(35,90,180,0.25);margin-bottom:6px;overflow:hidden">
+        return `<div style="background:#F5FAFA;border-radius:10px;border:1px solid #C8E0DE;margin-bottom:6px;overflow:hidden">
           <button onclick="toggleAtt('${bodyId}','${arrId}')"
-            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#e8edf2;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+            style="width:100%;padding:12px 14px;background:transparent;border:none;color:#1E293B;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
             <div style="display:flex;align-items:center;gap:8px">
               <span style="font-size:13px;font-weight:800;color:#f59e0b">📅 ${dateStr}${day.place?' · '+day.place:''}</span>
               <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;
@@ -4513,7 +4497,7 @@ function renderAdmin(){
                 참석 ${attendingCount}명
               </span>
             </div>
-            <span id="${arrId}" style="color:#4a8ab5;font-size:14px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">›</span>
+            <span id="${arrId}" style="color:#64748B;font-size:14px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">›</span>
           </button>
           <div id="${bodyId}" style="display:${isOpen?'block':'none'};padding:0 14px 14px">
             ${memberRows}${guestRows}
@@ -4528,13 +4512,13 @@ function renderAdmin(){
   const totalM=days.reduce((a,d)=>(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).length,a),0);
   const doneM=days.reduce((a,d)=>(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).filter(m=>m.done).length,a),0);
   document.getElementById('leagueStat').innerHTML=`
-    <div class="stat-row"><span style="color:#4a8ab5">정규 회원</span><span style="font-weight:700">${members.length}명 (남${members.filter(m=>m.gender==='m').length}/여${members.filter(m=>m.gender==='f').length})</span></div>
+    <div class="stat-row"><span style="color:#64748B">정규 회원</span><span style="font-weight:700">${members.length}명 (남${members.filter(m=>m.gender==='m').length}/여${members.filter(m=>m.gender==='f').length})</span></div>
     <div class="stat-row"><span style="color:#34d399">게스트</span><span style="font-weight:700;color:#34d399">${guests.length}명</span></div>
-    <div class="stat-row"><span style="color:#4a8ab5">날짜 그룹</span><span style="font-weight:700">${days.length}일</span></div>
-    <div class="stat-row"><span style="color:#4a8ab5">총 라운드</span><span style="font-weight:700">${totalR}라운드</span></div>
-    <div class="stat-row"><span style="color:#4a8ab5">완료 경기</span><span style="font-weight:700;color:#34d399">${doneM}경기</span></div>
-    <div class="stat-row"><span style="color:#4a8ab5">예정 경기</span><span style="font-weight:700;color:#fbbf24">${totalM-doneM}경기</span></div>
-    <div class="stat-row"><span style="color:#4a8ab5">이벤트</span><span style="font-weight:700;color:#a78bfa">${events.length}개</span></div>`;
+    <div class="stat-row"><span style="color:#64748B">날짜 그룹</span><span style="font-weight:700">${days.length}일</span></div>
+    <div class="stat-row"><span style="color:#64748B">총 라운드</span><span style="font-weight:700">${totalR}라운드</span></div>
+    <div class="stat-row"><span style="color:#64748B">완료 경기</span><span style="font-weight:700;color:#34d399">${doneM}경기</span></div>
+    <div class="stat-row"><span style="color:#64748B">예정 경기</span><span style="font-weight:700;color:#fbbf24">${totalM-doneM}경기</span></div>
+    <div class="stat-row"><span style="color:#64748B">이벤트</span><span style="font-weight:700;color:#a78bfa">${events.length}개</span></div>`;
 }
 
 // 탭
@@ -4708,8 +4692,8 @@ function renderEditAttendList(attend) {
   if (!el) return;
   const entries = Object.entries(editAttendState);
   el.innerHTML = entries.length ? entries.map(([name, status]) => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(35,90,180,0.15)">
-      <span style="font-size:12px;color:#e8edf2">${name}</span>
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #EEF7F6">
+      <span style="font-size:12px;color:#1E293B">${name}</span>
       <div style="display:flex;gap:4px;align-items:center">
         <select onchange="editAttendSetStatus('${name}', this.value)" class="row-sel" style="font-size:11px;padding:4px">
           <option value="참석" ${status==='참석'?'selected':''}>참석</option>
@@ -4718,7 +4702,7 @@ function renderEditAttendList(attend) {
         </select>
         <button onclick="editAttendRemove('${name}')" style="background:none;border:none;color:#f87171;font-size:14px;cursor:pointer;padding:0 4px">×</button>
       </div>
-    </div>`).join('') : '<div style="font-size:11px;color:#4a8ab5;padding:4px 0">참석자가 없어요</div>';
+    </div>`).join('') : '<div style="font-size:11px;color:#64748B;padding:4px 0">참석자가 없어요</div>';
 }
 
 window.editAttendSetStatus = function(name, status) {
@@ -4747,7 +4731,7 @@ window.openMeetupPairModal = function(scheduleId) {
   const attend = sch.attend || {};
   const attendees = Object.entries(attend).filter(([_, v]) => v === '참석').map(([n]) => n);
   if (attendees.length < 4) {
-    document.getElementById('meetupPairBody').innerHTML = '<div class="empty" style="padding:16px;text-align:center;color:#8aa5c4;font-size:13px">참석자가 4명 이상이어야 페어를 짤 수 있어요</div>';
+    document.getElementById('meetupPairBody').innerHTML = '<div class="empty" style="padding:16px;text-align:center;color:#78909C;font-size:13px">참석자가 4명 이상이어야 페어를 짤 수 있어요</div>';
     document.getElementById('meetupPairModal').style.display = 'flex';
     return;
   }
@@ -4761,13 +4745,13 @@ function renderMeetupConfigStep() {
   body.innerHTML = `
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <div style="flex:1">
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">코트 수</div>
+        <div style="font-size:11px;color:#64748B;margin-bottom:4px">코트 수</div>
         <select id="meetupCourtsSel" class="row-sel" style="width:100%;padding:8px">
           ${[1,2,3,4].map(n=>`<option value="${n}" ${n===meetupConfig.courts?'selected':''}>${n}코트</option>`).join('')}
         </select>
       </div>
       <div style="flex:1">
-        <div style="font-size:11px;color:#4a8ab5;margin-bottom:4px">라운드 수</div>
+        <div style="font-size:11px;color:#64748B;margin-bottom:4px">라운드 수</div>
         <select id="meetupRoundsSel" class="row-sel" style="width:100%;padding:8px">
           ${[1,2,3,4,5,6,7,8].map(n=>`<option value="${n}" ${n===meetupConfig.rounds?'selected':''}>${n}라운드</option>`).join('')}
         </select>
@@ -4792,7 +4776,7 @@ function renderMeetupTypeStep() {
       const cur = meetupConfig.types[key] || '혼복';
       rows += `
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-          <span style="font-size:11px;color:#8aa5c4;width:50px">${c}코트</span>
+          <span style="font-size:11px;color:#78909C;width:50px">${c}코트</span>
           <select id="meetupType_${key}" class="row-sel" style="flex:1;padding:6px;font-size:12px">
             ${['혼복','남복','여복','잡복'].map(t=>`<option value="${t}" ${t===cur?'selected':''}>${t}</option>`).join('')}
           </select>
@@ -4801,7 +4785,7 @@ function renderMeetupTypeStep() {
   }
   body.innerHTML = `${rows}
     <div style="display:flex;gap:8px;margin-top:8px">
-      <button onclick="meetupBackToConfigStep()" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">← 뒤로</button>
+      <button onclick="meetupBackToConfigStep()" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">← 뒤로</button>
       <button onclick="meetupGenerate()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">🎲 ${evExchangeMode?'자동 생성':'게임 생성'}</button>
       ${evExchangeMode?`<button onclick="meetupGenerateManual()" style="flex:1;padding:9px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:9px;color:#34d399;font-size:12px;font-weight:800;cursor:pointer">✏️ 직접 배정</button>`:''}
     </div>`;
@@ -5161,22 +5145,22 @@ function renderMeetupResultStep() {
         const dispOpp1 = preOpp1 || (ex.oppPair||[])[0] || '';
         const dispOpp2 = preOpp2 || (ex.oppPair||[])[1] || '';
         const oppRaw = [dispOpp1,dispOpp2].filter(Boolean).join(' / ')||'미입력';
-        const oppLabel = (preOppClub||ex.oppClub) ? `${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${preOppClub||ex.oppClub}</span>` : oppRaw;
+        const oppLabel = (preOppClub||ex.oppClub) ? `${oppRaw}<br><span style="font-size:9px;color:#2563EB">${preOppClub||ex.oppClub}</span>` : oppRaw;
         const oppInpId = `evExOppInp_${idx}`;
         return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
-          <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#4a8ab5">매치 ${idx+1} · ${m.court}코트</span></div>
+          <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#64748B">매치 ${idx+1} · ${m.court}코트</span></div>
           <div class="match-row">
             <div class="m-team ${won?'win':''}">${pair.join(' / ')}</div>
             ${scoreEl}
             <div class="m-team ${lost?'win':''}">${oppLabel}</div>
           </div>
           <div style="display:flex;gap:5px;margin-top:8px">
-            <button onclick="startEvExchangeEdit(${ri},${mci},0,${idx})" style="padding:5px 8px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:7px;color:#93c5fd;font-size:11px;font-weight:700;cursor:pointer">✏️ 수정</button>
+            <button onclick="startEvExchangeEdit(${ri},${mci},0,${idx})" style="padding:5px 8px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:7px;color:#1D6FB8;font-size:11px;font-weight:700;cursor:pointer">✏️ 수정</button>
             <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${oppInpId}')">👤 상대팀 입력</button>
             <button class="btn-input" style="margin-top:0;flex:1" onclick="openPendingEvScore(${ri},${mci},${idx})">📝 결과 입력</button>
           </div>
           <div id="${oppInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-            <div style="font-size:10px;color:#60a5fa;font-weight:700;margin-bottom:4px">상대팀</div>
+            <div style="font-size:10px;color:#2563EB;font-weight:700;margin-bottom:4px">상대팀</div>
             <div style="display:flex;gap:4px">
               <input id="evExOpp1_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${preOpp1}">
               <input id="evExOpp2_${idx}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${preOpp2}">
@@ -5196,12 +5180,12 @@ function renderMeetupResultStep() {
     const _GTS={'혼복':'혼','남복':'남','여복':'여'};
     const _gcRowsEx=evExchangeAttendees.map(a=>a.name).sort((a,b)=>_gcEx[a]-_gcEx[b]).map(p=>{
       const types=['혼복','남복','여복'].filter(t=>_gtEx[p][t]>0).map(t=>`<span style="color:${t==='혼복'?'#a78bfa':t==='남복'?'#60a5fa':'#f472b6'}">${_GTS[t]}${_gtEx[p][t]}</span>`).join('<span style="color:rgba(150,150,200,0.4)">·</span>');
-      return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#e8edf2">${p}</span><span style="color:#a78bfa;font-size:11px"> ${_gcEx[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
+      return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${p}</span><span style="color:#a78bfa;font-size:11px"> ${_gcEx[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
     }).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
     const _gcSecEx=`<div style="margin:10px 0 6px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px"><div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">🎯 참석자별 경기 수</div><div style="font-size:12px;line-height:2;display:flex;flex-wrap:wrap;gap:2px 0">${_gcRowsEx}</div></div>`;
     body.innerHTML = `<div style="margin-bottom:10px;padding:8px 12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:9px;font-size:11px;font-weight:700;color:#fbbf24">⚠️ 아직 저장되지 않았습니다. 저장 버튼을 눌러야 대진표가 확정됩니다.</div>${html}${_gcSecEx}
       <div style="display:flex;gap:6px;margin-top:10px">
-        <button onclick="meetupBackToTypeStep()" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 설정</button>
+        <button onclick="meetupBackToTypeStep()" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 설정</button>
         <button onclick="meetupGenerate()" style="flex:1;padding:9px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.4);border-radius:9px;color:#34d399;font-size:12px;font-weight:800;cursor:pointer">🎲 재생성</button>
         <button onclick="saveEvExchangeMeetup()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">✅ 저장</button>
       </div>`;
@@ -5211,9 +5195,9 @@ function renderMeetupResultStep() {
   const html = meetupCurrentRounds.map(rd => `
     <div style="font-size:12px;color:#a78bfa;font-weight:700;margin:10px 0 6px">${rd.round}라운드</div>
     ${rd.matches.map((m, mi) => `
-      <div style="background:rgba(3,12,45,0.5);border-radius:10px;padding:10px;margin-bottom:6px">
-        <div style="font-size:10px;color:#8aa5c4;margin-bottom:4px">${m.court}코트 · ${m.type}</div>
-        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#e8edf2">
+      <div style="background:#F5FAFA;border-radius:10px;padding:10px;margin-bottom:6px">
+        <div style="font-size:10px;color:#78909C;margin-bottom:4px">${m.court}코트 · ${m.type}</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#1E293B">
           <span style="flex:1;text-align:right;font-weight:700">${m.team1.join(' · ')}</span>
           <input type="number" id="meetupS1_${rd.round}_${mi}" min="0" placeholder="0" style="width:44px;text-align:center;background:rgba(0,0,0,0.3);border:1.5px solid rgba(167,139,250,0.5);border-radius:6px;color:#fff;padding:5px;font-weight:700">
           <span style="color:#a78bfa">:</span>
@@ -5233,12 +5217,12 @@ function renderMeetupResultStep() {
   const _GTS2={'혼복':'혼','남복':'남','여복':'여'};
   const _gcRowsR=Object.keys(_gcR).sort((a,b)=>_gcR[a]-_gcR[b]).map(p=>{
     const types=['혼복','남복','여복'].filter(t=>_gtR[p][t]>0).map(t=>`<span style="color:${t==='혼복'?'#a78bfa':t==='남복'?'#60a5fa':'#f472b6'}">${_GTS2[t]}${_gtR[p][t]}</span>`).join('<span style="color:rgba(150,150,200,0.4)">·</span>');
-    return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#e8edf2">${p}</span><span style="color:#a78bfa;font-size:11px"> ${_gcR[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
+    return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${p}</span><span style="color:#a78bfa;font-size:11px"> ${_gcR[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
   }).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
   const _gcSecR=`<div style="margin:10px 0 6px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px"><div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">🎯 참석자별 경기 수</div><div style="font-size:12px;line-height:2;display:flex;flex-wrap:wrap;gap:2px 0">${_gcRowsR}</div></div>`;
   body.innerHTML = `<div style="margin-bottom:10px;padding:8px 12px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:9px;font-size:11px;font-weight:700;color:#fbbf24">⚠️ 아직 저장되지 않았습니다. 저장 버튼을 눌러야 대진표가 확정됩니다.</div>${html}${_gcSecR}
     <div style="display:flex;gap:6px;margin-top:10px">
-      <button onclick="meetupBackToTypeStep()" style="flex:1;padding:9px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:9px;color:#93c5fd;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 설정</button>
+      <button onclick="meetupBackToTypeStep()" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">🔄 다시 설정</button>
       <button onclick="meetupGenerate()" style="flex:1;padding:9px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.4);border-radius:9px;color:#34d399;font-size:12px;font-weight:800;cursor:pointer">🎲 재생성</button>
       <button onclick="saveMeetupPairs()" style="flex:1;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">✅ 저장</button>
     </div>`;
@@ -5434,10 +5418,10 @@ function renderBoard(){
         <h3 style="margin-bottom:4px">${p.title}</h3>
         <button onclick="delBoardPost('${p.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">삭제</button>
       </div>
-      <div style="font-size:11px;color:#4a8ab5;margin-bottom:8px">✍️ ${p.author}</div>
-      <div style="font-size:13px;color:#e8edf2;white-space:pre-wrap;margin-bottom:10px">${p.content}</div>
-      <div style="border-top:1px solid rgba(35,90,180,0.2);padding-top:8px">
-        ${(p.comments||[]).map(c=>`<div style="font-size:12px;color:#8aa5c4;margin-bottom:4px"><b style="color:#60a5fa">${c.name}</b> ${c.text}</div>`).join('')}
+      <div style="font-size:11px;color:#64748B;margin-bottom:8px">✍️ ${p.author}</div>
+      <div style="font-size:13px;color:#1E293B;white-space:pre-wrap;margin-bottom:10px">${p.content}</div>
+      <div style="border-top:1px solid #E8F4F3;padding-top:8px">
+        ${(p.comments||[]).map(c=>`<div style="font-size:12px;color:#78909C;margin-bottom:4px"><b style="color:#2563EB">${c.name}</b> ${c.text}</div>`).join('')}
         <div style="display:flex;gap:6px;margin-top:6px">
           <select id="bcmt_who_${p.id}" class="row-sel" style="width:80px;font-size:11px;padding:6px"><option value="">이름</option>${opts}</select>
           <input id="bcmt_text_${p.id}" class="row-inp" placeholder="댓글 입력..." style="flex:1;font-size:12px;padding:7px" onkeydown="if(event.key==='Enter')addBoardComment('${p.id}')">
@@ -5673,14 +5657,14 @@ function renderHomeTab() {
              <div style="font-size:22px;font-weight:900;color:#f59e0b">${me.pts}점</div>
              ${myRank>0?`<div style="font-size:11px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">${myRank}위</div>`:''}
            </div>
-           <div style="font-size:14px;color:#60a5fa;margin-bottom:3px">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
-           <div style="font-size:13px;color:#8aa5c4">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
+           <div style="font-size:14px;color:#2563EB;margin-bottom:3px">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
+           <div style="font-size:13px;color:#78909C">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
          </div>`
-      : `<div style="text-align:center;color:#4a8ab5;font-size:14px;padding:4px 0">아직 경기 기록이 없어요</div>`;
+      : `<div style="text-align:center;color:#64748B;font-size:14px;padding:4px 0">아직 경기 기록이 없어요</div>`;
 
     myRecordHtml = `
-      <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:800;color:#4a8ab5;margin-bottom:10px">📊 ${myClaim.name}님의 기록</div>
+      <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:800;color:#64748B;margin-bottom:10px">📊 ${myClaim.name}님의 기록</div>
         ${statsInner}
       </div>`;
   }
@@ -5732,7 +5716,7 @@ function renderHomeTab() {
         <span style="font-size:13px;color:#34d399">✅ ${totalAttend}명 참석</span>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-        ${d.place?`<span style="font-size:13px;color:#60a5fa">📍 ${d.place}</span>`:''}
+        ${d.place?`<span style="font-size:13px;color:#2563EB">📍 ${d.place}</span>`:''}
         ${pairsSummary}
       </div>
       <div><span id="wxBadgeGame" style="font-size:17px;color:#e2e8f0;font-weight:700"></span></div>
@@ -5755,11 +5739,11 @@ function renderHomeTab() {
         <span style="font-size:12px;color:#a78bfa">${evLabel}</span>
       </div>
       <div style="font-size:16px;font-weight:900;color:#fbbf24;margin-bottom:4px">${dl}</div>
-      <div style="font-size:15px;font-weight:700;color:#e8edf2;margin-bottom:4px">
-        ${e.name}${e.oppClub?` <span style="font-size:13px;font-weight:600;color:#60a5fa;background:rgba(96,165,250,0.12);padding:2px 7px;border-radius:8px">${e.oppClub}</span>`:''}
+      <div style="font-size:15px;font-weight:700;color:#1E293B;margin-bottom:4px">
+        ${e.name}${e.oppClub?` <span style="font-size:13px;font-weight:600;color:#2563EB;background:rgba(96,165,250,0.12);padding:2px 7px;border-radius:8px">${e.oppClub}</span>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-        ${e.place?`<span style="font-size:13px;color:#60a5fa">📍 ${e.place}</span>`:''}
+        ${e.place?`<span style="font-size:13px;color:#2563EB">📍 ${e.place}</span>`:''}
         ${partCount?`<span style="font-size:13px;color:#34d399">👥 ${partCount}명 참가예정</span>`:''}
       </div>
       <div><span id="wxBadgeEv" style="font-size:17px;color:#e2e8f0;font-weight:700"></span></div>
@@ -5782,13 +5766,13 @@ function renderHomeTab() {
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
             <span style="font-size:14px;font-weight:800;color:#fbbf24">${dl}${s.time?' '+s.time:''}</span>
             <span style="font-size:12px;color:#34d399">✅ ${yes}명</span>
-            ${s.place?`<span style="font-size:12px;color:#4a8ab5">📍 ${s.place}</span>`:''}
+            ${s.place?`<span style="font-size:12px;color:#64748B">📍 ${s.place}</span>`:''}
           </div>
-          <div style="font-size:13px;color:#8aa5c4;line-height:1.4;margin-bottom:4px">${(s.content||'').slice(0,45)}</div>
+          <div style="font-size:13px;color:#78909C;line-height:1.4;margin-bottom:4px">${(s.content||'').slice(0,45)}</div>
           <div><span id="wxBadgeSched_${i}" style="font-size:15px;color:#e2e8f0;font-weight:700"></span></div>
         </div>`;
       }).join('')
-    : `<div style="font-size:14px;color:#4a8ab5;padding:4px 0">예정된 일정이 없어요</div>`;
+    : `<div style="font-size:14px;color:#64748B;padding:4px 0">예정된 일정이 없어요</div>`;
 
   // 바로가기 — 확장형 카테고리 카드
   var CATS = [
@@ -5806,7 +5790,7 @@ function renderHomeTab() {
       return '<button onclick="homeGoTo(\'' + it.go + '\')" class="sc-item"'
         + ' style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 6px;cursor:pointer;text-align:center;width:100%">'
         + '<div style="font-size:22px;margin-bottom:4px">' + it.icon + '</div>'
-        + '<div style="font-size:12px;font-weight:700;color:#e8edf2;line-height:1.3">' + it.name + '</div>'
+        + '<div style="font-size:12px;font-weight:700;color:#1E293B;line-height:1.3">' + it.name + '</div>'
         + '</button>';
     }).join('');
     return '<div class="sc-card ' + cat.cardCls + '" style="background:' + cat.grad + ';border:1.5px solid ' + cat.border + ';border-radius:16px;overflow:hidden;margin-bottom:10px">'
@@ -5814,7 +5798,7 @@ function renderHomeTab() {
       + '<div style="display:flex;align-items:center;gap:12px">'
       + '<span style="font-size:28px">' + cat.icon + '</span>'
       + '<div style="text-align:left">'
-      + '<div style="font-size:15px;font-weight:900;color:#e8edf2">' + cat.label + '</div>'
+      + '<div style="font-size:15px;font-weight:900;color:#1E293B">' + cat.label + '</div>'
       + '<div style="font-size:12px;color:rgba(200,220,255,0.55);margin-top:1px">' + cat.items.length + '개 바로가기</div>'
       + '</div></div>'
       + '<span class="sc-arrow" data-cat="' + cat.id + '" style="font-size:20px;color:rgba(200,220,255,0.5);display:inline-block;transition:transform 0.3s;' + (isOpen ? 'transform:rotate(90deg)' : '') + '">›</span>'
@@ -5848,21 +5832,21 @@ function renderHomeTab() {
 
       <!-- 요약 통계 4칸 -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
-        <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
-          <div style="font-size:18px;font-weight:900;color:#60a5fa">${members.length}</div>
-          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">정규회원</div>
+        <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
+          <div style="font-size:18px;font-weight:900;color:#2563EB">${members.length}</div>
+          <div style="font-size:11px;color:#64748B;margin-top:2px">정규회원</div>
         </div>
-        <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
+        <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:#a78bfa">${guests.length}</div>
-          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">게스트</div>
+          <div style="font-size:11px;color:#64748B;margin-top:2px">게스트</div>
         </div>
-        <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
+        <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:#34d399">${monthMatchCount}</div>
-          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">이달 경기</div>
+          <div style="font-size:11px;color:#64748B;margin-top:2px">이달 경기</div>
         </div>
-        <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
+        <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:#f59e0b">S${currentSeason}</div>
-          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">현재시즌</div>
+          <div style="font-size:11px;color:#64748B;margin-top:2px">현재시즌</div>
         </div>
       </div>
 
@@ -5876,10 +5860,10 @@ function renderHomeTab() {
       ${nextEvCardHtml}
 
       <!-- 다가오는 일정 (일반 회원 일정) -->
-      <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:800;color:#4a8ab5;margin-bottom:8px">📅 다가오는 일정</div>
+      <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:800;color:#64748B;margin-bottom:8px">📅 다가오는 일정</div>
         ${memberSchedsHtml}
-        <button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#60a5fa;font-size:13px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>
+        <button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#2563EB;font-size:13px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>
       </div>
 
       <!-- 바로가기 — 확장형 카테고리 카드 -->
@@ -5901,8 +5885,8 @@ function renderPhotoTab() {
   el.innerHTML = `
     <div style="text-align:center;padding:64px 24px">
       <div style="font-size:64px;margin-bottom:18px">📸</div>
-      <div style="font-size:20px;font-weight:900;color:#e8edf2;margin-bottom:10px">사진 · 동영상</div>
-      <div style="font-size:14px;color:#4a8ab5;line-height:1.8">곧 경기 사진/영상을<br>함께 볼 수 있어요 🎾</div>
+      <div style="font-size:20px;font-weight:900;color:#1E293B;margin-bottom:10px">사진 · 동영상</div>
+      <div style="font-size:14px;color:#64748B;line-height:1.8">곧 경기 사진/영상을<br>함께 볼 수 있어요 🎾</div>
       <div style="margin-top:20px;font-size:11px;color:rgba(74,138,181,0.6)">저장소 연동 후 업데이트 예정</div>
     </div>`;
 }
@@ -6019,7 +6003,7 @@ function renderTodayBanner() {
         <div style="font-size:12px;color:rgba(3,12,45,0.82);margin-top:5px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc}</div>
       </div>
       <div style="display:flex;gap:7px;margin-top:10px">
-        <button onclick="openSchedule()" style="flex:1;background:rgba(96,165,250,0.18);color:#93c5fd;border:1px solid rgba(96,165,250,0.4);border-radius:9px;padding:7px 0;font-size:12px;font-weight:700;cursor:pointer">자세히 / 참석체크</button>
+        <button onclick="openSchedule()" style="flex:1;background:rgba(96,165,250,0.18);color:#1D6FB8;border:1px solid rgba(96,165,250,0.4);border-radius:9px;padding:7px 0;font-size:12px;font-weight:700;cursor:pointer">자세히 / 참석체크</button>
         <button onclick="shareTodayBanner()" style="flex:1;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1a120a;border:none;border-radius:9px;padding:7px 0;font-size:12px;font-weight:800;cursor:pointer">📤 카톡 공유</button>
       </div>
       <button onclick="bannerGoogleCal()" style="width:100%;margin-top:7px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:9px;padding:7px 0;font-size:12px;font-weight:800;cursor:pointer">📅 구글 캘린더에 추가</button>
@@ -6124,16 +6108,16 @@ function renderCalendar(){
   const filterChip = calSelectedDate
     ? `<div style="margin-top:10px;display:flex;align-items:center;gap:6px">
          <span style="font-size:11px;color:#fbbf24;font-weight:700">📅 ${calSelectedDate} 일정만 보는 중</span>
-         <button onclick="clearCalFilter()" style="font-size:11px;color:#4a8ab5;background:none;border:none;cursor:pointer;text-decoration:underline">전체보기</button>
+         <button onclick="clearCalFilter()" style="font-size:11px;color:#64748B;background:none;border:none;cursor:pointer;text-decoration:underline">전체보기</button>
        </div>` : '';
 
   el.innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <button onclick="changeCalMonth(-1)" style="background:none;border:none;color:#60a5fa;font-size:16px;cursor:pointer;padding:4px 10px">‹</button>
-      <div style="font-size:14px;font-weight:800;color:#60a5fa">${calYear}년 ${calMonth+1}월</div>
-      <button onclick="changeCalMonth(1)" style="background:none;border:none;color:#60a5fa;font-size:16px;cursor:pointer;padding:4px 10px">›</button>
+      <button onclick="changeCalMonth(-1)" style="background:none;border:none;color:#2563EB;font-size:16px;cursor:pointer;padding:4px 10px">‹</button>
+      <div style="font-size:14px;font-weight:800;color:#2563EB">${calYear}년 ${calMonth+1}월</div>
+      <button onclick="changeCalMonth(1)" style="background:none;border:none;color:#2563EB;font-size:16px;cursor:pointer;padding:4px 10px">›</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:#4a8ab5;text-align:center;margin-bottom:4px">
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:#64748B;text-align:center;margin-bottom:4px">
       <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells.join('')}</div>
@@ -6144,7 +6128,7 @@ function renderSchedules() {
   const el = document.getElementById('scheduleList');
   if (!el) return;
   if (!schedules.length) {
-    el.innerHTML = '<div style="text-align:center;padding:30px;color:#4a8ab5;font-size:13px">아직 등록된 일정이 없어요 📭<br>위에서 첫 일정을 올려보세요!</div>';
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:#64748B;font-size:13px">아직 등록된 일정이 없어요 📭<br>위에서 첫 일정을 올려보세요!</div>';
     return;
   }
   // 날짜순 정렬 (최근 날짜 먼저, 같은 날짜는 등록순)
@@ -6170,7 +6154,7 @@ function renderSchedules() {
     const maybe = Object.entries(attend).filter(([_,v])=>v==='미정').map(([n])=>n);
     const comments = s.comments || [];
     const canManage = isAdmin || (myClaim && myClaim !== 'pending' && s.writerUid && myClaim.uid === s.writerUid);
-    const editBtn = canManage ? `<button onclick="openEditSchedule('${s.id}')" style="background:none;border:none;color:#93c5fd;font-size:11px;cursor:pointer;margin-right:8px">✏️ 수정</button>` : '';
+    const editBtn = canManage ? `<button onclick="openEditSchedule('${s.id}')" style="background:none;border:none;color:#1D6FB8;font-size:11px;cursor:pointer;margin-right:8px">✏️ 수정</button>` : '';
     const delBtn = canManage ? `<button onclick="delSchedule('${s.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">🗑️ 삭제</button>` : '';
     const canSetPairs = isAdmin || (myClaim && myClaim !== 'pending');
     const pairsResultHtml = (s.gamePairs && s.gamePairs.length) ? (function() {
@@ -6180,7 +6164,7 @@ function renderSchedules() {
           var done = !!(m.score1||m.score2);
           var w1 = done && m.score1 > m.score2, w2 = done && m.score2 > m.score1;
           return '<div class="match-card" style="padding:10px 12px;margin-bottom:5px">'
-            + '<div style="font-size:10px;color:#4a8ab5;margin-bottom:3px">' + (m.court||'') + ' (' + (m.type||'') + ')</div>'
+            + '<div style="font-size:10px;color:#64748B;margin-bottom:3px">' + (m.court||'') + ' (' + (m.type||'') + ')</div>'
             + '<div class="match-row">'
             + '<div class="m-team ' + (w1?'win':'') + '">' + (m.team1||[]).join(' / ') + '</div>'
             + (done ? '<div class="m-score">' + m.score1 + ' : ' + m.score2 + '</div>' : '<div class="m-score pend">예정</div>')
@@ -6199,26 +6183,26 @@ function renderSchedules() {
         <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:6px">🎾 게임모임</div>
         ${canSetPairs
           ? `<button onclick="openMeetupPairModal('${s.id}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">🎲 페어 짜기</button>`
-          : `<div style="font-size:11px;color:#8aa5c4">정회원만 페어를 짤 수 있어요</div>`}
+          : `<div style="font-size:11px;color:#78909C">정회원만 페어를 짤 수 있어요</div>`}
         ${pairsResultHtml}
       </div>` : '';
 
     return `
-    <div style="background:rgba(8,28,75,0.8);border:1px solid rgba(50,110,200,0.3);border-radius:14px;padding:16px;margin-bottom:14px">
+    <div style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:16px;margin-bottom:14px">
       <!-- 헤더 -->
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div>
           <div style="font-size:15px;font-weight:800;color:#f59e0b">📅 ${dateStr}${s.time?` · ${s.time}`:''}</div>
-          ${s.place?`<div style="font-size:12px;color:#60a5fa;margin-top:3px">📍 ${s.place}</div>`:''}
+          ${s.place?`<div style="font-size:12px;color:#2563EB;margin-top:3px">📍 ${s.place}</div>`:''}
         </div>
         <div style="text-align:right">
-          <div style="font-size:11px;color:#4a8ab5">✍️ ${s.writer}</div>
+          <div style="font-size:11px;color:#64748B">✍️ ${s.writer}</div>
           ${editBtn}${delBtn}
         </div>
       </div>
 
       <!-- 내용 -->
-      <div style="background:rgba(3,12,45,0.5);border-radius:10px;padding:12px;font-size:13px;color:#e8edf2;line-height:1.6;white-space:pre-wrap;margin-bottom:12px">${s.content}</div>
+      <div style="background:#F5FAFA;border-radius:10px;padding:12px;font-size:13px;color:#1E293B;line-height:1.6;white-space:pre-wrap;margin-bottom:12px">${s.content}</div>
 
       <!-- 공유 / 캘린더 -->
       <div style="display:flex;gap:7px;margin-bottom:12px">
@@ -6230,33 +6214,33 @@ function renderSchedules() {
       ${meetupSection}
 
       <!-- 참석 여부 -->
-      <div style="background:rgba(3,12,45,0.4);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="background:#FAFEFF;border-radius:10px;padding:12px;margin-bottom:10px">
         <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:8px">🙋 참석 여부 체크</div>
         <select id="att_who_${s.id}" class="row-sel" style="width:100%;font-size:12px;padding:7px;margin-bottom:8px" onchange="document.getElementById('att_who_custom_${s.id}').style.display=(this.value==='__custom__')?'block':'none'">${opts}</select>
-        <input type="text" id="att_who_custom_${s.id}" placeholder="이름을 입력하세요" style="display:none;width:100%;font-size:12px;padding:7px;margin-bottom:8px;background:rgba(3,12,45,0.7);border:1px solid rgba(35,90,180,0.3);border-radius:8px;color:#fff;box-sizing:border-box">
+        <input type="text" id="att_who_custom_${s.id}" placeholder="이름을 입력하세요" style="display:none;width:100%;font-size:12px;padding:7px;margin-bottom:8px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:8px;color:#fff;box-sizing:border-box">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
           <button onclick="setAttend('${s.id}','참석')" style="padding:8px;background:rgba(52,211,153,0.2);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">⭕ 참석</button>
           <button onclick="setAttend('${s.id}','불참')" style="padding:8px;background:rgba(248,113,113,0.2);border:1px solid rgba(248,113,113,0.4);border-radius:8px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer">❌ 불참</button>
           <button onclick="setAttend('${s.id}','미정')" style="padding:8px;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.4);border-radius:8px;color:#fbbf24;font-size:12px;font-weight:700;cursor:pointer">❔ 미정</button>
         </div>
         <div style="margin-top:10px;display:flex;flex-direction:column;gap:5px;font-size:11px">
-          <div><span style="color:#34d399;font-weight:700">⭕ 참석 ${yes.length}</span> <span style="color:#e8edf2">${yes.join(', ')}</span></div>
+          <div><span style="color:#34d399;font-weight:700">⭕ 참석 ${yes.length}</span> <span style="color:#1E293B">${yes.join(', ')}</span></div>
           <div><span style="color:#f87171;font-weight:700">❌ 불참 ${no.length}</span> <span style="color:#8aa">${no.join(', ')}</span></div>
           <div><span style="color:#fbbf24;font-weight:700">❔ 미정 ${maybe.length}</span> <span style="color:#8aa">${maybe.join(', ')}</span></div>
         </div>
       </div>
 
       <!-- 댓글 -->
-      <div style="background:rgba(3,12,45,0.4);border-radius:10px;padding:12px">
-        <div style="font-size:11px;color:#60a5fa;font-weight:700;margin-bottom:8px">💬 댓글 ${comments.length}개</div>
+      <div style="background:#FAFEFF;border-radius:10px;padding:12px">
+        <div style="font-size:11px;color:#2563EB;font-weight:700;margin-bottom:8px">💬 댓글 ${comments.length}개</div>
         ${comments.map((c,i)=>`
           <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:7px 0;border-bottom:1px solid rgba(50,110,200,0.15)">
             <div style="flex:1">
               <span style="font-size:12px;font-weight:700;color:#a78bfa">${c.name}</span>
-              <span style="font-size:12px;color:#e8edf2;margin-left:6px">${c.text}</span>
+              <span style="font-size:12px;color:#1E293B;margin-left:6px">${c.text}</span>
             </div>
             ${isAdmin?`<button onclick="delComment('${s.id}',${i})" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;flex-shrink:0">×</button>`:''}
-          </div>`).join('') || '<div style="font-size:11px;color:#4a8ab5;padding:4px 0">첫 댓글을 남겨보세요!</div>'}
+          </div>`).join('') || '<div style="font-size:11px;color:#64748B;padding:4px 0">첫 댓글을 남겨보세요!</div>'}
         <div style="display:flex;gap:6px;margin-top:8px">
           <select id="cmt_who_${s.id}" class="row-sel" style="width:80px;font-size:11px;padding:6px">${opts}</select>
           <input id="cmt_text_${s.id}" class="row-inp" placeholder="댓글 입력..." style="flex:1;font-size:12px;padding:7px" onkeydown="if(event.key==='Enter')addComment('${s.id}')">
@@ -6431,21 +6415,21 @@ window.getFortune = function() {
       <!-- 사주 정보 -->
       <div style="display:flex;justify-content:center;gap:6px;margin-bottom:14px;flex-wrap:wrap">
         ${[['년주',년간+년지],['월주',월간+월지],['일주',일간+일지]].map(([lb,v])=>`
-        <div style="background:rgba(8,28,75,0.7);border-radius:8px;padding:5px 10px;text-align:center">
-          <div style="font-size:9px;color:#4a8ab5">${lb}</div>
-          <div style="font-size:13px;font-weight:800;color:#e8edf2">${v}</div>
+        <div style="background:#FAFAFA;border-radius:8px;padding:5px 10px;text-align:center">
+          <div style="font-size:9px;color:#64748B">${lb}</div>
+          <div style="font-size:13px;font-weight:800;color:#1E293B">${v}</div>
         </div>`).join('')}
-        <div style="background:rgba(8,28,75,0.7);border-radius:8px;padding:5px 10px;text-align:center;border:1px solid ${관계색}55">
-          <div style="font-size:9px;color:#4a8ab5">오늘기운</div>
+        <div style="background:#FAFAFA;border-radius:8px;padding:5px 10px;text-align:center;border:1px solid ${관계색}55">
+          <div style="font-size:9px;color:#64748B">오늘기운</div>
           <div style="font-size:11px;font-weight:700;color:${관계색}">${관계텍스트}</div>
         </div>
       </div>
 
       <!-- 헤더 -->
       <div style="text-align:center;margin-bottom:16px">
-        <div style="font-size:20px;font-weight:900;color:#e8edf2;margin-bottom:6px">${pick(전체운[관계])}</div>
+        <div style="font-size:20px;font-weight:900;color:#1E293B;margin-bottom:6px">${pick(전체운[관계])}</div>
         <div style="font-size:22px;margin:4px 0">${stars}</div>
-        <div style="font-size:12px;color:#4a8ab5">테니스 운 ${score}/5</div>
+        <div style="font-size:12px;color:#64748B">테니스 운 ${score}/5</div>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:10px">
@@ -6461,50 +6445,50 @@ window.getFortune = function() {
         </div>
 
         <!-- 게임운 -->
-        <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px">
+        <div style="background:#F5FAFA;border-radius:10px;padding:12px">
           <div style="font-size:11px;color:#a78bfa;font-weight:700;margin-bottom:6px">🎾 게임운</div>
-          <div style="font-size:13px;color:#e8edf2;line-height:1.6">${pick(관계별게임운[관계])}</div>
+          <div style="font-size:13px;color:#1E293B;line-height:1.6">${pick(관계별게임운[관계])}</div>
         </div>
 
         <!-- 파트너운 -->
-        <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px">
-          <div style="font-size:11px;color:#60a5fa;font-weight:700;margin-bottom:6px">🤝 파트너운</div>
-          <div style="font-size:13px;color:#e8edf2;line-height:1.6">${pick(파트너운)}</div>
+        <div style="background:#F5FAFA;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:#2563EB;font-weight:700;margin-bottom:6px">🤝 파트너운</div>
+          <div style="font-size:13px;color:#1E293B;line-height:1.6">${pick(파트너운)}</div>
         </div>
 
         <!-- 조언 -->
-        <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px">
+        <div style="background:#F5FAFA;border-radius:10px;padding:12px">
           <div style="font-size:11px;color:#34d399;font-weight:700;margin-bottom:6px">💡 오행 기반 조언</div>
-          <div style="font-size:13px;color:#e8edf2;line-height:1.6">${pick(조언풀[일간오행])}</div>
+          <div style="font-size:13px;color:#1E293B;line-height:1.6">${pick(조언풀[일간오행])}</div>
         </div>
 
         <!-- 행운 정보 -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px">
-            <div style="font-size:10px;color:#4a8ab5;margin-bottom:6px">🎯 행운의 포지션</div>
+          <div style="background:#F5FAFA;border-radius:10px;padding:12px">
+            <div style="font-size:10px;color:#64748B;margin-bottom:6px">🎯 행운의 포지션</div>
             <div style="font-size:12px;font-weight:700;color:#f59e0b;line-height:1.4">${행운포지션[일간오행]}</div>
           </div>
-          <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px;text-align:center">
-            <div style="font-size:10px;color:#4a8ab5;margin-bottom:6px">🎨 오행 행운색</div>
+          <div style="background:#F5FAFA;border-radius:10px;padding:12px;text-align:center">
+            <div style="font-size:10px;color:#64748B;margin-bottom:6px">🎨 오행 행운색</div>
             <div style="font-size:18px;font-weight:900;color:#f472b6">${행운색[일간오행]}</div>
-            <div style="font-size:10px;color:#4a8ab5;margin-top:2px">${오행한자[일간오행]}</div>
+            <div style="font-size:10px;color:#64748B;margin-top:2px">${오행한자[일간오행]}</div>
           </div>
         </div>
 
         <!-- 에너지 -->
-        <div style="background:rgba(8,28,75,0.6);border-radius:10px;padding:12px;border-left:3px solid ${관계색}">
+        <div style="background:#F5FAFA;border-radius:10px;padding:12px;border-left:3px solid ${관계색}">
           <div style="font-size:11px;color:${관계색};font-weight:700;margin-bottom:4px">⚡ 오늘의 에너지</div>
-          <div style="font-size:12px;color:#e8edf2;line-height:1.5">${pick(에너지문구[관계])}</div>
+          <div style="font-size:12px;color:#1E293B;line-height:1.5">${pick(에너지문구[관계])}</div>
         </div>
 
         <!-- 주의사항 -->
         <div style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.25);border-radius:10px;padding:12px">
           <div style="font-size:11px;color:#f87171;font-weight:700;margin-bottom:6px">⚠️ 주의사항</div>
-          <div style="font-size:13px;color:#e8edf2;line-height:1.6">${pick(주의사항[관계])}</div>
+          <div style="font-size:13px;color:#1E293B;line-height:1.6">${pick(주의사항[관계])}</div>
         </div>
       </div>
     </div>
-    <div style="font-size:10px;color:#4a8ab5;text-align:center">${name}님 일간 ${일간}(${띠}띠) · ${today} 사주 운세 🔮</div>`;
+    <div style="font-size:10px;color:#64748B;text-align:center">${name}님 일간 ${일간}(${띠}띠) · ${today} 사주 운세 🔮</div>`;
   }, 800);
 };
 window.switchSub=function(sub,btn){
@@ -6543,7 +6527,7 @@ window.openScore=function(rId,mId){
   const round=rounds.find(r=>r.id===rId);
   const match=(round?.matches||[]).find(m=>m.id===mId); if(!match)return;
   pendingScore={rId,mId};
-  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#e8edf2">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#e8edf2">${(match.team2||[]).join(' / ')}</strong>`;
+  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#1E293B">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#1E293B">${(match.team2||[]).join(' / ')}</strong>`;
   document.getElementById('s1Label').textContent=(match.team1||[]).join('/')+' 스코어';
   document.getElementById('s2Label').textContent=(match.team2||[]).join('/')+' 스코어';
   document.getElementById('s1').value=''; document.getElementById('s2').value='';
@@ -6566,7 +6550,7 @@ window.openScore=function(dayId, rIdx, mId){
   const match=(round?.matches||[]).find(m=>m.id===mId); if(!match)return;
   pendingScore={dayId, rIdx:parseInt(rIdx), mId};
   const allP=[...(match.team1||[]),...(match.team2||[])].filter(Boolean);
-  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#e8edf2">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#e8edf2">${(match.team2||[]).join(' / ')}</strong>`;
+  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#1E293B">${(match.team1||[]).join(' / ')}</strong> vs <strong style="color:#1E293B">${(match.team2||[]).join(' / ')}</strong>`;
   document.getElementById('s1Label').textContent=(match.team1||[]).join('/')+' 스코어';
   document.getElementById('s2Label').textContent=(match.team2||[]).join('/')+' 스코어';
   document.getElementById('s1').value=''; document.getElementById('s2').value='';
@@ -6578,7 +6562,7 @@ window.openScore=function(dayId, rIdx, mId){
     if(!fp.length)return '';
     const [p0,p1]=fp;
     const k0=(p0||'').replace(/\s/g,'_'), k1=(p1||'').replace(/\s/g,'_');
-    return `<div style="font-size:10px;color:#4a8ab5;font-weight:600;margin:5px 0 3px">${label}</div>`
+    return `<div style="font-size:10px;color:#64748B;font-weight:600;margin:5px 0 3px">${label}</div>`
       +(p0?renderPosRow(p0,k0,p1?k1:'',existPos[p0]||''):'')
       +(p1?renderPosRow(p1,k1,p0?k0:'',existPos[p1]||''):'');
   }).join('');
@@ -6592,7 +6576,7 @@ window.openMeetupScore=function(schId, rdIdx, mIdx){
   const rd=sch.gamePairs[rdIdx]; if(!rd)return;
   const m=(rd.matches||[])[mIdx]; if(!m)return;
   pendingScore={type:'gamePairs', schId, rdIdx:parseInt(rdIdx), mIdx:parseInt(mIdx)};
-  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#e8edf2">${(m.team1||[]).join(' / ')}</strong> vs <strong style="color:#e8edf2">${(m.team2||[]).join(' / ')}</strong>`;
+  document.getElementById('scoreInfo').innerHTML=`<strong style="color:#1E293B">${(m.team1||[]).join(' / ')}</strong> vs <strong style="color:#1E293B">${(m.team2||[]).join(' / ')}</strong>`;
   document.getElementById('s1Label').textContent=(m.team1||[]).join('/')+' 스코어';
   document.getElementById('s2Label').textContent=(m.team2||[]).join('/')+' 스코어';
   document.getElementById('s1').value=''; document.getElementById('s2').value='';
@@ -6603,7 +6587,7 @@ window.openMeetupScore=function(schId, rdIdx, mIdx){
     if(!fp.length)return '';
     const [p0,p1]=fp;
     const k0=(p0||'').replace(/\s/g,'_'), k1=(p1||'').replace(/\s/g,'_');
-    return `<div style="font-size:10px;color:#4a8ab5;font-weight:600;margin:5px 0 3px">${label}</div>`
+    return `<div style="font-size:10px;color:#64748B;font-weight:600;margin:5px 0 3px">${label}</div>`
       +(p0?renderPosRow(p0,k0,p1?k1:'',mupExistPos[p0]||''):'')
       +(p1?renderPosRow(p1,k1,p0?k0:'',mupExistPos[p1]||''):'');
   }).join('');
@@ -6614,7 +6598,7 @@ function renderPosRow(label, key, partnerKey, existPos) {
   const isF=existPos==='fore', isB=existPos==='back';
   const pArg=partnerKey?`,'${partnerKey}'`:'';
   return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
-    <span style="font-size:11px;min-width:44px;max-width:56px;font-weight:600;color:#e8edf2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${label}">${label}</span>
+    <span style="font-size:11px;min-width:44px;max-width:56px;font-weight:600;color:#1E293B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${label}">${label}</span>
     <button id="pos_fore_${key}" onclick="selectPos('${key}','fore'${pArg})"
       data-selected="${isF?'1':'0'}"
       style="flex:1;padding:5px 0;border-radius:7px;border:1px solid ${isF?'#ef4444':'rgba(35,90,180,0.35)'};background:${isF?'rgba(239,68,68,0.25)':'rgba(3,12,45,0.85)'};color:${isF?'#f87171':'#4a8ab5'};font-size:11px;font-weight:700;cursor:pointer">
@@ -6652,7 +6636,7 @@ window.openEvScore=function(evId, mi){
   const oppStr=(m.oppPair||[]).filter(Boolean).join(' / ')||'상대팀';
   const clubLabel=m.oppClub||(ev.oppClub||'');
   document.getElementById('scoreInfo').innerHTML=
-    `<strong style="color:#e8edf2">${ourStr}</strong> <span style="color:#4a8ab5">vs</span> <strong style="color:#60a5fa">${oppStr}${clubLabel?` <span style="font-size:10px;color:#4a8ab5">(${clubLabel})</span>`:''}</strong>`;
+    `<strong style="color:#1E293B">${ourStr}</strong> <span style="color:#64748B">vs</span> <strong style="color:#2563EB">${oppStr}${clubLabel?` <span style="font-size:10px;color:#64748B">(${clubLabel})</span>`:''}</strong>`;
   document.getElementById('s1Label').textContent='우리팀 스코어';
   document.getElementById('s2Label').textContent='상대팀 스코어';
   const done=m.ourScore!==null&&m.ourScore!==undefined;
@@ -6668,7 +6652,7 @@ window.openEvScore=function(evId, mi){
     if(!fp.length)return '';
     const [p0,p1]=fp;
     const k0=(p0||'').replace(/\s/g,'_'), k1=(p1||'').replace(/\s/g,'_');
-    return `<div style="font-size:10px;color:#4a8ab5;font-weight:600;margin:5px 0 3px">${label}</div>`
+    return `<div style="font-size:10px;color:#64748B;font-weight:600;margin:5px 0 3px">${label}</div>`
       +(p0?renderPosRow(p0,k0,p1?k1:'',existPos[p0]||''):'')
       +(p1?renderPosRow(p1,k1,p0?k0:'',existPos[p1]||''):'');
   }).join('');
@@ -6690,7 +6674,7 @@ window.openPendingEvScore=function(ri, mci, idx){
   const ourStr=pair.filter(Boolean).join(' / ')||'우리팀';
   const oppStr=[opp1,opp2].filter(Boolean).join(' / ')||'상대팀';
   document.getElementById('scoreInfo').innerHTML=
-    `<strong style="color:#e8edf2">${ourStr}</strong> <span style="color:#4a8ab5">vs</span> <strong style="color:#60a5fa">${oppStr}${clubLabel?` <span style="font-size:10px;color:#4a8ab5">(${clubLabel})</span>`:''}</strong>`;
+    `<strong style="color:#1E293B">${ourStr}</strong> <span style="color:#64748B">vs</span> <strong style="color:#2563EB">${oppStr}${clubLabel?` <span style="font-size:10px;color:#64748B">(${clubLabel})</span>`:''}</strong>`;
   document.getElementById('s1Label').textContent='우리팀 스코어';
   document.getElementById('s2Label').textContent='상대팀 스코어';
   const inMemDone=m.score1!==null&&m.score1!==undefined;
@@ -7232,20 +7216,20 @@ function renderMyRecordCard(){
         <div style="font-size:20px;font-weight:900;color:#f59e0b">${me.pts}점</div>
         ${myRank>0?`<div style="font-size:11px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">${myRank}위</div>`:''}
       </div>
-      <div style="font-size:12px;color:#4a8ab5">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
-      <div style="font-size:11px;color:#8aa5c4;margin-top:2px">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
-    </div>` : `<div style="text-align:center;color:#4a8ab5;padding:10px;font-size:12px">아직 경기 기록이 없어요</div>`;
+      <div style="font-size:12px;color:#64748B">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
+      <div style="font-size:11px;color:#78909C;margin-top:2px">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
+    </div>` : `<div style="text-align:center;color:#64748B;padding:10px;font-size:12px">아직 경기 기록이 없어요</div>`;
 
   const schedHtml = mySchedules.length
-    ? mySchedules.map(s=>`<div style="padding:4px 0;font-size:11px;color:#e8edf2">📅 ${s.date}${s.place?' · '+s.place:''}${s.time?' '+s.time:''}</div>`).join('')
-    : `<div style="font-size:11px;color:#4a8ab5">다가오는 일정이 없어요</div>`;
+    ? mySchedules.map(s=>`<div style="padding:4px 0;font-size:11px;color:#1E293B">📅 ${s.date}${s.place?' · '+s.place:''}${s.time?' '+s.time:''}</div>`).join('')
+    : `<div style="font-size:11px;color:#64748B">다가오는 일정이 없어요</div>`;
 
   el.style.display = 'block';
   el.innerHTML = `
     <div class="admin-sec" style="height:100%;box-sizing:border-box">
       <h3>👤 ${myClaim.name}님의 기록</h3>
       ${statsHtml}
-      <div style="font-size:11px;color:#4a8ab5;font-weight:700;margin:8px 0 4px">📅 다가오는 일정</div>
+      <div style="font-size:11px;color:#64748B;font-weight:700;margin:8px 0 4px">📅 다가오는 일정</div>
       ${schedHtml}
     </div>`;
 }
@@ -7315,19 +7299,19 @@ window.openMyDashboard = function(){
   const statsHtml = me ? `
     <div style="text-align:center;margin-bottom:14px">
       <div style="font-size:22px;font-weight:900;color:#f59e0b">${me.pts}점</div>
-      <div style="font-size:13px;color:#4a8ab5">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
-      <div style="font-size:12px;color:#8aa5c4;margin-top:4px">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff}</div>
-      <div style="font-size:12px;color:#8aa5c4">게임 ${me.games} · 출석 ${att[me.name]||0}일</div>
+      <div style="font-size:13px;color:#64748B">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
+      <div style="font-size:12px;color:#78909C;margin-top:4px">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff}</div>
+      <div style="font-size:12px;color:#78909C">게임 ${me.games} · 출석 ${att[me.name]||0}일</div>
     </div>`
-    : `<div style="text-align:center;color:#4a8ab5;padding:14px">아직 경기 기록이 없어요</div>`;
+    : `<div style="text-align:center;color:#64748B;padding:14px">아직 경기 기록이 없어요</div>`;
 
   const schedHtml = mySchedules.length
-    ? mySchedules.map(s=>`<div style="padding:6px 0;font-size:12px;color:#e8edf2;border-bottom:1px solid rgba(35,90,180,0.15)">📅 ${s.date}${s.place?' · '+s.place:''}${s.time?' '+s.time:''}</div>`).join('')
-    : `<div style="font-size:12px;color:#4a8ab5">다가오는 일정이 없어요</div>`;
+    ? mySchedules.map(s=>`<div style="padding:6px 0;font-size:12px;color:#1E293B;border-bottom:1px solid #EEF7F6">📅 ${s.date}${s.place?' · '+s.place:''}${s.time?' '+s.time:''}</div>`).join('')
+    : `<div style="font-size:12px;color:#64748B">다가오는 일정이 없어요</div>`;
 
   document.getElementById('myDashboardTitle').textContent = `👤 ${myClaim.name}님의 기록`;
   document.getElementById('myDashboardBody').innerHTML = statsHtml
-    + `<div style="font-size:11px;color:#4a8ab5;font-weight:700;margin:10px 0 4px">📅 다가오는 일정</div>`
+    + `<div style="font-size:11px;color:#64748B;font-weight:700;margin:10px 0 4px">📅 다가오는 일정</div>`
     + schedHtml;
   document.getElementById('myDashboardModal').style.display = 'flex';
 };
@@ -7658,7 +7642,7 @@ function lsRenderPositionGrid() {
     const cur = liveScore.positions[p.name]||'';
     const tl = p.team==='a' ? `${t1n} 팀` : `${t2n} 팀`;
     return `<div class="ls-position-row team-${p.team}">
-      <div class="ls-pr-name">${p.name} <span style="font-size:11px;color:#4a8ab5;font-weight:600">(${tl})</span></div>
+      <div class="ls-pr-name">${p.name} <span style="font-size:11px;color:#64748B;font-weight:600">(${tl})</span></div>
       <div class="ls-pr-toggle">
         <button class="${cur==='포'?'active':''}" onclick="lsPickPosition('${p.name}','포')">포</button>
         <button class="${cur==='백'?'active':''}" onclick="lsPickPosition('${p.name}','백')">백</button>
@@ -7930,7 +7914,7 @@ function lsRenderLog() {
   const t1 = liveScore.players.filter(p=>p.team==='a').map(p=>p.name).join('·');
   const t2 = liveScore.players.filter(p=>p.team==='b').map(p=>p.name).join('·');
   const list = liveScore.lsEvents.slice().reverse();
-  if (!list.length) { box.innerHTML='<div class="ls-log-item" style="justify-content:center;color:#4a8ab5">기록 없음</div>'; return; }
+  if (!list.length) { box.innerHTML='<div class="ls-log-item" style="justify-content:center;color:#64748B">기록 없음</div>'; return; }
   box.innerHTML = list.map(h => {
     const nm = h.who==='a'?t1:t2;
     const label = h.type==='game'?`🏅 게임 획득 (${h.gsA}:${h.gsB})`:'포인트 +1';
@@ -7989,9 +7973,9 @@ function lsRenderLog() {
   <div id="ls-matchScreen" style="display:none;flex:1;flex-direction:column;min-height:0;">
     <div class="ls-server-bar">
       🎾 서브: <span class="ls-tag" id="ls-curServerName">-</span>
-      <span style="color:#4a8ab5">→ 리시브:</span>
-      <span class="ls-tag" style="color:#60a5fa" id="ls-curReceiverName">-</span>
-      <span style="color:#4a8ab5;font-size:11px" id="ls-curGameIdx">(1게임째)</span>
+      <span style="color:#64748B">→ 리시브:</span>
+      <span class="ls-tag" style="color:#2563EB" id="ls-curReceiverName">-</span>
+      <span style="color:#64748B;font-size:11px" id="ls-curGameIdx">(1게임째)</span>
     </div>
     <div class="ls-deciding-chooser" id="ls-decidingChooser" style="display:none">
       <div class="ls-dc-label">⚡ 40:40 결정 포인트 — 리시브 자리를 골라주세요</div>
@@ -8001,9 +7985,9 @@ function lsRenderLog() {
       </div>
     </div>
     <div class="ls-match-chooser" id="ls-matchChooser" style="display:none">
-      <div class="ls-dc-label" style="color:#60a5fa">🎾 5:5 — 어떻게 마무리할까요?</div>
+      <div class="ls-dc-label" style="color:#2563EB">🎾 5:5 — 어떻게 마무리할까요?</div>
       <div class="ls-dc-btns">
-        <button onclick="lsChooseTiebreak()" style="border-color:rgba(96,165,250,0.5);color:#93c5fd">타이브레이크 (7점 선승)</button>
+        <button onclick="lsChooseTiebreak()" style="border-color:rgba(96,165,250,0.5);color:#1D6FB8">타이브레이크 (7점 선승)</button>
         <button onclick="lsChooseDraw()" style="border-color:rgba(52,211,153,0.5);color:#6ee7b7">🤝 무승부로 마무리</button>
       </div>
     </div>
