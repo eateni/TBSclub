@@ -3643,13 +3643,15 @@ window.openEventDetail=function(evId){
 
 // 화면 B: 대진표 카드 (결과 입력 + 상대팀 입력 — 누구나)
 function buildScoreboardCard(m, mi, evId) {
+  const evDefault = events.find(e=>e.id===evId)?.oppClub||'';
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
   const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
   const scoreEl=done
     ?`<div class="m-score" style="${won?'color:#34d399':lost?'color:#f87171':'color:#fbbf24'}">${m.ourScore} : ${m.oppScore}</div>`
     :`<div class="m-score pend">예정</div>`;
   const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
-  const oppLabel=m.oppClub?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${m.oppClub}</span>`:oppRaw;
+  const clubDisplay=m.oppClub||evDefault;
+  const oppLabel=clubDisplay?`${oppRaw}<br><span style="font-size:9px;color:#60a5fa">${clubDisplay}</span>`:oppRaw;
   const courtLabel=m.court?`${m.court}코트${m.courtType?' · '+m.courtType:''}`:''
   const hasOpp=(m.oppPair||[]).filter(Boolean).length>0;
   const oppInpId=`evOppSbInp_${mi}`;
@@ -3658,7 +3660,7 @@ function buildScoreboardCard(m, mi, evId) {
     <div style="display:flex;gap:4px;margin-bottom:6px">
       <input id="evSbOpp1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
       <input id="evSbOpp2_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대2" value="${(m.oppPair||[])[1]||''}">
-      <input id="evSbOppClub_${mi}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${m.oppClub||''}">
+      <input id="evSbOppClub_${mi}" class="row-inp" style="width:70px;padding:5px;font-size:12px" placeholder="클럽명" value="${m.oppClub||evDefault}">
     </div>
     <button onclick="saveEvSbOpp('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">저장</button>
   </div>`;
@@ -5381,20 +5383,26 @@ function renderMiniCalendar(year, month, attendedSet, eventDaysMap) {
     var isEv = !!eventDaysMap[d];
     var isT  = isThisMonth && d === todayD;
     var col, bg, fw, ring;
-    if (att && isT) {
+    if (att && isEv && isT) {
+      col = '#04150c'; bg = '#34d399'; fw = '900'; ring = 'box-shadow:0 0 0 2px #a78bfa;';
+    } else if (att && isEv) {
+      col = '#04150c'; bg = 'rgba(52,211,153,0.75)'; fw = '700'; ring = 'box-shadow:0 0 0 2px rgba(167,139,250,0.7);';
+    } else if (att && isT) {
       col = '#04150c'; bg = '#34d399'; fw = '900'; ring = '';
     } else if (att) {
       col = '#34d399'; bg = 'rgba(52,211,153,0.22)'; fw = '700'; ring = '';
+    } else if (isEv && isT) {
+      col = '#fff'; bg = 'rgba(167,139,250,0.35)'; fw = '800'; ring = 'box-shadow:0 0 0 1.5px #a78bfa;';
+    } else if (isEv) {
+      col = '#c4b5fd'; bg = 'rgba(167,139,250,0.25)'; fw = '700'; ring = '';
     } else if (isT) {
       col = '#fff'; bg = 'transparent'; fw = '800'; ring = 'box-shadow:0 0 0 1.5px rgba(255,255,255,0.75);';
     } else {
       col = 'rgba(200,220,255,0.38)'; bg = 'transparent'; fw = '400'; ring = '';
     }
     var titleAttr = isEv ? ' title="🎉 ' + eventDaysMap[d].join(', ') + '"' : '';
-    var dotBg = isEv ? '#a78bfa' : 'transparent';
-    cells += '<div style="font-size:9px;text-align:center;line-height:1">'
+    cells += '<div style="font-size:9px;text-align:center;line-height:1;margin-bottom:1px">'
       + '<div' + titleAttr + ' style="width:17px;height:17px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin:0 auto;background:' + bg + ';color:' + col + ';font-weight:' + fw + ';' + ring + '">' + d + '</div>'
-      + '<div style="width:4px;height:4px;border-radius:50%;margin:1px auto 0;background:' + dotBg + '"></div>'
       + '</div>';
   }
   var ml = year + '.' + String(month + 1).padStart(2, '0');
@@ -6757,7 +6765,9 @@ window.promoteGuest = async function(name){
   if (!confirm(`게스트 → 정규회원으로 전환하시겠습니까?\n\n이름: ${name}\n\n* 기존 경기 기록은 그대로 유지됩니다\n* 정규 랭킹/성적표에 정식으로 나타나요`)) return;
   try{
     await setDoc(doc(db,'club','guests'),{list:guests.filter(x=>x.name!==name)});
-    await setDoc(doc(db,'club','members'),{list:[...members,{name:g.name,gender:g.gender}]});
+    const newMember = {name:g.name, gender:g.gender};
+    if (g.uid) newMember.uid = g.uid;
+    await setDoc(doc(db,'club','members'),{list:[...members, newMember]});
     alert(`✅ "${name}"이(가) 정규회원이 됐어요!\n기존 경기 기록은 모두 유지됩니다.`);
   }catch(e){
     alert('전환 실패: '+e.code);
@@ -6770,7 +6780,9 @@ window.demoteMember = async function(name){
   if (!m) return;
   if (!confirm(`"${name}"을(를) 게스트로 전환할까요?\n\n* 정규 랭킹/성적표에서 빠지고 게스트로 표시돼요\n* 과거 경기 기록은 보존돼요`)) return;
   await setDoc(doc(db,'club','members'),{list:members.filter(x=>x.name!==name)});
-  await setDoc(doc(db,'club','guests'),{list:[...guests,{name:m.name,gender:m.gender,isGuest:true}]});
+  const newGuest = {name:m.name, gender:m.gender, isGuest:true};
+  if (m.uid) newGuest.uid = m.uid;
+  await setDoc(doc(db,'club','guests'),{list:[...guests, newGuest]});
   alert(`✅ "${name}"이(가) 게스트가 됐어요!`);
 };
 
@@ -7047,8 +7059,9 @@ function renderMyDashboardState(){
     if (logoutBtn) logoutBtn.style.display = memberLoggedIn ? 'block' : 'none';
     if (uBadge) {
       if (memberLoggedIn) {
-        uBadge.textContent = `✅ ${myClaim.name}`;
-        uBadge.className = 'u-badge badge-member';
+        const isG = myClaim.isGuest;
+        uBadge.textContent = isG ? `👤 ${myClaim.name} (게스트)` : `✅ ${myClaim.name}`;
+        uBadge.className = 'u-badge ' + (isG ? 'badge-guest' : 'badge-member');
       } else {
         uBadge.textContent = '👤 게스트';
         uBadge.className = 'u-badge badge-guest';
@@ -7116,11 +7129,13 @@ async function resolveMyClaim(isRetry) {
 
   if (foundMember) {
     myClaim = { ...foundMember, isGuest:false };
+    console.log('[TBS] myClaim(정회원):', JSON.stringify(myClaim));
     renderMyDashboardState();
     return;
   }
   if (foundGuest) {
     myClaim = { ...foundGuest, isGuest:true };
+    console.log('[TBS] myClaim(게스트):', JSON.stringify(myClaim));
     renderMyDashboardState();
     return;
   }
