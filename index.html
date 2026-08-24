@@ -3684,14 +3684,21 @@ window.openEvScoreboard=function(evId){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const evMatches=ev.matches||[];
   const parts=ev.participants||[];
+  const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
 
   let matchesHtml='';
   if(!evMatches.length){
-    matchesHtml=`<div style="color:#4a8ab5;font-size:12px;padding:12px 0;text-align:center">아직 매치가 없어요.<br>이벤트 관리 화면에서 페어를 짜주세요.</div>`;
+    const noMatchAddBtn=isMember
+      ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:8px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
+      :'';
+    matchesHtml=`<div style="color:#4a8ab5;font-size:12px;padding:12px 0;text-align:center">아직 매치가 없어요.<br>이벤트 관리 화면에서 페어를 짜주세요.</div>${noMatchAddBtn}`;
   } else {
     const hasRoundInfo=evMatches.some(m=>m.round!==undefined);
     if(!hasRoundInfo){
-      matchesHtml=evMatches.map((m,mi)=>buildScoreboardCard(m,mi,evId)).join('');
+      const quickAddBtn=isMember
+        ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
+        :'';
+      matchesHtml=evMatches.map((m,mi)=>buildScoreboardCard(m,mi,evId)).join('')+quickAddBtn;
     } else {
       const roundMap={};
       evMatches.forEach((m,mi)=>{
@@ -3700,6 +3707,7 @@ window.openEvScoreboard=function(evId){
         roundMap[r].push({m,mi});
       });
       const roundNums=Object.keys(roundMap).map(Number).sort((a,b)=>a-b);
+      const maxRoundSb=roundNums.length?Math.max(...roundNums):0;
       matchesHtml=roundNums.map(rNum=>{
         const entries=roundMap[rNum];
         const cardsHtml=entries.map(({m,mi})=>buildScoreboardCard(m,mi,evId)).join('');
@@ -3709,11 +3717,15 @@ window.openEvScoreboard=function(evId){
               <span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(52,211,153,0.15);color:#34d399;white-space:nowrap">⏳ 대기</span>
               <span style="font-size:12px;color:#34d399;font-weight:600">${waiting.join(', ')}</span>
             </div>`:'';
+        const roundAddBtn=isMember
+          ?`<button onclick="openAddEvMatch('${evId}',${rNum})" style="width:100%;padding:6px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#a78bfa;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
+          :'';
         return `<div style="margin-bottom:12px">
           <div style="font-size:12px;color:#a78bfa;font-weight:700;margin-bottom:6px">${rNum}라운드</div>
-          ${cardsHtml}${waitHtml}
+          ${cardsHtml}${waitHtml}${roundAddBtn}
         </div>`;
       }).join('');
+      if(isMember&&maxRoundSb>0) matchesHtml+=`<button onclick="openAddEvMatch('${evId}',${maxRoundSb+1})" style="width:100%;padding:7px;margin-top:4px;background:rgba(52,211,153,0.1);border:1px dashed rgba(52,211,153,0.4);border-radius:8px;color:#34d399;font-size:11px;font-weight:700;cursor:pointer">➕ 새 라운드 매치 추가 (${maxRoundSb+1}라운드)</button>`;
     }
   }
 
