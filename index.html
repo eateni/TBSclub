@@ -25,7 +25,7 @@ body::after {
 #appScreen { position:relative; z-index:1; }
 
 .header {
-  background: #ffffff;
+  background: rgba(255,255,255,0.8);
   border-bottom: 2px solid rgba(0,0,0,0.08);
   padding: 0 16px; position:sticky; top:0; z-index:50;
   box-shadow: 0 4px 20px rgba(0,0,0,0.08);
@@ -53,7 +53,7 @@ body::after {
 .bottom-nav {
   position:fixed; left:0; right:0; bottom:0; z-index:500;
   display:flex; justify-content:space-around; align-items:center;
-  background:rgba(255,255,255,0.97);
+  background:rgba(255,255,255,0.77);
   border-top:1px solid rgba(0,0,0,0.1);
   padding:6px 0 calc(6px + env(safe-area-inset-bottom));
   backdrop-filter:blur(8px);
@@ -70,7 +70,7 @@ body::after {
   display:flex; align-items:flex-end;
 }
 .more-menu-sheet {
-  width:100%; background:#FFFFFF; border-radius:18px 18px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+  width:100%; background:rgba(255,255,255,0.8); border-radius:18px 18px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom));
   border-top:1px solid rgba(245,158,11,0.3);
 }
 .more-menu-title { font-size:13px; font-weight:800; color:#64748B; margin-bottom:10px; }
@@ -80,7 +80,7 @@ body::after {
 }
 .more-menu-item:last-child { border-bottom:none; }
 
-.subtabs { display:flex; gap:4px; background:#FFFFFF; border-radius:10px; padding:4px; margin-bottom:18px; }
+.subtabs { display:flex; gap:4px; background:rgba(255,255,255,0.8); border-radius:10px; padding:4px; margin-bottom:18px; }
 .stab { flex:1; padding:8px 0; border-radius:7px; border:none; cursor:pointer; font-weight:600; font-size:12px; transition:all 0.2s; }
 .stab.active { background:#0D9488; color:#fff; }
 .stab:not(.active) { background:transparent; color:#64748B; }
@@ -92,6 +92,9 @@ body::after {
 .rc2{background:linear-gradient(135deg,#94a3b8,#4a8ab5);}
 .rc3{background:linear-gradient(135deg,#b45309,#92400e);}
 .rcN{background:#FFFFFF;border:1px solid #C8E0DE;}
+.home-card-pair { display:flex; gap:10px; margin-bottom:12px; align-items:flex-start; }
+.home-card-pair > div { flex:1; min-width:0; }
+@media (max-width:480px) { .home-card-pair { flex-direction:column; } }
 
 .round-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
 .round-card { background:#FFFFFF; border-radius:12px; overflow:hidden; border:1px solid #C8E0DE; box-shadow:0 2px 12px rgba(0,0,0,0.4); }
@@ -5611,8 +5614,9 @@ function renderHomeTab() {
   const weekdays = ['일','월','화','수','목','금','토'];
   const todayLabel = `${todayStr.replace(/-/g,'.')}(${weekdays[now.getDay()]})`;
 
-  const isLoggedIn = myClaim && myClaim !== 'pending';
-  const welcomeName = isLoggedIn ? `${myClaim.name}님 환영합니다 👋` : 'TBS HISTORY 👋';
+  const isMemberLoggedIn = !!(myClaim && myClaim !== 'pending');
+  const isLoggedIn = isAdmin || isMemberLoggedIn;
+  const welcomeName = isAdmin ? '관리자 👑 환영합니다!' : (isMemberLoggedIn ? `${myClaim.name}님 환영합니다 👋` : 'TBS HISTORY 👋');
   const subMsg = isLoggedIn ? '오늘도 좋은 경기 되세요!' : '로그인하면 내 기록을 확인할 수 있어요';
 
   // 이번 달 출석일 집계 (days.attendance[name] !== false인 날짜)
@@ -5620,7 +5624,7 @@ function renderHomeTab() {
   const calM = now.getMonth();
   const calMStr = `${calY}-${String(calM+1).padStart(2,'0')}`;
   const attendedSet = new Set();
-  if (isLoggedIn) {
+  if (isMemberLoggedIn) {
     days.forEach(function(day) {
       if (!day.date || !day.date.startsWith(calMStr)) return;
       const dayAtt = day.attendance || {};
@@ -5646,7 +5650,7 @@ function renderHomeTab() {
 
   // ── 내 기록 상세 (기록탭 renderMyRecordCard와 동일 구성) ──────────
   let myRecordHtml = '';
-  if (isLoggedIn) {
+  if (isMemberLoggedIn) {
     const stats = calcStats();
     const att = calcAttendance();
     const ranked = [...stats].sort((a,b)=>b.pts-a.pts);
@@ -5708,7 +5712,7 @@ function renderHomeTab() {
     const pairsSummary = rds.length
       ? `<span style="font-size:12px;color:#6D28D9;background:#EDE9FE;padding:2px 7px;border-radius:8px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
       : '';
-    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:14px 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:13px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
         ${attendBadge}
@@ -5735,7 +5739,7 @@ function renderHomeTab() {
     const dl=`${dd.getMonth()+1}/${dd.getDate()}(${weekdays[dd.getDay()]})`;
     const partCount=(e.participants||[]).length;
     const evLabel=EV_TYPE_EMOJI[e.type]?(EV_TYPE_EMOJI[e.type]+' '+(EV_TYPE_LABEL[e.type]||e.type)):'🎉 이벤트전';
-    return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:#F0FDF4;border:1.5px solid #059669;border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:#F0FDF4;border:1.5px solid #059669;border-radius:14px;padding:14px 16px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
         <span style="font-size:13px;font-weight:800;color:#059669;background:#D1FAE5;padding:3px 10px;border-radius:10px">🎉 다가오는 이벤트전</span>
         <span style="font-size:12px;color:#6D28D9">${evLabel}</span>
@@ -5850,11 +5854,55 @@ function renderHomeTab() {
       + '</div></div></div>';
   }).join('');
 
-  // 배치 순서: 웰컴배너 → 통계4칸 → 내 기록 → 다음게임(있을 때만) → 다가오는 일정 → 바로가기
+  // 이번 주 금·토 정기 게임 카드 (이벤트전이 없을 때 우측에 표시)
+  const _nowDow = now.getDay();
+  const _daysToMon = (_nowDow === 0) ? 6 : _nowDow - 1;
+  const _mon = new Date(now); _mon.setDate(now.getDate() - _daysToMon);
+  const _fri = new Date(_mon); _fri.setDate(_mon.getDate() + 4);
+  const _sat = new Date(_mon); _sat.setDate(_mon.getDate() + 5);
+  const thisFriStr = `${_fri.getFullYear()}-${String(_fri.getMonth()+1).padStart(2,'0')}-${String(_fri.getDate()).padStart(2,'0')}`;
+  const thisSatStr = `${_sat.getFullYear()}-${String(_sat.getMonth()+1).padStart(2,'0')}-${String(_sat.getDate()).padStart(2,'0')}`;
+  const fridayGame = days.find(function(d){ return d.date === thisFriStr; }) || null;
+  const saturdayGame = days.find(function(d){ return d.date === thisSatStr; }) || null;
+  const makeWeeklyGameCard = function(d) {
+    const _wd = new Date(d.date+'T00:00:00');
+    const _wdl = `${_wd.getMonth()+1}/${_wd.getDate()}(${weekdays[_wd.getDay()]})`;
+    const _watt = d.attendance || {};
+    const _waM = members.filter(function(m){ return _watt[m.name] !== false; }).length;
+    const _waG = guests.filter(function(g){ return (d.guests||[]).includes(g.name); }).length;
+    const _wRds = d.rounds || [];
+    const _wTM = _wRds.reduce(function(a,r){ return a+(r.matches||[]).length; }, 0);
+    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 12px">
+      <div style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px">🎾 ${weekdays[_wd.getDay()]}요일 게임</div>
+      <div style="font-size:14px;font-weight:900;color:#D97706;margin-bottom:3px">${_wdl}</div>
+      <div style="font-size:12px;color:#059669">✅ ${_waM+_waG}명 참석</div>
+      ${d.place?`<div style="font-size:11px;color:#2563EB;margin-top:2px">📍 ${d.place}</div>`:''}
+      ${_wTM?`<div style="font-size:11px;color:#6D28D9;margin-top:2px">${_wRds.length}라운드 · ${_wTM}경기</div>`:''}
+    </div>`;
+  };
+  let rightColumnHtml = '';
+  if (nextExchangeEv) {
+    rightColumnHtml = nextEvCardHtml;
+  } else if (fridayGame || saturdayGame) {
+    const _wParts = [];
+    if (fridayGame) _wParts.push(makeWeeklyGameCard(fridayGame));
+    if (saturdayGame) _wParts.push(makeWeeklyGameCard(saturdayGame));
+    rightColumnHtml = `<div style="display:flex;flex-direction:column;gap:8px">${_wParts.join('')}</div>`;
+  }
+  let cardPairHtml = '';
+  if (nextGameCardHtml && rightColumnHtml) {
+    cardPairHtml = `<div class="home-card-pair"><div>${nextGameCardHtml}</div><div>${rightColumnHtml}</div></div>`;
+  } else if (nextGameCardHtml) {
+    cardPairHtml = `<div style="margin-bottom:12px">${nextGameCardHtml}</div>`;
+  } else if (rightColumnHtml) {
+    cardPairHtml = `<div style="margin-bottom:12px">${rightColumnHtml}</div>`;
+  }
+
+  // 배치 순서: 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 다가오는 일정 → 바로가기
   el.innerHTML = `
     <div style="padding-top:12px">
       <!-- 웰컴 배너 -->
-      <div style="background:linear-gradient(135deg,#1e3a8a 0%,#1565c0 50%,#0891b2 100%);border-radius:18px;padding:18px 16px 16px;margin-bottom:12px;position:relative;overflow:hidden">
+      <div style="background:linear-gradient(135deg,#0d1b6e 0%,#1e40af 45%,#0369a1 100%);border-radius:18px;padding:18px 16px 16px;margin-bottom:12px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-24px;right:-16px;font-size:90px;opacity:0.07;pointer-events:none;user-select:none">🎾</div>
         <div style="display:flex;align-items:flex-start;gap:10px;position:relative">
           <!-- 좌측: 인사말 -->
@@ -5895,11 +5943,8 @@ function renderHomeTab() {
       <!-- 내 기록 상세 (로그인 시만) -->
       ${myRecordHtml}
 
-      <!-- 관리자 다음 게임 카드 (isGameMeetup=true 일정 있을 때만) -->
-      ${nextGameCardHtml}
-
-      <!-- 다가오는 교류전 (예정 상태 교류전이 있을 때만) -->
-      ${nextEvCardHtml}
+      <!-- 다음 게임 + 이벤트전 카드 쌍 (50/50 or 폴백) -->
+      ${cardPairHtml}
 
       <!-- 다가오는 일정 (일반 회원 일정) -->
       <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
