@@ -1844,11 +1844,18 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
   const femaleCourts = usableCourtTypes.filter(t=>t==='여복').length;
 
   // typeHistory 균형 정렬 헬퍼 (하루 전체 섞기 시에만 활성화)
-  // 1순위: 휴식 많은 사람 먼저(코트 우선 배정), 2순위: 해당 타입 적게 배정된 사람 먼저
+  // 1순위: 휴식 많은 사람 먼저, 2순위: 해당 타입 적게 배정된 사람 먼저
+  // 3순위(동점 타이브레이크): 다른 타입을 더 많이 한 사람 우선 → 타입 다양성 극대화
+  const _TYPE_ALL=['혼복','남복','여복','잡복'];
   const _thBs = typeHistory
     ? (a,fr,k)=>[...a.filter(n=>fr.has(n)),...a.filter(n=>!fr.has(n)).sort((x,y)=>{
         const rD=(typeHistory[y]?.휴식||0)-(typeHistory[x]?.휴식||0);
-        return rD!==0?rD:(typeHistory[x]?.[k]||0)-(typeHistory[y]?.[k]||0);
+        if(rD!==0)return rD;
+        const kD=(typeHistory[x]?.[k]||0)-(typeHistory[y]?.[k]||0);
+        if(kD!==0)return kD;
+        const xOth=_TYPE_ALL.filter(t=>t!==k).reduce((s,t)=>s+(typeHistory[x]?.[t]||0),0);
+        const yOth=_TYPE_ALL.filter(t=>t!==k).reduce((s,t)=>s+(typeHistory[y]?.[t]||0),0);
+        return yOth-xOth;
       })]
     : null;
   if (_thBs) {
@@ -3731,15 +3738,27 @@ window.openEvScoreboard=function(evId){
     }
   }
 
-  // 참석자별 배정 경기 수 (결과 입력 여부와 무관)
+  // 참석자별 배정 경기 수 + 코트 타입별 세부 (결과 입력 여부와 무관)
   const gameCntMap={};
-  parts.forEach(p=>{gameCntMap[p]=0;});
-  evMatches.forEach(m=>{(m.ourPair||[]).forEach(p=>{if(p in gameCntMap)gameCntMap[p]++;});});
+  const gameTypeCnt={};
+  parts.forEach(p=>{gameCntMap[p]=0; gameTypeCnt[p]={혼복:0,남복:0,여복:0};});
+  evMatches.forEach(m=>{
+    const ct=m.courtType||'';
+    (m.ourPair||[]).forEach(p=>{
+      if(!(p in gameCntMap))return;
+      gameCntMap[p]++;
+      if(gameTypeCnt[p]&&['혼복','남복','여복'].includes(ct)) gameTypeCnt[p][ct]++;
+    });
+  });
+  const GTS={'혼복':'혼','남복':'남','여복':'여'};
   const gameCntSorted=[...parts].sort((a,b)=>gameCntMap[a]-gameCntMap[b]);
-  const gameCntRows=gameCntSorted.map(p=>`<span style="white-space:nowrap"><span style="font-weight:700;color:#e8edf2">${p}</span><span style="color:#a78bfa;font-size:11px"> ${gameCntMap[p]}경기</span></span>`).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
+  const gameCntRows=gameCntSorted.map(p=>{
+    const types=['혼복','남복','여복'].filter(t=>gameTypeCnt[p][t]>0).map(t=>`<span style="color:${t==='혼복'?'#a78bfa':t==='남복'?'#60a5fa':'#f472b6'}">${GTS[t]}${gameTypeCnt[p][t]}</span>`).join('<span style="color:rgba(150,150,200,0.4)">·</span>');
+    return `<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#e8edf2">${p}</span><span style="color:#a78bfa;font-size:11px"> ${gameCntMap[p]}경기</span>${types?`<span style="font-size:10px;color:rgba(200,200,255,0.5)">(${types})</span>`:''}</span>`;
+  }).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
   const gameCntSec=evMatches.length&&parts.length?`<div style="margin-bottom:16px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.2);border-radius:10px">
     <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:6px">🎯 참석자별 경기 수</div>
-    <div style="font-size:12px;line-height:1.8;display:flex;flex-wrap:wrap;gap:2px 0">${gameCntRows}</div>
+    <div style="font-size:12px;line-height:2;display:flex;flex-wrap:wrap;gap:2px 0">${gameCntRows}</div>
   </div>`:'';
 
   const statRows=parts.map(p=>{
