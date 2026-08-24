@@ -4853,7 +4853,7 @@ window.meetupGenerate = function() {
     });
   }
 
-  // 교류전: 코트당 우리팀 페어 1개 생성 (게임수 균등화 + 승률 기반 스네이크 밸런스)
+  // 교류전: 코트당 우리팀 페어 1개 생성 (게임수 + 코트타입 균등화 + 스네이크 밸런스)
   if (evExchangeMode) {
     // 1. 정규 시즌 승률 조회 (전적 없는 참가자는 리그 평균으로 대체)
     const statsArr = calcStats();
@@ -4863,9 +4863,13 @@ window.meetupGenerate = function() {
     const avgWr = playedWrs.length ? Math.round(playedWrs.reduce((a,b) => a+b, 0) / playedWrs.length) : 50;
     const getWr = n => wrLookup[n] !== undefined ? wrLookup[n] : avgWr;
 
-    // 2. 라운드 간 게임수 추적 (균등화용)
+    // 2. 라운드 간 총 게임수 + 타입별 게임수 추적
     const gameCnt = {};
-    attendeesWithGender.forEach(p => { gameCnt[p.name] = 0; });
+    const typeCntEx = {};
+    attendeesWithGender.forEach(p => {
+      gameCnt[p.name] = 0;
+      typeCntEx[p.name] = { 혼복: 0, 남복: 0, 여복: 0 };
+    });
 
     const exRounds = [];
     for (let r = 1; r <= meetupConfig.rounds; r++) {
@@ -4882,35 +4886,55 @@ window.meetupGenerate = function() {
         else mixedCts.push(c);
       }
 
-      // 게임수 적은 선수 우선 선발 (동점이면 shuffle로 랜덤 결정)
-      const byGC = names => shuffle(names).sort((a, b) => (gameCnt[a]||0) - (gameCnt[b]||0));
-      const allM = byGC(attendeesWithGender.filter(p => p.gender === 'm').map(p => p.name));
-      const allF = byGC(attendeesWithGender.filter(p => p.gender === 'f').map(p => p.name));
+      // 타입별 우선순위 정렬: 해당 타입 경험 적은 순 → 총 게임 적은 순 → 랜덤
+      const byTypePri = (type, names) =>
+        shuffle(names).sort((a, b) => {
+          const td = (typeCntEx[a][type]||0) - (typeCntEx[b][type]||0);
+          return td !== 0 ? td : (gameCnt[a]||0) - (gameCnt[b]||0);
+        });
 
-      // 코트 유형별로 필요한 선수 수만큼 선발 (게임수 적은 순)
-      const mForMale = allM.splice(0, maleCts.length * 2);
-      const fForFemale = allF.splice(0, femaleCts.length * 2);
-      const mForMix = allM.splice(0, mixedCts.length);
-      const fForMix = allF.splice(0, mixedCts.length);
-      // allM, allF에 남은 인원 = 이 라운드 대기자
+      const allMales  = attendeesWithGender.filter(p => p.gender === 'm').map(p => p.name);
+      const allFemales= attendeesWithGender.filter(p => p.gender === 'f').map(p => p.name);
 
-      // 스네이크 드래프트: 승률 내림차순 정렬 후 hi+lo 짝 맞춤
+      // 타입별 우선순위 풀 (각각 독립 정렬)
+      const mByHon = byTypePri('혼복', allMales);
+      const fByHon = byTypePri('혼복', allFemales);
+      const mByNam = byTypePri('남복', allMales);
+      const fByYeo = byTypePri('여복', allFemales);
+
+      // 라운드 내 중복 배정 방지 세트
+      const assigned = new Set();
+      const takeFrom = (sorted, n) => {
+        const res = [];
+        for (const name of sorted) {
+          if (res.length >= n) break;
+          if (!assigned.has(name)) { res.push(name); assigned.add(name); }
+        }
+        return res;
+      };
+
+      // 혼복 먼저 배정 (남녀 모두 필요 → 제약 가장 큰 타입 우선 확보)
+      const mForMix  = takeFrom(mByHon, mixedCts.length);
+      const fForMix  = takeFrom(fByHon, mixedCts.length);
+      // 남복/여복은 나머지 중 해당 타입 경험 적은 순
+      const mForMale = takeFrom(mByNam, maleCts.length * 2);
+      const fForFemale = takeFrom(fByYeo, femaleCts.length * 2);
+
+      // 스네이크 드래프트: 승률 기반 페어 밸런싱
       mForMale.sort((a, b) => getWr(b) - getWr(a));
       fForFemale.sort((a, b) => getWr(b) - getWr(a));
-      mForMix.sort((a, b) => getWr(b) - getWr(a));   // M: 승률 내림차순
-      fForMix.sort((a, b) => getWr(a) - getWr(b));   // F: 승률 오름차순 → M[i](고승률)+F[i](저승률)
+      mForMix.sort((a, b) => getWr(b) - getWr(a));
+      fForMix.sort((a, b) => getWr(a) - getWr(b));
 
-      // [A,B,C,D] → [[A,D],[B,C]] 스네이크 페어
       const snakePair = arr => {
         const pairs = [], a = [...arr];
         while (a.length >= 2) pairs.push([a.shift(), a.pop()]);
         return pairs;
       };
-      const malePairs = snakePair(mForMale);
+      const malePairs   = snakePair(mForMale);
       const femalePairs = snakePair(fForFemale);
 
       const exMatches = [];
-      const assigned = new Set();
       let maleI = 0, femI = 0, mixI = 0;
 
       for (let c = 1; c <= meetupConfig.courts; c++) {
@@ -4920,20 +4944,26 @@ window.meetupGenerate = function() {
           pair = malePairs[maleI++] || null;
         } else if (type === '여복') {
           pair = femalePairs[femI++] || null;
-        } else { // 혼복/잡복: M+F 우선, 부족하면 동성 페어
+        } else {
           const m = mForMix[mixI], f = fForMix[mixI];
           mixI++;
-          if (m && f) pair = [m, f];
-          else if (m && allF.length > 0) pair = [m, allF.shift()];
-          else if (f && allM.length > 0) pair = [allM.shift(), f];
-          else if (m && allM.length > 0) pair = [m, allM.shift()];
-          else if (f && allF.length > 0) pair = [f, allF.shift()];
+          // 부족할 경우 미배정 인원에서 보충 (성별 교차 → 동성 순)
+          const remM = allMales.filter(n => !assigned.has(n));
+          const remF = allFemales.filter(n => !assigned.has(n));
+          if (m && f) { pair = [m, f]; }
+          else if (m && remF.length > 0) { const x=remF[0]; assigned.add(x); pair=[m,x]; }
+          else if (f && remM.length > 0) { const x=remM[0]; assigned.add(x); pair=[x,f]; }
+          else if (m && remM.length > 0) { const x=remM[0]; assigned.add(x); pair=[m,x]; }
+          else if (f && remF.length > 0) { const x=remF[0]; assigned.add(x); pair=[f,x]; }
           else if (m) pair = [m];
           else if (f) pair = [f];
         }
         if (pair && pair.length > 0) {
           exMatches.push({ court: c, type, team1: pair, team2: null, score1: '', score2: '' });
-          pair.forEach(p => { gameCnt[p] = (gameCnt[p]||0) + 1; assigned.add(p); });
+          pair.forEach(p => {
+            gameCnt[p] = (gameCnt[p]||0) + 1;
+            if (typeCntEx[p] && ['혼복','남복','여복'].includes(type)) typeCntEx[p][type]++;
+          });
         }
       }
 
