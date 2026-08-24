@@ -10,15 +10,15 @@ body {
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   color: #e8edf2; min-height: 100vh;
   background:
-    repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 80px),
-    repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 80px),
-    linear-gradient(160deg, #5D9E3E 0%, #6EBF4A 25%, #7CB342 45%, #84C244 65%, #5D9E3E 100%);
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 60px),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 60px),
+    linear-gradient(160deg, #8BC34A 0%, #9CCC65 30%, #AED581 55%, #9CCC65 80%, #8BC34A 100%);
   background-attachment: fixed;
 }
 body::before {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.15) 0%, transparent 55%),
-              radial-gradient(ellipse at 50% 100%, rgba(0,40,0,0.3) 0%, transparent 55%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.25) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 100%, rgba(60,100,0,0.12) 0%, transparent 55%);
 }
 #appScreen { position:relative; z-index:1; }
 
@@ -5412,7 +5412,7 @@ async function fetchDayWeather(dateStr, place) {
   } catch (e) { return null; }
 }
 
-async function updateHomeWeather(gameDate, gamePlace, evDate, evPlace) {
+async function updateHomeWeather(gameDate, gamePlace, evDate, evPlace, schedArr) {
   const now = new Date();
   const cutoffMs = now.getTime() + 16 * 24 * 60 * 60 * 1000;
   const cutoff = new Date(cutoffMs).toISOString().slice(0, 10);
@@ -5423,6 +5423,13 @@ async function updateHomeWeather(gameDate, gamePlace, evDate, evPlace) {
   if (evDate && evDate <= cutoff) {
     const wx = await fetchDayWeather(evDate, evPlace);
     if (wx) { const el = document.getElementById('wxBadgeEv'); if (el) el.textContent = wx; }
+  }
+  for (let i = 0; i < (schedArr || []).length; i++) {
+    const { date, place } = schedArr[i];
+    if (date && date <= cutoff) {
+      const wx = await fetchDayWeather(date, place);
+      if (wx) { const el = document.getElementById('wxBadgeSched_' + i); if (el) el.textContent = wx; }
+    }
   }
 }
 
@@ -5595,7 +5602,7 @@ function renderHomeTab() {
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
         ${d.place?`<span style="font-size:11px;color:#60a5fa">📍 ${d.place}</span>`:''}
         ${pairsSummary}
-        <span id="wxBadgeGame" style="font-size:10px;color:#94a3b8"></span>
+        <span id="wxBadgeGame" style="font-size:13px;color:#e2e8f0;font-weight:600"></span>
       </div>
     </div>`;
   })() : '';
@@ -5622,7 +5629,7 @@ function renderHomeTab() {
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${e.place?`<span style="font-size:11px;color:#60a5fa">📍 ${e.place}</span>`:''}
         ${partCount?`<span style="font-size:11px;color:#34d399">👥 ${partCount}명 참가예정</span>`:''}
-        <span id="wxBadgeEv" style="font-size:10px;color:#94a3b8"></span>
+        <span id="wxBadgeEv" style="font-size:13px;color:#e2e8f0;font-weight:600"></span>
       </div>
     </div>`;
   })():'';
@@ -5635,7 +5642,7 @@ function renderHomeTab() {
 
   // 일반 회원 일정 (isGameMeetup이 아닌 것)
   const memberSchedsHtml = memberScheds.length
-    ? memberScheds.map(s=>{
+    ? memberScheds.map((s,i)=>{
         const d=new Date(s.date+'T00:00:00');
         const dl=`${d.getMonth()+1}/${d.getDate()}(${weekdays[d.getDay()]})`;
         const yes=Object.values(s.attend||{}).filter(v=>v==='참석').length;
@@ -5644,6 +5651,7 @@ function renderHomeTab() {
             <span style="font-size:12px;font-weight:800;color:#fbbf24">${dl}${s.time?' '+s.time:''}</span>
             <span style="font-size:10px;color:#34d399">✅ ${yes}명</span>
             ${s.place?`<span style="font-size:10px;color:#4a8ab5">📍 ${s.place}</span>`:''}
+            <span id="wxBadgeSched_${i}" style="font-size:12px;color:#e2e8f0;font-weight:600"></span>
           </div>
           <div style="font-size:11px;color:#8aa5c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(s.content||'').slice(0,45)}</div>
         </div>`;
@@ -5750,7 +5758,8 @@ function renderHomeTab() {
     nextGameDay ? nextGameDay.date : null,
     nextGameDay ? nextGameDay.place : null,
     nextExchangeEv ? nextExchangeEv.date : null,
-    nextExchangeEv ? nextExchangeEv.place : null
+    nextExchangeEv ? nextExchangeEv.place : null,
+    memberScheds.map(s => ({ date: s.date, place: s.place || null }))
   );
 }
 
