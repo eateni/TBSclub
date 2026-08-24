@@ -5669,8 +5669,11 @@ function renderHomeTab() {
       : `<div style="text-align:center;color:#64748B;font-size:14px;padding:4px 0">아직 경기 기록이 없어요</div>`;
 
     myRecordHtml = `
-      <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:800;color:#64748B;margin-bottom:10px">📊 ${myClaim.name}님의 기록</div>
+      <div onclick="homeGoTo('ranking')" style="cursor:pointer;background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px;active:opacity:0.8">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:800;color:#64748B">📊 ${myClaim.name}님의 기록</div>
+          <span style="font-size:18px;color:#94a3b8;line-height:1">›</span>
+        </div>
         ${statsInner}
       </div>`;
   }
@@ -5826,6 +5829,10 @@ function renderHomeTab() {
     { id:'community', icon:'💬', label:'커뮤니티', grad:'linear-gradient(135deg,rgba(40,10,80,0.32),rgba(167,139,250,0.1))', border:'rgba(167,139,250,0.38)', cardCls:'sc-card-community',
       items:[{icon:'🍀',name:'오늘의 운세',go:'fortune'},{icon:'📰',name:'게시판',go:'board'},{icon:'📸',name:'사진/동영상',go:'photo'}] },
   ];
+  if (isAdmin) {
+    CATS.push({ id:'admin-panel', icon:'⚙️', label:'관리자', grad:'linear-gradient(135deg,rgba(100,10,10,0.28),rgba(239,68,68,0.1))', border:'rgba(239,68,68,0.38)', cardCls:'sc-card-admin',
+      items:[{icon:'👥',name:'회원 관리',go:'admin-members'},{icon:'🎾',name:'경기 설정',go:'admin-match'},{icon:'🗓️',name:'일정·라운드',go:'admin-schedule'},{icon:'📊',name:'현황/통계',go:'admin-status'}] });
+  }
   var shortcutsHtml = CATS.map(function(cat) {
     var isOpen = openCategory === cat.id;
     var cols = cat.items.length % 2 === 0 ? 2 : 3;
@@ -5995,6 +6002,13 @@ window.homeGoTo = function(target) {
     setTimeout(()=>{
       const b = document.querySelector('#tab-league .stab:nth-child(4)');
       if (b) switchSub('pairs', b);
+    }, 60);
+  } else if (target === 'admin-members' || target === 'admin-match' || target === 'admin-schedule' || target === 'admin-status') {
+    const sub = target.replace('admin-', '');
+    navTo('admin');
+    setTimeout(()=>{
+      const b = document.querySelector(`#tab-admin .stab[onclick*="switchAdminSub('${sub}'"]`);
+      if (b) switchAdminSub(sub, b);
     }, 60);
   } else {
     navTo(target);
@@ -6581,6 +6595,16 @@ window.switchSub=function(sub,btn){
   document.querySelectorAll('#tab-league .stab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if (sub === 'pairs') renderPairRanking();
+  // 랭킹 서브탭에서는 topCardsRow 내 기록 카드 숨김
+  const rc = document.getElementById('myRecordCard');
+  if (rc) {
+    if (sub === 'ranking') {
+      rc.style.display = 'none';
+    } else {
+      const memberOk = !!(myClaim && myClaim !== 'pending');
+      if (memberOk) rc.style.display = 'block';
+    }
+  }
 };
 window.toggleR=function(bodyId,arrId){
   const el=document.getElementById(bodyId),arr=document.getElementById(arrId);
