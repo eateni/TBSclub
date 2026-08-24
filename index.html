@@ -5717,10 +5717,8 @@ function renderHomeTab() {
         <span style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:10px">🎾 다음 게임</span>
         ${attendBadge}
       </div>
-      <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-        <span style="font-size:13px;font-weight:900;color:#D97706">${dl}</span>
-        <span style="font-size:11px;color:#059669">✅ ${totalAttend}명 참석</span>
-      </div>
+      <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${dl}</div>
+      <div style="font-size:11px;color:#059669;margin-bottom:4px;text-align:center">✅ ${totalAttend}명 참석</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin-bottom:4px">
         ${d.place?`<span style="font-size:11px;color:#2563EB">📍 ${d.place}</span>`:''}
         ${pairsSummary}
@@ -5744,8 +5742,8 @@ function renderHomeTab() {
         <span style="font-size:11px;font-weight:800;color:#059669;background:#D1FAE5;padding:2px 8px;border-radius:10px">🎉 이벤트전</span>
         <span style="font-size:10px;color:#6D28D9">${evLabel}</span>
       </div>
-      <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:3px;text-align:center">${dl}</div>
-      <div style="font-size:12px;font-weight:700;color:#1E293B;margin-bottom:3px;text-align:center">
+      <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${dl}</div>
+      <div style="font-size:11px;font-weight:700;color:#1E293B;margin-bottom:4px;text-align:center">
         ${e.name}${e.oppClub?` <span style="font-size:11px;font-weight:600;color:#2563EB;background:#DBEAFE;padding:1px 5px;border-radius:6px">${e.oppClub}</span>`:''}
       </div>
       <div style="display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin-bottom:4px">
