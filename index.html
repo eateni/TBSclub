@@ -5704,11 +5704,11 @@ function renderHomeTab() {
     const totalM = rds.reduce((a,r)=>a+(r.matches||[]).length, 0);
     const doneM = rds.reduce((a,r)=>a+(r.matches||[]).filter(m=>m.done).length, 0);
     const pairsSummary = rds.length
-      ? `<span style="font-size:12px;color:#6D28D9;background:rgba(124,58,237,0.15);padding:2px 7px;border-radius:8px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
+      ? `<span style="font-size:12px;color:#6D28D9;background:#EDE9FE;padding:2px 7px;border-radius:8px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
       : '';
-    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:linear-gradient(135deg,rgba(124,58,237,0.22) 0%,rgba(37,99,235,0.22) 100%);border:1.5px solid rgba(124,58,237,0.5);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:13px;font-weight:800;color:#6D28D9;background:rgba(124,58,237,0.2);padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
+        <span style="font-size:13px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
         ${attendBadge}
       </div>
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px">
@@ -5733,14 +5733,14 @@ function renderHomeTab() {
     const dl=`${dd.getMonth()+1}/${dd.getDate()}(${weekdays[dd.getDay()]})`;
     const partCount=(e.participants||[]).length;
     const evLabel=EV_TYPE_EMOJI[e.type]?(EV_TYPE_EMOJI[e.type]+' '+(EV_TYPE_LABEL[e.type]||e.type)):'🎉 이벤트전';
-    return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:linear-gradient(135deg,rgba(16,80,50,0.32) 0%,rgba(5,46,22,0.22) 100%);border:1.5px solid rgba(52,211,153,0.45);border-radius:14px;padding:14px 16px;margin-bottom:12px">
+    return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:#F0FDF4;border:1.5px solid #059669;border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:13px;font-weight:800;color:#059669;background:rgba(52,211,153,0.15);padding:3px 10px;border-radius:10px">🎉 다가오는 이벤트전</span>
+        <span style="font-size:13px;font-weight:800;color:#059669;background:#D1FAE5;padding:3px 10px;border-radius:10px">🎉 다가오는 이벤트전</span>
         <span style="font-size:12px;color:#6D28D9">${evLabel}</span>
       </div>
       <div style="font-size:16px;font-weight:900;color:#D97706;margin-bottom:4px">${dl}</div>
       <div style="font-size:15px;font-weight:700;color:#1E293B;margin-bottom:4px">
-        ${e.name}${e.oppClub?` <span style="font-size:13px;font-weight:600;color:#2563EB;background:rgba(96,165,250,0.12);padding:2px 7px;border-radius:8px">${e.oppClub}</span>`:''}
+        ${e.name}${e.oppClub?` <span style="font-size:13px;font-weight:600;color:#2563EB;background:#DBEAFE;padding:2px 7px;border-radius:8px">${e.oppClub}</span>`:''}
       </div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
         ${e.place?`<span style="font-size:13px;color:#2563EB">📍 ${e.place}</span>`:''}
