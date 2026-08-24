@@ -7523,6 +7523,7 @@ onSnapshot(collection(db,'days'), snap => {
 onSnapshot(collection(db,'events'), snap => {
   events = snap.docs.map(d=>({id:d.id,...d.data()}));
   renderEvents();
+  renderHomeTab();
 });
 onSnapshot(collection(db,'schedules'), snap => {
   schedules = snap.docs.map(d=>({id:d.id,...d.data()}));
