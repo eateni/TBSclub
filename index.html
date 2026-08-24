@@ -10,15 +10,15 @@ body {
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   color: #e8edf2; min-height: 100vh;
   background:
-    repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 80px),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 80px),
-    linear-gradient(160deg, #0a2d5e 0%, #0d4a8c 25%, #1565c0 45%, #0d3d7a 65%, #071e4a 100%);
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 80px),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 80px),
+    linear-gradient(160deg, #5D9E3E 0%, #6EBF4A 25%, #7CB342 45%, #84C244 65%, #5D9E3E 100%);
   background-attachment: fixed;
 }
 body::before {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(30,120,220,0.2) 0%, transparent 55%),
-              radial-gradient(ellipse at 50% 100%, rgba(4,20,70,0.45) 0%, transparent 55%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.15) 0%, transparent 55%),
+              radial-gradient(ellipse at 50% 100%, rgba(0,40,0,0.3) 0%, transparent 55%);
 }
 #appScreen { position:relative; z-index:1; }
 
@@ -92,10 +92,10 @@ body::before {
 .rcN{background:#0a1a4a;border:1px solid #1e3a5f;}
 
 .round-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
-.round-card { background:#0a1a4a; border-radius:12px; overflow:hidden; border:1px solid #1e3a5f; }
+.round-card { background:#0a1a4a; border-radius:12px; overflow:hidden; border:1px solid #1e3a5f; box-shadow:0 2px 12px rgba(0,0,0,0.4); }
 .round-hdr { width:100%; padding:14px 16px; background:transparent; border:none; color:#e8edf2; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; font-size:14px; }
 .round-body { padding:0 12px 12px; display:flex; flex-direction:column; gap:8px; }
-.match-card { background:#0f1923; border-radius:10px; padding:12px; border:1px solid #1e3a5f; }
+.match-card { background:#0f1923; border-radius:10px; padding:12px; border:1px solid #1e3a5f; box-shadow:0 1px 8px rgba(0,0,0,0.35); }
 .match-ct { font-size:10px; color:#4a8ab5; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; }
 .match-row { display:flex; align-items:center; justify-content:space-between; }
 .m-team { flex:1; text-align:center; font-weight:700; font-size:13px; color:#e8edf2; line-height:1.4; }
@@ -1002,7 +1002,7 @@ body {
 </div>
 
 <!-- 이벤트 즉석 매치 추가 모달 -->
-<div class="overlay-bottom" id="addEvMatchModal" style="display:none" onclick="if(event.target.id==='addEvMatchModal')hide('addEvMatchModal')">
+<div class="overlay-bottom" id="addEvMatchModal" style="display:none;z-index:300" onclick="if(event.target.id==='addEvMatchModal')hide('addEvMatchModal')">
   <div class="modal-bottom">
     <div class="modal-title">➕ 즉석 매치 추가</div>
     <div id="addEvMatchInfo" style="font-size:11px;color:#4a8ab5;margin-bottom:10px"></div>
@@ -5364,6 +5364,68 @@ window.shareKakao = function(id) {
 // ── 📌 오늘 일정 배너 (C안) ───────────────────────────────────────────
 let bannerSchId = null;
 // ── 홈 미니 캘린더 ─────────────────────────────────────────────────
+// ── 날씨 (Open-Meteo, API 키 불필요) ─────────────────────────────
+const VENUE_COORDS = {
+  '포동':         { lat: 37.661, lon: 126.769 },
+  '포동체육관':   { lat: 37.661, lon: 126.769 },
+  '비둘기':       { lat: 37.645, lon: 126.800 },
+  '비둘기체육관': { lat: 37.645, lon: 126.800 },
+  '능곡':         { lat: 37.636, lon: 126.829 },
+  '일산':         { lat: 37.658, lon: 126.832 },
+};
+const DEFAULT_COORDS = { lat: 37.566, lon: 126.978 };
+let homeWeatherCache = {};
+
+function wxEmoji(code) {
+  if (code === 0) return '☀️';
+  if (code <= 2)  return '🌤️';
+  if (code <= 3)  return '⛅';
+  if (code <= 48) return '🌫️';
+  if (code <= 57) return '🌦️';
+  if (code <= 67) return '🌧️';
+  if (code <= 77) return '❄️';
+  if (code <= 82) return '🌧️';
+  if (code <= 86) return '❄️';
+  return '⛈️';
+}
+
+async function fetchDayWeather(dateStr, place) {
+  const coords = (place && VENUE_COORDS[place]) || DEFAULT_COORDS;
+  const cacheKey = dateStr + '_' + coords.lat + '_' + coords.lon;
+  if (homeWeatherCache[cacheKey]) return homeWeatherCache[cacheKey];
+  try {
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude=' + coords.lat +
+      '&longitude=' + coords.lon +
+      '&daily=weathercode,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+      '&timezone=Asia%2FSeoul&start_date=' + dateStr + '&end_date=' + dateStr;
+    const resp = await fetch(url);
+    if (!resp.ok) return null;
+    const data = await resp.json();
+    const daily = data.daily;
+    if (!daily || !daily.time || daily.time[0] !== dateStr) return null;
+    const result = wxEmoji(daily.weathercode[0]) + ' ' +
+      Math.round(daily.temperature_2m_max[0]) + '° / ' +
+      Math.round(daily.temperature_2m_min[0]) + '° · 강수 ' +
+      daily.precipitation_probability_max[0] + '%';
+    homeWeatherCache[cacheKey] = result;
+    return result;
+  } catch (e) { return null; }
+}
+
+async function updateHomeWeather(gameDate, gamePlace, evDate, evPlace) {
+  const now = new Date();
+  const cutoffMs = now.getTime() + 16 * 24 * 60 * 60 * 1000;
+  const cutoff = new Date(cutoffMs).toISOString().slice(0, 10);
+  if (gameDate && gameDate <= cutoff) {
+    const wx = await fetchDayWeather(gameDate, gamePlace);
+    if (wx) { const el = document.getElementById('wxBadgeGame'); if (el) el.textContent = wx; }
+  }
+  if (evDate && evDate <= cutoff) {
+    const wx = await fetchDayWeather(evDate, evPlace);
+    if (wx) { const el = document.getElementById('wxBadgeEv'); if (el) el.textContent = wx; }
+  }
+}
+
 function renderMiniCalendar(year, month, attendedSet, eventDaysMap) {
   eventDaysMap = eventDaysMap || {};
   var today = new Date();
@@ -5392,9 +5454,9 @@ function renderMiniCalendar(year, month, attendedSet, eventDaysMap) {
     } else if (att) {
       col = '#34d399'; bg = 'rgba(52,211,153,0.22)'; fw = '700'; ring = '';
     } else if (isEv && isT) {
-      col = '#fff'; bg = 'rgba(167,139,250,0.35)'; fw = '800'; ring = 'box-shadow:0 0 0 1.5px #a78bfa;';
+      col = '#fff'; bg = '#7C3AED'; fw = '800'; ring = 'box-shadow:0 0 0 2px #a78bfa;';
     } else if (isEv) {
-      col = '#c4b5fd'; bg = 'rgba(167,139,250,0.25)'; fw = '700'; ring = '';
+      col = '#fff'; bg = '#8B5CF6'; fw = '700'; ring = '';
     } else if (isT) {
       col = '#fff'; bg = 'transparent'; fw = '800'; ring = 'box-shadow:0 0 0 1.5px rgba(255,255,255,0.75);';
     } else {
@@ -5533,6 +5595,7 @@ function renderHomeTab() {
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
         ${d.place?`<span style="font-size:11px;color:#60a5fa">📍 ${d.place}</span>`:''}
         ${pairsSummary}
+        <span id="wxBadgeGame" style="font-size:10px;color:#94a3b8"></span>
       </div>
     </div>`;
   })() : '';
@@ -5559,6 +5622,7 @@ function renderHomeTab() {
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         ${e.place?`<span style="font-size:11px;color:#60a5fa">📍 ${e.place}</span>`:''}
         ${partCount?`<span style="font-size:11px;color:#34d399">👥 ${partCount}명 참가예정</span>`:''}
+        <span id="wxBadgeEv" style="font-size:10px;color:#94a3b8"></span>
       </div>
     </div>`;
   })():'';
@@ -5681,6 +5745,13 @@ function renderHomeTab() {
       <!-- 바로가기 — 확장형 카테고리 카드 -->
       ${shortcutsHtml}
     </div>`;
+  // 날씨 비동기 업데이트 (렌더 후 주입)
+  updateHomeWeather(
+    nextGameDay ? nextGameDay.date : null,
+    nextGameDay ? nextGameDay.place : null,
+    nextExchangeEv ? nextExchangeEv.date : null,
+    nextExchangeEv ? nextExchangeEv.place : null
+  );
 }
 
 function renderPhotoTab() {
@@ -7144,7 +7215,29 @@ async function resolveMyClaim(isRetry) {
     const q = query(collection(db,'signupRequests'), where('uid','==',user.uid));
     const snap = await getDocs(q);
     const pending = snap.docs.find(d => d.data().status === 'pending');
-    myClaim = pending ? 'pending' : null;
+    if (pending) { myClaim = 'pending'; renderMyDashboardState(); return; }
+    // uid가 members/guests에 없으면 approved signupRequest로 이름 매칭 (uid 분실 자동복구)
+    const approved = snap.docs.find(d => d.data().status === 'approved');
+    if (approved) {
+      const req = approved.data();
+      const resName = (req.nickname && req.nickname.trim()) ? req.nickname.trim() : req.claimedName;
+      const inMember = members.find(m => m.name === resName);
+      if (inMember) {
+        myClaim = { ...inMember, uid: user.uid, isGuest: false };
+        console.log('[TBS] myClaim(fallback-정회원):', JSON.stringify(myClaim));
+        setDoc(doc(db,'club','members'), {list: members.map(m => m.name === resName ? {...m, uid: user.uid} : m)}).catch(()=>{});
+        renderMyDashboardState();
+        return;
+      }
+      const inGuest = guests.find(g => g.name === resName);
+      if (inGuest) {
+        myClaim = { ...inGuest, uid: user.uid, isGuest: true };
+        console.log('[TBS] myClaim(fallback-게스트):', JSON.stringify(myClaim));
+        renderMyDashboardState();
+        return;
+      }
+    }
+    myClaim = null;
   } catch (e) {
     console.error('resolveMyClaim 실패:', e.code, e.message);
     if (!isRetry) {
