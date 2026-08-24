@@ -9,16 +9,18 @@
 body {
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   color: #1E293B; min-height: 100vh;
-  background:
-    repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 60px),
-    repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 60px),
-    linear-gradient(160deg, #4DB6AC 0%, #80CBC4 30%, #B2DFDB 55%, #80CBC4 80%, #4DB6AC 100%);
+  background: #FAF8F3;
   background-attachment: fixed;
 }
 body::before {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.35) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 100%, rgba(0,80,70,0.10) 0%, transparent 55%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.65) 0%, transparent 55%);
+}
+/* TBS CLUB 로고 워터마크 — 카드 밖 여백에만 은은하게 표시 */
+body::after {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background: url('tbs_logo.png') center 38% / 72% auto no-repeat;
+  opacity: 0.07;
 }
 #appScreen { position:relative; z-index:1; }
 
