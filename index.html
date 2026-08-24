@@ -10,15 +10,15 @@ body {
   font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   color: #e8edf2; min-height: 100vh;
   background:
-    repeating-linear-gradient(90deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 60px),
-    repeating-linear-gradient(0deg, rgba(0,0,0,0.06) 0px, rgba(0,0,0,0.06) 1px, transparent 1px, transparent 60px),
-    linear-gradient(160deg, #8BC34A 0%, #9CCC65 30%, #AED581 55%, #9CCC65 80%, #8BC34A 100%);
+    repeating-linear-gradient(90deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 60px),
+    repeating-linear-gradient(0deg, rgba(0,0,0,0.04) 0px, rgba(0,0,0,0.04) 1px, transparent 1px, transparent 60px),
+    linear-gradient(160deg, #4DB6AC 0%, #80CBC4 30%, #B2DFDB 55%, #80CBC4 80%, #4DB6AC 100%);
   background-attachment: fixed;
 }
 body::before {
   content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
-  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.25) 0%, transparent 50%),
-              radial-gradient(ellipse at 50% 100%, rgba(60,100,0,0.12) 0%, transparent 55%);
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.35) 0%, transparent 50%),
+              radial-gradient(ellipse at 50% 100%, rgba(0,80,70,0.10) 0%, transparent 55%);
 }
 #appScreen { position:relative; z-index:1; }
 
@@ -5553,14 +5553,14 @@ function renderHomeTab() {
              <div style="font-size:22px;font-weight:900;color:#f59e0b">${me.pts}점</div>
              ${myRank>0?`<div style="font-size:11px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">${myRank}위</div>`:''}
            </div>
-           <div style="font-size:12px;color:#60a5fa;margin-bottom:3px">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
-           <div style="font-size:11px;color:#8aa5c4">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
+           <div style="font-size:14px;color:#60a5fa;margin-bottom:3px">${me.wins}승 ${me.draws}무 ${me.losses}패 · 승률 ${me.wr}%</div>
+           <div style="font-size:13px;color:#8aa5c4">득점 ${me.scored} · 실점 ${me.conceded} · 득실 ${me.diff>=0?'+':''}${me.diff} · 출석 ${att[me.name]||0}일</div>
          </div>`
-      : `<div style="text-align:center;color:#4a8ab5;font-size:12px;padding:4px 0">아직 경기 기록이 없어요</div>`;
+      : `<div style="text-align:center;color:#4a8ab5;font-size:14px;padding:4px 0">아직 경기 기록이 없어요</div>`;
 
     myRecordHtml = `
       <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:800;color:#4a8ab5;margin-bottom:10px">📊 ${myClaim.name}님의 기록</div>
+        <div style="font-size:13px;font-weight:800;color:#4a8ab5;margin-bottom:10px">📊 ${myClaim.name}님의 기록</div>
         ${statsInner}
       </div>`;
   }
@@ -5591,31 +5591,31 @@ function renderHomeTab() {
     // 내 참석 여부
     const myAtt = isLoggedIn ? att[myClaim.name] : undefined;
     const attendBadge = myAtt === false
-      ? `<span style="font-size:10px;font-weight:700;color:#f87171;background:rgba(248,113,113,0.15);padding:2px 8px;border-radius:10px">❌ 불참</span>`
+      ? `<span style="font-size:12px;font-weight:700;color:#f87171;background:rgba(248,113,113,0.15);padding:2px 8px;border-radius:10px">❌ 불참</span>`
       : isLoggedIn
-      ? `<span style="font-size:10px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">✅ 참석</span>`
+      ? `<span style="font-size:12px;font-weight:700;color:#34d399;background:rgba(52,211,153,0.15);padding:2px 8px;border-radius:10px">✅ 참석</span>`
       : '';
     // 라운드/경기 요약
     const rds = d.rounds || [];
     const totalM = rds.reduce((a,r)=>a+(r.matches||[]).length, 0);
     const doneM = rds.reduce((a,r)=>a+(r.matches||[]).filter(m=>m.done).length, 0);
     const pairsSummary = rds.length
-      ? `<span style="font-size:10px;color:#a78bfa;background:rgba(124,58,237,0.15);padding:2px 7px;border-radius:8px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
+      ? `<span style="font-size:12px;color:#a78bfa;background:rgba(124,58,237,0.15);padding:2px 7px;border-radius:8px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
       : '';
     return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:linear-gradient(135deg,rgba(124,58,237,0.22) 0%,rgba(37,99,235,0.22) 100%);border:1.5px solid rgba(124,58,237,0.5);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:11px;font-weight:800;color:#a78bfa;background:rgba(124,58,237,0.2);padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
+        <span style="font-size:13px;font-weight:800;color:#a78bfa;background:rgba(124,58,237,0.2);padding:3px 10px;border-radius:10px">🎾 다음 게임</span>
         ${attendBadge}
       </div>
       <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-bottom:6px">
         <span style="font-size:16px;font-weight:900;color:#fbbf24">${dl}</span>
-        <span style="font-size:11px;color:#34d399">✅ ${totalAttend}명 참석</span>
+        <span style="font-size:13px;color:#34d399">✅ ${totalAttend}명 참석</span>
       </div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-        ${d.place?`<span style="font-size:11px;color:#60a5fa">📍 ${d.place}</span>`:''}
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+        ${d.place?`<span style="font-size:13px;color:#60a5fa">📍 ${d.place}</span>`:''}
         ${pairsSummary}
-        <span id="wxBadgeGame" style="font-size:13px;color:#e2e8f0;font-weight:600"></span>
       </div>
+      <div><span id="wxBadgeGame" style="font-size:17px;color:#e2e8f0;font-weight:700"></span></div>
     </div>`;
   })() : '';
 
@@ -5631,18 +5631,18 @@ function renderHomeTab() {
     const evLabel=EV_TYPE_EMOJI[e.type]?(EV_TYPE_EMOJI[e.type]+' '+(EV_TYPE_LABEL[e.type]||e.type)):'🎉 이벤트전';
     return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:linear-gradient(135deg,rgba(16,80,50,0.32) 0%,rgba(5,46,22,0.22) 100%);border:1.5px solid rgba(52,211,153,0.45);border-radius:14px;padding:14px 16px;margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:11px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:3px 10px;border-radius:10px">🎉 다가오는 이벤트전</span>
-        <span style="font-size:10px;color:#a78bfa">${evLabel}</span>
+        <span style="font-size:13px;font-weight:800;color:#34d399;background:rgba(52,211,153,0.15);padding:3px 10px;border-radius:10px">🎉 다가오는 이벤트전</span>
+        <span style="font-size:12px;color:#a78bfa">${evLabel}</span>
       </div>
       <div style="font-size:16px;font-weight:900;color:#fbbf24;margin-bottom:4px">${dl}</div>
-      <div style="font-size:13px;font-weight:700;color:#e8edf2;margin-bottom:4px">
-        ${e.name}${e.oppClub?` <span style="font-size:11px;font-weight:600;color:#60a5fa;background:rgba(96,165,250,0.12);padding:2px 7px;border-radius:8px">${e.oppClub}</span>`:''}
+      <div style="font-size:15px;font-weight:700;color:#e8edf2;margin-bottom:4px">
+        ${e.name}${e.oppClub?` <span style="font-size:13px;font-weight:600;color:#60a5fa;background:rgba(96,165,250,0.12);padding:2px 7px;border-radius:8px">${e.oppClub}</span>`:''}
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        ${e.place?`<span style="font-size:11px;color:#60a5fa">📍 ${e.place}</span>`:''}
-        ${partCount?`<span style="font-size:11px;color:#34d399">👥 ${partCount}명 참가예정</span>`:''}
-        <span id="wxBadgeEv" style="font-size:13px;color:#e2e8f0;font-weight:600"></span>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
+        ${e.place?`<span style="font-size:13px;color:#60a5fa">📍 ${e.place}</span>`:''}
+        ${partCount?`<span style="font-size:13px;color:#34d399">👥 ${partCount}명 참가예정</span>`:''}
       </div>
+      <div><span id="wxBadgeEv" style="font-size:17px;color:#e2e8f0;font-weight:700"></span></div>
     </div>`;
   })():'';
 
@@ -5658,17 +5658,17 @@ function renderHomeTab() {
         const d=new Date(s.date+'T00:00:00');
         const dl=`${d.getMonth()+1}/${d.getDate()}(${weekdays[d.getDay()]})`;
         const yes=Object.values(s.attend||{}).filter(v=>v==='참석').length;
-        return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;padding:8px 0;border-bottom:1px solid rgba(50,110,200,0.1)">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px">
-            <span style="font-size:12px;font-weight:800;color:#fbbf24">${dl}${s.time?' '+s.time:''}</span>
-            <span style="font-size:10px;color:#34d399">✅ ${yes}명</span>
-            ${s.place?`<span style="font-size:10px;color:#4a8ab5">📍 ${s.place}</span>`:''}
-            <span id="wxBadgeSched_${i}" style="font-size:12px;color:#e2e8f0;font-weight:600"></span>
+        return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;padding:10px 0;border-bottom:1px solid rgba(50,110,200,0.1)">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+            <span style="font-size:14px;font-weight:800;color:#fbbf24">${dl}${s.time?' '+s.time:''}</span>
+            <span style="font-size:12px;color:#34d399">✅ ${yes}명</span>
+            ${s.place?`<span style="font-size:12px;color:#4a8ab5">📍 ${s.place}</span>`:''}
           </div>
-          <div style="font-size:11px;color:#8aa5c4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(s.content||'').slice(0,45)}</div>
+          <div style="font-size:13px;color:#8aa5c4;line-height:1.4;margin-bottom:4px">${(s.content||'').slice(0,45)}</div>
+          <div><span id="wxBadgeSched_${i}" style="font-size:15px;color:#e2e8f0;font-weight:700"></span></div>
         </div>`;
       }).join('')
-    : `<div style="font-size:12px;color:#4a8ab5;padding:4px 0">예정된 일정이 없어요</div>`;
+    : `<div style="font-size:14px;color:#4a8ab5;padding:4px 0">예정된 일정이 없어요</div>`;
 
   // 바로가기 — 확장형 카테고리 카드
   var CATS = [
@@ -5686,7 +5686,7 @@ function renderHomeTab() {
       return '<button onclick="homeGoTo(\'' + it.go + '\')" class="sc-item"'
         + ' style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px 6px;cursor:pointer;text-align:center;width:100%">'
         + '<div style="font-size:22px;margin-bottom:4px">' + it.icon + '</div>'
-        + '<div style="font-size:10px;font-weight:700;color:#e8edf2;line-height:1.3">' + it.name + '</div>'
+        + '<div style="font-size:12px;font-weight:700;color:#e8edf2;line-height:1.3">' + it.name + '</div>'
         + '</button>';
     }).join('');
     return '<div class="sc-card ' + cat.cardCls + '" style="background:' + cat.grad + ';border:1.5px solid ' + cat.border + ';border-radius:16px;overflow:hidden;margin-bottom:10px">'
@@ -5695,7 +5695,7 @@ function renderHomeTab() {
       + '<span style="font-size:28px">' + cat.icon + '</span>'
       + '<div style="text-align:left">'
       + '<div style="font-size:15px;font-weight:900;color:#e8edf2">' + cat.label + '</div>'
-      + '<div style="font-size:10px;color:rgba(200,220,255,0.55);margin-top:1px">' + cat.items.length + '개 바로가기</div>'
+      + '<div style="font-size:12px;color:rgba(200,220,255,0.55);margin-top:1px">' + cat.items.length + '개 바로가기</div>'
       + '</div></div>'
       + '<span class="sc-arrow" data-cat="' + cat.id + '" style="font-size:20px;color:rgba(200,220,255,0.5);display:inline-block;transition:transform 0.3s;' + (isOpen ? 'transform:rotate(90deg)' : '') + '">›</span>'
       + '</button>'
@@ -5715,10 +5715,10 @@ function renderHomeTab() {
           <!-- 좌측: 인사말 -->
           <div style="flex:1;min-width:0">
             <div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${welcomeName}</div>
-            <div style="font-size:11px;color:rgba(200,225,255,0.8);margin-bottom:12px">${subMsg}</div>
+            <div style="font-size:13px;color:rgba(200,225,255,0.8);margin-bottom:12px">${subMsg}</div>
             <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.13);border-radius:20px;padding:4px 11px">
-              <span style="font-size:11px">📆</span>
-              <span style="font-size:11px;font-weight:700;color:#e0f2fe">오늘 ${todayLabel}</span>
+              <span style="font-size:13px">📆</span>
+              <span style="font-size:13px;font-weight:700;color:#e0f2fe">오늘 ${todayLabel}</span>
             </div>
           </div>
           <!-- 우측: 미니 캘린더 -->
@@ -5730,19 +5730,19 @@ function renderHomeTab() {
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
         <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:#60a5fa">${members.length}</div>
-          <div style="font-size:9px;color:#4a8ab5;margin-top:2px">정규회원</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">정규회원</div>
         </div>
         <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:#a78bfa">${guests.length}</div>
-          <div style="font-size:9px;color:#4a8ab5;margin-top:2px">게스트</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">게스트</div>
         </div>
         <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:#34d399">${monthMatchCount}</div>
-          <div style="font-size:9px;color:#4a8ab5;margin-top:2px">이달 경기</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">이달 경기</div>
         </div>
         <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:#f59e0b">S${currentSeason}</div>
-          <div style="font-size:9px;color:#4a8ab5;margin-top:2px">현재시즌</div>
+          <div style="font-size:11px;color:#4a8ab5;margin-top:2px">현재시즌</div>
         </div>
       </div>
 
@@ -5757,9 +5757,9 @@ function renderHomeTab() {
 
       <!-- 다가오는 일정 (일반 회원 일정) -->
       <div style="background:rgba(8,28,75,0.7);border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-        <div style="font-size:11px;font-weight:800;color:#4a8ab5;margin-bottom:8px">📅 다가오는 일정</div>
+        <div style="font-size:13px;font-weight:800;color:#4a8ab5;margin-bottom:8px">📅 다가오는 일정</div>
         ${memberSchedsHtml}
-        <button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#60a5fa;font-size:11px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>
+        <button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#60a5fa;font-size:13px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>
       </div>
 
       <!-- 바로가기 — 확장형 카테고리 카드 -->
