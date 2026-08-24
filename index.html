@@ -92,7 +92,7 @@ body::after {
 .rc2{background:linear-gradient(135deg,#94a3b8,#4a8ab5);}
 .rc3{background:linear-gradient(135deg,#b45309,#92400e);}
 .rcN{background:#FFFFFF;border:1px solid #C8E0DE;}
-.home-card-pair { display:flex; gap:10px; margin-bottom:12px; align-items:flex-start; }
+.home-card-pair { display:flex; gap:10px; margin-bottom:12px; align-items:stretch; }
 .home-card-pair > div { flex:1; min-width:0; }
 @media (max-width:360px) { .home-card-pair { flex-direction:column; } }
 
@@ -5712,20 +5712,20 @@ function renderHomeTab() {
     const pairsSummary = rds.length
       ? `<span style="font-size:10px;color:#6D28D9;background:#EDE9FE;padding:1px 6px;border-radius:7px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
       : '';
-    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px">
+    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <span style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:10px">🎾 다음 게임</span>
         ${attendBadge}
       </div>
-      <div style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+      <div style="display:flex;align-items:baseline;justify-content:center;gap:6px;flex-wrap:wrap;margin-bottom:4px">
         <span style="font-size:13px;font-weight:900;color:#D97706">${dl}</span>
         <span style="font-size:11px;color:#059669">✅ ${totalAttend}명 참석</span>
       </div>
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin-bottom:4px">
         ${d.place?`<span style="font-size:11px;color:#2563EB">📍 ${d.place}</span>`:''}
         ${pairsSummary}
       </div>
-      <div><span id="wxBadgeGame" style="font-size:13px;color:#64748B;font-weight:700"></span></div>
+      <div style="text-align:center"><span id="wxBadgeGame" style="font-size:13px;color:#64748B;font-weight:700"></span></div>
     </div>`;
   })() : '';
 
@@ -5739,20 +5739,20 @@ function renderHomeTab() {
     const dl=`${dd.getMonth()+1}/${dd.getDate()}(${weekdays[dd.getDay()]})`;
     const partCount=(e.participants||[]).length;
     const evLabel=EV_TYPE_EMOJI[e.type]?(EV_TYPE_EMOJI[e.type]+' '+(EV_TYPE_LABEL[e.type]||e.type)):'🎉 이벤트전';
-    return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:#F0FDF4;border:1.5px solid #059669;border-radius:14px;padding:10px 10px">
+    return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:#F0FDF4;border:1.5px solid #059669;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <span style="font-size:11px;font-weight:800;color:#059669;background:#D1FAE5;padding:2px 8px;border-radius:10px">🎉 이벤트전</span>
         <span style="font-size:10px;color:#6D28D9">${evLabel}</span>
       </div>
-      <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:3px">${dl}</div>
-      <div style="font-size:12px;font-weight:700;color:#1E293B;margin-bottom:3px">
+      <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:3px;text-align:center">${dl}</div>
+      <div style="font-size:12px;font-weight:700;color:#1E293B;margin-bottom:3px;text-align:center">
         ${e.name}${e.oppClub?` <span style="font-size:11px;font-weight:600;color:#2563EB;background:#DBEAFE;padding:1px 5px;border-radius:6px">${e.oppClub}</span>`:''}
       </div>
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin-bottom:4px">
         ${e.place?`<span style="font-size:11px;color:#2563EB">📍 ${e.place}</span>`:''}
         ${partCount?`<span style="font-size:11px;color:#059669">👥 ${partCount}명</span>`:''}
       </div>
-      <div><span id="wxBadgeEv" style="font-size:13px;color:#64748B;font-weight:700"></span></div>
+      <div style="text-align:center"><span id="wxBadgeEv" style="font-size:13px;color:#64748B;font-weight:700"></span></div>
     </div>`;
   })():'';
 
