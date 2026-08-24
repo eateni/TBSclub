@@ -2886,7 +2886,7 @@ function renderRanking(stats) {
           ${isG?'<span style="font-size:10px;color:#059669;margin-left:4px">게스트</span>':''}
         </div>
         <div style="font-size:11px;color:#64748B;margin-top:2px">${s.wins}승 ${s.draws}무 ${s.losses}패 · ${s.wr}% · <span style="color:#6D28D9">${s.games}게임</span></div>
-        <div class="wr-bg" style="margin-top:4px"><div class="wr-bar" style="width:${s.wr}%;background:${s.wr>=70?'linear-gradient(90deg,#34d399,#10b981)':s.wr>=40?'linear-gradient(90deg,#fbbf24,#f59e0b)':'linear-gradient(90deg,#f87171,#ef4444)'}"></div></div>
+        <div class="wr-bg" style="margin-top:4px;display:flex">${(()=>{if(!s.games)return'';const w=Math.round(s.wins/s.games*100),d=Math.round(s.draws/s.games*100),l=100-w-d;return(w?`<div style="height:100%;width:${w}%;background:#22c55e"></div>`:'')+  (d?`<div style="height:100%;width:${d}%;background:#94a3b8"></div>`:'')+  (l?`<div style="height:100%;width:${l}%;background:#ef4444"></div>`:'');})()}</div>
       </div>
       <div style="text-align:right">
         <div style="font-weight:900;font-size:20px;color:#2563EB">${s.pts}</div>
