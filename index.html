@@ -3799,15 +3799,18 @@ window.openEvScoreboard=function(evId){
   const ourTeamName='TBS';
   const oppTeamName=ev.oppClub||'상대팀';
   let teamResultSec='';
-  if(teamTotal>0){
+  if(evMatches.length>0){
     const mkScore=(w,d,l)=>`<span style="font-size:15px;font-weight:900;color:#059669">${w}승</span>${d?`<span style="font-size:15px;font-weight:900;color:#D97706;margin-left:4px">${d}무</span>`:''}<span style="font-size:15px;font-weight:900;color:#f87171;margin-left:4px">${l}패</span>`;
+    const scoreBody=teamTotal>0
+      ?`<div style="display:flex;align-items:center;justify-content:center;gap:12px">
+          <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#1E293B;margin-bottom:4px">${ourTeamName}</div><div>${mkScore(teamResult.ourW,teamResult.ourD,teamResult.ourL)}</div></div>
+          <div style="font-size:16px;color:#94A3B8;font-weight:700">vs</div>
+          <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#2563EB;margin-bottom:4px">${oppTeamName}</div><div>${mkScore(teamResult.oppW,teamResult.oppD,teamResult.oppL)}</div></div>
+        </div>`
+      :`<div style="text-align:center;font-size:12px;color:#94A3B8">아직 진행된 경기가 없어요</div>`;
     teamResultSec=`<div style="margin-bottom:16px;padding:12px 14px;background:linear-gradient(135deg,rgba(52,211,153,0.08),rgba(167,139,250,0.08));border:1px solid rgba(52,211,153,0.25);border-radius:12px">
       <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:10px;text-align:center">🏆 팀 단위 전적</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:12px">
-        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#1E293B;margin-bottom:4px">${ourTeamName}</div><div>${mkScore(teamResult.ourW,teamResult.ourD,teamResult.ourL)}</div></div>
-        <div style="font-size:16px;color:#94A3B8;font-weight:700">vs</div>
-        <div style="text-align:center"><div style="font-size:12px;font-weight:700;color:#2563EB;margin-bottom:4px">${oppTeamName}</div><div>${mkScore(teamResult.oppW,teamResult.oppD,teamResult.oppL)}</div></div>
-      </div>
+      ${scoreBody}
     </div>`;
   }
 
