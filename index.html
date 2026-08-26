@@ -5708,9 +5708,8 @@ function renderHomeTab() {
   if (isMemberLoggedIn) {
     const stats = calcStats();
     const att = calcAttendance();
-    const ranked = [...stats].sort((a,b)=>b.pts-a.pts);
-    const myRank = ranked.findIndex(s=>s.name===myClaim.name) + 1;
     const me = stats.find(s=>s.name===myClaim.name);
+    const myRank = me ? (me.rank || 0) : 0;
 
     const statsInner = me
       ? `<div style="text-align:center">
@@ -7365,9 +7364,8 @@ function renderMyRecordCard(){
 
   const stats = calcStats();
   const att = calcAttendance();
-  const ranked = [...stats].sort((a,b)=>b.pts-a.pts);
-  const myRank = ranked.findIndex(s => s.name === myClaim.name) + 1;
   const me = stats.find(s => s.name === myClaim.name);
+  const myRank = me ? (me.rank || 0) : 0;
   const today = new Date().toISOString().slice(0,10);
   const mySchedules = schedules
     .filter(s => (s.date||'') >= today)
