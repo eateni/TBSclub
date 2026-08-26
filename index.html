@@ -703,6 +703,14 @@ tr:nth-child(even){background:#F5FCFB;}
           </div>
         </div>
 
+        <!-- 이벤트전 이름 동기화 도구 -->
+        <div class="admin-sec" style="border-color:rgba(251,191,36,0.4);background:rgba(40,30,0,0.3)">
+          <h3>🔄 이벤트전 이름 동기화</h3>
+          <div style="font-size:11px;color:#94A3B8;margin-bottom:10px">이벤트전 매치에 저장된 이름 중 현재 회원 목록에 없는 항목을 스캔하고, 매핑을 지정해 일괄 갱신합니다. <b style="color:#f59e0b">되돌릴 수 없으므로 미리보기 확인 후 적용하세요.</b></div>
+          <button onclick="scanEventNames()" class="btn-add" style="width:100%">🔍 미인식 이름 스캔</button>
+          <div id="eventNameMigResult" style="margin-top:10px"></div>
+        </div>
+
         <!-- 커플/부부 설정 -->
         <div class="admin-sec">
           <h3>💑 커플/부부 설정</h3>
@@ -7081,7 +7089,130 @@ async function cascadeRename(oldName, newName) {
     if (changed) attUpdates.push(updateDoc(doc(db,'days',day.id),upd));
   });
   await Promise.all(attUpdates);
+
+  // 5) events 컬렉션의 participants, matches.ourPair, matches.positions 이름 변경
+  const evUpdates = [];
+  events.forEach(ev => {
+    const upd = {};
+    let partChanged = false;
+    const newParts = (ev.participants||[]).map(p=>{if(p===oldName){partChanged=true;return newName;}return p;});
+    if(partChanged) upd.participants=newParts;
+    let mChanged = false;
+    const newMatches=(ev.matches||[]).map(m=>{
+      const nm={...m};
+      if((m.ourPair||[]).includes(oldName)){nm.ourPair=m.ourPair.map(p=>p===oldName?newName:p);mChanged=true;}
+      if(m.positions&&m.positions[oldName]!==undefined){
+        const np={...m.positions};np[newName]=np[oldName];delete np[oldName];nm.positions=np;mChanged=true;
+      }
+      return nm;
+    });
+    if(mChanged) upd.matches=newMatches;
+    if(Object.keys(upd).length) evUpdates.push(updateDoc(doc(db,'events',ev.id),upd));
+  });
+  await Promise.all(evUpdates);
 }
+
+// ── 이벤트전 이름 동기화 (일괄 마이그레이션) ──
+window.scanEventNames = function() {
+  const allNames = new Set(allPlayers().map(p=>p.name));
+  const unknownMap = {};
+  events.forEach(ev => {
+    (ev.participants||[]).forEach(name=>{
+      if(!allNames.has(name)){if(!unknownMap[name])unknownMap[name]=new Set();unknownMap[name].add(ev.name||ev.id);}
+    });
+    (ev.matches||[]).forEach(m=>{
+      (m.ourPair||[]).forEach(name=>{
+        if(!allNames.has(name)){if(!unknownMap[name])unknownMap[name]=new Set();unknownMap[name].add(ev.name||ev.id);}
+      });
+    });
+  });
+  const el=document.getElementById('eventNameMigResult');
+  const unknownNames=Object.keys(unknownMap);
+  if(!unknownNames.length){
+    el.innerHTML='<div style="color:#059669;font-size:12px;padding:8px 0">✅ 모든 이름이 현재 회원 목록과 일치해요!</div>';
+    return;
+  }
+  const memberOpts=allPlayers().map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  const rows=unknownNames.map((oldName,idx)=>{
+    const locStr=[...unknownMap[oldName]].join(', ');
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #EEF7F6;flex-wrap:wrap">
+      <span style="font-size:12px;font-weight:700;color:#f87171;min-width:60px">${oldName}</span>
+      <span style="font-size:10px;color:#64748B;flex:1;min-width:80px">${locStr}</span>
+      <select id="migMap_${idx}" class="row-sel" style="min-width:100px;font-size:11px">
+        <option value="">건너뜀</option>${memberOpts}
+      </select>
+    </div>`;
+  }).join('');
+  el.innerHTML=`<div style="font-size:11px;font-weight:700;color:#D97706;margin-bottom:8px">⚠️ 현재 회원 목록에 없는 이름 ${unknownNames.length}개 발견</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:8px">각 이름에 매핑할 현재 회원을 선택하세요 (건너뜀 = 변경 안 함)</div>
+    <div style="margin-bottom:10px">${rows}</div>
+    <button onclick="previewEventMigration()" style="width:100%;padding:8px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#6D28D9;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:6px">📋 변경 미리보기</button>
+    <div id="eventNameMigPreview"></div>`;
+  window._evNameUnknowns=unknownNames;
+};
+
+window.previewEventMigration = function() {
+  const unknowns=window._evNameUnknowns||[];
+  const mapping={};
+  unknowns.forEach((oldName,idx)=>{
+    const sel=document.getElementById(`migMap_${idx}`);
+    if(sel&&sel.value) mapping[oldName]=sel.value;
+  });
+  const prev=document.getElementById('eventNameMigPreview');
+  if(!Object.keys(mapping).length){
+    prev.innerHTML='<div style="font-size:12px;color:#64748B;padding:4px 0">매핑이 선택되지 않았어요.</div>';return;
+  }
+  const lines=[];
+  events.forEach(ev=>{
+    const changes=[];
+    (ev.participants||[]).forEach(name=>{if(mapping[name])changes.push(`participants: "${name}" → "${mapping[name]}"`)});
+    (ev.matches||[]).forEach((m,mi)=>{
+      (m.ourPair||[]).forEach(name=>{if(mapping[name])changes.push(`매치 ${mi+1} ourPair: "${name}" → "${mapping[name]}"`)});
+    });
+    if(changes.length) lines.push(`<div style="margin-bottom:8px">
+      <div style="font-size:12px;font-weight:700;margin-bottom:3px">📅 ${ev.name||ev.id}</div>
+      ${changes.map(c=>`<div style="font-size:11px;color:#64748B;padding:1px 8px">• ${c}</div>`).join('')}
+    </div>`);
+  });
+  if(!lines.length){prev.innerHTML='<div style="font-size:12px;color:#64748B;padding:4px 0">선택한 매핑으로 변경될 데이터가 없어요.</div>';return;}
+  prev.innerHTML=`<div style="font-size:11px;font-weight:700;color:#1E293B;margin-bottom:6px">📋 변경 예정 목록</div>
+    <div style="background:#F8FFFE;border:1px solid #D1E7E5;border-radius:8px;padding:10px;margin-bottom:8px;max-height:220px;overflow-y:auto">${lines.join('')}</div>
+    <button onclick="applyEventMigration()" style="width:100%;padding:8px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:8px;color:#059669;font-size:12px;font-weight:700;cursor:pointer">✅ 실제 적용 (되돌릴 수 없음)</button>`;
+  window._evNameMigMapping=mapping;
+};
+
+window.applyEventMigration = async function() {
+  const mapping=window._evNameMigMapping;
+  if(!mapping||!Object.keys(mapping).length){alert('매핑이 없어요');return;}
+  if(!confirm(`${Object.keys(mapping).length}개 이름 매핑을 이벤트전 데이터에 적용합니다.\n이 작업은 되돌릴 수 없어요. 계속할까요?`)) return;
+  const updates=[];
+  events.forEach(ev=>{
+    const upd={};
+    let partChanged=false;
+    const newParts=(ev.participants||[]).map(n=>{if(mapping[n]){partChanged=true;return mapping[n];}return n;});
+    if(partChanged) upd.participants=newParts;
+    let mChanged=false;
+    const newMatches=(ev.matches||[]).map(m=>{
+      const nm={...m};
+      if((m.ourPair||[]).some(n=>mapping[n])){nm.ourPair=(m.ourPair||[]).map(n=>mapping[n]||n);mChanged=true;}
+      if(m.positions){
+        const np={...m.positions};let pChanged=false;
+        Object.keys(mapping).forEach(old=>{if(np[old]!==undefined){np[mapping[old]]=np[old];delete np[old];pChanged=true;}});
+        if(pChanged){nm.positions=np;mChanged=true;}
+      }
+      return nm;
+    });
+    if(mChanged) upd.matches=newMatches;
+    if(Object.keys(upd).length) updates.push(updateDoc(doc(db,'events',ev.id),upd));
+  });
+  if(!updates.length){alert('변경할 내용이 없어요');return;}
+  try{
+    await Promise.all(updates);
+    alert(`✅ ${updates.length}개 이벤트 문서 갱신 완료!`);
+    document.getElementById('eventNameMigResult').innerHTML='';
+    window._evNameUnknowns=null;window._evNameMigMapping=null;
+  }catch(e){alert('갱신 실패: '+e.message);}
+};
 
 // ── 게스트 이름 변경 ──
 window.renameGuest = async function(oldName){
