@@ -898,10 +898,6 @@ tr:nth-child(even){background:#F5FCFB;}
         <option value="m">남</option><option value="f">여</option>
       </select>
     </div>
-    <div id="signupNicknameWrap" style="display:none">
-      <label style="font-size:12px;color:#64748B;display:block">닉네임으로 표시하고 싶으신가요? (선택)</label>
-      <input type="text" id="signupNickname" class="row-inp" placeholder="예: 종첸 (비워두면 원래 이름 그대로)" style="width:100%;margin-bottom:8px">
-    </div>
     <button onclick="doSignup()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a120a;border:none;border-radius:10px;font-weight:800;cursor:pointer">가입 신청</button>
     <div class="mft"><button class="btn-cancel" onclick="hide('signupModal')">취소</button></div>
   </div>
@@ -4294,7 +4290,6 @@ function renderAdmin(){
               <div style="font-weight:700">
                 ${r.claimedName} ${r.gender==='f'?'♀':'♂'}
                 ${r.isNewName?'<span style="color:#f59e0b;font-size:11px">(신규)</span>':''}
-                ${r.nickname?`<span style="color:#2563EB;font-size:11px"> → "${r.nickname}"으로 표시 희망</span>`:''}
               </div>
               <div style="font-size:11px;color:#64748B">${r.email}</div>
             </div>
@@ -7280,7 +7275,7 @@ window.doSignup = async function(){
   const nameSel = document.getElementById('signupNameSelect').value;
   if (!nameSel) { alert('본인 이름을 선택해주세요'); return; }
   const isNewName = nameSel === '__new__';
-  let claimedName, gender, nickname = null;
+  let claimedName, gender;
 
   if (isNewName) {
     claimedName = document.getElementById('signupNewName').value.trim();
@@ -7290,8 +7285,6 @@ window.doSignup = async function(){
     claimedName = nameSel;
     const found = [...members, ...guests].find(p=>p.name===claimedName);
     gender = found ? found.gender : 'm';
-    const nick = document.getElementById('signupNickname').value.trim();
-    if (nick) nickname = nick;
   }
 
   let uid, email;
@@ -7311,7 +7304,7 @@ window.doSignup = async function(){
   }
 
   await addDoc(collection(db,'signupRequests'), {
-    uid, email, claimedName, nickname, gender, isNewName,
+    uid, email, claimedName, gender, isNewName,
     status: 'pending', requestedAt: serverTimestamp()
   });
   alert('가입 신청 완료! 관리자 승인 후 이용하실 수 있어요.');
@@ -7326,13 +7319,7 @@ window.approveSignup = async function(reqId){
   const req = pendingSignups.find(r => r.id === reqId);
   if (!req) return;
 
-  const wantsNickname = req.nickname && req.nickname.trim() && req.nickname.trim() !== req.claimedName;
-  const newName = wantsNickname ? req.nickname.trim() : req.claimedName;
-
-  if (wantsNickname && allPlayers().some(p => p.name === newName)) {
-    alert(`"${newName}" 이름은 이미 사용 중이에요. 관리자 페이지에서 정리 후 다시 승인해주세요.`);
-    return;
-  }
+  const newName = req.claimedName;
 
   if (req.isNewName) {
     await setDoc(doc(db,'club','members'), { list: [...members, { name:newName, gender:req.gender, uid:req.uid }] });
@@ -7341,15 +7328,12 @@ window.approveSignup = async function(reqId){
     const targetList = inMembers ? members : guests;
     const collName = inMembers ? 'members' : 'guests';
     await setDoc(doc(db,'club',collName), {
-      list: targetList.map(x => x.name === req.claimedName ? { ...x, name:newName, uid:req.uid } : x)
+      list: targetList.map(x => x.name === req.claimedName ? { ...x, uid:req.uid } : x)
     });
-    if (wantsNickname) {
-      await cascadeRename(req.claimedName, newName);
-    }
   }
 
   await updateDoc(doc(db,'signupRequests',reqId), { status:'approved' });
-  alert(`${newName}님 승인 완료!` + (wantsNickname ? ` ("${req.claimedName}"에서 이름 변경됨)` : ''));
+  alert(`${newName}님 승인 완료!`);
 };
 window.rejectSignup = async function(reqId){
   if (!confirm('이 가입 신청을 거절할까요?')) return;
@@ -7507,7 +7491,7 @@ async function resolveMyClaim(isRetry) {
     const approved = snap.docs.find(d => d.data().status === 'approved');
     if (approved) {
       const req = approved.data();
-      const resName = (req.nickname && req.nickname.trim()) ? req.nickname.trim() : req.claimedName;
+      const resName = req.claimedName;
       const inMember = members.find(m => m.name === resName);
       if (inMember) {
         myClaim = { ...inMember, uid: user.uid, isGuest: false };
