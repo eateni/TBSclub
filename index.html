@@ -214,8 +214,8 @@ body::after {
 .admin-sec.guest-sec h3{color:#059669;}
 .admin-sec h3{font-size:14px;font-weight:700;color:#1E293B;margin-bottom:12px;}
 .chips-wrap{display:flex;flex-wrap:wrap;gap:8px;}
-.chip{padding:6px 14px;background:rgba(4,16,55,0.8);border-radius:20px;font-size:13px;color:#78909C;border:1px solid #C8E0DE;display:flex;align-items:center;gap:6px;}
-.chip-guest{border-color:rgba(52,211,153,0.3);}
+.chip{padding:6px 14px;background:rgba(15,35,90,0.85);border-radius:20px;font-size:13px;color:#B8CCd8;border:1px solid rgba(100,160,220,0.55);display:flex;align-items:center;gap:6px;}
+.chip-guest{border-color:rgba(52,211,153,0.5);}
 .g-guest{color:#059669;font-size:10px;font-weight:700;}
 .chip-x{background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;padding:0;line-height:1;}
 .row-form{display:flex;gap:8px;margin-top:10px;}
@@ -4322,6 +4322,9 @@ function renderAdmin(){
         <span class="chip" style="display:inline-flex;align-items:center;gap:4px">
           <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span>
           ${m.name}
+          ${m.uid
+            ? `<span style="font-size:10px;color:#34d399" title="Firebase 가입 완료">🔑</span>`
+            : `<span style="font-size:9px;color:#475569;font-weight:600;letter-spacing:0.2px" title="앱 미가입 (관리자 등록)">미가입</span>`}
           <button onclick="renameMember('${m.name}')" title="이름 변경"
             style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="demoteMember('${m.name}')" title="게스트로 전환"
@@ -4337,6 +4340,9 @@ function renderAdmin(){
           <span class="g-guest">👤</span>
           <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span>
           ${g.name}
+          ${g.uid
+            ? `<span style="font-size:10px;color:#34d399" title="Firebase 가입 완료">🔑</span>`
+            : `<span style="font-size:9px;color:#475569;font-weight:600;letter-spacing:0.2px" title="앱 미가입 (관리자 등록)">미가입</span>`}
           <button onclick="renameGuest('${g.name}')" title="이름 변경"
             style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="promoteGuest('${g.name}')" title="정규회원으로 전환"
