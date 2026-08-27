@@ -4292,11 +4292,17 @@ function renderAdmin(){
     signupEl.innerHTML = pendingSignups.length ? `
       <div class="admin-sec" style="border-color:rgba(245,158,11,0.4);background:rgba(40,30,0,0.5)">
         <h3>🆕 가입 승인 대기 (${pendingSignups.length})</h3>
-        ${pendingSignups.map(r => `
+        ${pendingSignups.map(r => {
+            const isMember = members.some(m => m.name.trim() === (r.claimedName||'').trim());
+            const memberBadge = isMember
+              ? `<span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(52,211,153,0.18);color:#059669;border:1px solid rgba(52,211,153,0.45);margin-left:6px">✅ 정회원</span>`
+              : `<span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(245,158,11,0.13);color:#D97706;border:1px solid rgba(245,158,11,0.4);margin-left:6px">🆕 신규</span>`;
+            return `
           <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #E8F4F3">
             <div>
-              <div style="font-weight:700">
+              <div style="font-weight:700;display:flex;align-items:center;flex-wrap:wrap;gap:2px">
                 ${r.claimedName} ${r.gender==='f'?'♀':'♂'}
+                ${memberBadge}
                 ${r.isNewName?'<span style="color:#f59e0b;font-size:11px">(신규)</span>':''}
               </div>
               <div style="font-size:11px;color:#64748B">${r.email}</div>
@@ -4305,7 +4311,8 @@ function renderAdmin(){
               <button onclick="approveSignup('${r.id}')" style="padding:6px 12px;background:#34d399;color:#04150c;border:none;border-radius:8px;font-weight:700;cursor:pointer">승인</button>
               <button onclick="rejectSignup('${r.id}')" style="padding:6px 12px;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.4);border-radius:8px;font-weight:700;cursor:pointer">거절</button>
             </div>
-          </div>`).join('')}
+          </div>`;
+          }).join('')}
       </div>` : '';
   }
 
