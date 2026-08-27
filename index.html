@@ -81,9 +81,9 @@ body::after {
 .more-menu-item:last-child { border-bottom:none; }
 
 .subtabs { display:flex; gap:4px; background:rgba(255,255,255,0.8); border-radius:10px; padding:4px; margin-bottom:18px; }
-.stab { flex:1; padding:8px 0; border-radius:7px; border:none; cursor:pointer; font-weight:600; font-size:12px; transition:all 0.2s; }
-.stab.active { background:#0D9488; color:#fff; }
-.stab:not(.active) { background:transparent; color:#64748B; }
+.stab { flex:1; padding:8px 0; border-radius:7px; border:1px solid transparent; cursor:pointer; font-weight:600; font-size:12px; transition:all 0.2s; }
+.stab.active { background:#0D9488; color:#fff; border-color:#0D9488; }
+.stab:not(.active) { background:rgba(0,0,0,0.04); color:#64748B; border-color:rgba(0,0,0,0.13); }
 
 .sec-header { font-size:18px; font-weight:800; text-align:center; margin-bottom:14px; }
 .rank-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:22px; }
@@ -4323,8 +4323,8 @@ function renderAdmin(){
           <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span>
           ${m.name}
           ${m.uid
-            ? `<span style="font-size:10px;color:#34d399" title="Firebase 가입 완료">🔑</span>`
-            : `<span style="font-size:9px;color:#475569;font-weight:600;letter-spacing:0.2px" title="앱 미가입 (관리자 등록)">미가입</span>`}
+            ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)" title="Firebase 가입 완료">🔑 가입완료</span>`
+            : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(245,158,11,0.12);color:#B45309;border:1px solid rgba(245,158,11,0.4)" title="앱 미가입 (관리자 등록)">미가입</span>`}
           <button onclick="renameMember('${m.name}')" title="이름 변경"
             style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="demoteMember('${m.name}')" title="게스트로 전환"
@@ -4341,8 +4341,8 @@ function renderAdmin(){
           <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span>
           ${g.name}
           ${g.uid
-            ? `<span style="font-size:10px;color:#34d399" title="Firebase 가입 완료">🔑</span>`
-            : `<span style="font-size:9px;color:#475569;font-weight:600;letter-spacing:0.2px" title="앱 미가입 (관리자 등록)">미가입</span>`}
+            ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)" title="Firebase 가입 완료">🔑 가입완료</span>`
+            : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(245,158,11,0.12);color:#B45309;border:1px solid rgba(245,158,11,0.4)" title="앱 미가입 (관리자 등록)">미가입</span>`}
           <button onclick="renameGuest('${g.name}')" title="이름 변경"
             style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
           <button onclick="promoteGuest('${g.name}')" title="정규회원으로 전환"
