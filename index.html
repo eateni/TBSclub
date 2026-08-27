@@ -713,6 +713,14 @@ tr:nth-child(even){background:#F5FCFB;}
           <div id="eventNameMigResult" style="margin-top:10px"></div>
         </div>
 
+        <!-- 게스트→정회원 출석일수 복원 도구 -->
+        <div class="admin-sec" style="border-color:rgba(99,102,241,0.4);background:rgba(20,10,50,0.3)">
+          <h3>📅 출석일수 복원 (게스트→정회원)</h3>
+          <div style="font-size:11px;color:#94A3B8;margin-bottom:10px">게스트에서 정회원으로 전환된 회원의 출석일수가 과다 계산되는 경우, 게스트 마지막 출석일을 기준으로 <b style="color:#818cf8">promotedAt</b>을 설정해 정상 계산되도록 복원합니다. <b style="color:#f59e0b">미리보기 확인 후 적용하세요.</b></div>
+          <button onclick="scanPromotionDates()" style="width:100%;padding:9px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.45);border-radius:8px;color:#818cf8;font-size:12px;font-weight:700;cursor:pointer">🔍 대상 스캔</button>
+          <div id="promotionMigResult" style="margin-top:10px"></div>
+        </div>
+
         <!-- 커플/부부 설정 -->
         <div class="admin-sec">
           <h3>💑 커플/부부 설정</h3>
@@ -1460,9 +1468,17 @@ function calcAttendance() {
   allPlayers().forEach(p => { att[p.name] = 0; });
   days.filter(d=>(d.season||1)===viewSeason).forEach(day => {
     const dayAtt = day.attendance || {};
-    const dayGuests = day.guests || [];
-    members.forEach(m => { if (dayAtt[m.name] !== false) att[m.name] = (att[m.name]||0)+1; });
-    guests.forEach(g => { if (dayGuests.includes(g.name)) att[g.name] = (att[g.name]||0)+1; });
+    const dayGuests = new Set(day.guests || []);
+    members.forEach(m => {
+      if (dayAtt[m.name] === false) return;
+      // 게스트 출신 회원: promotedAt 이전 날은 day.guests[] 기준으로만 출석 인정
+      if (m.promotedAt && day.date < m.promotedAt) {
+        if (dayGuests.has(m.name)) att[m.name] = (att[m.name]||0)+1;
+      } else {
+        att[m.name] = (att[m.name]||0)+1;
+      }
+    });
+    guests.forEach(g => { if (dayGuests.has(g.name)) att[g.name] = (att[g.name]||0)+1; });
   });
   return att;
 }
@@ -7229,6 +7245,84 @@ window.applyEventMigration = async function() {
   }catch(e){alert('갱신 실패: '+e.message);}
 };
 
+// ── 게스트→정회원 출석일수 마이그레이션 ──
+window.scanPromotionDates = function() {
+  // 모든 day.guests[] 스캔해서 이름별 마지막 게스트 출석일 수집
+  const lastGuestDay = {};
+  days.forEach(d => {
+    if (!d.date) return;
+    (d.guests||[]).forEach(name => {
+      if (!lastGuestDay[name] || d.date > lastGuestDay[name]) lastGuestDay[name] = d.date;
+    });
+  });
+
+  // promotedAt 없이 게스트 기록이 있는 정규회원 = 마이그레이션 대상
+  const targets = members.filter(m => !m.promotedAt && lastGuestDay[m.name]);
+  const el = document.getElementById('promotionMigResult');
+  if (!targets.length) {
+    el.innerHTML = '<div style="color:#34d399;font-size:12px;padding:6px 0">✅ 마이그레이션 대상 없음 — 모두 정상입니다.</div>';
+    return;
+  }
+
+  // 보정 후 출석일수 미리 계산 (현재 viewSeason 기준)
+  const currentAtt = calcAttendance();
+  const preview = targets.map(m => {
+    const tempDate = lastGuestDay[m.name];
+    let corrected = 0;
+    days.filter(d => (d.season||1)===viewSeason && d.date).forEach(day => {
+      const dayAtt = day.attendance || {};
+      if (dayAtt[m.name] === false) return;
+      if (day.date < tempDate) {
+        if ((day.guests||[]).includes(m.name)) corrected++;
+      } else {
+        corrected++;
+      }
+    });
+    return { name: m.name, current: currentAtt[m.name]||0, corrected, promotedAt: tempDate };
+  });
+
+  el.innerHTML = `
+    <div style="font-size:11px;color:#94A3B8;margin:8px 0">
+      아래 회원들의 <b style="color:#818cf8">promotedAt</b>이 미설정 상태입니다.<br>
+      게스트 마지막 출석일을 기준으로 출석일수가 보정됩니다.
+    </div>
+    <table style="width:100%;font-size:11px;border-collapse:collapse;margin-bottom:10px">
+      <tr style="color:#64748B;border-bottom:1px solid rgba(255,255,255,0.12)">
+        <th style="text-align:left;padding:5px 4px">이름</th>
+        <th style="text-align:center;padding:5px 4px">현재 출석</th>
+        <th style="text-align:center;padding:5px 4px">→ 보정 후</th>
+        <th style="text-align:left;padding:5px 4px">promotedAt</th>
+      </tr>
+      ${preview.map(p=>`
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.06)">
+          <td style="padding:5px 4px;color:#e2e8f0;font-weight:700">${p.name}</td>
+          <td style="padding:5px 4px;text-align:center;color:#f87171">${p.current}일</td>
+          <td style="padding:5px 4px;text-align:center;color:#34d399;font-weight:700">${p.corrected}일</td>
+          <td style="padding:5px 4px;color:#818cf8">${p.promotedAt}</td>
+        </tr>`).join('')}
+    </table>
+    <button onclick="applyPromotionDates()" style="width:100%;padding:8px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.45);border-radius:8px;color:#818cf8;font-size:12px;font-weight:700;cursor:pointer">
+      ✅ 실제 적용 (되돌릴 수 없음)
+    </button>`;
+  window._promotionMigTargets = preview;
+};
+
+window.applyPromotionDates = async function() {
+  const targets = window._promotionMigTargets;
+  if (!targets || !targets.length) return;
+  if (!confirm(`${targets.length}명의 promotedAt을 설정합니다.\n이 작업은 되돌릴 수 없어요. 계속할까요?`)) return;
+  const newList = members.map(m => {
+    const t = targets.find(x => x.name === m.name);
+    return t ? {...m, promotedAt: t.promotedAt} : m;
+  });
+  try {
+    await setDoc(doc(db,'club','members'), {list: newList});
+    document.getElementById('promotionMigResult').innerHTML =
+      '<div style="color:#34d399;font-size:12px;padding:6px 0">✅ 완료! 출석일수가 정상 계산됩니다.</div>';
+    window._promotionMigTargets = null;
+  } catch(e) { alert('실패: '+e.message); }
+};
+
 // ── 게스트 이름 변경 ──
 window.renameGuest = async function(oldName){
   const newName = prompt(`"${oldName}"의 새 이름을 입력하세요:`, oldName);
@@ -7265,7 +7359,8 @@ window.promoteGuest = async function(name){
   if (!confirm(`게스트 → 정규회원으로 전환하시겠습니까?\n\n이름: ${name}\n\n* 기존 경기 기록은 그대로 유지됩니다\n* 정규 랭킹/성적표에 정식으로 나타나요`)) return;
   try{
     await setDoc(doc(db,'club','guests'),{list:guests.filter(x=>x.name!==name)});
-    const newMember = {name:g.name, gender:g.gender};
+    const today = new Date().toISOString().slice(0,10);
+    const newMember = {name:g.name, gender:g.gender, promotedAt: today};
     if (g.uid) newMember.uid = g.uid;
     await setDoc(doc(db,'club','members'),{list:[...members, newMember]});
     alert(`✅ "${name}"이(가) 정규회원이 됐어요!\n기존 경기 기록은 모두 유지됩니다.`);
