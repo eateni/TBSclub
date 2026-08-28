@@ -2692,23 +2692,6 @@ function renderDays() {
     const totalMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).length),0);
     const doneMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).filter(m=>m.done).length),0);
 
-    // 날짜별 승/패/무 집계
-    let dayWins=0, dayLosses=0, dayDraws=0;
-    rounds.forEach(r => {
-      (r.matches||[]).forEach(m => {
-        if (!m.done || m.isRally) return;
-        if (m.score1 > m.score2) dayWins++;
-        else if (m.score1 < m.score2) dayLosses++;
-        else dayDraws++;
-      });
-    });
-    const resultStr = doneMatches > 0
-      ? `<span style="font-size:10px;font-weight:700;margin-left:6px">
-          <span style="color:#059669">${dayWins}승</span>
-          ${dayDraws>0?`<span style="color:#D97706"> ${dayDraws}무</span>`:''}
-          <span style="color:#f87171"> ${dayLosses}패</span>
-         </span>`
-      : '';
 
     // 참석자 정보
     const att = day.attendance || {};
@@ -2805,7 +2788,7 @@ function renderDays() {
       <button class="round-hdr" onclick="toggleR('${dayId}','${dayArr}')">
         <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;">
           <span>📅 ${dateStr}${day.place?` <span style="color:rgba(100,150,200,0.6);font-size:11px;font-weight:400">· ${day.place}</span>`:''}${attendStr}</span>
-          <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료${resultStr} ${delDayBtn}</span>
+          <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료 ${delDayBtn}</span>
           ${totalMatches>0?`<div style="width:100%;height:3px;background:rgba(35,90,180,0.15);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#34d399':'#60a5fa'};border-radius:2px;transition:width 0.5s"></div></div>`:''}
         </div>
         <span id="${dayArr}" style="color:#64748B;transition:transform 0.2s">›</span>
