@@ -2689,8 +2689,8 @@ function renderDays() {
   el.innerHTML = sorted.map(day => {
     const dateStr = day.date ? new Date(day.date).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
     const rounds = day.rounds || [];
-    const totalMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).length),0);
-    const doneMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).filter(m=>m.done).length),0);
+    const totalMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).filter(m=>!m.isRally&&m.tag!=='랠리').length),0);
+    const doneMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).filter(m=>m.done&&!m.isRally&&m.tag!=='랠리').length),0);
 
 
     // 참석자 정보
