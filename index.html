@@ -3519,6 +3519,14 @@ window.openEventDetail=function(evId){
   currentOpenEvId = evId;
   currentEvView = 'detail';
   const ev=events.find(e=>e.id===evId); if(!ev)return;
+
+  // 재렌더 전 라운드 펼침 상태 스냅샷 (삭제/수정 후 상태 유지용)
+  const savedRoundOpen={};
+  document.querySelectorAll(`[id^="evRd_${evId}_"]`).forEach(el=>{
+    const rNum=parseInt(el.id.replace(`evRd_${evId}_`,''));
+    if(!isNaN(rNum)) savedRoundOpen[rNum]=el.style.display!=='none';
+  });
+
   const parts=ev.participants||[], results=ev.results||[];
   const evMatches=ev.matches||[];
   const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
@@ -3584,7 +3592,7 @@ window.openEventDetail=function(evId){
           const roundAddBtn=isAdmin?`<button onclick="openAddEvMatch('${evId}',${rNum})" style="width:100%;padding:6px;margin-top:4px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`:'';
           const roundId=`evRd_${evId}_${rNum}`;
           const arrId=`evRdArr_${evId}_${rNum}`;
-          const isOpen=rIdx===0;
+          const isOpen=savedRoundOpen[rNum]!==undefined?savedRoundOpen[rNum]:rIdx===0;
           return `<div style="background:#FAFEFE;border-radius:10px;margin-bottom:8px;border:1px solid #D1E7E5">
             <button style="width:100%;padding:10px 14px;background:transparent;border:none;color:#1E293B;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:700;font-size:13px;" onclick="toggleR('${roundId}','${arrId}')">
               <span>🎾 ${rNum}라운드</span>
@@ -3639,8 +3647,9 @@ window.openEventDetail=function(evId){
         ${scoreEl}
         <div class="m-team ${lost?'win':''}">${oppLabel}</div>
       </div>
-      ${isAdmin?`<div style="margin-top:8px">
-        <button class="btn-input" style="margin-top:0;width:100%" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${hasOpp?'상대팀 수정':'상대팀 입력'}</button>
+      ${isAdmin?`<div style="display:flex;gap:5px;margin-top:8px">
+        <button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button>
+        <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#059669" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${hasOpp?'상대팀 수정':'상대팀 입력'}</button>
       </div>`:''}
       ${oppOnlySec}
     </div>`;
