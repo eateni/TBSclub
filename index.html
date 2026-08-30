@@ -3476,7 +3476,7 @@ window.saveEvMeta = async function(evId, field, value) {
   const update = {};
   if(field==='oppClub'){ update.oppClub=value.trim(); ev.oppClub=update.oppClub; }
   else if(field==='status'){ update.status=value; ev.status=value; }
-  await db.collection('events').doc(evId).update(update);
+  await updateDoc(doc(db,'events',evId), update);
   renderEvents();
   renderAdminEvents();
   if(currentOpenEvId===evId && document.getElementById('eventDetailModal').style.display!=='none'){
