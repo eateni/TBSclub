@@ -6604,7 +6604,7 @@ window.showAttendList = function(dayId) {
   var wk = ['일','월','화','수','목','금','토'];
   var dateLabel = (wd.getMonth()+1) + '/' + wd.getDate() + '(' + wk[wd.getDay()] + ')';
 
-  function calcExp(tennisStartDate) {
+  function tennisInfo(tennisStartDate) {
     if (!tennisStartDate) return '';
     var parts = tennisStartDate.split('-');
     var sy = parseInt(parts[0]), sm = parseInt(parts[1] || 1);
@@ -6612,27 +6612,36 @@ window.showAttendList = function(dayId) {
     var now = new Date();
     var months = (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm);
     if (months < 0) return '';
-    if (months < 12) return months + '개월차';
-    return Math.floor(months / 12) + '년차';
+    var startLabel = String(sy).slice(-2) + '.' + String(sm).padStart(2, '0') + '~';
+    var expLabel = months < 12 ? months + '개월차' : Math.floor(months / 12) + '년차';
+    return startLabel + ' · ' + expLabel;
   }
 
   function makeChip(obj, isGuest) {
-    var name = obj.name, gender = obj.gender, exp = calcExp(obj.tennisStartDate);
+    var name = obj.name, gender = obj.gender, info = tennisInfo(obj.tennisStartDate);
     var isMe = (name === myName);
-    var genderIcon = gender === 'f'
-      ? '<span style="font-size:10px;font-weight:700;color:#f472b6">♀</span> '
-      : '<span style="font-size:10px;font-weight:700;color:#2563EB">♂</span> ';
-    if (isGuest) genderIcon = '<span style="font-size:10px;font-weight:700;color:#059669">👤</span> ' + genderIcon;
-    var expHtml = exp ? '<span style="font-size:10px;color:#94A3B8;margin-left:4px">· ' + exp + '</span>' : '';
-    return '<span style="display:inline-flex;-webkit-align-items:center;align-items:center;margin:3px;' +
-      'padding:5px 11px;border-radius:20px;font-size:12px;font-weight:' +
-      (isMe ? '900' : '600') + ';background:' +
-      (isGuest ? 'rgba(109,40,217,0.08)' : isMe ? 'rgba(52,211,153,0.18)' : 'rgba(100,116,139,0.08)') +
-      ';border:1.5px solid ' +
-      (isGuest ? 'rgba(109,40,217,0.2)' : isMe ? 'rgba(52,211,153,0.5)' : 'rgba(100,116,139,0.2)') +
-      ';color:' + (isGuest ? '#6D28D9' : isMe ? '#059669' : '#334155') + '">' +
-      (isMe && !isGuest ? '<span style="margin-right:3px">⭐</span>' : '') +
-      genderIcon + name + expHtml + '</span>';
+    var bg = isGuest ? 'rgba(109,40,217,0.07)' : isMe ? 'rgba(52,211,153,0.15)' : 'rgba(100,116,139,0.07)';
+    var bd = isGuest ? 'rgba(109,40,217,0.22)' : isMe ? 'rgba(52,211,153,0.45)' : 'rgba(100,116,139,0.18)';
+    var nameColor = isGuest ? '#6D28D9' : isMe ? '#059669' : '#1E293B';
+    var gIcon = gender === 'f'
+      ? '<span style="font-size:12px;font-weight:800;color:#f472b6">♀</span>'
+      : '<span style="font-size:12px;font-weight:800;color:#2563EB">♂</span>';
+    var guestIcon = isGuest ? '<span style="font-size:11px;margin-right:2px">👤</span>' : '';
+    var starIcon = (isMe && !isGuest) ? '<span style="font-size:11px;margin-right:2px">⭐</span>' : '';
+    var infoHtml = info
+      ? '<div style="font-size:11px;color:#94A3B8;margin-top:3px;font-weight:500">' + info + '</div>'
+      : '<div style="font-size:11px;color:transparent;margin-top:3px">·</div>';
+    return '<div style="display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column;' +
+      '-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;' +
+      'padding:10px 6px;border-radius:12px;background:' + bg + ';border:1.5px solid ' + bd + ';text-align:center">' +
+      '<div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;gap:3px">' +
+        guestIcon + gIcon +
+        '<span style="font-size:14px;font-weight:' + (isMe ? '900' : '700') + ';color:' + nameColor + ';margin-left:3px">' +
+          starIcon + name +
+        '</span>' +
+      '</div>' +
+      infoHtml +
+    '</div>';
   }
 
   var chips = memberObjs.map(function(o){ return makeChip(o, false); })
@@ -6649,19 +6658,19 @@ window.showAttendList = function(dayId) {
     '-webkit-justify-content:center;justify-content:center;z-index:9999;padding:20px');
   modal.innerHTML =
     '<div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;padding:20px;' +
-      'max-width:340px;width:100%;max-height:72vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18)">' +
+      'max-width:360px;width:100%;max-height:75vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18)">' +
       '<div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;' +
         '-webkit-justify-content:space-between;justify-content:space-between;margin-bottom:14px">' +
         '<div>' +
-          '<div style="font-size:15px;font-weight:900;color:#1E293B">✅ 참석 ' + total + '명</div>' +
+          '<div style="font-size:16px;font-weight:900;color:#1E293B">✅ 참석 ' + total + '명</div>' +
           '<div style="font-size:12px;color:#64748B;margin-top:2px">🎾 ' + dateLabel + '</div>' +
         '</div>' +
         '<button onclick="closeAttendModal()" style="width:30px;height:30px;border-radius:50%;border:none;' +
           'background:#F1F5F9;color:#64748B;font-size:18px;font-weight:700;cursor:pointer;line-height:30px;' +
           'text-align:center;padding:0">×</button>' +
       '</div>' +
-      '<div style="display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap">' +
-        (chips || '<span style="font-size:13px;color:#94A3B8">참석자 정보가 없어요</span>') +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">' +
+        (chips || '<div style="grid-column:1/-1;font-size:13px;color:#94A3B8;text-align:center;padding:12px 0">참석자 정보가 없어요</div>') +
       '</div>' +
     '</div>';
   modal.onclick = function(e) { if (e.target === modal) closeAttendModal(); };
