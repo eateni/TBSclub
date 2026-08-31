@@ -6106,32 +6106,34 @@ function renderHomeTab() {
   // 미선택: 나란히 두 버튼 전체 표시
   const makeAttendBtns = function(status, schId, dayId) {
     const chgId = 'attChg_' + dayId;
-    const btnBase = 'cursor:pointer;font-size:11px;font-weight:800;padding:5px 0;border-radius:8px;';
-    const btnAtt = btnBase + 'background:rgba(52,211,153,0.12);color:#059669;border:1.5px solid rgba(52,211,153,0.4)';
-    const btnAbs = btnBase + 'background:rgba(248,113,113,0.08);color:#f87171;border:1.5px solid rgba(248,113,113,0.35)';
-    const twoBtn = `<div style="display:-webkit-flex;display:flex;margin-top:5px">
-        <button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','참석')"
-          style="-webkit-flex:1;flex:1;margin-right:5px;${btnAtt}">✅ 참석</button>
-        <button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','불참')"
-          style="-webkit-flex:1;flex:1;${btnAbs}">❌ 불참</button>
-      </div>`;
+    // btnRow: 미선택 상태와 "변경" 클릭 후 상태에서 완전히 동일한 구조/스타일로 재사용
+    const btnRow = `<div style="display:-webkit-flex;display:flex">
+      <button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','참석')"
+        style="-webkit-flex:1;flex:1;margin-right:5px;cursor:pointer;font-size:11px;font-weight:800;
+          padding:6px 0;border-radius:8px;text-align:center;
+          background:rgba(52,211,153,0.12);color:#059669;border:1.5px solid rgba(52,211,153,0.4)">✅ 참석</button>
+      <button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','불참')"
+        style="-webkit-flex:1;flex:1;cursor:pointer;font-size:11px;font-weight:800;
+          padding:6px 0;border-radius:8px;text-align:center;
+          background:rgba(248,113,113,0.08);color:#f87171;border:1.5px solid rgba(248,113,113,0.35)">❌ 불참</button>
+    </div>`;
     if (status) {
       const isAtt = status === '참석';
       return `<div onclick="event.stopPropagation()" style="margin-top:8px">
-        <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center">
+        <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-bottom:6px">
           <span style="-webkit-flex:1;flex:1;font-size:11px;font-weight:800;text-align:center;padding:4px 6px;border-radius:8px;
             background:${isAtt?'#059669':'#f87171'};color:#fff">
             ${isAtt?'✅ 참석':'❌ 불참'}
           </span>
-          <button onclick="event.stopPropagation();var el=document.getElementById('${chgId}');el.style.display=el.style.display==='flex'?'none':'flex'"
+          <button onclick="event.stopPropagation();var el=document.getElementById('${chgId}');el.style.display=el.style.display==='none'?'block':'none'"
             style="font-size:10px;padding:3px 9px;border-radius:7px;margin-left:6px;
             background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.3);
             color:#64748B;cursor:pointer;white-space:nowrap">변경 ↩</button>
         </div>
-        <div id="${chgId}" style="display:none">${twoBtn}</div>
+        <div id="${chgId}" style="display:none">${btnRow}</div>
       </div>`;
     }
-    return `<div onclick="event.stopPropagation()" style="margin-top:8px">${twoBtn}</div>`;
+    return `<div onclick="event.stopPropagation()" style="margin-top:8px">${btnRow}</div>`;
   };
 
   // "다음 게임" 카드 HTML (days 기반)
