@@ -4452,21 +4452,27 @@ function renderAdmin(){
         </span>`).join('')
     : '<span style="color:#64748B;font-size:12px">등록된 회원 없음</span>';
 
-  // ── 게스트 칩 (버그 수정) ──
+  // ── 게스트 칩 ──
   document.getElementById('guestChips').innerHTML = guests.length
     ? guests.map(g=>`
-        <span class="chip chip-guest" style="display:inline-flex;align-items:center;gap:4px">
-          <span class="g-guest">👤</span>
-          <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span>
-          ${g.name}
-          ${g.uid
-            ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)" title="Firebase 가입 완료">🔑 가입완료</span>`
-            : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(245,158,11,0.12);color:#B45309;border:1px solid rgba(245,158,11,0.4)" title="앱 미가입 (관리자 등록)">미가입</span>`}
-          <button onclick="renameGuest('${g.name}')" title="이름 변경"
-            style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
-          <button onclick="promoteGuest('${g.name}')" title="정규회원으로 전환"
-            style="background:none;border:none;color:#059669;font-size:12px;cursor:pointer;padding:0 2px">⬆️</button>
-          <button class="chip-x" onclick="delGuest('${g.name}')">×</button>
+        <span class="chip chip-guest" style="display:inline-flex;flex-direction:column;align-items:stretch;gap:2px">
+          <span style="display:flex;align-items:center;gap:4px">
+            <span class="g-guest">👤</span>
+            <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.name}</span>
+            ${g.uid
+              ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)" title="Firebase 가입 완료">🔑</span>`
+              : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(245,158,11,0.12);color:#B45309;border:1px solid rgba(245,158,11,0.4)" title="앱 미가입 (관리자 등록)">미가입</span>`}
+            <button onclick="renameGuest('${g.name}')" title="이름 변경"
+              style="background:none;border:none;color:#2563EB;font-size:11px;cursor:pointer;padding:0 1px">✏️</button>
+            <button onclick="promoteGuest('${g.name}')" title="정규회원으로 전환"
+              style="background:none;border:none;color:#059669;font-size:11px;cursor:pointer;padding:0 1px">⬆️</button>
+            <button class="chip-x" onclick="delGuest('${g.name}')">×</button>
+          </span>
+          <span style="display:flex;gap:3px;flex-wrap:wrap">
+            <button onclick="editGuestField('${g.name}','tennisStartDate')" title="테니스 시작: ${g.tennisStartDate||'미입력'}"
+              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎾 ${g.tennisStartDate||'—'}</button>
+          </span>
         </span>`).join('')
     : '<span style="color:#64748B;font-size:12px">등록된 게스트 없음</span>';
 
@@ -6186,8 +6192,8 @@ function renderHomeTab() {
     const attendBtns = isMemberLoggedIn ? makeAttendBtns(mySchStatus, schId, d.id, d.id + '_ng') : '';
     window._attCache = window._attCache || {};
     window._attCache[d.id] = {
-      members: members.filter(m => att[m.name] !== false).map(m => m.name),
-      guests: guests.filter(g => guestList.includes(g.name)).map(g => g.name),
+      members: members.filter(m => att[m.name] !== false).map(m => ({name:m.name, gender:m.gender, tennisStartDate:m.tennisStartDate||''})),
+      guests: guests.filter(g => guestList.includes(g.name)).map(g => ({name:g.name, gender:g.gender, tennisStartDate:g.tennisStartDate||''})),
       date: d.date,
       myName: isMemberLoggedIn && myClaim ? myClaim.name : ''
     };
@@ -6371,8 +6377,8 @@ function renderHomeTab() {
     const _wAttBtns = isMemberLoggedIn ? makeAttendBtns(_wMyStatus, _wSchId, d.id, d.id + '_wk') : '';
     window._attCache = window._attCache || {};
     window._attCache[d.id] = {
-      members: members.filter(function(m){ return _watt[m.name] !== false; }).map(function(m){ return m.name; }),
-      guests: guests.filter(function(g){ return (d.guests||[]).includes(g.name); }).map(function(g){ return g.name; }),
+      members: members.filter(function(m){ return _watt[m.name] !== false; }).map(function(m){ return {name:m.name, gender:m.gender, tennisStartDate:m.tennisStartDate||''}; }),
+      guests: guests.filter(function(g){ return (d.guests||[]).includes(g.name); }).map(function(g){ return {name:g.name, gender:g.gender, tennisStartDate:g.tennisStartDate||''}; }),
       date: d.date,
       myName: isMemberLoggedIn && myClaim ? myClaim.name : ''
     };
@@ -6590,24 +6596,48 @@ window.closeAttendModal = function() {
 window.showAttendList = function(dayId) {
   var data = (window._attCache || {})[dayId];
   if (!data) return;
-  var memberNames = data.members || [];
-  var guestNames = data.guests || [];
+  var memberObjs = data.members || [];
+  var guestObjs = data.guests || [];
   var myName = data.myName || '';
-  var total = memberNames.length + guestNames.length;
+  var total = memberObjs.length + guestObjs.length;
   var wd = new Date(data.date + 'T00:00:00');
   var wk = ['일','월','화','수','목','금','토'];
   var dateLabel = (wd.getMonth()+1) + '/' + wd.getDate() + '(' + wk[wd.getDay()] + ')';
-  var chips = memberNames.map(function(name) {
+
+  function calcExp(tennisStartDate) {
+    if (!tennisStartDate) return '';
+    var parts = tennisStartDate.split('-');
+    var sy = parseInt(parts[0]), sm = parseInt(parts[1] || 1);
+    if (!sy) return '';
+    var now = new Date();
+    var months = (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm);
+    if (months < 0) return '';
+    if (months < 12) return months + '개월차';
+    return Math.floor(months / 12) + '년차';
+  }
+
+  function makeChip(obj, isGuest) {
+    var name = obj.name, gender = obj.gender, exp = calcExp(obj.tennisStartDate);
     var isMe = (name === myName);
-    return '<span style="display:inline-block;margin:3px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:' +
+    var genderIcon = gender === 'f'
+      ? '<span style="font-size:10px;font-weight:700;color:#f472b6">♀</span> '
+      : '<span style="font-size:10px;font-weight:700;color:#2563EB">♂</span> ';
+    if (isGuest) genderIcon = '<span style="font-size:10px;font-weight:700;color:#059669">👤</span> ' + genderIcon;
+    var expHtml = exp ? '<span style="font-size:10px;color:#94A3B8;margin-left:4px">· ' + exp + '</span>' : '';
+    return '<span style="display:inline-flex;-webkit-align-items:center;align-items:center;margin:3px;' +
+      'padding:5px 11px;border-radius:20px;font-size:12px;font-weight:' +
       (isMe ? '900' : '600') + ';background:' +
-      (isMe ? 'rgba(52,211,153,0.18)' : 'rgba(100,116,139,0.08)') + ';border:1.5px solid ' +
-      (isMe ? 'rgba(52,211,153,0.5)' : 'rgba(100,116,139,0.2)') + ';color:' +
-      (isMe ? '#059669' : '#334155') + '">' + (isMe ? '⭐ ' : '') + name + '</span>';
-  }).concat(guestNames.map(function(name) {
-    return '<span style="display:inline-block;margin:3px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;' +
-      'background:rgba(109,40,217,0.08);border:1.5px solid rgba(109,40,217,0.2);color:#6D28D9">👤 ' + name + '</span>';
-  })).join('');
+      (isGuest ? 'rgba(109,40,217,0.08)' : isMe ? 'rgba(52,211,153,0.18)' : 'rgba(100,116,139,0.08)') +
+      ';border:1.5px solid ' +
+      (isGuest ? 'rgba(109,40,217,0.2)' : isMe ? 'rgba(52,211,153,0.5)' : 'rgba(100,116,139,0.2)') +
+      ';color:' + (isGuest ? '#6D28D9' : isMe ? '#059669' : '#334155') + '">' +
+      (isMe && !isGuest ? '<span style="margin-right:3px">⭐</span>' : '') +
+      genderIcon + name + expHtml + '</span>';
+  }
+
+  var chips = memberObjs.map(function(o){ return makeChip(o, false); })
+    .concat(guestObjs.map(function(o){ return makeChip(o, true); })).join('');
+
   var modal = document.getElementById('_attendListModal');
   if (!modal) {
     modal = document.createElement('div');
@@ -7898,6 +7928,23 @@ window.editMemberField = async function(name, field){
     return u;
   });
   await setDoc(doc(db,'club','members'), {list:newList});
+};
+
+// ── 게스트 테니스 시작년월 수정 ──
+window.editGuestField = async function(name, field) {
+  const g = guests.find(x => x.name === name);
+  if (!g) return;
+  const labels = { tennisStartDate: '테니스 시작년월 (YYYY-MM 형식, 예: 2020-03)' };
+  const val = prompt(`${name}님의 ${labels[field]||field}\n비우면 삭제됩니다:`, g[field] || '');
+  if (val === null) return;
+  const trimmed = val.trim();
+  const newList = guests.map(x => {
+    if (x.name !== name) return x;
+    const u = {...x};
+    if (trimmed) u[field] = trimmed; else delete u[field];
+    return u;
+  });
+  await setDoc(doc(db, 'club', 'guests'), {list: newList});
 };
 
 // ── 정규회원 이름 변경 ──
