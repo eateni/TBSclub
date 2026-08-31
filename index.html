@@ -6299,15 +6299,25 @@ function renderHomeTab() {
       ${_wTM?`<div style="font-size:11px;color:#6D28D9;margin-top:2px">${_wRds.length}라운드 · ${_wTM}경기</div>`:''}
     </div>`;
   };
+  // ─ 우측 열: 이벤트전만 담당 (주간 게임은 별도 행으로 분리) ─
   let rightColumnHtml = '';
   if (nextExchangeEv) {
     rightColumnHtml = nextEvCardHtml;
-  } else if (fridayGame || saturdayGame) {
-    const _wParts = [];
-    if (fridayGame) _wParts.push(makeWeeklyGameCard(fridayGame));
-    if (saturdayGame) _wParts.push(makeWeeklyGameCard(saturdayGame));
-    rightColumnHtml = `<div style="display:flex;flex-direction:column;gap:8px">${_wParts.join('')}</div>`;
   }
+
+  // ─ 주간 게임 카드: 이미 nextGameCardHtml에 표시된 날짜 제외 후 50/50 배치 ─
+  const _nextDateEx = nextGameDay ? nextGameDay.date : null;
+  const _wCards = [];
+  if (fridayGame  && fridayGame.date  !== _nextDateEx) _wCards.push(`<div style="flex:1;min-width:0">${makeWeeklyGameCard(fridayGame)}</div>`);
+  if (saturdayGame && saturdayGame.date !== _nextDateEx) _wCards.push(`<div style="flex:1;min-width:0">${makeWeeklyGameCard(saturdayGame)}</div>`);
+  let weeklyPairHtml = '';
+  if (_wCards.length === 2) {
+    weeklyPairHtml = `<div class="home-card-pair" style="margin-bottom:12px">${_wCards.join('')}</div>`;
+  } else if (_wCards.length === 1) {
+    weeklyPairHtml = `<div style="margin-bottom:12px">${_wCards[0]}</div>`;
+  }
+
+  // ─ 메인 페어: nextGame + 이벤트전 ─
   let cardPairHtml = '';
   if (nextGameCardHtml && rightColumnHtml) {
     cardPairHtml = `<div class="home-card-pair"><div>${nextGameCardHtml}</div><div>${rightColumnHtml}</div></div>`;
@@ -6316,6 +6326,8 @@ function renderHomeTab() {
   } else if (rightColumnHtml) {
     cardPairHtml = `<div style="margin-bottom:12px">${rightColumnHtml}</div>`;
   }
+  // 주간 게임 쌍을 메인 페어 아래에 추가
+  cardPairHtml += weeklyPairHtml;
 
   // ── 공지사항 배너 (배너 타입만, 여러 개 동시 표시) ──────────────
   const today0 = new Date().toISOString().slice(0,10);
