@@ -7957,6 +7957,36 @@ window.editGuestField = async function(name, field) {
 };
 
 // ── 정규회원 이름 변경 ──
+// ── [일회용] 정화↔임정화 계정 병합 ── 작업 후 즉시 삭제할 것
+window.doMerge = async function() {
+  const jh = members.find(m => m.name === '정화');
+  const ijh = members.find(m => m.name === '임정화');
+  if (!jh)  { console.error('❌ "정화" 없음'); return; }
+  if (!ijh) { console.error('❌ "임정화" 없음'); return; }
+  console.log('정화 현재:', JSON.stringify(jh));
+  console.log('임정화 현재:', JSON.stringify(ijh));
+
+  // club/members: "임정화" 제거 + "정화"에 uid/개인정보 추가 + 이름 변경 — 한 번에
+  const newList = members
+    .filter(m => m.name !== '임정화')
+    .map(m => m.name !== '정화' ? m : {
+      ...m,
+      name: '임정화',
+      uid: 'DJLAMPc8I0P5t0NJGE3XVnkQ2Zv1',
+      birthDate: '1979-10-26',
+      tennisStartDate: '2024-01'
+    });
+  console.log('club/members 업데이트 중...');
+  await setDoc(doc(db, 'club', 'members'), { list: newList });
+  console.log('✅ club/members 완료');
+
+  // days/schedules 등 과거 기록 "정화" → "임정화" 일괄 변경
+  console.log('cascadeRename 실행 중...');
+  await cascadeRename('정화', '임정화');
+  console.log('✅ cascadeRename 완료');
+  console.log('🎉 병합 완료! 페이지를 새로고침하세요.');
+};
+
 window.renameMember = async function(oldName){
   const newName = prompt(`"${oldName}"의 새 이름을 입력하세요:`, oldName);
   if (newName===null) return;
