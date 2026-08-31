@@ -4634,12 +4634,20 @@ function renderAdmin(){
         const arrId  = `att_arr_${day.id}`;
         const isOpen = openAttBodies.has(bodyId);
 
+        // 같은 날짜 isGameMeetup 일정 — 뱃지 표시용 (렌더 시점마다 실시간 참조)
+        const matchSch = schedules.find(s => s.date === day.date && s.isGameMeetup);
+        const schAttend = matchSch ? (matchSch.attend || {}) : {};
+
         // 정규회원 행
         const memberRows = members.map(m => {
           const status = att[m.name] ?? true;
+          const fromSch = schAttend[m.name] === '참석';
+          const badge = fromSch
+            ? `<span style="font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(37,99,235,0.12);color:#2563EB;border:1px solid rgba(37,99,235,0.28);vertical-align:middle;margin-left:5px;font-weight:700">📅 일정 참석</span>`
+            : '';
           return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #EEF7F6">
             <span style="font-size:13px;font-weight:600;color:#1E293B">
-              <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span> ${m.name}
+              <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span> ${m.name}${badge}
             </span>
             <div style="display:flex;gap:6px">
               <button onclick="setAttendance('${day.id}','${m.name}',true)"
@@ -4684,6 +4692,7 @@ function renderAdmin(){
             <span id="${arrId}" style="color:#64748B;font-size:14px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">›</span>
           </button>
           <div id="${bodyId}" style="display:${isOpen?'block':'none'};padding:0 14px 14px">
+            ${matchSch ? `<div style="font-size:10px;color:#2563EB;background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.2);border-radius:8px;padding:5px 9px;margin-bottom:8px">📅 같은 날짜의 일정(${matchSch.place||matchSch.content||'게임 모임'}) 참석 데이터가 반영되어 있어요. <b>📅 일정 참석</b> 뱃지로 구분됩니다.</div>` : ''}
             ${memberRows}${guestRows}
           </div>
         </div>`;
@@ -7290,9 +7299,34 @@ window.addDay=async function(){
   const date=document.getElementById('dayDate').value;
   const place=document.getElementById('dayPlace').value.trim();
   if(!date){alert('날짜를 선택해주세요');return;}
-  await addDoc(collection(db,'days'),{date,place,rounds:[],season:currentSeason,createdAt:serverTimestamp()});
+
+  // 같은 날짜의 isGameMeetup 일정에서 참석 데이터 자동 반영
+  const matchSch = schedules.find(s => s.date === date && s.isGameMeetup);
+  const initAttendance = {};
+  if (matchSch) {
+    const schAttend = matchSch.attend || {};
+    members.forEach(m => {
+      if (schAttend[m.name] === '참석') initAttendance[m.name] = true;
+      else if (schAttend[m.name] === '불참') initAttendance[m.name] = false;
+      // 무응답(미정/미설정)은 기본값(true) 그대로 — key를 추가하지 않음
+    });
+  }
+
+  const docData = {date, place, rounds:[], season:currentSeason, createdAt:serverTimestamp()};
+  if (Object.keys(initAttendance).length) docData.attendance = initAttendance;
+
+  await addDoc(collection(db,'days'), docData);
   document.getElementById('dayDate').value='';
   document.getElementById('dayPlace').value='';
+
+  if (matchSch) {
+    const cnt = Object.values(initAttendance).filter(v=>v===true).length;
+    const inf = document.createElement('div');
+    inf.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(37,99,235,0.92);color:#fff;padding:8px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:99999;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,0.18)';
+    inf.textContent=`📅 일정 참석 ${cnt}명 자동 반영됨`;
+    document.body.appendChild(inf);
+    setTimeout(()=>inf.remove(), 2800);
+  }
 };
 window.delDay=async function(dayId){
   if(!confirm('이 날짜 그룹과 모든 라운드/경기를 삭제할까요?'))return;
