@@ -6105,8 +6105,9 @@ function renderHomeTab() {
   // 선택 후: compact 상태 레이블 + "변경 ↩" 토글 버튼
   // 미선택: 나란히 두 버튼 전체 표시
   const makeAttendBtns = function(status, schId, dayId) {
+    const statusId = 'attStatus_' + dayId;
     const chgId = 'attChg_' + dayId;
-    // btnRow: 미선택 상태와 "변경" 클릭 후 상태에서 완전히 동일한 구조/스타일로 재사용
+    // btnRow: 미선택/변경 후 두 경우 모두 동일한 구조로 재사용
     const btnRow = `<div style="display:-webkit-flex;display:flex">
       <button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','참석')"
         style="-webkit-flex:1;flex:1;margin-right:5px;cursor:pointer;font-size:11px;font-weight:800;
@@ -6119,16 +6120,18 @@ function renderHomeTab() {
     </div>`;
     if (status) {
       const isAtt = status === '참석';
+      // "변경" 클릭: 상태 표시 줄 숨김 + 버튼 패널 표시 (단방향)
+      const onChg = `event.stopPropagation();document.getElementById('${statusId}').style.display='none';document.getElementById('${chgId}').style.display='block'`;
       return `<div onclick="event.stopPropagation()" style="margin-top:8px">
-        <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;margin-bottom:6px">
-          <span style="-webkit-flex:1;flex:1;font-size:11px;font-weight:800;text-align:center;padding:4px 6px;border-radius:8px;
+        <div id="${statusId}" style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center">
+          <span style="-webkit-flex:1;flex:1;font-size:11px;font-weight:800;text-align:center;padding:5px 6px;border-radius:8px;
             background:${isAtt?'#059669':'#f87171'};color:#fff">
             ${isAtt?'✅ 참석':'❌ 불참'}
           </span>
-          <button onclick="event.stopPropagation();var el=document.getElementById('${chgId}');el.style.display=el.style.display==='none'?'block':'none'"
-            style="font-size:10px;padding:3px 9px;border-radius:7px;margin-left:6px;
-            background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.3);
-            color:#64748B;cursor:pointer;white-space:nowrap">변경 ↩</button>
+          <button onclick="${onChg}"
+            style="-webkit-flex:1;flex:1;font-size:11px;font-weight:800;padding:5px 6px;border-radius:8px;margin-left:5px;
+            background:rgba(100,116,139,0.1);border:1.5px solid rgba(100,116,139,0.3);
+            color:#64748B;cursor:pointer;text-align:center">변경 ↩</button>
         </div>
         <div id="${chgId}" style="display:none">${btnRow}</div>
       </div>`;
