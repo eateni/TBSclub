@@ -314,6 +314,8 @@ tr:nth-child(even){background:#F5FCFB;}
 @keyframes scItemIn { from{opacity:0;transform:translateY(10px) scale(0.87)} to{opacity:1;transform:translateY(0) scale(1)} }
 
 </style>
+<!-- 음양력 변환 라이브러리 (korean-lunar-calendar by usingsky, MIT) -->
+<script src="https://cdn.jsdelivr.net/npm/korean-lunar-calendar/src/korean-lunar-calendar.js"></script>
 </head>
 <body>
 
@@ -964,8 +966,14 @@ tr:nth-child(even){background:#F5FCFB;}
         <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
       </select>
     </div>
-    <label style="font-size:12px;color:#64748B;display:block">생년월일 <span style="color:#94A3B8;font-size:11px">(선택)</span></label>
-    <input type="date" id="signupBirthDate" class="row-inp" style="width:100%;margin-bottom:12px;margin-top:4px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <label style="font-size:12px;color:#64748B">생년월일 <span style="color:#94A3B8;font-size:11px">(선택)</span></label>
+      <span style="display:flex;gap:8px;font-size:11px;color:#475569">
+        <label style="cursor:pointer;display:flex;align-items:center;gap:2px"><input type="radio" name="signupBirthCal" value="solar" checked style="margin:0">양력</label>
+        <label style="cursor:pointer;display:flex;align-items:center;gap:2px"><input type="radio" name="signupBirthCal" value="lunar" style="margin:0">음력</label>
+      </span>
+    </div>
+    <input type="date" id="signupBirthDate" class="row-inp" style="width:100%;margin-bottom:12px">
     <button onclick="doSignup()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a120a;border:none;border-radius:10px;font-weight:800;cursor:pointer">가입 신청</button>
     <div class="mft"><button class="btn-cancel" onclick="hide('signupModal')">취소</button></div>
   </div>
@@ -4433,8 +4441,8 @@ function renderAdmin(){
             <button class="chip-x" onclick="delMember('${m.name}')">×</button>
           </span>
           <span style="display:flex;gap:3px;flex-wrap:wrap">
-            <button onclick="editMemberField('${m.name}','birthDate')" title="생년월일: ${m.birthDate||'미입력'}"
-              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎂 ${m.birthDate||'—'}</button>
+            <button onclick="editMemberField('${m.name}','birthDate')" title="생년월일: ${m.birthDate||'미입력'}${m.isLunarBirth?' (음력)':''}"
+              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎂 ${m.birthDate||'—'}${m.isLunarBirth?'<span style="font-size:8px;color:#7C3AED;margin-left:1px">(음)</span>':''}</button>
             <button onclick="editMemberField('${m.name}','tennisStartDate')" title="테니스 시작: ${m.tennisStartDate||'미입력'}"
               style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎾 ${m.tennisStartDate||'—'}</button>
           </span>
@@ -5869,6 +5877,15 @@ window.shareKakao = function(id) {
 
 // ── 📌 오늘 일정 배너 (C안) ───────────────────────────────────────────
 let bannerSchId = null;
+// ── 음양력 변환 헬퍼 (korean-lunar-calendar CDN 라이브러리 래핑) ──────
+function lunarToSolar(year, month, day) {
+  if (typeof KoreanLunarCalendar === 'undefined') return null;
+  try {
+    const cal = new KoreanLunarCalendar();
+    cal.setLunarDate(year, month, day, false);
+    return cal.getSolarCalendar(); // {year, month, day} 또는 null
+  } catch(e) { return null; }
+}
 // ── 홈 미니 캘린더 ─────────────────────────────────────────────────
 // ── 날씨 (Open-Meteo, API 키 불필요) ─────────────────────────────
 const VENUE_COORDS = {
@@ -8008,11 +8025,26 @@ window.doSignup = async function(){
   const tennisY = document.getElementById('signupTennisYear').value;
   const tennisM = document.getElementById('signupTennisMonth').value;
   const tennisStartDate = (tennisY && tennisM) ? `${tennisY}-${tennisM}` : '';
-  const birthDate = document.getElementById('signupBirthDate').value || '';
+  let birthDate = document.getElementById('signupBirthDate').value || '';
+  let isLunarBirth = false;
+  if (birthDate) {
+    const calType = document.querySelector('input[name="signupBirthCal"]:checked')?.value || 'solar';
+    if (calType === 'lunar') {
+      const [by, bm, bd] = birthDate.split('-').map(Number);
+      const solar = lunarToSolar(by, bm, bd);
+      if (solar) {
+        birthDate = `${solar.year}-${String(solar.month).padStart(2,'0')}-${String(solar.day).padStart(2,'0')}`;
+        isLunarBirth = true;
+      } else {
+        alert('음력 날짜를 양력으로 변환할 수 없습니다. 양력으로 직접 입력하거나 날짜를 확인해주세요.'); return;
+      }
+    }
+  }
 
   const reqData = { uid, email, claimedName, gender, isNewName, status: 'pending', requestedAt: serverTimestamp() };
   if (tennisStartDate) reqData.tennisStartDate = tennisStartDate;
   if (birthDate) reqData.birthDate = birthDate;
+  if (isLunarBirth) reqData.isLunarBirth = true;
   await addDoc(collection(db,'signupRequests'), reqData);
   alert('가입 신청 완료! 관리자 승인 후 이용하실 수 있어요.');
   googleAuthedUser = null;
@@ -8031,6 +8063,7 @@ window.approveSignup = async function(reqId){
   if (req.isNewName) {
     const newMemberObj = { name:newName, gender:req.gender, uid:req.uid };
     if (req.birthDate) newMemberObj.birthDate = req.birthDate;
+    if (req.isLunarBirth) newMemberObj.isLunarBirth = true;
     if (req.tennisStartDate) newMemberObj.tennisStartDate = req.tennisStartDate;
     await setDoc(doc(db,'club','members'), { list: [...members, newMemberObj] });
   } else {
@@ -8042,6 +8075,7 @@ window.approveSignup = async function(reqId){
         if (x.name !== req.claimedName) return x;
         const u = { ...x, uid: req.uid };
         if (req.birthDate) u.birthDate = req.birthDate;
+        if (req.isLunarBirth) u.isLunarBirth = true;
         if (req.tennisStartDate) u.tennisStartDate = req.tennisStartDate;
         return u;
       })
@@ -8188,7 +8222,13 @@ window.openMyDashboard = function(){
     profileHtml = `
       <div style="margin-top:16px;border-top:1px solid #EEF7F6;padding-top:14px">
         <div style="font-size:12px;font-weight:800;color:#1E293B;margin-bottom:10px">✏️ 내 정보 수정</div>
-        <label style="font-size:11px;color:#64748B;display:block;margin-bottom:3px">생년월일 <span style="color:#94A3B8">(선택)</span></label>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">
+          <label style="font-size:11px;color:#64748B">생년월일 <span style="color:#94A3B8">(선택)</span>${myMember.isLunarBirth?'<span style="font-size:10px;color:#7C3AED;margin-left:4px">음력 저장됨</span>':''}</label>
+          <span style="display:flex;gap:8px;font-size:11px;color:#475569">
+            <label style="cursor:pointer;display:flex;align-items:center;gap:2px"><input type="radio" name="myProfileBirthCal" value="solar" checked style="margin:0">양력</label>
+            <label style="cursor:pointer;display:flex;align-items:center;gap:2px"><input type="radio" name="myProfileBirthCal" value="lunar" style="margin:0">음력</label>
+          </span>
+        </div>
         <input type="date" id="myProfileBirthDate" class="row-inp"
           style="width:100%;margin-bottom:12px" value="${myMember.birthDate||''}">
         <label style="font-size:11px;color:#64748B;display:block;margin-bottom:3px">테니스 시작년월 <span style="color:#94A3B8">(선택)</span></label>
@@ -8219,10 +8259,27 @@ window.saveMyProfile = async function(){
   const user = lastAuthUser;
   if (!user) return;
 
-  const birthDate = (document.getElementById('myProfileBirthDate')?.value || '').trim();
+  let birthDate = (document.getElementById('myProfileBirthDate')?.value || '').trim();
+  let isLunarBirth = false;
   const tennisY = document.getElementById('myProfileTennisYear')?.value || '';
   const tennisM = document.getElementById('myProfileTennisMonth')?.value || '';
   const tennisStartDate = (tennisY && tennisM) ? `${tennisY}-${tennisM}` : '';
+
+  if (birthDate) {
+    const calType = document.querySelector('input[name="myProfileBirthCal"]:checked')?.value || 'solar';
+    if (calType === 'lunar') {
+      const [by, bm, bd] = birthDate.split('-').map(Number);
+      const solar = lunarToSolar(by, bm, bd);
+      if (solar) {
+        birthDate = `${solar.year}-${String(solar.month).padStart(2,'0')}-${String(solar.day).padStart(2,'0')}`;
+        isLunarBirth = true;
+      } else {
+        const msgEl = document.getElementById('myProfileMsg');
+        if (msgEl) { msgEl.textContent = '음력 날짜 변환 실패. 양력으로 직접 입력해주세요.'; msgEl.style.color = '#f87171'; }
+        return;
+      }
+    }
+  }
 
   // uid가 없는 회원(fallback 경로)도 수정 가능하도록 name 기준 조회
   const idx = members.findIndex(m => m.name === myClaim.name);
@@ -8231,7 +8288,8 @@ window.saveMyProfile = async function(){
   const updated = members.map((m, i) => {
     if (i !== idx) return m;
     const patch = {...m};
-    if (birthDate) patch.birthDate = birthDate; else delete patch.birthDate;
+    if (birthDate) { patch.birthDate = birthDate; patch.isLunarBirth = isLunarBirth; }
+    else { delete patch.birthDate; delete patch.isLunarBirth; }
     if (tennisStartDate) patch.tennisStartDate = tennisStartDate; else delete patch.tennisStartDate;
     return patch;
   });
