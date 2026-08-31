@@ -21,6 +21,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
     }
+    // 회원 본인의 생년월일/테니스시작년월 자기 수정 허용
+    // (list 필드만, 크기 불변 — 멤버 추가/삭제 불가)
+    match /club/members {
+      allow update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['list'])
+        && request.resource.data.list.size() == resource.data.list.size();
+    }
     match /events/{document=**} {
       allow read: if true;
       allow write: if request.auth != null;

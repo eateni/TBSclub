@@ -8062,11 +8062,79 @@ window.openMyDashboard = function(){
     ? mySchedules.map(s=>`<div style="padding:6px 0;font-size:12px;color:#1E293B;border-bottom:1px solid #EEF7F6">📅 ${s.date}${s.place?' · '+s.place:''}${s.time?' '+s.time:''}</div>`).join('')
     : `<div style="font-size:12px;color:#64748B">다가오는 일정이 없어요</div>`;
 
+  // 내 정보 수정 섹션 (정회원만, 게스트 제외)
+  let profileHtml = '';
+  if (!myClaim.isGuest) {
+    const myMember = members.find(m => m.uid === (lastAuthUser && lastAuthUser.uid));
+    if (myMember) {
+      const curY = new Date().getFullYear();
+      const [tsy, tsm] = (myMember.tennisStartDate||'').split('-');
+      const yearOpts = `<option value="">연도</option>`
+        + Array.from({length: curY-1990+1}, (_,i) => curY-i)
+            .map(y => `<option value="${y}"${String(tsy)===String(y)?' selected':''}>${y}</option>`)
+            .join('');
+      const monthOpts = ['01','02','03','04','05','06','07','08','09','10','11','12']
+        .map(m => `<option value="${m}"${tsm===m?' selected':''}>${parseInt(m)}월</option>`)
+        .join('');
+      profileHtml = `
+        <div style="margin-top:16px;border-top:1px solid #EEF7F6;padding-top:14px">
+          <div style="font-size:12px;font-weight:800;color:#1E293B;margin-bottom:10px">✏️ 내 정보 수정</div>
+          <label style="font-size:11px;color:#64748B;display:block;margin-bottom:3px">생년월일 <span style="color:#94A3B8">(선택)</span></label>
+          <input type="date" id="myProfileBirthDate" class="row-inp"
+            style="width:100%;margin-bottom:12px" value="${myMember.birthDate||''}">
+          <label style="font-size:11px;color:#64748B;display:block;margin-bottom:3px">테니스 시작년월 <span style="color:#94A3B8">(선택)</span></label>
+          <div style="display:flex;gap:8px;margin-bottom:14px">
+            <select id="myProfileTennisYear" class="row-sel" style="flex:1">${yearOpts}</select>
+            <select id="myProfileTennisMonth" class="row-sel" style="flex:1">
+              <option value="">월</option>${monthOpts}
+            </select>
+          </div>
+          <button onclick="saveMyProfile()"
+            style="width:100%;padding:10px;background:linear-gradient(135deg,#0D9488,#0369a1);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">
+            💾 저장
+          </button>
+          <div id="myProfileMsg" style="font-size:12px;margin-top:6px;min-height:16px"></div>
+        </div>`;
+    }
+  }
+
   document.getElementById('myDashboardTitle').textContent = `👤 ${myClaim.name}님의 기록`;
   document.getElementById('myDashboardBody').innerHTML = statsHtml
     + `<div style="font-size:11px;color:#64748B;font-weight:700;margin:10px 0 4px">📅 다가오는 일정</div>`
-    + schedHtml;
+    + schedHtml
+    + profileHtml;
   document.getElementById('myDashboardModal').style.display = 'flex';
+};
+
+window.saveMyProfile = async function(){
+  if (!myClaim || myClaim === 'pending' || myClaim.isGuest) return;
+  const user = lastAuthUser;
+  if (!user) return;
+
+  const birthDate = (document.getElementById('myProfileBirthDate')?.value || '').trim();
+  const tennisY = document.getElementById('myProfileTennisYear')?.value || '';
+  const tennisM = document.getElementById('myProfileTennisMonth')?.value || '';
+  const tennisStartDate = (tennisY && tennisM) ? `${tennisY}-${tennisM}` : '';
+
+  const idx = members.findIndex(m => m.uid === user.uid);
+  if (idx < 0) return;
+
+  const updated = members.map((m, i) => {
+    if (i !== idx) return m;
+    const patch = {...m};
+    if (birthDate) patch.birthDate = birthDate; else delete patch.birthDate;
+    if (tennisStartDate) patch.tennisStartDate = tennisStartDate; else delete patch.tennisStartDate;
+    return patch;
+  });
+
+  const msgEl = document.getElementById('myProfileMsg');
+  try {
+    await updateDoc(doc(db,'club','members'), { list: updated });
+    if (msgEl) { msgEl.textContent = '✅ 저장됐어요!'; msgEl.style.color = '#059669'; }
+    setTimeout(() => { if (msgEl) msgEl.textContent = ''; }, 2500);
+  } catch(e) {
+    if (msgEl) { msgEl.textContent = '저장 실패: ' + (e.message||e); msgEl.style.color = '#f87171'; }
+  }
 };
 
 async function resolveMyClaim(isRetry) {
