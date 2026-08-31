@@ -5716,6 +5716,24 @@ window.setAttend = async function(id, status) {
   await updateDoc(doc(db,'schedules',id), { attend });
 };
 
+// 홈 "다음 게임" 카드 참석체크 — 본인 이름으로 즉시 저장 (낙관적 업데이트)
+window.setMyGameAttend = async function(schId, status) {
+  if (!myClaim || myClaim === 'pending') return;
+  const name = myClaim.name;
+  const sch = schedules.find(s => s.id === schId);
+  if (!sch) return;
+  // 낙관적 업데이트: 로컬 상태 즉시 반영
+  if (!sch.attend) sch.attend = {};
+  sch.attend[name] = status;
+  renderHomeTab();
+  // Firestore 저장 (dot notation으로 해당 키만 업데이트)
+  try {
+    await updateDoc(doc(db,'schedules',schId), { [`attend.${name}`]: status });
+  } catch(e) {
+    console.error('참석 저장 실패:', e);
+  }
+};
+
 window.addComment = async function(id) {
   const name = document.getElementById(`cmt_who_${id}`)?.value;
   const text = document.getElementById(`cmt_text_${id}`)?.value.trim();
@@ -6073,6 +6091,26 @@ function renderHomeTab() {
     const pairsSummary = rds.length
       ? `<span style="font-size:10px;color:#6D28D9;background:#EDE9FE;padding:1px 6px;border-radius:7px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
       : '';
+    // 같은 날짜 isGameMeetup 스케줄 — 홈카드 참석체크 버튼 대상
+    const gameMatchSch = schedules.find(s => s.date === d.date && s.isGameMeetup);
+    const mySchStatus = (gameMatchSch && isMemberLoggedIn) ? (gameMatchSch.attend||{})[myClaim.name] : null;
+    const attendBtns = (isMemberLoggedIn && gameMatchSch) ? `
+      <div onclick="event.stopPropagation()" style="display:flex;gap:5px;margin-top:8px">
+        <button onclick="event.stopPropagation();setMyGameAttend('${gameMatchSch.id}','참석')"
+          style="flex:1;padding:5px 0;border-radius:8px;cursor:pointer;font-size:11px;font-weight:800;
+            background:${mySchStatus==='참석'?'#059669':'rgba(52,211,153,0.12)'};
+            color:${mySchStatus==='참석'?'#fff':'#059669'};
+            border:1.5px solid ${mySchStatus==='참석'?'#059669':'rgba(52,211,153,0.4)'}">
+          ✅ 참석
+        </button>
+        <button onclick="event.stopPropagation();setMyGameAttend('${gameMatchSch.id}','불참')"
+          style="flex:1;padding:5px 0;border-radius:8px;cursor:pointer;font-size:11px;font-weight:800;
+            background:${mySchStatus==='불참'?'#f87171':'rgba(248,113,113,0.08)'};
+            color:${mySchStatus==='불참'?'#fff':'#f87171'};
+            border:1.5px solid ${mySchStatus==='불참'?'#f87171':'rgba(248,113,113,0.35)'}">
+          ❌ 불참
+        </button>
+      </div>` : '';
     return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <span style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:10px">🎾 다음 게임</span>
@@ -6084,6 +6122,7 @@ function renderHomeTab() {
         ${d.place?`<span style="font-size:11px;color:#2563EB">📍 ${d.place}</span>`:''}
         ${pairsSummary}
       </div>
+      ${attendBtns}
       <div style="text-align:center"><span id="wxBadgeGame" style="font-size:13px;color:#64748B;font-weight:700"></span></div>
     </div>`;
   })() : '';
