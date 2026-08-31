@@ -5717,18 +5717,26 @@ window.setAttend = async function(id, status) {
 };
 
 // 홈 "다음 게임" 카드 참석체크 — 본인 이름으로 즉시 저장 (낙관적 업데이트)
-window.setMyGameAttend = async function(schId, status) {
+// schId 있으면 schedules.attend, 없으면 days.attendance로 fallback
+window.setMyGameAttend = async function(schId, dayId, status) {
   if (!myClaim || myClaim === 'pending') return;
   const name = myClaim.name;
-  const sch = schedules.find(s => s.id === schId);
-  if (!sch) return;
   // 낙관적 업데이트: 로컬 상태 즉시 반영
-  if (!sch.attend) sch.attend = {};
-  sch.attend[name] = status;
+  if (schId) {
+    const sch = schedules.find(s => s.id === schId);
+    if (sch) { if (!sch.attend) sch.attend = {}; sch.attend[name] = status; }
+  } else {
+    const day = days.find(d => d.id === dayId);
+    if (day) { if (!day.attendance) day.attendance = {}; day.attendance[name] = (status === '참석'); }
+  }
   renderHomeTab();
-  // Firestore 저장 (dot notation으로 해당 키만 업데이트)
+  // Firestore 저장
   try {
-    await updateDoc(doc(db,'schedules',schId), { [`attend.${name}`]: status });
+    if (schId) {
+      await updateDoc(doc(db,'schedules',schId), { [`attend.${name}`]: status });
+    } else {
+      await updateDoc(doc(db,'days',dayId), { [`attendance.${name}`]: status === '참석' });
+    }
   } catch(e) {
     console.error('참석 저장 실패:', e);
   }
@@ -6091,19 +6099,28 @@ function renderHomeTab() {
     const pairsSummary = rds.length
       ? `<span style="font-size:10px;color:#6D28D9;background:#EDE9FE;padding:1px 6px;border-radius:7px">${rds.length}라운드 · ${doneM}/${totalM}경기</span>`
       : '';
-    // 같은 날짜 isGameMeetup 스케줄 — 홈카드 참석체크 버튼 대상
+    // 같은 날짜 isGameMeetup 스케줄 — 있으면 schedules.attend, 없으면 days.attendance로 fallback
     const gameMatchSch = schedules.find(s => s.date === d.date && s.isGameMeetup);
-    const mySchStatus = (gameMatchSch && isMemberLoggedIn) ? (gameMatchSch.attend||{})[myClaim.name] : null;
-    const attendBtns = (isMemberLoggedIn && gameMatchSch) ? `
+    const schId = gameMatchSch ? gameMatchSch.id : '';
+    // 현재 상태: 스케줄 있으면 schedules.attend 값, 없으면 days.attendance 값(boolean→문자열 변환)
+    let mySchStatus = null;
+    if (isMemberLoggedIn) {
+      if (gameMatchSch) {
+        mySchStatus = (gameMatchSch.attend||{})[myClaim.name] || null;
+      } else {
+        mySchStatus = myAtt === false ? '불참' : myAtt === true ? '참석' : null;
+      }
+    }
+    const attendBtns = isMemberLoggedIn ? `
       <div onclick="event.stopPropagation()" style="display:flex;gap:5px;margin-top:8px">
-        <button onclick="event.stopPropagation();setMyGameAttend('${gameMatchSch.id}','참석')"
+        <button onclick="event.stopPropagation();setMyGameAttend('${schId}','${d.id}','참석')"
           style="flex:1;padding:5px 0;border-radius:8px;cursor:pointer;font-size:11px;font-weight:800;
             background:${mySchStatus==='참석'?'#059669':'rgba(52,211,153,0.12)'};
             color:${mySchStatus==='참석'?'#fff':'#059669'};
             border:1.5px solid ${mySchStatus==='참석'?'#059669':'rgba(52,211,153,0.4)'}">
           ✅ 참석
         </button>
-        <button onclick="event.stopPropagation();setMyGameAttend('${gameMatchSch.id}','불참')"
+        <button onclick="event.stopPropagation();setMyGameAttend('${schId}','${d.id}','불참')"
           style="flex:1;padding:5px 0;border-radius:8px;cursor:pointer;font-size:11px;font-weight:800;
             background:${mySchStatus==='불참'?'#f87171':'rgba(248,113,113,0.08)'};
             color:${mySchStatus==='불참'?'#fff':'#f87171'};
@@ -8102,39 +8119,38 @@ window.openMyDashboard = function(){
     : `<div style="font-size:12px;color:#64748B">다가오는 일정이 없어요</div>`;
 
   // 내 정보 수정 섹션 (정회원만, 게스트 제외)
+  // uid 기준이 아닌 name 기준으로 조회 — uid 미등록 회원(fallback 경로)도 표시
   let profileHtml = '';
   if (!myClaim.isGuest) {
-    const myMember = members.find(m => m.uid === (lastAuthUser && lastAuthUser.uid));
-    if (myMember) {
-      const curY = new Date().getFullYear();
-      const [tsy, tsm] = (myMember.tennisStartDate||'').split('-');
-      const yearOpts = `<option value="">연도</option>`
-        + Array.from({length: curY-1990+1}, (_,i) => curY-i)
-            .map(y => `<option value="${y}"${String(tsy)===String(y)?' selected':''}>${y}</option>`)
-            .join('');
-      const monthOpts = ['01','02','03','04','05','06','07','08','09','10','11','12']
-        .map(m => `<option value="${m}"${tsm===m?' selected':''}>${parseInt(m)}월</option>`)
-        .join('');
-      profileHtml = `
-        <div style="margin-top:16px;border-top:1px solid #EEF7F6;padding-top:14px">
-          <div style="font-size:12px;font-weight:800;color:#1E293B;margin-bottom:10px">✏️ 내 정보 수정</div>
-          <label style="font-size:11px;color:#64748B;display:block;margin-bottom:3px">생년월일 <span style="color:#94A3B8">(선택)</span></label>
-          <input type="date" id="myProfileBirthDate" class="row-inp"
-            style="width:100%;margin-bottom:12px" value="${myMember.birthDate||''}">
-          <label style="font-size:11px;color:#64748B;display:block;margin-bottom:3px">테니스 시작년월 <span style="color:#94A3B8">(선택)</span></label>
-          <div style="display:flex;gap:8px;margin-bottom:14px">
-            <select id="myProfileTennisYear" class="row-sel" style="flex:1">${yearOpts}</select>
-            <select id="myProfileTennisMonth" class="row-sel" style="flex:1">
-              <option value="">월</option>${monthOpts}
-            </select>
-          </div>
-          <button onclick="saveMyProfile()"
-            style="width:100%;padding:10px;background:linear-gradient(135deg,#0D9488,#0369a1);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">
-            💾 저장
-          </button>
-          <div id="myProfileMsg" style="font-size:12px;margin-top:6px;min-height:16px"></div>
-        </div>`;
-    }
+    const myMember = members.find(m => m.name === myClaim.name) || myClaim;
+    const curY = new Date().getFullYear();
+    const [tsy, tsm] = (myMember.tennisStartDate||'').split('-');
+    const yearOpts = `<option value="">연도</option>`
+      + Array.from({length: curY-1990+1}, (_,i) => curY-i)
+          .map(y => `<option value="${y}"${String(tsy)===String(y)?' selected':''}>${y}</option>`)
+          .join('');
+    const monthOpts = ['01','02','03','04','05','06','07','08','09','10','11','12']
+      .map(m => `<option value="${m}"${tsm===m?' selected':''}>${parseInt(m)}월</option>`)
+      .join('');
+    profileHtml = `
+      <div style="margin-top:16px;border-top:1px solid #EEF7F6;padding-top:14px">
+        <div style="font-size:12px;font-weight:800;color:#1E293B;margin-bottom:10px">✏️ 내 정보 수정</div>
+        <label style="font-size:11px;color:#64748B;display:block;margin-bottom:3px">생년월일 <span style="color:#94A3B8">(선택)</span></label>
+        <input type="date" id="myProfileBirthDate" class="row-inp"
+          style="width:100%;margin-bottom:12px" value="${myMember.birthDate||''}">
+        <label style="font-size:11px;color:#64748B;display:block;margin-bottom:3px">테니스 시작년월 <span style="color:#94A3B8">(선택)</span></label>
+        <div style="display:flex;gap:8px;margin-bottom:14px">
+          <select id="myProfileTennisYear" class="row-sel" style="flex:1">${yearOpts}</select>
+          <select id="myProfileTennisMonth" class="row-sel" style="flex:1">
+            <option value="">월</option>${monthOpts}
+          </select>
+        </div>
+        <button onclick="saveMyProfile()"
+          style="width:100%;padding:10px;background:linear-gradient(135deg,#0D9488,#0369a1);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer">
+          💾 저장
+        </button>
+        <div id="myProfileMsg" style="font-size:12px;margin-top:6px;min-height:16px"></div>
+      </div>`;
   }
 
   document.getElementById('myDashboardTitle').textContent = `👤 ${myClaim.name}님의 기록`;
@@ -8155,7 +8171,8 @@ window.saveMyProfile = async function(){
   const tennisM = document.getElementById('myProfileTennisMonth')?.value || '';
   const tennisStartDate = (tennisY && tennisM) ? `${tennisY}-${tennisM}` : '';
 
-  const idx = members.findIndex(m => m.uid === user.uid);
+  // uid가 없는 회원(fallback 경로)도 수정 가능하도록 name 기준 조회
+  const idx = members.findIndex(m => m.name === myClaim.name);
   if (idx < 0) return;
 
   const updated = members.map((m, i) => {
