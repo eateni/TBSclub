@@ -4408,12 +4408,19 @@ function renderAdmin(){
             const memberBadge = isMember
               ? `<span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(52,211,153,0.18);color:#059669;border:1px solid rgba(52,211,153,0.45);margin-left:6px">✅ 정회원</span>`
               : `<span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(245,158,11,0.13);color:#D97706;border:1px solid rgba(245,158,11,0.4);margin-left:6px">🆕 신규</span>`;
+            const similar = !isMember ? findSimilarExisting(r.claimedName || '') : [];
+            const similarHtml = similar.map(s => {
+              const games = countGamesForName(s.name);
+              return `<span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:rgba(245,158,11,0.15);color:#D97706;border:1px solid rgba(245,158,11,0.5);margin-left:4px">⚠️ '${s.name}'${s.isGuest?'(게)':''} 유사</span>` +
+                     `<button onclick="mergeSimilarMember('${r.id}','${s.name}',${s.isGuest})" style="padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;border:1px solid rgba(245,158,11,0.5);background:rgba(245,158,11,0.12);color:#D97706;cursor:pointer;margin-left:2px">🔗 병합(${games}경기)</button>`;
+            }).join('');
             return `
           <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;border-bottom:1px solid #E8F4F3">
             <div>
               <div style="font-weight:700;display:flex;align-items:center;flex-wrap:wrap;gap:2px">
                 ${r.claimedName} ${r.gender==='f'?'♀':'♂'}
                 ${memberBadge}
+                ${similarHtml}
                 ${r.isNewName?'<span style="color:#f59e0b;font-size:11px">(신규)</span>':''}
               </div>
               <div style="font-size:11px;color:#64748B">${r.email}</div>
@@ -8236,6 +8243,36 @@ window.doSignup = async function(){
 };
 
 // ── 관리자 승인/거절 ──────────────────────────────────────────────
+// ── 이름 유사도 헬퍼 ──
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({length: m+1}, (_, i) =>
+    Array.from({length: n+1}, (_, j) => j===0 ? i : i===0 ? j : 0));
+  for (let i=1;i<=m;i++) for (let j=1;j<=n;j++)
+    dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : 1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+function findSimilarExisting(claimedName) {
+  const a = claimedName.trim();
+  if (!a) return [];
+  const res = [];
+  for (const m of members) {
+    const b = m.name.trim();
+    if (a===b) continue;
+    if (a.includes(b) || b.includes(a) || levenshtein(a,b)<=2) res.push({name:m.name, isGuest:false});
+  }
+  for (const g of guests) {
+    const b = g.name.trim();
+    if (a===b) continue;
+    if (a.includes(b) || b.includes(a) || levenshtein(a,b)<=2) res.push({name:g.name, isGuest:true});
+  }
+  return res;
+}
+function countGamesForName(name) {
+  return days.reduce((t,d) => t+(d.rounds||[]).reduce((rt,r) =>
+    rt+(r.matches||[]).filter(m=>[...(m.team1||[]),...(m.team2||[])].includes(name)).length, 0), 0);
+}
+
 window.approveSignup = async function(reqId){
   const req = pendingSignups.find(r => r.id === reqId);
   if (!req) return;
@@ -8270,6 +8307,49 @@ window.approveSignup = async function(reqId){
 window.rejectSignup = async function(reqId){
   if (!confirm('이 가입 신청을 거절할까요?')) return;
   await updateDoc(doc(db,'signupRequests',reqId), { status:'rejected' });
+};
+
+// ── 유사 이름 계정 병합 ──
+window.mergeSimilarMember = async function(reqId, existingName, isGuest) {
+  const req = pendingSignups.find(r => r.id === reqId);
+  if (!req) return;
+  const existingGames = countGamesForName(existingName);
+  const newGames = countGamesForName(req.claimedName);
+  if (newGames > 0) {
+    alert(`⚠️ 신규 가입자 "${req.claimedName}"에게도 경기 기록(${newGames}경기)이 있습니다.\n자동 병합을 진행하지 않습니다. 수동으로 확인해주세요.`);
+    return;
+  }
+  const ok = confirm(
+    `"${existingName}"(기존, ${existingGames}경기)과\n"${req.claimedName}"(신규 가입)을 병합하시겠습니까?\n\n` +
+    `• 기존 "${existingName}"의 경기 기록 ${existingGames}건 유지\n` +
+    `• uid · 개인정보를 기존 회원에 연결\n` +
+    `• 기존 이름을 "${req.claimedName}"으로 변경 (경기 기록 포함)\n` +
+    `• 신규 가입자 문서 삭제\n\n` +
+    `⚠️ 이 작업은 되돌릴 수 없습니다.`
+  );
+  if (!ok) return;
+  try {
+    const infoFromReq = {};
+    if (req.birthDate) infoFromReq.birthDate = req.birthDate;
+    if (req.isLunarBirth) infoFromReq.isLunarBirth = true;
+    if (req.tennisStartDate) infoFromReq.tennisStartDate = req.tennisStartDate;
+    if (isGuest) {
+      const newList = guests
+        .filter(g => g.name !== req.claimedName)
+        .map(g => g.name !== existingName ? g : {...g, ...infoFromReq, name: req.claimedName, uid: req.uid});
+      await setDoc(doc(db,'club','guests'), {list: newList});
+    } else {
+      const newList = members
+        .filter(m => m.name !== req.claimedName)
+        .map(m => m.name !== existingName ? m : {...m, ...infoFromReq, name: req.claimedName, uid: req.uid});
+      await setDoc(doc(db,'club','members'), {list: newList});
+    }
+    if (existingName !== req.claimedName) await cascadeRename(existingName, req.claimedName);
+    await updateDoc(doc(db,'signupRequests',reqId), {status:'approved'});
+    alert(`✅ 병합 완료!\n"${existingName}" → "${req.claimedName}", ${existingGames}경기 기록 유지됨`);
+  } catch(e) {
+    alert('❌ 병합 오류: ' + e.message);
+  }
 };
 
 // ── 내 대시보드 ────────────────────────────────────────────────────
