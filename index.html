@@ -6298,6 +6298,35 @@ function renderHomeTab() {
     const _waG = guests.filter(function(g){ return (d.guests||[]).includes(g.name); }).length;
     const _wRds = d.rounds || [];
     const _wTM = _wRds.reduce(function(a,r){ return a+(r.matches||[]).length; }, 0);
+    // 참석/불참 버튼 — nextGameCardHtml과 동일한 로직
+    const _wSch = schedules.find(function(s){ return s.date === d.date && s.isGameMeetup; });
+    const _wSchId = _wSch ? _wSch.id : '';
+    const _wMyAtt = isMemberLoggedIn ? _watt[myClaim.name] : undefined;
+    let _wMyStatus = null;
+    if (isMemberLoggedIn) {
+      if (_wSch) {
+        _wMyStatus = (_wSch.attend||{})[myClaim.name] || null;
+      } else {
+        _wMyStatus = _wMyAtt === false ? '불참' : _wMyAtt === true ? '참석' : null;
+      }
+    }
+    const _wAttBtns = isMemberLoggedIn ? `
+      <div onclick="event.stopPropagation()" style="display:flex;gap:5px;margin-top:8px">
+        <button onclick="event.stopPropagation();setMyGameAttend('${_wSchId}','${d.id}','참석')"
+          style="flex:1;padding:5px 0;border-radius:8px;cursor:pointer;font-size:11px;font-weight:800;
+            background:${_wMyStatus==='참석'?'#059669':'rgba(52,211,153,0.12)'};
+            color:${_wMyStatus==='참석'?'#fff':'#059669'};
+            border:1.5px solid ${_wMyStatus==='참석'?'#059669':'rgba(52,211,153,0.4)'}">
+          ✅ 참석
+        </button>
+        <button onclick="event.stopPropagation();setMyGameAttend('${_wSchId}','${d.id}','불참')"
+          style="flex:1;padding:5px 0;border-radius:8px;cursor:pointer;font-size:11px;font-weight:800;
+            background:${_wMyStatus==='불참'?'#f87171':'rgba(248,113,113,0.08)'};
+            color:${_wMyStatus==='불참'?'#fff':'#f87171'};
+            border:1.5px solid ${_wMyStatus==='불참'?'#f87171':'rgba(248,113,113,0.35)'}">
+          ❌ 불참
+        </button>
+      </div>` : '';
     return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px">🎾 ${weekdays[_wd.getDay()]}요일 게임</div>
       <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${_wdl}</div>
@@ -6306,6 +6335,7 @@ function renderHomeTab() {
         ${d.place?`<span style="font-size:11px;color:#2563EB">📍 ${d.place}</span>`:''}
         ${_wTM?`<span style="font-size:11px;color:#6D28D9">${_wRds.length}라운드 · ${_wTM}경기</span>`:''}
       </div>
+      ${_wAttBtns}
       <div style="text-align:center"><span id="wxBadgeWeekly_${d.date}" style="font-size:11px;color:#64748B;font-weight:700"></span></div>
     </div>`;
   };
