@@ -664,6 +664,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <button class="stab" onclick="switchAdminSub('schedule',this)">🗓️ 일정·라운드</button>
         <button class="stab" onclick="switchAdminSub('events',this)">🎉 이벤트전</button>
         <button class="stab" onclick="switchAdminSub('status',this)">📊 현황</button>
+        <button class="stab" onclick="switchAdminSub('announce',this)">📢 공지사항</button>
       </div>
 
       <div id="adminGroup-members">
@@ -854,6 +855,27 @@ tr:nth-child(even){background:#F5FCFB;}
 
       <div id="adminGroup-events" style="display:none">
         <div id="adminEvList"></div>
+      </div>
+
+      <div id="adminGroup-announce" style="display:none">
+        <div class="admin-sec">
+          <h3>📢 공지사항 관리</h3>
+          <div style="font-size:11px;color:#64748B;margin-bottom:12px">활성화된 공지가 홈 화면 상단에 표시됩니다.</div>
+          <!-- 새 공지 작성 폼 -->
+          <div style="background:#F0F9FF;border:1px solid rgba(96,165,250,0.3);border-radius:12px;padding:12px 14px;margin-bottom:14px">
+            <div style="font-size:12px;font-weight:700;color:#2563EB;margin-bottom:8px">새 공지 작성</div>
+            <input id="annTitleInp" class="row-inp" placeholder="제목 (예: 7월 정기대회 안내)" style="width:100%;margin-bottom:8px">
+            <textarea id="annContentInp" class="row-inp" placeholder="내용을 입력하세요 (1~2줄 권장)" rows="3" style="width:100%;resize:vertical;font-family:inherit;font-size:13px"></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748B;cursor:pointer">
+                <input type="checkbox" id="annActiveChk" checked style="accent-color:#0D9488"> 즉시 활성화
+              </label>
+              <button onclick="createAnnouncement()" style="margin-left:auto;padding:6px 14px;background:linear-gradient(135deg,#0D9488,#0369a1);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">📢 공지 등록</button>
+            </div>
+          </div>
+          <!-- 공지 목록 -->
+          <div id="adminAnnounceList"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -1181,6 +1203,7 @@ let days = [];
 let openAttBodies = new Set();
 let events = [];
 let schedules = [];
+let announcements = [];
 let boardPosts = [];
 let meetupCurrentScheduleId = null;
 let meetupCurrentRounds = [];
@@ -4710,14 +4733,86 @@ function renderAdminEvents(){
   }).join('');
 }
 
+// ── 공지사항 관리 ───────────────────────────────────────────────────
+function renderAdminAnnouncements() {
+  const el = document.getElementById('adminAnnounceList');
+  if (!el) return;
+  const sorted = [...announcements].sort((a,b)=>{
+    const at = a.updatedAt?.seconds||0, bt = b.updatedAt?.seconds||0;
+    return bt - at;
+  });
+  el.innerHTML = sorted.length ? sorted.map(ann=>`
+    <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:800;color:#1E293B;margin-bottom:2px">${ann.title}</div>
+          <div style="font-size:12px;color:#64748B;line-height:1.4;word-break:break-all">${ann.content}</div>
+        </div>
+        <span style="flex-shrink:0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;${ann.active
+          ?'background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)'
+          :'background:rgba(148,163,184,0.1);color:#94A3B8;border:1px solid rgba(148,163,184,0.25)'}">
+          ${ann.active?'● 활성':'○ 비활성'}
+        </span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="toggleAnnouncement('${ann.id}',${!ann.active})"
+          style="font-size:11px;padding:4px 10px;border-radius:7px;border:1px solid ${ann.active?'rgba(239,68,68,0.35)':'rgba(52,211,153,0.4)'};background:none;color:${ann.active?'#f87171':'#059669'};cursor:pointer">
+          ${ann.active?'비활성화':'활성화'}
+        </button>
+        <button onclick="editAnnouncement('${ann.id}')"
+          style="font-size:11px;padding:4px 10px;border-radius:7px;border:1px solid rgba(96,165,250,0.4);background:none;color:#2563EB;cursor:pointer">✏️ 수정</button>
+        <button onclick="deleteAnnouncement('${ann.id}')"
+          style="font-size:11px;padding:4px 10px;border-radius:7px;border:1px solid rgba(239,68,68,0.3);background:none;color:#f87171;cursor:pointer">삭제</button>
+      </div>
+    </div>`).join('')
+    : '<div style="color:#94A3B8;font-size:13px;padding:4px 0">등록된 공지사항이 없어요</div>';
+}
+
+window.createAnnouncement = async function(){
+  const title = document.getElementById('annTitleInp').value.trim();
+  const content = document.getElementById('annContentInp').value.trim();
+  if (!title || !content) { alert('제목과 내용을 모두 입력해주세요'); return; }
+  const active = document.getElementById('annActiveChk').checked;
+  await addDoc(collection(db,'announcements'), { title, content, active, updatedAt: serverTimestamp() });
+  document.getElementById('annTitleInp').value = '';
+  document.getElementById('annContentInp').value = '';
+};
+
+window.toggleAnnouncement = async function(id, active){
+  await updateDoc(doc(db,'announcements',id), { active, updatedAt: serverTimestamp() });
+};
+
+window.editAnnouncement = async function(id){
+  const ann = announcements.find(a=>a.id===id);
+  if (!ann) return;
+  const title = prompt('제목:', ann.title);
+  if (title===null) return;
+  const content = prompt('내용:', ann.content);
+  if (content===null) return;
+  await updateDoc(doc(db,'announcements',id), { title:title.trim(), content:content.trim(), updatedAt:serverTimestamp() });
+};
+
+window.deleteAnnouncement = async function(id){
+  if (!confirm('이 공지사항을 삭제할까요?')) return;
+  await deleteDoc(doc(db,'announcements',id));
+};
+
+window.dismissAnnouncement = function(id){
+  const today = new Date().toISOString().slice(0,10);
+  localStorage.setItem(`dismiss_ann_${id}_${today}`, '1');
+  const banner = document.getElementById('announceBanner');
+  if (banner) banner.style.display = 'none';
+};
+
 // 탭
 window.switchAdminSub = function(key, btn){
-  ['members','match','schedule','events','status'].forEach(k => {
+  ['members','match','schedule','events','status','announce'].forEach(k => {
     const el = document.getElementById(`adminGroup-${k}`);
     if (el) el.style.display = (k === key) ? 'block' : 'none';
   });
   document.querySelectorAll('#tab-admin .subtabs .stab').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
+  if (key === 'announce') renderAdminAnnouncements();
 };
 
 window.switchTab=function(tab,btn){
@@ -6086,9 +6181,28 @@ function renderHomeTab() {
     cardPairHtml = `<div style="margin-bottom:12px">${rightColumnHtml}</div>`;
   }
 
-  // 배치 순서: 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 다가오는 일정 → 바로가기
+  // ── 공지사항 배너 ──────────────────────────────────────────────────
+  const today0 = new Date().toISOString().slice(0,10);
+  const activeAnn = [...announcements]
+    .filter(a=>a.active)
+    .sort((a,b)=>(b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0] || null;
+  const annBannerHtml = (activeAnn && localStorage.getItem(`dismiss_ann_${activeAnn.id}_${today0}`) !== '1')
+    ? `<div id="announceBanner" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.38);border-radius:12px;padding:9px 12px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px">
+        <span style="font-size:16px;flex-shrink:0;line-height:1.4">📢</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:800;color:#D97706;margin-bottom:1px">${activeAnn.title}</div>
+          <div style="font-size:12px;color:#78350F;line-height:1.4;word-break:break-all">${activeAnn.content}</div>
+        </div>
+        <button onclick="dismissAnnouncement('${activeAnn.id}')" style="background:none;border:none;color:#94A3B8;font-size:20px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>
+      </div>`
+    : '';
+
+  // 배치 순서: 공지배너 → 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 다가오는 일정 → 바로가기
   el.innerHTML = `
     <div style="padding-top:12px">
+      <!-- 공지사항 배너 -->
+      ${annBannerHtml}
+
       <!-- 웰컴 배너 -->
       <div style="background:linear-gradient(135deg,#0d1b6e 0%,#1e40af 45%,#0369a1 100%);border-radius:18px;padding:18px 16px 16px;margin-bottom:12px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-24px;right:-16px;font-size:90px;opacity:0.07;pointer-events:none;user-select:none">🎾</div>
@@ -6556,7 +6670,16 @@ function initFortune() {
     const cur = sel.value;
     sel.innerHTML = '<option value="">이름을 선택하세요</option>' +
       allPlayers().map(p=>`<option value="${p.name}">${p.name} ${p.gender==='f'?'♀':'♂'}</option>`).join('');
-    if(cur) sel.value = cur;
+    if(cur) {
+      sel.value = cur;
+    } else if (myClaim && myClaim.name) {
+      sel.value = myClaim.name;
+      const me = members.find(x => x.name === myClaim.name);
+      if (me && me.birthDate) {
+        const bEl = document.getElementById('fortuneBirth');
+        if (bEl && !bEl.value) bEl.value = me.birthDate;
+      }
+    }
   }
 }
 
@@ -7973,6 +8096,11 @@ onSnapshot(collection(db,'schedules'), snap => {
 onSnapshot(collection(db,'boardPosts'), snap => {
   boardPosts = snap.docs.map(d=>({id:d.id,...d.data()}));
   renderBoard();
+});
+onSnapshot(collection(db,'announcements'), snap => {
+  announcements = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderHomeTab();
+  renderAdminAnnouncements();
 });
 // ── 실시간 스코어 ──
 const LS_PTS = ['0','15','30','40'];
