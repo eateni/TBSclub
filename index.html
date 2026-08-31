@@ -295,12 +295,12 @@ tr:nth-child(even){background:#F5FCFB;}
 #introVideo{ max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; background:#000; }
 #introSkip{
   position:absolute; bottom:30px; right:20px; z-index:2;
-  background:rgba(0,0,0,0.45); color:rgba(3,12,45,0.85);
-  border:1px solid rgba(3,12,45,0.35); border-radius:20px;
+  background:rgba(0,0,0,0.45); color:rgba(255,255,255,0.9);
+  border:1px solid rgba(255,255,255,0.35); border-radius:20px;
   padding:7px 16px; font-size:12px; font-weight:600; cursor:pointer;
   backdrop-filter:blur(4px);
 }
-#introSkip:hover{ background:rgba(0,0,0,0.7); }
+#introSkip:hover{ background:rgba(0,0,0,0.7); color:#fff; }
 
 /* ── 홈 바로가기 카테고리 카드 ── */
 @keyframes glowGold   { 0%,100%{box-shadow:0 2px 0 rgba(0,0,0,0.25)} 50%{box-shadow:0 2px 22px rgba(245,158,11,0.28),0 0 0 1px rgba(245,158,11,0.18)} }
@@ -4773,9 +4773,16 @@ window.createAnnouncement = async function(){
   const content = document.getElementById('annContentInp').value.trim();
   if (!title || !content) { alert('제목과 내용을 모두 입력해주세요'); return; }
   const active = document.getElementById('annActiveChk').checked;
-  await addDoc(collection(db,'announcements'), { title, content, active, updatedAt: serverTimestamp() });
-  document.getElementById('annTitleInp').value = '';
-  document.getElementById('annContentInp').value = '';
+  try {
+    const ref = await addDoc(collection(db,'announcements'), { title, content, active, updatedAt: serverTimestamp() });
+    announcements.push({ id: ref.id, title, content, active });
+    document.getElementById('annTitleInp').value = '';
+    document.getElementById('annContentInp').value = '';
+    renderAdminAnnouncements();
+    alert('공지가 등록됐어요!');
+  } catch(e) {
+    alert('저장 실패: ' + (e.message || e));
+  }
 };
 
 window.toggleAnnouncement = async function(id, active){
