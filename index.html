@@ -860,13 +860,21 @@ tr:nth-child(even){background:#F5FCFB;}
       <div id="adminGroup-announce" style="display:none">
         <div class="admin-sec">
           <h3>📢 공지사항 관리</h3>
-          <div style="font-size:11px;color:#64748B;margin-bottom:12px">활성화된 공지가 홈 화면 상단에 표시됩니다.</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:12px">활성화된 공지가 배너 또는 팝업으로 표시됩니다.</div>
           <!-- 새 공지 작성 폼 -->
           <div style="background:#F0F9FF;border:1px solid rgba(96,165,250,0.3);border-radius:12px;padding:12px 14px;margin-bottom:14px">
             <div style="font-size:12px;font-weight:700;color:#2563EB;margin-bottom:8px">새 공지 작성</div>
             <input id="annTitleInp" class="row-inp" placeholder="제목 (예: 7월 정기대회 안내)" style="width:100%;margin-bottom:8px">
             <textarea id="annContentInp" class="row-inp" placeholder="내용을 입력하세요 (1~2줄 권장)" rows="3" style="width:100%;resize:vertical;font-family:inherit;font-size:13px"></textarea>
-            <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+            <div style="display:flex;gap:16px;margin-top:10px;margin-bottom:6px">
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748B;cursor:pointer">
+                <input type="radio" name="annDisplayType" value="banner" id="annTypeBanner" checked style="accent-color:#D97706"> 🔔 배너 (상단)
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748B;cursor:pointer">
+                <input type="radio" name="annDisplayType" value="popup" id="annTypePopup" style="accent-color:#6D28D9"> 💬 팝업 (모달)
+              </label>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:4px;align-items:center">
               <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:#64748B;cursor:pointer">
                 <input type="checkbox" id="annActiveChk" checked style="accent-color:#0D9488"> 즉시 활성화
               </label>
@@ -4741,11 +4749,17 @@ function renderAdminAnnouncements() {
     const at = a.updatedAt?.seconds||0, bt = b.updatedAt?.seconds||0;
     return bt - at;
   });
-  el.innerHTML = sorted.length ? sorted.map(ann=>`
+  el.innerHTML = sorted.length ? sorted.map(ann=>{
+    const dt = ann.displayType === 'popup' ? '💬 팝업' : '🔔 배너';
+    const dtColor = ann.displayType === 'popup' ? 'rgba(109,40,217,0.15);color:#6D28D9;border:1px solid rgba(109,40,217,0.3)' : 'rgba(245,158,11,0.12);color:#D97706;border:1px solid rgba(245,158,11,0.4)';
+    return `
     <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:10px;padding:12px 14px;margin-bottom:8px">
       <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
         <div style="flex:1;min-width:0">
-          <div style="font-size:13px;font-weight:800;color:#1E293B;margin-bottom:2px">${ann.title}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+            <div style="font-size:13px;font-weight:800;color:#1E293B">${ann.title}</div>
+            <span style="font-size:9px;font-weight:700;padding:1px 6px;border-radius:8px;background:${dtColor};flex-shrink:0">${dt}</span>
+          </div>
           <div style="font-size:12px;color:#64748B;line-height:1.4;word-break:break-all">${ann.content}</div>
         </div>
         <span style="flex-shrink:0;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;${ann.active
@@ -4764,7 +4778,8 @@ function renderAdminAnnouncements() {
         <button onclick="deleteAnnouncement('${ann.id}')"
           style="font-size:11px;padding:4px 10px;border-radius:7px;border:1px solid rgba(239,68,68,0.3);background:none;color:#f87171;cursor:pointer">삭제</button>
       </div>
-    </div>`).join('')
+    </div>`;
+  }).join('')
     : '<div style="color:#94A3B8;font-size:13px;padding:4px 0">등록된 공지사항이 없어요</div>';
 }
 
@@ -4773,11 +4788,13 @@ window.createAnnouncement = async function(){
   const content = document.getElementById('annContentInp').value.trim();
   if (!title || !content) { alert('제목과 내용을 모두 입력해주세요'); return; }
   const active = document.getElementById('annActiveChk').checked;
+  const displayType = document.querySelector('input[name="annDisplayType"]:checked')?.value || 'banner';
   try {
-    const ref = await addDoc(collection(db,'announcements'), { title, content, active, updatedAt: serverTimestamp() });
-    announcements.push({ id: ref.id, title, content, active });
+    const ref = await addDoc(collection(db,'announcements'), { title, content, active, displayType, updatedAt: serverTimestamp() });
+    announcements.push({ id: ref.id, title, content, active, displayType });
     document.getElementById('annTitleInp').value = '';
     document.getElementById('annContentInp').value = '';
+    document.getElementById('annTypeBanner').checked = true;
     renderAdminAnnouncements();
     alert('공지가 등록됐어요!');
   } catch(e) {
@@ -4796,7 +4813,10 @@ window.editAnnouncement = async function(id){
   if (title===null) return;
   const content = prompt('내용:', ann.content);
   if (content===null) return;
-  await updateDoc(doc(db,'announcements',id), { title:title.trim(), content:content.trim(), updatedAt:serverTimestamp() });
+  const dtRaw = prompt(`표시 방식 (현재: ${ann.displayType||'banner'})\nbanner = 상단 배너 / popup = 팝업 모달`, ann.displayType||'banner');
+  if (dtRaw===null) return;
+  const displayType = dtRaw.trim() === 'popup' ? 'popup' : 'banner';
+  await updateDoc(doc(db,'announcements',id), { title:title.trim(), content:content.trim(), displayType, updatedAt:serverTimestamp() });
 };
 
 window.deleteAnnouncement = async function(id){
@@ -4807,9 +4827,53 @@ window.deleteAnnouncement = async function(id){
 window.dismissAnnouncement = function(id){
   const today = new Date().toISOString().slice(0,10);
   localStorage.setItem(`dismiss_ann_${id}_${today}`, '1');
-  const banner = document.getElementById('announceBanner');
+  const banner = document.getElementById(`announceBanner_${id}`);
   if (banner) banner.style.display = 'none';
 };
+
+// ── 공지 팝업 ────────────────────────────────────────────────────────
+let annPopupQueue = [];
+let annPopupCurrentId = null;
+
+function showNextAnnPopup() {
+  if (!annPopupQueue.length) return;
+  const ann = annPopupQueue.shift();
+  annPopupCurrentId = ann.id;
+  const el = document.getElementById('annPopupOverlay');
+  if (!el) return;
+  document.getElementById('annPopupTitle').textContent = ann.title;
+  document.getElementById('annPopupContent').textContent = ann.content;
+  const chk = document.getElementById('annPopupDismissChk');
+  if (chk) chk.checked = false;
+  el.style.display = 'flex';
+}
+
+window.closeAnnPopup = function(){
+  const today = new Date().toISOString().slice(0,10);
+  const chk = document.getElementById('annPopupDismissChk');
+  if (chk && chk.checked && annPopupCurrentId) {
+    localStorage.setItem(`dismiss_ann_${annPopupCurrentId}_${today}`, '1');
+  }
+  const el = document.getElementById('annPopupOverlay');
+  if (el) el.style.display = 'none';
+  annPopupCurrentId = null;
+  showNextAnnPopup();
+};
+
+function triggerAnnPopups() {
+  const loggedIn = isAdmin || (myClaim && myClaim !== 'pending');
+  if (!loggedIn) return;
+  const today = new Date().toISOString().slice(0,10);
+  const pending = [...announcements]
+    .filter(a => a.active && a.displayType === 'popup')
+    .filter(a => localStorage.getItem(`dismiss_ann_${a.id}_${today}`) !== '1')
+    .sort((a,b) => (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
+  if (!pending.length) return;
+  const overlay = document.getElementById('annPopupOverlay');
+  if (overlay && overlay.style.display === 'flex') return; // already showing
+  annPopupQueue = pending;
+  showNextAnnPopup();
+}
 
 // 탭
 window.switchAdminSub = function(key, btn){
@@ -6188,21 +6252,21 @@ function renderHomeTab() {
     cardPairHtml = `<div style="margin-bottom:12px">${rightColumnHtml}</div>`;
   }
 
-  // ── 공지사항 배너 ──────────────────────────────────────────────────
+  // ── 공지사항 배너 (배너 타입만, 여러 개 동시 표시) ──────────────
   const today0 = new Date().toISOString().slice(0,10);
-  const activeAnn = [...announcements]
-    .filter(a=>a.active)
-    .sort((a,b)=>(b.updatedAt?.seconds||0)-(a.updatedAt?.seconds||0))[0] || null;
-  const annBannerHtml = (activeAnn && localStorage.getItem(`dismiss_ann_${activeAnn.id}_${today0}`) !== '1')
-    ? `<div id="announceBanner" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.38);border-radius:12px;padding:9px 12px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px">
-        <span style="font-size:16px;flex-shrink:0;line-height:1.4">📢</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:800;color:#D97706;margin-bottom:1px">${activeAnn.title}</div>
-          <div style="font-size:12px;color:#78350F;line-height:1.4;word-break:break-all">${activeAnn.content}</div>
-        </div>
-        <button onclick="dismissAnnouncement('${activeAnn.id}')" style="background:none;border:none;color:#94A3B8;font-size:20px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>
-      </div>`
-    : '';
+  const activeBanners = [...announcements]
+    .filter(a => a.active && (a.displayType === 'banner' || !a.displayType))
+    .filter(a => localStorage.getItem(`dismiss_ann_${a.id}_${today0}`) !== '1')
+    .sort((a,b) => (b.updatedAt?.seconds||0) - (a.updatedAt?.seconds||0));
+  const annBannerHtml = activeBanners.map(ann => `
+    <div id="announceBanner_${ann.id}" style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.38);border-radius:12px;padding:9px 12px;margin-bottom:10px;display:flex;align-items:flex-start;gap:10px">
+      <span style="font-size:16px;flex-shrink:0;line-height:1.4">📢</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:800;color:#D97706;margin-bottom:1px">${ann.title}</div>
+        <div style="font-size:12px;color:#78350F;line-height:1.4;word-break:break-all">${ann.content}</div>
+      </div>
+      <button onclick="dismissAnnouncement('${ann.id}')" style="background:none;border:none;color:#94A3B8;font-size:20px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>
+    </div>`).join('');
 
   // 배치 순서: 공지배너 → 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 다가오는 일정 → 바로가기
   el.innerHTML = `
@@ -7652,6 +7716,7 @@ window.doAdminLogin=async function(){
     lastAuthUser = cred.user;
     setAdminMode(cred.user.email === ADMIN_EMAIL);
     await resolveMyClaim();
+    triggerAnnPopups();
     hide('adminLoginModal');
   } catch(e){
     console.error('로그인 실패:', e.code, e.message);
@@ -8032,6 +8097,7 @@ onAuthStateChanged(auth, async user => {
   setAdminMode(!!(user && user.email === ADMIN_EMAIL));
   lastAuthUser = user;
   await resolveMyClaim();
+  if (user) triggerAnnPopups();
 });
 
 // Firestore 실시간 (누구나 읽기)
@@ -8108,6 +8174,7 @@ onSnapshot(collection(db,'announcements'), snap => {
   announcements = snap.docs.map(d=>({id:d.id,...d.data()}));
   renderHomeTab();
   renderAdminAnnouncements();
+  triggerAnnPopups();
 });
 // ── 실시간 스코어 ──
 const LS_PTS = ['0','15','30','40'];
@@ -8699,6 +8766,19 @@ function lsRenderLog() {
       <button class="ls-confirm-btn" onclick="lsConfirmEnd()">✅ 결과 저장 &amp; 종료</button>
       <button class="ls-cancel-btn" onclick="lsCloseEnd()">계속 입력</button>
     </div>
+  </div>
+</div>
+
+<!-- 📢 공지사항 팝업 모달 -->
+<div id="annPopupOverlay" style="display:none;position:fixed;inset:0;z-index:99500;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;padding:24px">
+  <div style="background:#fff;border-radius:20px;padding:24px 20px 20px;max-width:340px;width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.18)">
+    <div style="font-size:26px;text-align:center;margin-bottom:10px">📢</div>
+    <div id="annPopupTitle" style="font-size:16px;font-weight:900;color:#1E293B;margin-bottom:8px;text-align:center"></div>
+    <div id="annPopupContent" style="font-size:13px;color:#64748B;line-height:1.6;margin-bottom:16px;word-break:break-all"></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#94A3B8;margin-bottom:14px;cursor:pointer">
+      <input type="checkbox" id="annPopupDismissChk" style="accent-color:#0D9488;width:14px;height:14px"> 오늘 하루 안 보기
+    </label>
+    <button onclick="closeAnnPopup()" style="width:100%;padding:11px;background:linear-gradient(135deg,#0D9488,#0369a1);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer">확인</button>
   </div>
 </div>
 
