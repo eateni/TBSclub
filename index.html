@@ -6620,8 +6620,7 @@ window.showAttendList = function(dayId) {
     var months = (now.getFullYear() - sy) * 12 + (now.getMonth() + 1 - sm);
     if (months < 0) return '';
     var startLabel = String(sy).slice(-2) + '.' + String(sm).padStart(2, '0') + '~';
-    var expLabel = months < 12 ? months + '개월차' : Math.floor(months / 12) + '년차';
-    return startLabel + ' · ' + expLabel;
+    return startLabel;
   }
 
   function makeChip(obj, isGuest) {
