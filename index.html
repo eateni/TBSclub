@@ -6438,7 +6438,7 @@ window.openEvDetailFromHome=function(evId){
 // 홈 바로가기 카테고리 카드 토글 (아코디언 + 하위 항목 stagger 애니)
 window.toggleCategory = function(cat) {
   openCategory = (openCategory === cat) ? null : cat;
-  ['record', 'match', 'community'].forEach(function(id) {
+  ['record', 'match', 'community', 'admin-panel'].forEach(function(id) {
     var body  = document.getElementById('sc-body-' + id);
     var arrow = document.querySelector('.sc-arrow[data-cat="' + id + '"]');
     var on    = (openCategory === id);
