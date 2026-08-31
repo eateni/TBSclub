@@ -6432,9 +6432,14 @@ function renderHomeTab() {
           <div style="flex:1;min-width:0">
             <div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${welcomeName}</div>
             <div style="font-size:13px;color:rgba(200,225,255,0.8);margin-bottom:12px">${subMsg}</div>
-            <div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.13);border-radius:20px;padding:4px 11px">
-              <span style="font-size:13px">📆</span>
-              <span style="font-size:13px;font-weight:700;color:#e0f2fe">오늘 ${todayLabel}</span>
+            <div style="display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;align-items:center;gap:6px">
+              <div style="display:-webkit-inline-flex;display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.13);border-radius:20px;padding:4px 11px">
+                <span style="font-size:13px">📆</span>
+                <span style="font-size:13px;font-weight:700;color:#e0f2fe">오늘 ${todayLabel}</span>
+              </div>
+              <div style="display:-webkit-inline-flex;display:inline-flex;align-items:center;background:rgba(245,158,11,0.2);border:1px solid rgba(245,158,11,0.4);border-radius:20px;padding:3px 10px">
+                <span style="font-size:11px;font-weight:700;color:rgba(253,230,138,0.9)">S${currentSeason} 진행중</span>
+              </div>
             </div>
           </div>
           <!-- 우측: 미니 캘린더 -->
@@ -6443,7 +6448,7 @@ function renderHomeTab() {
         ${bannerSummaryHtml}
       </div>
 
-      <!-- 요약 통계 4칸 -->
+      ${false /* 요약 통계 4칸 비활성화 — 복원 시 false → true */ ? `
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
         <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:12px;padding:10px 5px;text-align:center">
           <div style="font-size:18px;font-weight:900;color:#2563EB">${members.length}</div>
@@ -6461,7 +6466,7 @@ function renderHomeTab() {
           <div style="font-size:18px;font-weight:900;color:#f59e0b">S${currentSeason}</div>
           <div style="font-size:11px;color:#64748B;margin-top:2px">현재시즌</div>
         </div>
-      </div>
+      </div>` : ''}
 
       <!-- 내 기록 상세 (로그인 시만) -->
       ${myRecordHtml}
