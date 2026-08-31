@@ -5918,7 +5918,7 @@ async function fetchDayWeather(dateStr, place) {
   } catch (e) { return null; }
 }
 
-async function updateHomeWeather(gameDate, gamePlace, evDate, evPlace, schedArr) {
+async function updateHomeWeather(gameDate, gamePlace, evDate, evPlace, schedArr, weeklyArr) {
   const now = new Date();
   const cutoffMs = now.getTime() + 16 * 24 * 60 * 60 * 1000;
   const cutoff = new Date(cutoffMs).toISOString().slice(0, 10);
@@ -5935,6 +5935,13 @@ async function updateHomeWeather(gameDate, gamePlace, evDate, evPlace, schedArr)
     if (date && date <= cutoff) {
       const wx = await fetchDayWeather(date, place);
       if (wx) { const el = document.getElementById('wxBadgeSched_' + i); if (el) el.textContent = wx; }
+    }
+  }
+  for (let i = 0; i < (weeklyArr || []).length; i++) {
+    const { date, place } = weeklyArr[i];
+    if (date && date <= cutoff) {
+      const wx = await fetchDayWeather(date, place);
+      if (wx) { const el = document.getElementById('wxBadgeWeekly_' + date); if (el) el.textContent = wx; }
     }
   }
 }
@@ -6291,12 +6298,15 @@ function renderHomeTab() {
     const _waG = guests.filter(function(g){ return (d.guests||[]).includes(g.name); }).length;
     const _wRds = d.rounds || [];
     const _wTM = _wRds.reduce(function(a,r){ return a+(r.matches||[]).length; }, 0);
-    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 12px">
+    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px">🎾 ${weekdays[_wd.getDay()]}요일 게임</div>
-      <div style="font-size:14px;font-weight:900;color:#D97706;margin-bottom:3px">${_wdl}</div>
-      <div style="font-size:12px;color:#059669">✅ ${_waM+_waG}명 참석</div>
-      ${d.place?`<div style="font-size:11px;color:#2563EB;margin-top:2px">📍 ${d.place}</div>`:''}
-      ${_wTM?`<div style="font-size:11px;color:#6D28D9;margin-top:2px">${_wRds.length}라운드 · ${_wTM}경기</div>`:''}
+      <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${_wdl}</div>
+      <div style="font-size:11px;color:#059669;margin-bottom:4px;text-align:center">✅ ${_waM+_waG}명 참석</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;margin-bottom:4px">
+        ${d.place?`<span style="font-size:11px;color:#2563EB">📍 ${d.place}</span>`:''}
+        ${_wTM?`<span style="font-size:11px;color:#6D28D9">${_wRds.length}라운드 · ${_wTM}경기</span>`:''}
+      </div>
+      <div style="text-align:center"><span id="wxBadgeWeekly_${d.date}" style="font-size:11px;color:#64748B;font-weight:700"></span></div>
     </div>`;
   };
   // ─ 우측 열: 이벤트전만 담당 (주간 게임은 별도 행으로 분리) ─
@@ -6412,7 +6422,8 @@ function renderHomeTab() {
     nextGameDay ? nextGameDay.place : null,
     nextExchangeEv ? nextExchangeEv.date : null,
     nextExchangeEv ? nextExchangeEv.place : null,
-    memberScheds.map(s => ({ date: s.date, place: s.place || null }))
+    memberScheds.map(s => ({ date: s.date, place: s.place || null })),
+    [fridayGame, saturdayGame].filter(Boolean).map(function(d){ return { date: d.date, place: d.place || null }; })
   );
 }
 
