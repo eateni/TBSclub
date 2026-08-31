@@ -921,6 +921,21 @@ tr:nth-child(even){background:#F5FCFB;}
         <option value="m">남</option><option value="f">여</option>
       </select>
     </div>
+    <label style="font-size:12px;color:#64748B;display:block;margin-top:10px">테니스 시작년월 <span style="color:#94A3B8;font-size:11px">(선택)</span></label>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <select id="signupTennisYear" class="row-sel" style="flex:1">
+        <option value="">연도</option>
+      </select>
+      <select id="signupTennisMonth" class="row-sel" style="flex:1">
+        <option value="">월</option>
+        <option value="01">1월</option><option value="02">2월</option><option value="03">3월</option>
+        <option value="04">4월</option><option value="05">5월</option><option value="06">6월</option>
+        <option value="07">7월</option><option value="08">8월</option><option value="09">9월</option>
+        <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+      </select>
+    </div>
+    <label style="font-size:12px;color:#64748B;display:block">생년월일 <span style="color:#94A3B8;font-size:11px">(선택)</span></label>
+    <input type="date" id="signupBirthDate" class="row-inp" style="width:100%;margin-bottom:12px;margin-top:4px">
     <button onclick="doSignup()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a120a;border:none;border-radius:10px;font-weight:800;cursor:pointer">가입 신청</button>
     <div class="mft"><button class="btn-cancel" onclick="hide('signupModal')">취소</button></div>
   </div>
@@ -4373,17 +4388,25 @@ function renderAdmin(){
   // ── 정규 회원 칩 ──
   document.getElementById('memberChips').innerHTML = members.length
     ? members.map(m=>`
-        <span class="chip" style="display:inline-flex;align-items:center;gap:4px">
-          <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span>
-          ${m.name}
-          ${m.uid
-            ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)" title="Firebase 가입 완료">🔑 가입완료</span>`
-            : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(245,158,11,0.12);color:#B45309;border:1px solid rgba(245,158,11,0.4)" title="앱 미가입 (관리자 등록)">미가입</span>`}
-          <button onclick="renameMember('${m.name}')" title="이름 변경"
-            style="background:none;border:none;color:#2563EB;font-size:12px;cursor:pointer;padding:0 2px">✏️</button>
-          <button onclick="demoteMember('${m.name}')" title="게스트로 전환"
-            style="background:none;border:none;color:#D97706;font-size:12px;cursor:pointer;padding:0 2px">⬇️</button>
-          <button class="chip-x" onclick="delMember('${m.name}')">×</button>
+        <span class="chip" style="display:inline-flex;flex-direction:column;align-items:stretch;gap:2px">
+          <span style="display:flex;align-items:center;gap:4px">
+            <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span>
+            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</span>
+            ${m.uid
+              ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)" title="Firebase 가입 완료">🔑</span>`
+              : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(245,158,11,0.12);color:#B45309;border:1px solid rgba(245,158,11,0.4)" title="앱 미가입 (관리자 등록)">미가입</span>`}
+            <button onclick="renameMember('${m.name}')" title="이름 변경"
+              style="background:none;border:none;color:#2563EB;font-size:11px;cursor:pointer;padding:0 1px">✏️</button>
+            <button onclick="demoteMember('${m.name}')" title="게스트로 전환"
+              style="background:none;border:none;color:#D97706;font-size:11px;cursor:pointer;padding:0 1px">⬇️</button>
+            <button class="chip-x" onclick="delMember('${m.name}')">×</button>
+          </span>
+          <span style="display:flex;gap:3px;flex-wrap:wrap">
+            <button onclick="editMemberField('${m.name}','birthDate')" title="생년월일: ${m.birthDate||'미입력'}"
+              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎂 ${m.birthDate||'—'}</button>
+            <button onclick="editMemberField('${m.name}','tennisStartDate')" title="테니스 시작: ${m.tennisStartDate||'미입력'}"
+              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎾 ${m.tennisStartDate||'—'}</button>
+          </span>
         </span>`).join('')
     : '<span style="color:#64748B;font-size:12px">등록된 회원 없음</span>';
 
@@ -7410,6 +7433,23 @@ window.renameGuest = async function(oldName){
   alert(`✅ "${trimmed}"으로 변경 완료!`);
 };
 
+// ── 회원 생년월일/테니스 시작년월 수정 ──
+window.editMemberField = async function(name, field){
+  const m = members.find(x=>x.name===name);
+  if (!m) return;
+  const labels = { birthDate:'생년월일 (YYYY-MM-DD 형식, 예: 1990-05-15)', tennisStartDate:'테니스 시작년월 (YYYY-MM 형식, 예: 2020-03)' };
+  const val = prompt(`${name}님의 ${labels[field]}\n비우면 삭제됩니다:`, m[field]||'');
+  if (val===null) return;
+  const trimmed = val.trim();
+  const newList = members.map(x=>{
+    if (x.name!==name) return x;
+    const u = {...x};
+    if (trimmed) u[field]=trimmed; else delete u[field];
+    return u;
+  });
+  await setDoc(doc(db,'club','members'), {list:newList});
+};
+
 // ── 정규회원 이름 변경 ──
 window.renameMember = async function(oldName){
   const newName = prompt(`"${oldName}"의 새 이름을 입력하세요:`, oldName);
@@ -7557,6 +7597,17 @@ function populateSignupNameSelect(){
     + names.map(n=>`<option value="${n}">${n}</option>`).join('')
     + '<option value="__new__">➕ 명단에 없어요 (새 이름으로 등록)</option>';
   if (cur) sel.value = cur;
+
+  const ySel = document.getElementById('signupTennisYear');
+  if (ySel && ySel.options.length <= 1) {
+    const curY = new Date().getFullYear();
+    for (let y = curY; y >= 1970; y--) {
+      const opt = document.createElement('option');
+      opt.value = String(y);
+      opt.textContent = `${y}년`;
+      ySel.appendChild(opt);
+    }
+  }
 }
 
 window.onSignupNameChange = function(){
@@ -7616,10 +7667,15 @@ window.doSignup = async function(){
     } catch(e) { alert('가입 실패: ' + (e.message || e)); return; }
   }
 
-  await addDoc(collection(db,'signupRequests'), {
-    uid, email, claimedName, gender, isNewName,
-    status: 'pending', requestedAt: serverTimestamp()
-  });
+  const tennisY = document.getElementById('signupTennisYear').value;
+  const tennisM = document.getElementById('signupTennisMonth').value;
+  const tennisStartDate = (tennisY && tennisM) ? `${tennisY}-${tennisM}` : '';
+  const birthDate = document.getElementById('signupBirthDate').value || '';
+
+  const reqData = { uid, email, claimedName, gender, isNewName, status: 'pending', requestedAt: serverTimestamp() };
+  if (tennisStartDate) reqData.tennisStartDate = tennisStartDate;
+  if (birthDate) reqData.birthDate = birthDate;
+  await addDoc(collection(db,'signupRequests'), reqData);
   alert('가입 신청 완료! 관리자 승인 후 이용하실 수 있어요.');
   googleAuthedUser = null;
   document.getElementById('signupEmailPwFields').style.display = '';
@@ -7635,13 +7691,22 @@ window.approveSignup = async function(reqId){
   const newName = req.claimedName;
 
   if (req.isNewName) {
-    await setDoc(doc(db,'club','members'), { list: [...members, { name:newName, gender:req.gender, uid:req.uid }] });
+    const newMemberObj = { name:newName, gender:req.gender, uid:req.uid };
+    if (req.birthDate) newMemberObj.birthDate = req.birthDate;
+    if (req.tennisStartDate) newMemberObj.tennisStartDate = req.tennisStartDate;
+    await setDoc(doc(db,'club','members'), { list: [...members, newMemberObj] });
   } else {
     const inMembers = members.some(m => m.name === req.claimedName);
     const targetList = inMembers ? members : guests;
     const collName = inMembers ? 'members' : 'guests';
     await setDoc(doc(db,'club',collName), {
-      list: targetList.map(x => x.name === req.claimedName ? { ...x, uid:req.uid } : x)
+      list: targetList.map(x => {
+        if (x.name !== req.claimedName) return x;
+        const u = { ...x, uid: req.uid };
+        if (req.birthDate) u.birthDate = req.birthDate;
+        if (req.tennisStartDate) u.tennisStartDate = req.tennisStartDate;
+        return u;
+      })
     });
   }
 
