@@ -529,8 +529,8 @@ tr:nth-child(even){background:#F5FCFB;}
       <!-- 월 캘린더 -->
       <div id="scheduleCalendar" style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:14px;margin-bottom:16px"></div>
 
-      <!-- 새 일정 작성 -->
-      <div style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:16px;margin-bottom:16px">
+      <!-- 새 일정 작성 (관리자만 표시) -->
+      <div id="scheduleNewSection" style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:16px;margin-bottom:16px">
         <div style="font-size:14px;font-weight:800;color:#2563EB;margin-bottom:12px">✏️ 새 일정 올리기</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div>
@@ -4977,6 +4977,9 @@ function initSchedule() {
   // 오늘 날짜 기본값
   const dEl = document.getElementById('schDate');
   if (dEl && !dEl.value) dEl.value = new Date().toISOString().slice(0,10);
+  // "새 일정 올리기" 섹션: 관리자만 표시
+  const newSection = document.getElementById('scheduleNewSection');
+  if (newSection) newSection.style.display = isAdmin ? '' : 'none';
   renderSchedules();
   // 마지막 확인 시각 저장 (NEW 배지 제거)
   try { localStorage.setItem('schLastSeen', Date.now()); } catch(e){}
@@ -6108,34 +6111,36 @@ function renderHomeTab() {
     const statusId = 'attStatus_' + dayId;
     const chgId = 'attChg_' + dayId;
     // btnRow: 미선택/변경 후 두 경우 모두 동일한 구조로 재사용
-    const btnRow = `<div style="display:-webkit-flex;display:flex">
-      <button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','참석')"
-        style="-webkit-flex:1;flex:1;margin-right:5px;cursor:pointer;font-size:11px;font-weight:800;
-          padding:6px 0;border-radius:8px;text-align:center;
-          background:rgba(52,211,153,0.12);color:#059669;border:1.5px solid rgba(52,211,153,0.4)">✅ 참석</button>
-      <button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','불참')"
-        style="-webkit-flex:1;flex:1;cursor:pointer;font-size:11px;font-weight:800;
-          padding:6px 0;border-radius:8px;text-align:center;
-          background:rgba(248,113,113,0.08);color:#f87171;border:1.5px solid rgba(248,113,113,0.35)">❌ 불참</button>
-    </div>`;
+    const btnRow = `<div style="display:-webkit-flex;display:flex">` +
+      `<button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','참석')"` +
+      ` style="-webkit-flex:1;flex:1;margin-right:5px;cursor:pointer;font-size:11px;font-weight:800;` +
+      `padding:6px 0;border-radius:8px;text-align:center;` +
+      `background:rgba(52,211,153,0.12);color:#059669;border:1.5px solid rgba(52,211,153,0.4)">✅ 참석</button>` +
+      `<button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','불참')"` +
+      ` style="-webkit-flex:1;flex:1;cursor:pointer;font-size:11px;font-weight:800;` +
+      `padding:6px 0;border-radius:8px;text-align:center;` +
+      `background:rgba(248,113,113,0.08);color:#f87171;border:1.5px solid rgba(248,113,113,0.35)">❌ 불참</button>` +
+      `</div>`;
     if (status) {
       const isAtt = status === '참석';
-      // "변경" 클릭: 상태 표시 줄 숨김 + 버튼 패널 표시 (단방향)
-      const onChg = `event.stopPropagation();document.getElementById('${statusId}').style.display='none';document.getElementById('${chgId}').style.display='block'`;
-      return `<div onclick="event.stopPropagation()" style="margin-top:8px">
-        <div id="${statusId}" style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center">
-          <span style="-webkit-flex:1;flex:1;font-size:11px;font-weight:800;text-align:center;padding:5px 6px;border-radius:8px;
-            background:${isAtt?'#059669':'#f87171'};color:#fff">
-            ${isAtt?'✅ 참석':'❌ 불참'}
-          </span>
-          <button onclick="${onChg}"
-            style="-webkit-flex:1;flex:1;font-size:11px;font-weight:800;padding:5px 6px;border-radius:8px;margin-left:5px;
-            background:rgba(100,116,139,0.1);border:1.5px solid rgba(100,116,139,0.3);
-            color:#64748B;cursor:pointer;text-align:center">변경 ↩</button>
-        </div>
-        <div id="${chgId}" style="display:none">${btnRow}</div>
-      </div>`;
+      // "변경" 클릭: statusId(상태줄) setAttribute로 완전 숨김 + chgId(버튼패널) 표시 (단방향)
+      // setAttribute('style',...) 사용 — Kakao WebView에서 .style.display 미적용 이슈 방지
+      const onChg = `event.stopPropagation();` +
+        `document.getElementById('${statusId}').setAttribute('style','display:none');` +
+        `document.getElementById('${chgId}').setAttribute('style','display:block')`;
+      return `<div onclick="event.stopPropagation()" style="margin-top:8px">` +
+        `<div id="${statusId}" style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center">` +
+          `<span style="-webkit-flex:1;flex:1;font-size:11px;font-weight:800;text-align:center;padding:5px 6px;border-radius:8px;` +
+            `background:${isAtt?'#059669':'#f87171'};color:#fff">${isAtt?'✅ 참석':'❌ 불참'}</span>` +
+          `<button onclick="${onChg}"` +
+            ` style="-webkit-flex:1;flex:1;font-size:11px;font-weight:800;padding:5px 6px;border-radius:8px;margin-left:5px;` +
+            `background:rgba(100,116,139,0.1);border:1.5px solid rgba(100,116,139,0.3);` +
+            `color:#64748B;cursor:pointer;text-align:center">변경 ↩</button>` +
+        `</div>` +
+        `<div id="${chgId}" style="display:none">${btnRow}</div>` +
+      `</div>`;
     }
+    // 미선택: 버튼 패널 바로 표시
     return `<div onclick="event.stopPropagation()" style="margin-top:8px">${btnRow}</div>`;
   };
 
@@ -6176,7 +6181,7 @@ function renderHomeTab() {
         mySchStatus = myAtt === false ? '불참' : myAtt === true ? '참석' : null;
       }
     }
-    const attendBtns = isMemberLoggedIn ? makeAttendBtns(mySchStatus, schId, d.id) : '';
+    const attendBtns = isMemberLoggedIn ? makeAttendBtns(mySchStatus, schId, d.id + '_ng') : '';
     return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;margin-bottom:5px">
         <span style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:10px">🎾 다음 게임</span>
@@ -6286,9 +6291,9 @@ function renderHomeTab() {
   // 바로가기 — 확장형 카테고리 카드
   var CATS = [
     { id:'record',    icon:'📊', label:'기록',     grad:'linear-gradient(135deg,rgba(120,85,10,0.28),rgba(245,158,11,0.1))',   border:'rgba(245,158,11,0.38)', cardCls:'sc-card-record',
-      items:[{icon:'🏆',name:'랭킹 순위',go:'ranking'},{icon:'📈',name:'내 성적',go:'analysis'},{icon:'📅',name:'기간 리포트',go:'terra'},{icon:'👫',name:'페어 랭킹',go:'pairs'}] },
+      items:[{icon:'🏆',name:'랭킹 순위',go:'ranking'},{icon:'📈',name:'내 성적',go:'analysis'}].concat(isAdmin?[{icon:'📅',name:'기간 리포트',go:'terra'}]:[]).concat([{icon:'👫',name:'페어 랭킹',go:'pairs'}]) },
     { id:'match',     icon:'🎾', label:'경기',     grad:'linear-gradient(135deg,rgba(5,46,22,0.32),rgba(52,211,153,0.1))',    border:'rgba(52,211,153,0.38)', cardCls:'sc-card-match',
-      items:[{icon:'📋',name:'스코어보드',go:'league'},{icon:'✅',name:'출석체크',go:'schedule'},{icon:'🎉',name:'이벤트전',go:'event'}] },
+      items:[{icon:'📋',name:'스코어보드',go:'league'}].concat(isAdmin?[{icon:'✅',name:'출석체크',go:'schedule'}]:[]).concat([{icon:'🎉',name:'이벤트전',go:'event'}]) },
     { id:'community', icon:'💬', label:'커뮤니티', grad:'linear-gradient(135deg,rgba(40,10,80,0.32),rgba(167,139,250,0.1))', border:'rgba(167,139,250,0.38)', cardCls:'sc-card-community',
       items:[{icon:'🍀',name:'오늘의 운세',go:'fortune'},{icon:'📰',name:'게시판',go:'board'},{icon:'📸',name:'사진/동영상',go:'photo'}] },
   ];
@@ -6352,7 +6357,7 @@ function renderHomeTab() {
         _wMyStatus = _wMyAtt === false ? '불참' : _wMyAtt === true ? '참석' : null;
       }
     }
-    const _wAttBtns = isMemberLoggedIn ? makeAttendBtns(_wMyStatus, _wSchId, d.id) : '';
+    const _wAttBtns = isMemberLoggedIn ? makeAttendBtns(_wMyStatus, _wSchId, d.id + '_wk') : '';
     return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px">🎾 ${weekdays[_wd.getDay()]}요일 게임</div>
       <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${_wdl}</div>
