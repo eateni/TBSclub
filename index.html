@@ -6061,7 +6061,7 @@ function renderHomeTab() {
   // 요약 통계
   const thisMonth = todayStr.slice(0,7);
   const monthMatchCount = days.filter(d=>(d.date||'').startsWith(thisMonth) && (d.date||'')<=todayStr)
-    .reduce((a,d)=>a+(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).filter(m=>m.done).length,0),0);
+    .reduce((a,d)=>a+(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).filter(m=>m.done&&!m.isRally&&m.tag!=='랠리').length,0),0);
 
   // ── 내 기록 상세 (기록탭 renderMyRecordCard와 동일 구성) ──────────
   let myRecordHtml = '';
