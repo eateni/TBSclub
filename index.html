@@ -6107,11 +6107,13 @@ function renderHomeTab() {
   // ─ 참석/불참 버튼 HTML 공용 헬퍼 ─────────────────────────────────────
   // 선택 후: compact 상태 레이블 + "변경 ↩" 토글 버튼
   // 미선택: 나란히 두 버튼 전체 표시
-  const makeAttendBtns = function(status, schId, dayId) {
-    const statusId = 'attStatus_' + dayId;
-    const chgId = 'attChg_' + dayId;
-    // btnRow: 미선택/변경 후 두 경우 모두 동일한 구조로 재사용
-    const btnRow = `<div style="display:-webkit-flex;display:flex">` +
+  // domSuffix: DOM ID 고유성용 (d.id+'_ng'/'_wk'), dayId: Firestore 실제 문서 ID
+  const makeAttendBtns = function(status, schId, dayId, domSuffix) {
+    const sid = domSuffix || dayId;
+    const statusId = 'attStatus_' + sid;
+    const chgId = 'attChg_' + sid;
+    // 참석/불참 선택 버튼 행 (50:50) — dayId는 Firestore 실제 ID 그대로 사용
+    const btnRow = `<div style="display:-webkit-flex;display:flex;margin-top:6px">` +
       `<button onclick="event.stopPropagation();setMyGameAttend('${schId}','${dayId}','참석')"` +
       ` style="-webkit-flex:1;flex:1;margin-right:5px;cursor:pointer;font-size:11px;font-weight:800;` +
       `padding:6px 0;border-radius:8px;text-align:center;` +
@@ -6123,11 +6125,11 @@ function renderHomeTab() {
       `</div>`;
     if (status) {
       const isAtt = status === '참석';
-      // "변경" 클릭: statusId(상태줄) setAttribute로 완전 숨김 + chgId(버튼패널) 표시 (단방향)
-      // setAttribute('style',...) 사용 — Kakao WebView에서 .style.display 미적용 이슈 방지
+      // "변경" 클릭: chgId 버튼 패널만 토글 — statusId 상태줄은 그대로 위에 유지
+      // getAttribute('style') 비교로 toggle — setAttribute로 완전 교체하여 Kakao WebView 호환
       const onChg = `event.stopPropagation();` +
-        `document.getElementById('${statusId}').setAttribute('style','display:none');` +
-        `document.getElementById('${chgId}').setAttribute('style','display:block')`;
+        `(function(){var el=document.getElementById('${chgId}');` +
+        `el.setAttribute('style',el.getAttribute('style')==='display:none'?'display:block':'display:none')})()`;
       return `<div onclick="event.stopPropagation()" style="margin-top:8px">` +
         `<div id="${statusId}" style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center">` +
           `<span style="-webkit-flex:1;flex:1;font-size:11px;font-weight:800;text-align:center;padding:5px 6px;border-radius:8px;` +
@@ -6181,7 +6183,7 @@ function renderHomeTab() {
         mySchStatus = myAtt === false ? '불참' : myAtt === true ? '참석' : null;
       }
     }
-    const attendBtns = isMemberLoggedIn ? makeAttendBtns(mySchStatus, schId, d.id + '_ng') : '';
+    const attendBtns = isMemberLoggedIn ? makeAttendBtns(mySchStatus, schId, d.id, d.id + '_ng') : '';
     return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;margin-bottom:5px">
         <span style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:10px">🎾 다음 게임</span>
@@ -6357,7 +6359,7 @@ function renderHomeTab() {
         _wMyStatus = _wMyAtt === false ? '불참' : _wMyAtt === true ? '참석' : null;
       }
     }
-    const _wAttBtns = isMemberLoggedIn ? makeAttendBtns(_wMyStatus, _wSchId, d.id + '_wk') : '';
+    const _wAttBtns = isMemberLoggedIn ? makeAttendBtns(_wMyStatus, _wSchId, d.id, d.id + '_wk') : '';
     return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px">🎾 ${weekdays[_wd.getDay()]}요일 게임</div>
       <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${_wdl}</div>
@@ -6471,7 +6473,7 @@ function renderHomeTab() {
       <div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
         <div style="font-size:13px;font-weight:800;color:#64748B;margin-bottom:8px">📅 다가오는 일정</div>
         ${memberSchedsHtml}
-        <button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#2563EB;font-size:13px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>
+        ${isAdmin ? `<button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#2563EB;font-size:13px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>` : ''}
       </div>
 
       <!-- 바로가기 — 확장형 카테고리 카드 -->
