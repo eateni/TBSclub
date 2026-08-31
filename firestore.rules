@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 누구나 읽기 가능, days/terra/rounds는 누구나 쓰기 가능
+    match /days/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /terra/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+    match /rounds/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // 회원/설정/이벤트는 관리자(로그인)만 쓰기 가능
+    match /club/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
+    }
+    match /events/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // 일정 공유 - 누구나 읽고 쓰기 가능
+    match /schedules/{document=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // 회원가입 신청 - 본인 신청만 생성 가능, 승인/거절은 관리자만
+    match /signupRequests/{reqId} {
+      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
+      allow read: if request.auth != null;
+      allow update: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
+    }
+
+    // 게시판 - 누구나 읽고 쓰기 가능
+    match /boardPosts/{postId} {
+      allow read: if true;
+      allow write: if true;
+    }
+
+    // 공지사항 - 누구나 읽기 가능, 관리자만 쓰기 가능
+    match /announcements/{document=**} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
+    }
+
+  }
+}
