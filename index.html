@@ -6184,17 +6184,26 @@ function renderHomeTab() {
       }
     }
     const attendBtns = isMemberLoggedIn ? makeAttendBtns(mySchStatus, schId, d.id, d.id + '_ng') : '';
-    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
-      <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;margin-bottom:5px">
-        <span style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:10px">🎾 다음 게임</span>
-        ${attendBadge}
+    window._attCache = window._attCache || {};
+    window._attCache[d.id] = {
+      members: members.filter(m => att[m.name] !== false).map(m => m.name),
+      guests: guests.filter(g => guestList.includes(g.name)).map(g => g.name),
+      date: d.date,
+      myName: isMemberLoggedIn && myClaim ? myClaim.name : ''
+    };
+    return `<div style="background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
+      <div onclick="goToGameDay('${d.id}')" style="cursor:pointer">
+        <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;margin-bottom:5px">
+          <span style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:10px">🎾 다음 게임</span>
+          ${attendBadge}
+        </div>
+        <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${dl}</div>
+        <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin-bottom:4px">
+          ${d.place?`<span style="font-size:11px;color:#2563EB;margin-right:5px">📍 ${d.place}</span>`:''}
+          ${pairsSummary}
+        </div>
       </div>
-      <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${dl}</div>
-      <div style="font-size:11px;color:#059669;margin-bottom:4px;text-align:center">✅ ${totalAttend}명 참석</div>
-      <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin-bottom:4px">
-        ${d.place?`<span style="font-size:11px;color:#2563EB;margin-right:5px">📍 ${d.place}</span>`:''}
-        ${pairsSummary}
-      </div>
+      <div onclick="showAttendList('${d.id}')" style="cursor:pointer;font-size:11px;color:#059669;margin-bottom:4px;text-align:center">✅ ${totalAttend}명 참석 ›</div>
       ${attendBtns}
       <div style="text-align:center"><span id="wxBadgeGame" style="font-size:13px;color:#64748B;font-weight:700"></span></div>
     </div>`;
@@ -6360,14 +6369,23 @@ function renderHomeTab() {
       }
     }
     const _wAttBtns = isMemberLoggedIn ? makeAttendBtns(_wMyStatus, _wSchId, d.id, d.id + '_wk') : '';
-    return `<div onclick="goToGameDay('${d.id}')" style="cursor:pointer;background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
-      <div style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px">🎾 ${weekdays[_wd.getDay()]}요일 게임</div>
-      <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${_wdl}</div>
-      <div style="font-size:11px;color:#059669;margin-bottom:4px;text-align:center">✅ ${_waM+_waG}명 참석</div>
-      <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin-bottom:4px">
-        ${d.place?`<span style="font-size:11px;color:#2563EB;margin-right:5px">📍 ${d.place}</span>`:''}
-        ${_wTM?`<span style="font-size:11px;color:#6D28D9">${_wRds.length}라운드 · ${_wTM}경기</span>`:''}
+    window._attCache = window._attCache || {};
+    window._attCache[d.id] = {
+      members: members.filter(function(m){ return _watt[m.name] !== false; }).map(function(m){ return m.name; }),
+      guests: guests.filter(function(g){ return (d.guests||[]).includes(g.name); }).map(function(g){ return g.name; }),
+      date: d.date,
+      myName: isMemberLoggedIn && myClaim ? myClaim.name : ''
+    };
+    return `<div style="background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
+      <div onclick="goToGameDay('${d.id}')" style="cursor:pointer">
+        <div style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px">🎾 ${weekdays[_wd.getDay()]}요일 게임</div>
+        <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${_wdl}</div>
+        <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin-bottom:4px">
+          ${d.place?`<span style="font-size:11px;color:#2563EB;margin-right:5px">📍 ${d.place}</span>`:''}
+          ${_wTM?`<span style="font-size:11px;color:#6D28D9">${_wRds.length}라운드 · ${_wTM}경기</span>`:''}
+        </div>
       </div>
+      <div onclick="showAttendList('${d.id}')" style="cursor:pointer;font-size:11px;color:#059669;margin-bottom:4px;text-align:center">✅ ${_waM+_waG}명 참석 ›</div>
       ${_wAttBtns}
       <div style="text-align:center"><span id="wxBadgeWeekly_${d.date}" style="font-size:11px;color:#64748B;font-weight:700"></span></div>
     </div>`;
@@ -6560,6 +6578,63 @@ window.toggleCategory = function(cat) {
       });
     }
   });
+};
+
+// 참석자 목록 모달 닫기
+window.closeAttendModal = function() {
+  var m = document.getElementById('_attendListModal');
+  if (m) m.setAttribute('style', 'display:none');
+};
+
+// "N명 참석 ›" 클릭 → 참석 예정 명단 모달
+window.showAttendList = function(dayId) {
+  var data = (window._attCache || {})[dayId];
+  if (!data) return;
+  var memberNames = data.members || [];
+  var guestNames = data.guests || [];
+  var myName = data.myName || '';
+  var total = memberNames.length + guestNames.length;
+  var wd = new Date(data.date + 'T00:00:00');
+  var wk = ['일','월','화','수','목','금','토'];
+  var dateLabel = (wd.getMonth()+1) + '/' + wd.getDate() + '(' + wk[wd.getDay()] + ')';
+  var chips = memberNames.map(function(name) {
+    var isMe = (name === myName);
+    return '<span style="display:inline-block;margin:3px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:' +
+      (isMe ? '900' : '600') + ';background:' +
+      (isMe ? 'rgba(52,211,153,0.18)' : 'rgba(100,116,139,0.08)') + ';border:1.5px solid ' +
+      (isMe ? 'rgba(52,211,153,0.5)' : 'rgba(100,116,139,0.2)') + ';color:' +
+      (isMe ? '#059669' : '#334155') + '">' + (isMe ? '⭐ ' : '') + name + '</span>';
+  }).concat(guestNames.map(function(name) {
+    return '<span style="display:inline-block;margin:3px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;' +
+      'background:rgba(109,40,217,0.08);border:1.5px solid rgba(109,40,217,0.2);color:#6D28D9">👤 ' + name + '</span>';
+  })).join('');
+  var modal = document.getElementById('_attendListModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = '_attendListModal';
+    document.body.appendChild(modal);
+  }
+  modal.setAttribute('style', 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);' +
+    'display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;' +
+    '-webkit-justify-content:center;justify-content:center;z-index:9999;padding:20px');
+  modal.innerHTML =
+    '<div onclick="event.stopPropagation()" style="background:#fff;border-radius:18px;padding:20px;' +
+      'max-width:340px;width:100%;max-height:72vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.18)">' +
+      '<div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;' +
+        '-webkit-justify-content:space-between;justify-content:space-between;margin-bottom:14px">' +
+        '<div>' +
+          '<div style="font-size:15px;font-weight:900;color:#1E293B">✅ 참석 ' + total + '명</div>' +
+          '<div style="font-size:12px;color:#64748B;margin-top:2px">🎾 ' + dateLabel + '</div>' +
+        '</div>' +
+        '<button onclick="closeAttendModal()" style="width:30px;height:30px;border-radius:50%;border:none;' +
+          'background:#F1F5F9;color:#64748B;font-size:18px;font-weight:700;cursor:pointer;line-height:30px;' +
+          'text-align:center;padding:0">×</button>' +
+      '</div>' +
+      '<div style="display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap">' +
+        (chips || '<span style="font-size:13px;color:#94A3B8">참석자 정보가 없어요</span>') +
+      '</div>' +
+    '</div>';
+  modal.onclick = function(e) { if (e.target === modal) closeAttendModal(); };
 };
 
 // 홈 "다음 게임" 카드 클릭 → 정규리그 탭 해당 날짜 아코디언 열고 스크롤
