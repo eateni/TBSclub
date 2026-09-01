@@ -3643,6 +3643,12 @@ window.openEventDetail=function(evId){
       var bg=FM_BG[m.type]||'rgba(167,139,250,0.12)';
       var fc=FM_FC[m.type]||'#6D28D9';
       var delBtn=isMember?'<button onclick="deleteFreeMatch(\''+evId+'\',\''+m.id+'\')" style="background:none;border:none;color:rgba(248,113,113,0.5);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>':'';
+      var typeEditBtns=isMember?['혼복','남복','여복'].map(function(t){
+        var sel=m.type===t;
+        return '<button onclick="saveFreeMatchType(\''+evId+'\',\''+m.id+'\',\''+t+'\')" style="flex:1;padding:3px 0;border-radius:6px;border:1px solid '+(sel?FM_FC[t]:'rgba(100,116,139,0.25)')+';background:'+(sel?FM_BG[t]:'rgba(100,116,139,0.05)')+';color:'+(sel?FM_FC[t]:'#64748B')+';font-size:10px;font-weight:700;cursor:pointer">'+t+'</button>';
+      }).join(''):null;
+      var typeEditForm=isMember?'<div id="fmTE_'+m.id+'" style="display:none;margin-top:5px;-webkit-display:flex;display:flex;gap:4px">'+typeEditBtns+'</div>':'';
+      var typeEditBtn=isMember?'<button onclick="var e=document.getElementById(\'fmTE_'+m.id+'\');e.style.display=e.style.display===\'none\'?\'flex\':\'none\'" style="background:none;border:none;color:#94A3B8;font-size:12px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0" title="타입 수정">✏</button>':'';
       var t2badge=noTeam2?'<span style="font-size:10px;padding:2px 6px;border-radius:8px;background:rgba(100,116,139,0.12);color:#64748B;border:1px solid rgba(100,116,139,0.2);white-space:nowrap;flex-shrink:0">상대팀 미정</span>':'';
       var t2inputBtn=noTeam2&&isMember?'<button onclick="document.getElementById(\'fmT2Form_'+m.id+'\').style.display=\'block\'" style="padding:3px 8px;background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.25);border-radius:7px;color:#64748B;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">입력</button>':'';
       var t2form=noTeam2&&isMember?'<div id="fmT2Form_'+m.id+'" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(167,139,250,0.06);border:1px dashed rgba(167,139,250,0.35);border-radius:8px">'
@@ -3661,15 +3667,17 @@ window.openEventDetail=function(evId){
         +'<span style="font-size:10px;font-weight:800;padding:2px 6px;border-radius:8px;background:'+bg+';color:'+fc+';white-space:nowrap;flex-shrink:0">'+(m.type||'')+'</span>'
         +'<span style="font-size:13px;font-weight:700;flex:1">'+t1+(t2?' vs '+t2:'')+'</span>'
         +t2badge
+        +typeEditBtn
         +t2inputBtn
         +delBtn
         +'</div>'
+        +typeEditForm
         +modLabel
         +t2form
         +'</div>';
     }).join(''):'<div style="color:#64748B;font-size:12px;padding:8px 0">아직 매치가 없어요</div>';
     const addFormId='fmAddForm_'+evId;
-    const addFormHtml=isMember?'<div id="'+addFormId+'" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px dashed rgba(167,139,250,0.4);border-radius:10px">'
+    const addFormHtml=isMember?'<div id="'+addFormId+'" style="display:none;margin-bottom:10px;padding:10px 12px;background:rgba(167,139,250,0.07);border:1px dashed rgba(167,139,250,0.4);border-radius:10px">'
       +'<div style="font-size:11px;font-weight:800;color:#6D28D9;margin-bottom:10px">매치 추가</div>'
       +'<div style="margin-bottom:7px"><div style="font-size:10px;color:#64748B;margin-bottom:3px">타입</div>'
       +'<select id="fmType_'+evId+'" class="row-inp" style="width:100%;font-size:12px;padding:6px"><option value="혼복">혼복</option><option value="남복">남복</option><option value="여복">여복</option></select></div>'
@@ -3687,17 +3695,17 @@ window.openEventDetail=function(evId){
       +'<button onclick="saveAddFreeMatch(\''+evId+'\')" style="flex:1;padding:8px;background:rgba(167,139,250,0.85);border:none;border-radius:8px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer">등록</button>'
       +'<button onclick="document.getElementById(\''+addFormId+'\').style.display=\'none\'" style="padding:8px 14px;background:rgba(100,116,139,0.1);border:1px solid rgba(100,116,139,0.2);border-radius:8px;color:#64748B;font-size:12px;cursor:pointer">취소</button>'
       +'</div></div>':'';
-    const addBtn=isMember?'<button onclick="document.getElementById(\'fmAddForm_'+evId+'\').style.display=\'block\'" style="padding:5px 12px;background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.4);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">+ 매치 추가</button>':'';
-    const statSec=allFms.length?'<div style="margin-bottom:10px;padding:8px 10px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.15);border-radius:10px">'
+    const addBtn=isMember?'<button onclick="document.getElementById(\'fmAddForm_'+evId+'\').style.display=\'block\'" style="width:100%;padding:7px;background:rgba(167,139,250,0.12);border:1px dashed rgba(167,139,250,0.45);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:8px">+ 매치 추가</button>':'';
+    const statSec=allFms.length?'<div style="margin-bottom:12px;padding:8px 10px;background:rgba(167,139,250,0.06);border:1px solid rgba(167,139,250,0.15);border-radius:10px">'
       +'<div style="font-size:11px;font-weight:700;color:#6D28D9;margin-bottom:6px">👥 선수별 게임 수 (정회원)</div>'
-      +statRows+'</div>':'';
+      +statRows+'</div>':allFms.length===0&&isMember?'':'';
     freeMatchesSec='<div style="margin-bottom:16px">'
-      +'<div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:space-between;justify-content:space-between;margin-bottom:10px">'
-      +'<div style="font-size:13px;font-weight:700">🎯 자유 매치 현황판</div>'+addBtn+'</div>'
+      +'<div style="font-size:13px;font-weight:700;margin-bottom:10px">🎯 자유 매치 현황판</div>'
       +statSec
+      +addBtn
+      +addFormHtml
       +'<div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:6px">📋 매치 목록 (최신순)</div>'
       +matchRows
-      +addFormHtml
       +'</div>';
   }
 
@@ -4288,6 +4296,24 @@ window.saveFreeMatchTeam2=async function(evId,matchId){
     // events onSnapshot이 스크롤 보존하며 자동 재렌더
   }catch(e){
     alert('저장 실패: '+(e.message||e.code||e));
+  }
+};
+
+window.saveFreeMatchType=async function(evId,matchId,newType){
+  const canAct=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
+  if(!canAct){alert('정회원만 수정할 수 있어요');return;}
+  const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const modifiedBy=(myClaim&&myClaim!=='pending')?myClaim.name:'';
+  const updated=(ev.freeMatches||[]).map(function(m){
+    if(m.id!==matchId)return m;
+    return Object.assign({},m,{type:newType,lastModifiedBy:modifiedBy});
+  });
+  try{
+    await updateDoc(doc(db,'events',evId),{freeMatches:updated});
+    ev.freeMatches=updated;
+    // events onSnapshot이 스크롤 보존하며 자동 재렌더 → statRows 자동 재계산
+  }catch(e){
+    alert('타입 수정 실패: '+(e.message||e.code||e));
   }
 };
 
