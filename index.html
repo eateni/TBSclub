@@ -956,9 +956,9 @@ tr:nth-child(even){background:#F5FCFB;}
         <option value="m">남</option><option value="f">여</option>
       </select>
     </div>
-    <label style="font-size:12px;color:#64748B;display:block;margin-top:10px">테니스 시작년월 <span style="color:#94A3B8;font-size:11px">(선택)</span></label>
+    <label style="font-size:12px;color:#64748B;display:block;margin-top:10px">테니스 시작년월 <span style="color:#f87171;font-size:11px">(필수)</span></label>
     <div style="display:flex;gap:8px;margin-bottom:10px">
-      <select id="signupTennisYear" class="row-sel" style="flex:1">
+      <select id="signupTennisYear" class="row-sel" style="flex:1" required>
         <option value="">연도</option>
       </select>
       <select id="signupTennisMonth" class="row-sel" style="flex:1">
@@ -970,13 +970,13 @@ tr:nth-child(even){background:#F5FCFB;}
       </select>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <label style="font-size:12px;color:#64748B">생년월일 <span style="color:#94A3B8;font-size:11px">(선택)</span></label>
+      <label style="font-size:12px;color:#64748B">생년월일 <span style="color:#f87171;font-size:11px">(필수)</span></label>
       <span style="display:flex;gap:8px;font-size:11px;color:#475569">
         <label style="cursor:pointer;display:flex;align-items:center;gap:2px"><input type="radio" name="signupBirthCal" value="solar" checked style="margin:0">양력</label>
         <label style="cursor:pointer;display:flex;align-items:center;gap:2px"><input type="radio" name="signupBirthCal" value="lunar" style="margin:0">음력</label>
       </span>
     </div>
-    <input type="date" id="signupBirthDate" class="row-inp" style="width:100%;margin-bottom:12px">
+    <input type="date" id="signupBirthDate" class="row-inp" style="width:100%;margin-bottom:12px" required>
     <button onclick="doSignup()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a120a;border:none;border-radius:10px;font-weight:800;cursor:pointer">가입 신청</button>
     <div class="mft"><button class="btn-cancel" onclick="hide('signupModal')">취소</button></div>
   </div>
@@ -8409,7 +8409,9 @@ window.doSignup = async function(){
   const tennisY = document.getElementById('signupTennisYear').value;
   const tennisM = document.getElementById('signupTennisMonth').value;
   const tennisStartDate = (tennisY && tennisM) ? `${tennisY}-${tennisM}` : '';
+  if (!tennisStartDate) { alert('테니스 시작년월을 입력해주세요'); return; }
   let birthDate = document.getElementById('signupBirthDate').value || '';
+  if (!birthDate) { alert('생년월일을 입력해주세요'); return; }
   let isLunarBirth = false;
   if (birthDate) {
     const calType = document.querySelector('input[name="signupBirthCal"]:checked')?.value || 'solar';
