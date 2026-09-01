@@ -4925,7 +4925,7 @@ window.switchTab=function(tab,btn){
     if(el) el.style.display=t===tab?'block':'none';
   });
   const tcr = document.getElementById('topCardsRow');
-  if (tcr) tcr.style.display = (tab==='home') ? 'none' : 'flex';
+  if (tcr) tcr.style.display = (tab==='home') ? 'flex' : 'none';
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   if(tab==='terra') { updateTerraSelects(); renderTerraMyRecords(); }
