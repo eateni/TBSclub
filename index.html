@@ -4073,7 +4073,7 @@ window.openEvScoreboard=function(evId){
     ${statSec}
     ${oppStatSec}
     <div class="mft">
-      ${isAdmin?`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">⚙️ 참가자/페어 관리</button>`:''}
+      ${isAdmin?`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">⚙️ 참가자/페어 관리</button>`:`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">← 상세보기</button>`}
       <button class="btn-cancel" style="flex:1" onclick="hide('eventDetailModal')">닫기</button>
     </div>`;
   document.getElementById('eventDetailModal').style.display='flex';
@@ -6767,7 +6767,7 @@ window.homeGoTo = function(target) {
 };
 
 window.openEvDetailFromHome=function(evId){
-  openEvScoreboard(evId);
+  openEventDetail(evId);
 };
 
 // 홈 바로가기 카테고리 카드 토글 (아코디언 + 하위 항목 stagger 애니)
