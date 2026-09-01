@@ -3755,8 +3755,8 @@ window.openEventDetail=function(evId){
       matchCards=`<div style="color:#64748B;font-size:12px;padding:8px 0">매치 없음 — 페어 짜기 또는 즉석 추가로 생성하세요</div>${quickAddBtn}`;
     } else {
       const hasRoundInfo=evMatches.some(m=>m.round!==undefined);
-      if(!hasRoundInfo){
-        // 하위 호환: round 정보 없으면 flat 표시
+      if(!hasRoundInfo||ev.type==='exchange'){
+        // 교류전은 항상 flat 표시 (라운드 헤더 없음)
         matchCards=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'')).join('')+quickAddBtn;
       } else {
         // round/court 그룹 표시
@@ -3822,7 +3822,7 @@ window.openEventDetail=function(evId){
     const oppInpId=`evOppInp_${mi}`;
     const inpId=`evInp_${mi}`;
     const defaultClub=m.oppClub||defaultOppClub||'';
-    const oppOnlySec=isAdmin?`<div id="${oppInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+    const oppOnlySec=isMember?`<div id="${oppInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
       <div style="font-size:10px;color:#2563EB;font-weight:700;margin-bottom:4px">상대팀 이름</div>
       <div style="display:flex;gap:4px;margin-bottom:8px">
         <input id="evOppOnly1_${mi}" class="row-inp" style="flex:1;padding:5px;font-size:12px" placeholder="상대1" value="${(m.oppPair||[])[0]||''}">
@@ -3832,16 +3832,18 @@ window.openEventDetail=function(evId){
       <button onclick="saveEvOppOnly('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#059669;font-size:12px;font-weight:700;cursor:pointer">저장</button>
     </div>`:'';
     const delBtn=isAdmin?`<button onclick="deleteEvMatch('${evId}',${mi})" title="매치 삭제" style="position:absolute;top:5px;right:6px;background:none;border:none;color:rgba(248,113,113,0.4);font-size:15px;line-height:1;cursor:pointer;padding:2px 4px">×</button>`:'';
+    const courtLabel=m.court?`${m.court}게임${m.courtType?' · '+m.courtType:''}`:''
     return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px;position:relative">
       ${delBtn}
+      ${courtLabel?`<div style="font-size:10px;color:#6D28D9;font-weight:700;padding:2px 0 4px">${courtLabel}</div>`:''}
       <div class="match-row">
         <div class="m-team ${won?'win':''}">${(m.ourPair||[]).join(' / ')}</div>
         ${scoreEl}
         <div class="m-team ${lost?'win':''}">${oppLabel}</div>
       </div>
-      ${isAdmin?`<div style="display:flex;gap:5px;margin-top:8px">
+      ${isMember?`<div style="display:flex;gap:5px;margin-top:8px">
         <button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button>
-        <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#059669" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${hasOpp?'상대팀 수정':'상대팀 입력'}</button>
+        <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#059669" onclick="toggleEvMatchInput('${oppInpId}')">👤 상대팀 수정</button>
       </div>`:''}
       ${oppOnlySec}
     </div>`;
