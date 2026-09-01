@@ -4848,7 +4848,7 @@ function renderAdmin(){
       attEl.innerHTML = adminDays.map(day => {
         const att = day.attendance || {};
         const dayGuests = day.guests || [];
-        const attendingCount = members.filter(m=>(att[m.name]??true)).length + dayGuests.length;
+        const attendingCount = members.filter(m=>(att[m.name]??true)).length + guests.filter(g=>dayGuests.includes(g.name)).length;
         const dateStr = day.date ? new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : day.date;
         const bodyId = `att_body_${day.id}`;
         const arrId  = `att_arr_${day.id}`;
@@ -5121,7 +5121,7 @@ window.switchTab=function(tab,btn){
     if(el) el.style.display=t===tab?'block':'none';
   });
   const tcr = document.getElementById('topCardsRow');
-  if (tcr) tcr.style.display = (tab==='home') ? 'flex' : 'none';
+  if (tcr) tcr.style.display = 'none'; // tab-home 내 myRecordHtml로 대체됨
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   if(tab==='terra') { updateTerraSelects(); renderTerraMyRecords(); }
@@ -8629,7 +8629,7 @@ function renderMyDashboardState(){
     btn.onclick = () => { populateSignupNameSelect(); document.getElementById('signupModal').style.display = 'flex'; };
   }
   updateSloganVisibility();
-  renderMyRecordCard();
+  // renderMyRecordCard(); // topCardsRow 비활성화로 불필요 (tab-home 내 myRecordHtml로 대체)
   applyWriterAutoSelect();
   renderHomeTab();
   const evModal = document.getElementById('eventDetailModal');
