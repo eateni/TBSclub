@@ -1103,8 +1103,9 @@ tr:nth-child(even){background:#F5FCFB;}
     <div class="mf-full" id="evOppClubRow">
       <label>상대 클럽명 <span style="font-size:10px;color:#64748B">(교류전)</span></label>
       <input id="evOppClub" placeholder="예: 능곡 신생팀">
-      <label style="margin-top:8px;display:block;font-size:12px;color:#64748B">상대팀 명단 <span style="font-size:10px;color:#94A3B8">(선택 · 콤마 또는 줄바꿈으로 구분)</span></label>
-      <textarea id="evOppRoster" class="row-inp" placeholder="예: 홍길동, 이영희" style="width:100%;min-height:48px;resize:vertical;box-sizing:border-box;font-size:13px"></textarea>
+      <label style="margin-top:8px;display:block;font-size:12px;color:#64748B">상대팀 명단 <span style="font-size:10px;color:#94A3B8">(선택)</span></label>
+      <div id="evOppRosterRows" style="margin-bottom:4px"></div>
+      <button type="button" onclick="addOppRosterRow('evOppRosterRows')" style="width:100%;padding:5px;border:1px dashed rgba(100,116,139,0.4);border-radius:6px;background:none;color:#64748B;font-size:11px;cursor:pointer">+ 인원 추가</button>
     </div>
     <div class="mg">
       <div class="mf"><label>날짜</label><input type="date" id="evDate"></div>
@@ -3638,8 +3639,8 @@ window.openEventDetail=function(evId){
         +'</div>';
     }).join('');
     const partOpts=parts.map(function(p){return '<option value="'+p.replace(/"/g,'&quot;')+'">'+p+'</option>';}).join('');
-    const oppRoster=ev.oppRoster||[];
-    const oppOpts=oppRoster.map(function(n){return '<option value="'+n.replace(/"/g,'&quot;')+'">'+n+'</option>';}).join('');
+    const oppRoster=(ev.oppRoster||[]).map(function(e){return typeof e==='string'?{name:e,gender:''}:{name:e.name||'',gender:e.gender||''};});
+    const oppOpts=oppRoster.map(function(e){var icon=e.gender==='m'?'♂ ':e.gender==='f'?'♀ ':'';var n=e.name.replace(/"/g,'&quot;');return '<option value="'+n+'">'+icon+e.name+'</option>';}).join('');
     const matchRows=fmsDesc.length?fmsDesc.map(function(m){
       var t1=(m.team1||[]).join(' / ');
       var t2arr=m.team2||[];
@@ -3825,9 +3826,10 @@ window.openEventDetail=function(evId){
       <button onclick="saveEvMeta('${evId}','oppClub',document.getElementById('evMetaOppClub_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">팀명 저장</button>
     </div>
     <div style="margin-top:6px">
-      <div style="font-size:10px;color:#94A3B8;margin-bottom:4px">상대팀 명단 (콤마·줄바꿈 구분)</div>
-      <div style="display:flex;gap:6px;align-items:flex-start">
-        <textarea id="evMetaOppRoster_${evId}" style="flex:1;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;resize:vertical;min-height:36px;box-sizing:border-box" placeholder="홍길동, 이영희">${(ev.oppRoster||[]).join('\n')}</textarea>
+      <div style="font-size:10px;color:#94A3B8;margin-bottom:4px">상대팀 명단</div>
+      <div id="evMetaOppRosterRows_${evId}" style="margin-bottom:4px">${(ev.oppRoster||[]).map(function(e){var r=typeof e==='string'?{name:e,gender:''}:{name:e.name||'',gender:e.gender||''};return buildOppRosterRowHtml(r.name,r.gender);}).join('')}</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button onclick="addOppRosterRow('evMetaOppRosterRows_${evId}')" style="flex:1;padding:4px 8px;border:1px dashed rgba(100,150,200,0.4);border-radius:6px;background:none;color:#94A3B8;font-size:11px;cursor:pointer">+ 인원 추가</button>
         <button onclick="saveOppRoster('${evId}')" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">명단 저장</button>
       </div>
     </div>
@@ -4288,9 +4290,58 @@ window.updateFmType=function(evId){
     if(manual)manual.style.display='block';
   }
 };
+function buildOppRosterRowHtml(name, gender) {
+  var mSel=gender==='m', fSel=gender==='f';
+  function mkGBtn(val,label,sel){
+    var isM=val==='m';
+    var ac=sel?(isM?'#6366f1':'#ec4899'):'#64748B';
+    var bg=sel?(isM?'rgba(99,102,241,0.15)':'rgba(236,72,153,0.15)'):'none';
+    var bc=sel?(isM?'#6366f1':'#ec4899'):'rgba(100,116,139,0.25)';
+    return '<button data-val="'+val+'" onclick="toggleOppGender(this,\''+val+'\')" style="padding:3px 7px;border:1px solid '+bc+';border-radius:6px;background:'+bg+';color:'+ac+';font-size:11px;cursor:pointer;flex-shrink:0">'+label+'</button>';
+  }
+  var safe=(name||'').replace(/"/g,'&quot;');
+  return '<div class="opp-roster-row" data-gender="'+(gender||'')+'" style="display:flex;gap:4px;align-items:center;margin-bottom:4px">'
+    +'<input type="text" class="opp-roster-name row-inp" placeholder="이름" value="'+safe+'" style="flex:1;padding:4px 8px;font-size:12px">'
+    +mkGBtn('m','남',mSel)+mkGBtn('f','여',fSel)
+    +'<button onclick="this.closest(\'.opp-roster-row\').remove()" style="padding:3px 6px;border:none;background:none;color:rgba(248,113,113,0.6);font-size:14px;cursor:pointer;flex-shrink:0">×</button>'
+    +'</div>';
+}
+function readOppRosterFromContainer(containerId) {
+  var container=document.getElementById(containerId);
+  if(!container)return [];
+  return Array.from(container.querySelectorAll('.opp-roster-row')).map(function(row){
+    var name=(row.querySelector('.opp-roster-name')?.value||'').trim();
+    var gender=row.dataset.gender||'';
+    return name?{name:name,gender:gender}:null;
+  }).filter(Boolean);
+}
+window.toggleOppGender=function(btn,gender){
+  var row=btn.closest('.opp-roster-row');
+  var current=row.dataset.gender;
+  var newG=current===gender?'':gender;
+  row.dataset.gender=newG;
+  row.querySelectorAll('[data-val]').forEach(function(b){
+    var isM=b.dataset.val==='m', active=b.dataset.val===newG;
+    b.style.borderColor=active?(isM?'#6366f1':'#ec4899'):'rgba(100,116,139,0.25)';
+    b.style.background=active?(isM?'rgba(99,102,241,0.15)':'rgba(236,72,153,0.15)'):'none';
+    b.style.color=active?(isM?'#6366f1':'#ec4899'):'#64748B';
+  });
+};
+window.addOppRosterRow=function(containerId){
+  var container=document.getElementById(containerId);
+  if(!container)return;
+  var div=document.createElement('div');
+  div.className='opp-roster-row';
+  div.dataset.gender='';
+  div.style.cssText='display:flex;gap:4px;align-items:center;margin-bottom:4px';
+  div.innerHTML='<input type="text" class="opp-roster-name row-inp" placeholder="이름" style="flex:1;padding:4px 8px;font-size:12px">'
+    +'<button data-val="m" onclick="toggleOppGender(this,\'m\')" style="padding:3px 7px;border:1px solid rgba(100,116,139,0.25);border-radius:6px;background:none;color:#64748B;font-size:11px;cursor:pointer;flex-shrink:0">남</button>'
+    +'<button data-val="f" onclick="toggleOppGender(this,\'f\')" style="padding:3px 7px;border:1px solid rgba(100,116,139,0.25);border-radius:6px;background:none;color:#64748B;font-size:11px;cursor:pointer;flex-shrink:0">여</button>'
+    +'<button onclick="this.closest(\'.opp-roster-row\').remove()" style="padding:3px 6px;border:none;background:none;color:rgba(248,113,113,0.6);font-size:14px;cursor:pointer;flex-shrink:0">×</button>';
+  container.appendChild(div);
+};
 window.saveOppRoster=function(evId){
-  const raw=document.getElementById('evMetaOppRoster_'+evId)?.value||'';
-  const roster=raw.trim().split(/[,\n]+/).map(function(s){return s.trim();}).filter(Boolean);
+  var roster=readOppRosterFromContainer('evMetaOppRosterRows_'+evId);
   saveEvMeta(evId,'oppRoster',roster);
 };
 window.saveAddFreeMatch=async function(evId){
@@ -7902,11 +7953,12 @@ window.submitEvent=async function(){
     place:document.getElementById('evPlace').value,
     desc:document.getElementById('evDesc').value,
     oppClub:document.getElementById('evOppClub')?.value.trim()||'',
-    oppRoster:(document.getElementById('evOppRoster')?.value.trim()||'').split(/[,\n]+/).map(s=>s.trim()).filter(Boolean),
+    oppRoster:readOppRosterFromContainer('evOppRosterRows'),
     status:document.getElementById('evStatus').value,
     participants:[],results:[],createdAt:serverTimestamp()
   });
-  ['evName','evDate','evPlace','evDesc','evOppClub','evOppRoster'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['evName','evDate','evPlace','evDesc','evOppClub'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const _rRows=document.getElementById('evOppRosterRows');if(_rRows)_rRows.innerHTML='';
   hide('eventModal');
 };
 window.delEvent=async function(evId){
