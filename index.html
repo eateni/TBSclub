@@ -3757,7 +3757,7 @@ window.openEventDetail=function(evId){
       const hasRoundInfo=evMatches.some(m=>m.round!==undefined);
       if(!hasRoundInfo||ev.type==='exchange'){
         // 교류전은 항상 flat 표시 (라운드 헤더 없음)
-        matchCards=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'',parts)).join('')+quickAddBtn;
+        matchCards=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'',parts,isMember)).join('')+quickAddBtn;
       } else {
         // round/court 그룹 표시
         const roundMap={};
@@ -3775,7 +3775,7 @@ window.openEventDetail=function(evId){
           const courtsHtml=courtNums.map(cNum=>{
             const {type,entries}=courtMap[cNum];
             const typeLabel=type?` · ${type}`:'';
-            const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'',parts)).join('');
+            const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'',parts,isMember)).join('');
             return `<div style="margin-bottom:4px">
               <div style="font-size:10px;color:#6D28D9;font-weight:700;padding:4px 0 2px">${cNum}코트${typeLabel}</div>
               ${cardsHtml}
@@ -3850,7 +3850,7 @@ window.openEventDetail=function(evId){
 };
 
 // 교류전·월례전·특별전 매치 카드 (상세 화면 + 대진표 화면 공통)
-function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts) {
+function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMember) {
   const evDefault=defaultOppClub||events.find(e=>e.id===evId)?.oppClub||'';
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
   const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
@@ -3910,6 +3910,7 @@ window.openEvScoreboard=function(evId){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const evMatches=ev.matches||[];
   const parts=ev.participants||[];
+  const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
 
   let matchesHtml='';
   if(!evMatches.length){
@@ -3923,7 +3924,7 @@ window.openEvScoreboard=function(evId){
       const quickAddBtn=isAdmin
         ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
         :'';
-      matchesHtml=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'',parts)).join('')+quickAddBtn;
+      matchesHtml=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'',parts,isMember)).join('')+quickAddBtn;
     } else {
       const roundMap={};
       evMatches.forEach((m,mi)=>{
@@ -3935,7 +3936,7 @@ window.openEvScoreboard=function(evId){
       const maxRoundSb=roundNums.length?Math.max(...roundNums):0;
       matchesHtml=roundNums.map(rNum=>{
         const entries=roundMap[rNum];
-        const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'',parts)).join('');
+        const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'',parts,isMember)).join('');
         const waiting=parts.filter(p=>!entries.some(({m})=>(m.ourPair||[]).includes(p)));
         const waitHtml=waiting.length
           ?`<div style="padding:8px 12px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
