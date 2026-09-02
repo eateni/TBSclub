@@ -3864,6 +3864,7 @@ window.openEventDetail=function(evId){
 };
 
 // ── 경기별 평가 엔진 ──────────────────────────────────────────
+let _evalCache = {}; // 세션 내 평가 문구 캐시 (카드 생성 시 1회 고정)
 function _getAllMatchHistory(upToDate) {
   const res = [];
   days.forEach(function(day) {
@@ -3891,6 +3892,9 @@ function buildMatchEval(norm, date) {
   if (!norm||!date) return '';
   const s1=Number(norm.score1), s2=Number(norm.score2);
   if (isNaN(s1)||isNaN(s2)||(s1===0&&s2===0)) return '';
+  // 캐시 조회 — 카드 생성 시 최초 1회 확정 후 재렌더링 시 동일 문구 반환
+  const cacheKey=(norm.team1||[]).join('·')+'|vs|'+(norm.team2||[]).join('·')+'|'+s1+':'+s2+'|'+date+'|'+(norm.isExchange?'ex':'reg');
+  if (_evalCache[cacheKey]) return _evalCache[cacheKey];
   const allFull=_getAllMatchHistory(date);
   const priorOnly=allFull.filter(function(h){return h.date<date;});
   const winner=s1>s2?1:s1<s2?2:0;
@@ -3942,14 +3946,16 @@ function buildMatchEval(norm, date) {
   if (winner!==0&&winTeam.length>0) {
     let bestStreak=0,bestSName='';
     winTeam.forEach(function(name) {
-      const pm=allFull.filter(function(h){return h.team1.includes(name)||h.team2.includes(name);});
+      const pmAll=allFull.filter(function(h){return h.team1.includes(name)||h.team2.includes(name);});
+      // TODO: 교류전 통합 여부 추후 결정 — 현재 마일스톤은 정규시즌 경기만 카운트
+      const pmReg=pmAll.filter(function(h){return !h.isExchange;});
       let streak=0,totalW=0;
-      for (let i=pm.length-1;i>=0;i--) {
-        const h=pm[i],onT1=h.team1.includes(name),hw=h.score1>h.score2?1:h.score1<h.score2?2:0;
+      for (let i=pmAll.length-1;i>=0;i--) {
+        const h=pmAll[i],onT1=h.team1.includes(name),hw=h.score1>h.score2?1:h.score1<h.score2?2:0;
         if ((onT1&&hw===1)||(!onT1&&hw===2)) streak++;
         else if (hw!==0) break;
       }
-      pm.forEach(function(h){const onT1=h.team1.includes(name),hw=h.score1>h.score2?1:h.score1<h.score2?2:0;if((onT1&&hw===1)||(!onT1&&hw===2))totalW++;});
+      pmReg.forEach(function(h){const onT1=h.team1.includes(name),hw=h.score1>h.score2?1:h.score1<h.score2?2:0;if((onT1&&hw===1)||(!onT1&&hw===2))totalW++;});
       if (streak>bestStreak){bestStreak=streak;bestSName=name;}
       if (totalW>0&&totalW%10===0&&sentences.length<3) {
         sentences.push(pick([`${name}, 이 경기로 통산 ${totalW}승 고지를 밟았다!`,`${name}의 통산 ${totalW}승 달성, 귀한 이정표다.`]));
@@ -3967,7 +3973,9 @@ function buildMatchEval(norm, date) {
     }
   }
 
-  return sentences.slice(0,3).join(' ');
+  const result=sentences.slice(0,3).join(' ');
+  _evalCache[cacheKey]=result; // 캐시에 저장
+  return result;
 }
 
 // 교류전·월례전·특별전 매치 카드 (상세 화면 + 대진표 화면 공통)
