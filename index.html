@@ -2800,6 +2800,7 @@ function renderDays() {
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
         const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
+        const evalHtml=m.done?buildMatchEval({team1:m.team1||[],team2:m.team2||[],score1:m.score1,score2:m.score2,matchType:m.tag||'',isExchange:false},day.date||''):'';
         const mComments = m.comments || [];
         const commentOpts = [...members, ...guests].map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
         // 댓글 목록
@@ -2815,6 +2816,7 @@ function renderDays() {
             ${scoreEl}
             <div class="m-team ${w2?'win':''}">${(m.team2||[]).join(' / ')}</div>
           </div>
+          ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(13,148,136,0.05);border-radius:7px;border-left:2px solid rgba(13,148,136,0.2)">${evalHtml}</div>`:''}
           <div style="display:flex;align-items:center;gap:5px;margin-top:8px">
             ${basicInputBtn}${editBtn}${delBtn}
             <button onclick="toggleMatchCard('${m.id}')" id="marr_${m.id}" style="margin-left:auto;background:none;border:1px solid rgba(50,110,200,0.22);border-radius:7px;color:#64748B;font-size:12px;cursor:pointer;padding:2px 9px;transition:transform 0.2s;flex-shrink:0">⌄</button>
@@ -3861,11 +3863,121 @@ window.openEventDetail=function(evId){
   document.getElementById('eventDetailModal').style.display='flex';
 };
 
+// ── 경기별 평가 엔진 ──────────────────────────────────────────
+function _getAllMatchHistory(upToDate) {
+  const res = [];
+  days.forEach(function(day) {
+    if (!day.date || day.date > upToDate) return;
+    (day.rounds||[]).forEach(function(r) {
+      (r.matches||[]).forEach(function(m) {
+        if (!m.done || m.isRally || m.tag==='랠리' || m.tag==='휴식') return;
+        if (m.score1==null || m.score2==null) return;
+        res.push({team1:m.team1||[],team2:m.team2||[],score1:Number(m.score1),score2:Number(m.score2),matchType:m.tag||'',date:day.date,isExchange:false});
+      });
+    });
+  });
+  events.forEach(function(ev) {
+    if (!ev.date || ev.date > upToDate) return;
+    (ev.matches||[]).forEach(function(m) {
+      if (m.ourScore==null||m.ourScore===''||m.oppScore==null||m.oppScore==='') return;
+      res.push({team1:m.ourPair||[],team2:m.oppPair||[],score1:Number(m.ourScore),score2:Number(m.oppScore),matchType:m.courtType||'',date:ev.date,isExchange:true});
+    });
+  });
+  res.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
+  return res;
+}
+
+function buildMatchEval(norm, date) {
+  if (!norm||!date) return '';
+  const s1=Number(norm.score1), s2=Number(norm.score2);
+  if (isNaN(s1)||isNaN(s2)||(s1===0&&s2===0)) return '';
+  const allFull=_getAllMatchHistory(date);
+  const priorOnly=allFull.filter(function(h){return h.date<date;});
+  const winner=s1>s2?1:s1<s2?2:0;
+  const winTeam=winner===1?(norm.team1||[]):winner===2?(norm.team2||[]):[];
+  const t1k=[...(norm.team1||[])].sort().join('|');
+  const t2k=[...(norm.team2||[])].sort().join('|');
+  function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+  const sentences=[];
+
+  // 1. 점수차 묘사
+  const diff=Math.abs(s1-s2);
+  if (winner===0) {
+    sentences.push(pick(['팽팽한 접전 끝에 동점으로 마무리됐다.','막상막하, 비겨도 아쉽지 않은 승부였다.','끝까지 긴장감 넘쳤던 드로 한 판이었다.']));
+  } else if (Math.min(s1,s2)===0) {
+    sentences.push(pick(['상대에게 단 한 포인트도 내주지 않는 완봉 승리!','완전한 셧아웃, 상대의 흔적이 없다.','완벽한 지배력, 0대 완봉으로 끝냈다.']));
+  } else if (diff>=6) {
+    sentences.push(pick(['압도적인 스코어로 상대를 완전히 따돌렸다.','여유로운 승리, 실력 차를 여실히 드러냈다.','한 수 위의 경기력으로 크게 앞서 승리했다.']));
+  } else if (diff>=3) {
+    sentences.push(pick(['안정적인 경기 운영으로 확실한 승리를 챙겼다.','명확한 우위를 바탕으로 승부를 결정지었다.','선명한 점수 차로 흔들림 없이 이겼다.']));
+  } else {
+    sentences.push(pick(['아슬아슬한 접전, 마지막 순간까지 긴장을 놓을 수 없었다.','끝까지 손에 땀을 쥐게 한 박빙 승부였다.',(diff===1?'1점 차':'2점 차')+'로 간신히 웃었다.']));
+  }
+
+  // 2. 맞대결 전적 (정규시즌 2vs2만)
+  if (!norm.isExchange&&(norm.team1||[]).length===2&&(norm.team2||[]).length===2&&winner!==0) {
+    let h2wW=0,h2wL=0,h2wT=0;
+    priorOnly.forEach(function(h) {
+      if (h.isExchange||h.team1.length!==2||h.team2.length!==2) return;
+      const hT1=[...h.team1].sort().join('|'),hT2=[...h.team2].sort().join('|');
+      const m1=hT1===t1k&&hT2===t2k,m2=hT1===t2k&&hT2===t1k;
+      if (!m1&&!m2) return;
+      h2wT++;
+      const hw=h.score1>h.score2?1:h.score1<h.score2?2:0;
+      if ((m1&&hw===1)||(m2&&hw===2)) h2wW++;
+      else if ((m1&&hw===2)||(m2&&hw===1)) h2wL++;
+    });
+    const wN=winner===1?(norm.team1||[]).join('·'):(norm.team2||[]).join('·');
+    const priorWW=winner===1?h2wW:h2wL;
+    const priorWL=winner===1?h2wL:h2wW;
+    const newWW=priorWW+1,tot=h2wT+1;
+    if (h2wT===0) {
+      sentences.push(pick([`이 조합 첫 맞대결, ${wN}가 선수를 쳤다.`,`처음 맞붙은 두 팀, ${wN}가 첫 승을 가져갔다.`]));
+    } else {
+      sentences.push(pick([`통산 ${tot}번째 맞대결, ${wN}가 ${newWW}승 ${priorWL}패로 앞서게 됐다.`,`맞대결 통산 ${newWW}승 ${priorWL}패, ${wN} 리드가 계속된다.`]));
+    }
+  }
+
+  // 3. 연승 + 마일스톤 + 파트너 첫 조합
+  if (winner!==0&&winTeam.length>0) {
+    let bestStreak=0,bestSName='';
+    winTeam.forEach(function(name) {
+      const pm=allFull.filter(function(h){return h.team1.includes(name)||h.team2.includes(name);});
+      let streak=0,totalW=0;
+      for (let i=pm.length-1;i>=0;i--) {
+        const h=pm[i],onT1=h.team1.includes(name),hw=h.score1>h.score2?1:h.score1<h.score2?2:0;
+        if ((onT1&&hw===1)||(!onT1&&hw===2)) streak++;
+        else if (hw!==0) break;
+      }
+      pm.forEach(function(h){const onT1=h.team1.includes(name),hw=h.score1>h.score2?1:h.score1<h.score2?2:0;if((onT1&&hw===1)||(!onT1&&hw===2))totalW++;});
+      if (streak>bestStreak){bestStreak=streak;bestSName=name;}
+      if (totalW>0&&totalW%10===0&&sentences.length<3) {
+        sentences.push(pick([`${name}, 이 경기로 통산 ${totalW}승 고지를 밟았다!`,`${name}의 통산 ${totalW}승 달성, 귀한 이정표다.`]));
+      }
+    });
+    if (bestStreak>=3&&sentences.length<3) {
+      sentences.push(pick([`${bestSName}의 ${bestStreak}연승 행진이 계속되고 있다.`,`멈추지 않는 ${bestSName}, 이번 승리로 ${bestStreak}연승을 이어갔다.`,`${bestStreak}연승 중인 ${bestSName}, 이번에도 해냈다.`]));
+    } else if (bestStreak===2&&sentences.length<3) {
+      sentences.push(pick([`${bestSName}가 연속 2연승으로 분위기를 이어가고 있다.`,`${bestSName}의 2연승 도전, 성공.`]));
+    }
+    if (!norm.isExchange&&winTeam.length===2&&sentences.length<3) {
+      const wkey=[...winTeam].sort().join('|');
+      const firstTime=!priorOnly.some(function(h){return [...h.team1].sort().join('|')===wkey||[...h.team2].sort().join('|')===wkey;});
+      if (firstTime) sentences.push(pick([`${winTeam.join('·')} 조합의 파트너 데뷔전, 승리로 시작했다.`,`처음 파트너로 나선 ${winTeam.join('·')}, 첫 경기부터 웃었다.`]));
+    }
+  }
+
+  return sentences.slice(0,3).join(' ');
+}
+
 // 교류전·월례전·특별전 매치 카드 (상세 화면 + 대진표 화면 공통)
 function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMember) {
-  const evDefault=defaultOppClub||events.find(e=>e.id===evId)?.oppClub||'';
+  const _ev=events.find(e=>e.id===evId);
+  const evDefault=defaultOppClub||_ev?.oppClub||'';
+  const evDate=_ev?.date||'';
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
   const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
+  const evalHtml=done?buildMatchEval({team1:m.ourPair||[],team2:m.oppPair||[],score1:Number(m.ourScore),score2:Number(m.oppScore),matchType:m.courtType||'',isExchange:true},evDate):'';
   const scoreEl=done
     ?`<div class="m-score" style="${won?'color:#059669':lost?'color:#f87171':'color:#D97706'}">${m.ourScore} : ${m.oppScore}</div>`
     :`<div class="m-score pend">예정</div>`;
@@ -3905,6 +4017,7 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
       ${scoreEl}
       <div class="m-team ${lost?'win':''}">${oppLabel}</div>
     </div>
+    ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(109,40,217,0.05);border-radius:7px;border-left:2px solid rgba(109,40,217,0.2)">${evalHtml}</div>`:''}
     ${isMember?`<div style="display:flex;gap:5px;margin-top:8px">
       <button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button>
       <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#059669" onclick="toggleEvMatchInput('${oppInpId}')">👤 상대팀 수정</button>
