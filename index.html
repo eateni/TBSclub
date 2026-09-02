@@ -1246,6 +1246,7 @@ const SCHEDULE_PER_PAGE = 5;
 window.gotoSchedulePage = function(p){ schedulePage = p; renderSchedules(); const el = document.getElementById('scheduleList'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
 let couples = [];  // [{m, f}] 커플/부부
 let currentSeason = 1;      // 현재 진행 시즌
+let _analysisAutoSelected = false; // 개인별 분석 최초 자동 선택 완료 플래그
 let viewSeason = 1;         // 화면에서 보고 있는 시즌
 let seasonUserPicked = false; // 사용자가 과거 시즌을 직접 선택했는지
 let adminDaySeason = null;  // null = currentSeason, -1 = 전체
@@ -3004,7 +3005,16 @@ function renderAnalysis(stats) {
     + (guestList.length ? '<optgroup label="👤 게스트">'
     + guestList.map(s=>`<option value="${s.name}">${s.name} ${s.gender==='f'?'♀':'♂'} (게스트 · 출석${s.attendance}일)</option>`).join('')
     + '</optgroup>' : '');
-  if (cur) { sel.value = cur; renderAnalysisDetail(); }
+  if (cur) {
+    sel.value = cur;
+    renderAnalysisDetail();
+  } else if (!_analysisAutoSelected) {
+    const isMemberUser = myClaim && myClaim !== 'pending' && !myClaim.isGuest;
+    if (isMemberUser && myClaim.name) {
+      sel.value = myClaim.name;
+      if (sel.value) { _analysisAutoSelected = true; renderAnalysisDetail(); }
+    }
+  }
 }
 
 window.renderAnalysisDetail = function() {
