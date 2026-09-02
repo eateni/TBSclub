@@ -3991,6 +3991,8 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
   const evDate=_ev?.date||'';
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
   const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
+  // 기존 매치에 id 없으면 lazy 부여 — evalText 저장 시 함께 영구화
+  if (!m.id) m.id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
   let evalHtml='';
   if (done) {
     if (m.evalText) {
@@ -3999,8 +4001,9 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
       evalHtml=buildMatchEval({team1:m.ourPair||[],team2:m.oppPair||[],score1:Number(m.ourScore),score2:Number(m.oppScore),matchType:m.courtType||'',isExchange:true},evDate);
       if (evalHtml) {
         m.evalText=evalHtml;
-        const _eId=evId,_eMi=mi,_et=evalHtml;
-        (async()=>{const _ev2=events.find(e=>e.id===_eId);if(!_ev2)return;const nm=(_ev2.matches||[]).map((mx,i)=>i===_eMi?{...mx,evalText:_et}:mx);try{await updateDoc(doc(db,'events',_eId),{matches:nm});}catch(e){}})();
+        const _eId=evId,_mId=m.id,_eMi=mi,_et=evalHtml;
+        // ID 기반으로 매치 탐색, 없으면 인덱스 폴백 (하위호환)
+        (async()=>{const _ev2=events.find(e=>e.id===_eId);if(!_ev2)return;const nm=(_ev2.matches||[]).map((mx,i)=>(_mId?mx.id===_mId:i===_eMi)?{...mx,id:_mId,evalText:_et}:mx);try{await updateDoc(doc(db,'events',_eId),{matches:nm});}catch(e){}})();
       }
     }
   }
@@ -4356,7 +4359,7 @@ window.saveAddEvMatch=async function(){
   const matches=[...(ev.matches||[])];
   const roundMatches=matches.filter(m=>(m.round||1)===roundNum);
   const nextCourt=(roundMatches.length>0?Math.max(...roundMatches.map(m=>m.court||0)):0)+1;
-  matches.push({ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:''});
+  matches.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:''});
   if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon:',e.code);}}
   try{
     await updateDoc(doc(db,'events',evId),{matches});
@@ -4387,7 +4390,7 @@ window.saveAddEvMatchFromFm=async function(evId){
   const roundNum=roundNums.length?Math.max(...roundNums):1;
   const roundMatches=matches.filter(function(m){return(m.round||1)===roundNum;});
   const nextCourt=(roundMatches.length>0?Math.max(...roundMatches.map(function(m){return m.court||0;})):0)+1;
-  matches.push({ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub:ev.oppClub||'',ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:courtType});
+  matches.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub:ev.oppClub||'',ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:courtType});
   if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon:',e.code);}}
   try{
     await updateDoc(doc(db,'events',evId),{matches});
