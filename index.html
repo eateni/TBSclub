@@ -2800,7 +2800,19 @@ function renderDays() {
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
         const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
-        const evalHtml=m.done?buildMatchEval({team1:m.team1||[],team2:m.team2||[],score1:m.score1,score2:m.score2,matchType:m.tag||'',isExchange:false},day.date||''):'';
+        let evalHtml='';
+        if (m.done) {
+          if (m.evalText) {
+            evalHtml=m.evalText;
+          } else {
+            evalHtml=buildMatchEval({team1:m.team1||[],team2:m.team2||[],score1:m.score1,score2:m.score2,matchType:m.tag||'',isExchange:false},day.date||'');
+            if (evalHtml) {
+              m.evalText=evalHtml;
+              const _dId=day.id,_rI=rIdx,_mId=m.id,_et=evalHtml;
+              (async()=>{const _d=days.find(d=>d.id===_dId);if(!_d)return;const nr=(_d.rounds||[]).map((rn,ri)=>ri!==_rI?rn:{...rn,matches:(rn.matches||[]).map(mx=>mx.id===_mId?{...mx,evalText:_et}:mx)});try{await updateDoc(doc(db,'days',_dId),{rounds:nr});}catch(e){}})();
+            }
+          }
+        }
         const mComments = m.comments || [];
         const commentOpts = [...members, ...guests].map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
         // 댓글 목록
@@ -3864,7 +3876,6 @@ window.openEventDetail=function(evId){
 };
 
 // ── 경기별 평가 엔진 ──────────────────────────────────────────
-let _evalCache = {}; // 세션 내 평가 문구 캐시 (카드 생성 시 1회 고정)
 function _getAllMatchHistory(upToDate) {
   const res = [];
   days.forEach(function(day) {
@@ -3892,9 +3903,6 @@ function buildMatchEval(norm, date) {
   if (!norm||!date) return '';
   const s1=Number(norm.score1), s2=Number(norm.score2);
   if (isNaN(s1)||isNaN(s2)||(s1===0&&s2===0)) return '';
-  // 캐시 조회 — 카드 생성 시 최초 1회 확정 후 재렌더링 시 동일 문구 반환
-  const cacheKey=(norm.team1||[]).join('·')+'|vs|'+(norm.team2||[]).join('·')+'|'+s1+':'+s2+'|'+date+'|'+(norm.isExchange?'ex':'reg');
-  if (_evalCache[cacheKey]) return _evalCache[cacheKey];
   const allFull=_getAllMatchHistory(date);
   const priorOnly=allFull.filter(function(h){return h.date<date;});
   const winner=s1>s2?1:s1<s2?2:0;
@@ -3973,9 +3981,7 @@ function buildMatchEval(norm, date) {
     }
   }
 
-  const result=sentences.slice(0,3).join(' ');
-  _evalCache[cacheKey]=result; // 캐시에 저장
-  return result;
+  return sentences.slice(0,3).join(' ');
 }
 
 // 교류전·월례전·특별전 매치 카드 (상세 화면 + 대진표 화면 공통)
@@ -3985,7 +3991,19 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
   const evDate=_ev?.date||'';
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
   const won=done&&m.ourScore>m.oppScore, lost=done&&m.ourScore<m.oppScore;
-  const evalHtml=done?buildMatchEval({team1:m.ourPair||[],team2:m.oppPair||[],score1:Number(m.ourScore),score2:Number(m.oppScore),matchType:m.courtType||'',isExchange:true},evDate):'';
+  let evalHtml='';
+  if (done) {
+    if (m.evalText) {
+      evalHtml=m.evalText;
+    } else {
+      evalHtml=buildMatchEval({team1:m.ourPair||[],team2:m.oppPair||[],score1:Number(m.ourScore),score2:Number(m.oppScore),matchType:m.courtType||'',isExchange:true},evDate);
+      if (evalHtml) {
+        m.evalText=evalHtml;
+        const _eId=evId,_eMi=mi,_et=evalHtml;
+        (async()=>{const _ev2=events.find(e=>e.id===_eId);if(!_ev2)return;const nm=(_ev2.matches||[]).map((mx,i)=>i===_eMi?{...mx,evalText:_et}:mx);try{await updateDoc(doc(db,'events',_eId),{matches:nm});}catch(e){}})();
+      }
+    }
+  }
   const scoreEl=done
     ?`<div class="m-score" style="${won?'color:#059669':lost?'color:#f87171':'color:#D97706'}">${m.ourScore} : ${m.oppScore}</div>`
     :`<div class="m-score pend">예정</div>`;
