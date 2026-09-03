@@ -1389,7 +1389,7 @@ function getDayBanSet(dayId){
 }
 function getDayFixPairs(dayId){
   const day = days.find(d=>d.id===dayId);
-  return (day && Array.isArray(day.fixPairs)) ? day.fixPairs.map(p=>[p.a,p.b]) : [];
+  return (day && Array.isArray(day.fixPairs)) ? day.fixPairs.map(p=>[p.a,p.b,p.courtType||'전체']) : [];
 }
 
 // ── 혼복 페어 생성 (부부/금지 절대금지 + 지정 강제 + 당일 중복 회피) ──
@@ -1888,22 +1888,24 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
   const forcedMix=[], forcedMale=[], forcedFemale=[]; const fixedNames=new Set();
   fixAll.forEach(p=>{
     if(fixedNames.has(p[0])||fixedNames.has(p[1])) return; // 한 사람이 여러 지정에 겹치면 첫 것만
+    const ct=p[2]||'전체';
     const g0=genderOf[p[0]], g1=genderOf[p[1]];
-    if(g0==='m'&&g1==='f') forcedMix.push([p[0],p[1]]);
-    else if(g0==='f'&&g1==='m') forcedMix.push([p[1],p[0]]);
-    else if(g0==='m'&&g1==='m') forcedMale.push([p[0],p[1]]);
-    else if(g0==='f'&&g1==='f') forcedFemale.push([p[0],p[1]]);
-    else return;
-    fixedNames.add(p[0]); fixedNames.add(p[1]);
+    let pushed=false;
+    if(g0==='m'&&g1==='f'){ if(ct==='전체'||ct==='혼복'){forcedMix.push([p[0],p[1]]);pushed=true;} }
+    else if(g0==='f'&&g1==='m'){ if(ct==='전체'||ct==='혼복'){forcedMix.push([p[1],p[0]]);pushed=true;} }
+    else if(g0==='m'&&g1==='m'){ if(ct==='전체'||ct==='남복'){forcedMale.push([p[0],p[1]]);pushed=true;} }
+    else if(g0==='f'&&g1==='f'){ if(ct==='전체'||ct==='여복'){forcedFemale.push([p[0],p[1]]);pushed=true;} }
+    if(pushed){fixedNames.add(p[0]);fixedNames.add(p[1]);}
   });
   // 강제 멤버를 해당 풀 앞쪽으로 정렬 → 올바른 코트 타입 슬라이스에 포함되게
+  // 혼복 지정만 앞으로 (남복/여복 지정은 각자 2차 정렬에서 처리)
   const orderPool = (arr, fronts) => {
     const front=[]; fronts.forEach(g=>g.forEach(n=>{ if(arr.includes(n)&&!front.includes(n)) front.push(n); }));
     const fset=new Set(front);
     return [...front, ...arr.filter(n=>!fset.has(n))];
   };
-  mPool = orderPool(mPool, [forcedMix.map(p=>p[0]), forcedMale.flat()]);
-  fPool = orderPool(fPool, [forcedMix.map(p=>p[1]), forcedFemale.flat()]);
+  mPool = orderPool(mPool, [forcedMix.map(p=>p[0])]);
+  fPool = orderPool(fPool, [forcedMix.map(p=>p[1])]);
   const matches = [];
 
   // 코트별 방식 파악
@@ -1939,8 +1941,8 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
     : null;
   if (_thBs) {
     pool.forEach(p=>{if(!typeHistory[p.name])typeHistory[p.name]={혼복:0,남복:0,여복:0,잡복:0,휴식:0};});
-    const mF=new Set([...forcedMix.map(p=>p[0]),...forcedMale.flat()].filter(n=>mPool.includes(n)));
-    const fF=new Set([...forcedMix.map(p=>p[1]),...forcedFemale.flat()].filter(n=>fPool.includes(n)));
+    const mF=new Set(forcedMix.map(p=>p[0]).filter(n=>mPool.includes(n)));
+    const fF=new Set(forcedMix.map(p=>p[1]).filter(n=>fPool.includes(n)));
     mPool=_thBs(mPool,mF,'혼복'); fPool=_thBs(fPool,fF,'혼복');
   }
   // 1) 혼복 페어
@@ -2599,7 +2601,7 @@ function renderDatePairs(){
   const att = getAttendees(dayId);
   const opts = '<option value="">선수 선택</option>' +
     att.map(p=>`<option value="${p.name}">${p.name}${p.gender==='f'?' (여)':''}</option>`).join('');
-  const chip = (p,kind)=>`<span class="chip" style="border-color:${kind==='ban'?'rgba(239,68,68,0.45)':'rgba(96,165,250,0.45)'}"><span style="color:${kind==='ban'?'#f87171':'#60a5fa'}">${kind==='ban'?'🚫':'📌'}</span> ${p.a} &amp; ${p.b}<button class="chip-x" onclick="deleteDayPair('${dayId}','${kind}','${p.a}','${p.b}')">×</button></span>`;
+  const chip = (p,kind)=>`<span class="chip" style="border-color:${kind==='ban'?'rgba(239,68,68,0.45)':'rgba(96,165,250,0.45)'}"><span style="color:${kind==='ban'?'#f87171':'#60a5fa'}">${kind==='ban'?'🚫':'📌'}</span> ${p.a} &amp; ${p.b}${kind==='fix'&&p.courtType&&p.courtType!=='전체'?' ('+p.courtType+')':''}<button class="chip-x" onclick="deleteDayPair('${dayId}','${kind}','${p.a}','${p.b}')">×</button></span>`;
   const banChips = ban.length ? ban.map(p=>chip(p,'ban')).join('') : '<span style="color:#64748B;font-size:12px">없음</span>';
   const fixChips = fix.length ? fix.map(p=>chip(p,'fix')).join('') : '<span style="color:#64748B;font-size:12px">없음</span>';
   body.innerHTML = `
@@ -2618,6 +2620,12 @@ function renderDatePairs(){
       <div class="row-form" style="margin-top:8px">
         <select class="row-inp" id="fixA" style="flex:1">${opts}</select>
         <select class="row-inp" id="fixB" style="flex:1">${opts}</select>
+        <select class="row-inp" id="fixCourt" style="flex:0.65">
+          <option value="전체">전체</option>
+          <option value="혼복">혼복</option>
+          <option value="남복">남복</option>
+          <option value="여복">여복</option>
+        </select>
         <button class="btn-add" onclick="addDayPair('fix')">추가</button>
       </div>
     </div>`;
@@ -2639,7 +2647,8 @@ window.addDayPair = async function(kind){
   const key = dayPairKey(a,b);
   if(list.some(p=>dayPairKey(p.a,p.b)===key)){ alert('이미 등록된 페어예요'); return; }
   if(other.some(p=>dayPairKey(p.a,p.b)===key)){ alert('같은 페어가 '+(kind==='ban'?'지정':'금지')+'에 이미 있어요'); return; }
-  await updateDoc(doc(db,'days',dayId), { [field]: [...list, {a,b}] });
+  const extra = kind==='fix' ? {courtType:(document.getElementById('fixCourt')||{}).value||'전체'} : {};
+  await updateDoc(doc(db,'days',dayId), { [field]: [...list, {a,b,...extra}] });
 };
 
 window.deleteDayPair = async function(dayId, kind, a, b){
