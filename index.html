@@ -1247,6 +1247,7 @@ window.gotoSchedulePage = function(p){ schedulePage = p; renderSchedules(); cons
 let couples = [];  // [{m, f}] 커플/부부
 let currentSeason = 1;      // 현재 진행 시즌
 let _analysisAutoSelected = false; // 개인별 분석 최초 자동 선택 완료 플래그
+let _openDayIds = new Set(); // 날짜 카드 열림 상태 (재렌더링 후 복원용)
 let viewSeason = 1;         // 화면에서 보고 있는 시즌
 let seasonUserPicked = false; // 사용자가 과거 시즌을 직접 선택했는지
 let adminDaySeason = null;  // null = currentSeason, -1 = 전체
@@ -2879,6 +2880,12 @@ function renderDays() {
       </div>
     </div>`;
   }).join('');
+  _openDayIds.forEach(function(dayId){
+    const body=document.getElementById(dayId);
+    const arr=document.getElementById('darr_'+dayId.slice(4));
+    if(body) body.style.display='flex';
+    if(arr) arr.style.transform='rotate(90deg)';
+  });
 }
 
 let statsGuestSortKey = null;
@@ -7750,6 +7757,7 @@ window.toggleR=function(bodyId,arrId){
   const open=el.style.display==='none';
   el.style.display=open?'flex':'none';
   if(arr)arr.style.transform=open?'rotate(90deg)':'';
+  if(bodyId.startsWith('day_')){if(open)_openDayIds.add(bodyId);else _openDayIds.delete(bodyId);}
 };
 // 코트 카드 2차 정보(실시간스코어·댓글) 펼침/접힘
 window.toggleMatchCard=function(mid){
