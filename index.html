@@ -1922,11 +1922,26 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
     const mF=new Set(forcedMix.map(p=>p[0]).filter(n=>mPool.includes(n)));
     const fF=new Set(forcedMix.map(p=>p[1]).filter(n=>fPool.includes(n)));
     mPool=_thBs(mPool,mF,'혼복'); fPool=_thBs(fPool,fF,'혼복');
-    // forcedMale/forcedFemale을 혼복 slice 뒤로 이동 (선취 방지, 최후순위 배정)
-    const fmSet=new Set(forcedMale.flat()); const ffSet=new Set(forcedFemale.flat());
-    if(fmSet.size)mPool=[...mPool.filter(n=>!fmSet.has(n)),...mPool.filter(n=>fmSet.has(n))];
-    if(ffSet.size)fPool=[...fPool.filter(n=>!ffSet.has(n)),...fPool.filter(n=>ffSet.has(n))];
   }
+  // 지정 페어 멤버가 혼복/비혼복 경계에서 갈라지면 평균 위치 기준으로 같은 쪽으로 이동
+  // (seeding이 동작하려면 둘 다 같은 코트타입 풀에 있어야 함)
+  // 코트타입 균형은 _thBs / orderPool 로직이 담당하며, 이 함수는 쌍 분리만 해소
+  const _adjPairs=(pool,pairs,bnd)=>{
+    if(bnd<=0||bnd>=pool.length)return;
+    pairs.forEach(pair=>{
+      const pA=pool.indexOf(pair[0]),pB=pool.indexOf(pair[1]);
+      if(pA<0||pB<0)return;
+      if((pA<bnd)===(pB<bnd))return; // 이미 같은 쪽
+      // avg < bnd → 둘 다 혼복으로, 그 외 → 둘 다 비혼복으로
+      const outIdx=(pA+pB)/2<bnd?[pA,pB].find(p=>p>=bnd):[pA,pB].find(p=>p<bnd);
+      const mover=pool[outIdx];const goIn=outIdx>=bnd;
+      for(let i=goIn?bnd-1:bnd;goIn?i>=0:i<pool.length;goIn?i--:i++){
+        if(pool[i]!==pair[0]&&pool[i]!==pair[1]){pool[outIdx]=pool[i];pool[i]=mover;break;}
+      }
+    });
+  };
+  _adjPairs(fPool,forcedFemale.filter(p=>fPool.includes(p[0])&&fPool.includes(p[1])),mixedCourts*2);
+  _adjPairs(mPool,forcedMale.filter(p=>mPool.includes(p[0])&&mPool.includes(p[1])),mixedCourts*2);
   // 1) 혼복 페어
   const mForMix = mPool.splice(0, mixedCourts*2);
   const fForMix = fPool.splice(0, mixedCourts*2);
