@@ -2841,6 +2841,7 @@ function renderDays() {
           ?`<div class="m-score">${m.score1} : ${m.score2}</div>`
           :`<div class="m-score pend">예정</div>`;
         // 기본 노출: 결과 입력만
+        const isRegularMember = !isAdmin && myClaim && myClaim !== 'pending' && !myClaim.isGuest;
         const basicInputBtn = !m.done
           ? `<button class="btn-input" style="margin-top:0;flex:1" onclick="openScore('${day.id}','${rIdx}','${m.id}')">📝 결과 입력</button>`
           : '';
@@ -2849,7 +2850,7 @@ function renderDays() {
           ? `<button class="btn-input" style="width:100%;margin-bottom:7px;border-color:rgba(52,211,153,0.4);color:#059669" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button>`
           : '';
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
-        const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
+        const editBtn=(isAdmin||isRegularMember)&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
         let evalHtml='';
         if (m.done) {
@@ -3780,8 +3781,10 @@ window.openEventDetail=function(evId){
         +'</div></div>':'';
       var scoreDone=m.score1!==null&&m.score1!==undefined&&m.score1!==''&&m.score2!==null&&m.score2!==undefined&&m.score2!=='';
       var scoreDisplay=scoreDone?'<div style="margin-top:5px;text-align:center;font-size:14px;font-weight:900;color:#1E293B;letter-spacing:2px">'+m.score1+' : '+m.score2+'</div>':'';
-      var scoreBtn=!noTeam2&&isMember?'<button onclick="document.getElementById(\'fmScoreForm_'+m.id+'\').style.display=\'block\'" style="padding:3px 8px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.35);border-radius:7px;color:#059669;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">'+(scoreDone?'✏ 수정':'📝 결과')+'</button>':'';
-      var scoreForm=!noTeam2&&isMember?'<div id="fmScoreForm_'+m.id+'" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(52,211,153,0.06);border:1px dashed rgba(52,211,153,0.35);border-radius:8px">'
+      var evRegMember=!isAdmin&&myClaim&&myClaim!=='pending'&&!myClaim.isGuest;
+      var scoreInputBtn=!noTeam2&&!scoreDone?'<button onclick="document.getElementById(\'fmScoreForm_'+m.id+'\').style.display=\'block\'" style="padding:3px 8px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.35);border-radius:7px;color:#059669;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">📝 결과</button>':'';
+      var scoreEditBtn=!noTeam2&&scoreDone&&(isAdmin||evRegMember)?'<button onclick="document.getElementById(\'fmScoreForm_'+m.id+'\').style.display=\'block\'" style="padding:3px 8px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.35);border-radius:7px;color:#059669;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0">✏ 수정</button>':'';
+      var scoreForm=!noTeam2?'<div id="fmScoreForm_'+m.id+'" style="display:none;margin-top:8px;padding:8px 10px;background:rgba(52,211,153,0.06);border:1px dashed rgba(52,211,153,0.35);border-radius:8px">'
         +'<div style="font-size:10px;color:#64748B;margin-bottom:6px">결과 입력</div>'
         +'<div style="display:-webkit-flex;display:flex;gap:8px;align-items:flex-end;margin-bottom:6px">'
         +'<div style="flex:1;text-align:center">'
@@ -3806,7 +3809,7 @@ window.openEventDetail=function(evId){
         +t2badge
         +typeEditBtn
         +t2inputBtn
-        +scoreBtn
+        +scoreInputBtn+scoreEditBtn
         +delBtn
         +'</div>'
         +typeEditForm
