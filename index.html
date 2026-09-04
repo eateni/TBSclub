@@ -1876,14 +1876,14 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
     if(pushed){fixedNames.add(p[0]);fixedNames.add(p[1]);}
   });
   // 강제 멤버를 해당 풀 앞쪽으로 정렬 → 올바른 코트 타입 슬라이스에 포함되게
-  // 혼복 지정만 앞으로 (남복/여복 지정은 각자 2차 정렬에서 처리)
-  const orderPool = (arr, fronts) => {
+  // 혼복 지정은 앞으로, 남복/여복 코트타입 지정(backs)은 뒤로 → 혼복 splice 선취 방지
+  const orderPool = (arr, fronts, backs=[]) => {
     const front=[]; fronts.forEach(g=>g.forEach(n=>{ if(arr.includes(n)&&!front.includes(n)) front.push(n); }));
-    const fset=new Set(front);
-    return [...front, ...arr.filter(n=>!fset.has(n))];
+    const fset=new Set(front); const bset=new Set(backs);
+    return [...front,...arr.filter(n=>!fset.has(n)&&!bset.has(n)),...arr.filter(n=>!fset.has(n)&&bset.has(n))];
   };
-  mPool = orderPool(mPool, [forcedMix.map(p=>p[0])]);
-  fPool = orderPool(fPool, [forcedMix.map(p=>p[1])]);
+  mPool = orderPool(mPool, [forcedMix.map(p=>p[0])], forcedMale.flat());
+  fPool = orderPool(fPool, [forcedMix.map(p=>p[1])], forcedFemale.flat());
   const matches = [];
 
   // 코트별 방식 파악
@@ -1922,6 +1922,10 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
     const mF=new Set(forcedMix.map(p=>p[0]).filter(n=>mPool.includes(n)));
     const fF=new Set(forcedMix.map(p=>p[1]).filter(n=>fPool.includes(n)));
     mPool=_thBs(mPool,mF,'혼복'); fPool=_thBs(fPool,fF,'혼복');
+    // forcedMale/forcedFemale을 혼복 slice 뒤로 이동 (선취 방지, 최후순위 배정)
+    const fmSet=new Set(forcedMale.flat()); const ffSet=new Set(forcedFemale.flat());
+    if(fmSet.size)mPool=[...mPool.filter(n=>!fmSet.has(n)),...mPool.filter(n=>fmSet.has(n))];
+    if(ffSet.size)fPool=[...fPool.filter(n=>!ffSet.has(n)),...fPool.filter(n=>ffSet.has(n))];
   }
   // 1) 혼복 페어
   const mForMix = mPool.splice(0, mixedCourts*2);
