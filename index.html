@@ -6997,35 +6997,28 @@ function renderHomeTab() {
       <div style="text-align:center"><span id="wxBadgeWeekly_${d.date}" style="font-size:11px;color:#64748B;font-weight:700"></span></div>
     </div>`;
   };
-  // ─ 우측 열: 이벤트전만 담당 (주간 게임은 별도 행으로 분리) ─
-  let rightColumnHtml = '';
-  if (nextExchangeEv) {
-    rightColumnHtml = nextEvCardHtml;
-  }
-
-  // ─ 주간 게임 카드: 이미 nextGameCardHtml에 표시된 날짜 제외 후 50/50 배치 ─
-  const _nextDateEx = nextGameDay ? nextGameDay.date : null;
-  const _wCards = [];
-  if (fridayGame  && fridayGame.date  !== _nextDateEx) _wCards.push(`<div style="flex:1;min-width:0">${makeWeeklyGameCard(fridayGame)}</div>`);
-  if (saturdayGame && saturdayGame.date !== _nextDateEx) _wCards.push(`<div style="flex:1;min-width:0">${makeWeeklyGameCard(saturdayGame)}</div>`);
-  let weeklyPairHtml = '';
-  if (_wCards.length === 2) {
-    weeklyPairHtml = `<div class="home-card-pair" style="margin-bottom:12px">${_wCards.join('')}</div>`;
-  } else if (_wCards.length === 1) {
-    weeklyPairHtml = `<div style="margin-bottom:12px">${_wCards[0]}</div>`;
-  }
-
-  // ─ 메인 페어: nextGame + 이벤트전 ─
-  let cardPairHtml = '';
-  if (nextGameCardHtml && rightColumnHtml) {
-    cardPairHtml = `<div class="home-card-pair"><div>${nextGameCardHtml}</div><div>${rightColumnHtml}</div></div>`;
-  } else if (nextGameCardHtml) {
-    cardPairHtml = `<div style="margin-bottom:12px">${nextGameCardHtml}</div>`;
-  } else if (rightColumnHtml) {
-    cardPairHtml = `<div style="margin-bottom:12px">${rightColumnHtml}</div>`;
-  }
-  // 주간 게임 쌍을 메인 페어 아래에 추가
-  cardPairHtml += weeklyPairHtml;
+  // ── 고정 카드 레이아웃: 이벤트전(1행 전체) + 금/토 정규시즌(2단 고정) ──────
+  const _emptyGameCard = (label) =>
+    `<div style="background:#F8FAFC;border:1.5px dashed #CBD5E1;border-radius:14px;padding:10px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90px">
+      <div style="font-size:12px;font-weight:700;color:#94A3B8;text-align:center">${label}</div>
+      <div style="font-size:11px;color:#CBD5E1;margin-top:4px;text-align:center">예정된 일정이 없습니다</div>
+    </div>`;
+  // 이벤트전 행: 항상 가로 전체 표시, 없으면 compact 플레이스홀더
+  const _evRowHtml = nextExchangeEv
+    ? `<div style="margin-bottom:10px">${nextEvCardHtml}</div>`
+    : `<div style="background:#F8FAFC;border:1.5px dashed #CBD5E1;border-radius:14px;padding:9px 14px;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+         <span style="font-size:14px">🎉</span>
+         <span style="font-size:11px;font-weight:700;color:#94A3B8">이벤트전</span>
+         <span style="font-size:10px;color:#CBD5E1">예정된 이벤트전이 없습니다</span>
+       </div>`;
+  // 금/토 2단: 항상 2칸 고정, 없는 쪽은 플레이스홀더
+  const _friCardHtml = fridayGame ? makeWeeklyGameCard(fridayGame) : _emptyGameCard('🎾 금요일 게임');
+  const _satCardHtml = saturdayGame ? makeWeeklyGameCard(saturdayGame) : _emptyGameCard('🎾 토요일 게임');
+  const cardPairHtml = _evRowHtml
+    + `<div class="home-card-pair" style="margin-bottom:12px">
+         <div style="flex:1;min-width:0">${_friCardHtml}</div>
+         <div style="flex:1;min-width:0">${_satCardHtml}</div>
+       </div>`;
 
   // ── 공지사항 배너 (배너 타입만, 여러 개 동시 표시) ──────────────
   const today0 = new Date().toISOString().slice(0,10);
@@ -7129,7 +7122,7 @@ function renderHomeTab() {
       <!-- 내 기록 상세 (로그인 시만) -->
       ${myRecordHtml}
 
-      <!-- 다음 게임 + 이벤트전 카드 쌍 (50/50 or 폴백) -->
+      <!-- 이벤트전(1행 전체) + 금/토 정규시즌(2단 고정) -->
       ${cardPairHtml}
 
       <!-- 최근 날짜 하이라이트 -->
