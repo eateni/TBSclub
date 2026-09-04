@@ -2848,6 +2848,30 @@ function renderDays() {
       </div>`;
     }).join('');
 
+    let daySummaryHtml='';
+    if(totalMatches>0&&doneMatches===totalMatches){
+      let dBadges=day.dayBadges;
+      let dSummary=day.daySummary;
+      if(!dBadges||!dSummary){
+        const dayNorm=_getAllMatchHistory(day.date).filter(function(h){return h.date===day.date;});
+        dBadges=buildDayBadges(dayNorm,day.date);
+        dSummary=buildDaySummary(dayNorm,dBadges,day.date);
+        if(dBadges.length&&dSummary){
+          day.dayBadges=dBadges;day.daySummary=dSummary;
+          const _dId=day.id,_db=dBadges,_ds=dSummary;
+          (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds});}catch(e){}})();
+        }
+      }
+      const chipsHtml=buildDayBadgesHtml(dBadges||[]);
+      if(chipsHtml||dSummary){
+        daySummaryHtml='<div style="margin-top:10px;padding:12px;background:rgba(13,148,136,0.04);border-radius:10px;border:1px solid rgba(13,148,136,0.12)">'
+          +'<div style="font-size:11px;font-weight:800;color:#059669;margin-bottom:6px">✨ 오늘의 하이라이트</div>'
+          +chipsHtml
+          +(dSummary?'<div style="font-size:11px;color:#475569;line-height:1.7;margin-top:'+(chipsHtml?'8':'0')+'px;padding:8px 10px;background:rgba(13,148,136,0.05);border-radius:8px;border-left:2px solid rgba(13,148,136,0.2)">'+dSummary+'</div>':'')
+          +'</div>';
+      }
+    }
+
     const delDayBtn = isAdmin ? `<button onclick="delDay('${day.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:8px">날짜 삭제</button>` : '';
     const dayId = `day_${day.id}`;
     const dayArr = `darr_${day.id}`;
@@ -2864,6 +2888,7 @@ function renderDays() {
       </button>
       <div class="round-body" id="${dayId}" style="display:none">
         ${roundsHtml || '<div style="color:#64748B;font-size:13px;padding:8px 0">아직 라운드가 없어요</div>'}
+        ${daySummaryHtml}
       </div>
     </div>`;
   }).join('');
@@ -3976,6 +4001,70 @@ function buildMatchEval(norm, date) {
   }
 
   return sentences.slice(0,3).join(' ');
+}
+
+function buildDayBadges(dayMatches, date) {
+  if (!dayMatches||!dayMatches.length) return [];
+  const badges=[];
+  const ds={};
+  dayMatches.forEach(function(h){
+    const s1=Number(h.score1),s2=Number(h.score2);
+    (h.team1||[]).forEach(function(p){if(!ds[p])ds[p]={wins:0,games:0,scored:0,conceded:0};ds[p].games++;ds[p].scored+=s1;ds[p].conceded+=s2;if(s1>s2)ds[p].wins++;});
+    (h.team2||[]).forEach(function(p){if(!ds[p])ds[p]={wins:0,games:0,scored:0,conceded:0};ds[p].games++;ds[p].scored+=s2;ds[p].conceded+=s1;if(s2>s1)ds[p].wins++;});
+  });
+  const mvpC=Object.entries(ds).filter(function(e){return e[1].wins>0;});
+  if(mvpC.length){
+    mvpC.sort(function(a,b){const wd=b[1].wins-a[1].wins;return wd!==0?wd:(b[1].scored-b[1].conceded)-(a[1].scored-a[1].conceded);});
+    const t=mvpC[0];badges.push({type:'mvp',name:t[0],wins:t[1].wins});
+  }
+  const allH=_getAllMatchHistory(date);
+  const streaks={};
+  allH.forEach(function(h){
+    const s1=Number(h.score1),s2=Number(h.score2);
+    [...(h.team1||[]),...(h.team2||[])].forEach(function(p){if(!(p in streaks))streaks[p]=0;});
+    if(s1===s2){[...(h.team1||[]),...(h.team2||[])].forEach(function(p){streaks[p]=0;});}
+    else{const W=s1>s2?h.team1:h.team2,L=s1>s2?h.team2:h.team1;(W||[]).forEach(function(p){streaks[p]=(streaks[p]||0)+1;});(L||[]).forEach(function(p){streaks[p]=0;});}
+  });
+  const sC=Object.entries(streaks).filter(function(e){return e[1]>=2;});
+  if(sC.length){sC.sort(function(a,b){return b[1]-a[1];});badges.push({type:'streak',name:sC[0][0],count:sC[0][1]});}
+  const unbeaten=Object.entries(ds).filter(function(e){return e[1].games>=2&&e[1].wins===e[1].games;}).sort(function(a,b){return b[1].games-a[1].games;}).map(function(e){return e[0];});
+  if(unbeaten.length)badges.push({type:'unbeaten',names:unbeaten});
+  const breadSet=new Set();
+  dayMatches.forEach(function(h){
+    const s1=Number(h.score1),s2=Number(h.score2);
+    if(s1>s2&&s2===0)(h.team1||[]).forEach(function(p){breadSet.add(p);});
+    if(s2>s1&&s1===0)(h.team2||[]).forEach(function(p){breadSet.add(p);});
+  });
+  if(breadSet.size)badges.push({type:'breadking',names:[...breadSet]});
+  return badges;
+}
+
+function buildDaySummary(dayMatches, badges, date) {
+  if (!dayMatches||!dayMatches.length) return '';
+  function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+  const total=dayMatches.length;
+  const sentences=[];
+  sentences.push(pick(['총 '+total+'경기가 펼쳐진 하루였다.','오늘은 '+total+'경기의 열전이 이어졌다.',total+'번의 승부, 코트 위 열기가 뜨거웠다.']));
+  const mvpB=badges.find(function(b){return b.type==='mvp';});
+  if(mvpB)sentences.push(pick([mvpB.name+'이(가) '+mvpB.wins+'승으로 오늘의 MVP에 등극했다.',mvpB.wins+'승을 챙긴 '+mvpB.name+'이(가) 단연 돋보였다.','최다 '+mvpB.wins+'승을 기록한 '+mvpB.name+'이(가) 코트를 지배했다.']));
+  const strkB=badges.find(function(b){return b.type==='streak';});
+  if(strkB)sentences.push(pick([strkB.name+'은(는) '+strkB.count+'연승 행진 중으로, 오늘도 그 기세를 이어갔다.',strkB.count+'연승째를 달리는 '+strkB.name+'의 질주는 어디까지 계속될까.']));
+  const brdB=badges.find(function(b){return b.type==='breadking';});
+  if(brdB){const nm=brdB.names.join(', ');sentences.push(pick([nm+'은(는) 상대에게 단 한 점도 내주지 않는 완봉승을 거뒀다.',nm+'의 완봉 승리는 오늘 하이라이트 중 하나였다.']));}
+  return sentences.slice(0,4).join(' ');
+}
+
+function buildDayBadgesHtml(badges) {
+  if (!badges||!badges.length) return '';
+  const chips=badges.map(function(b){
+    if(b.type==='mvp')return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);font-size:10px;font-weight:700;color:#D97706">🏅 MVP · '+b.name+' ('+b.wins+'승)</span>';
+    if(b.type==='streak')return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;background:rgba(239,68,68,0.10);border:1px solid rgba(239,68,68,0.35);font-size:10px;font-weight:700;color:#ef4444">🔥 연승왕 · '+b.name+' ('+b.count+'연승)</span>';
+    if(b.type==='unbeaten')return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;background:rgba(16,185,129,0.10);border:1px solid rgba(16,185,129,0.35);font-size:10px;font-weight:700;color:#059669">💯 무패 · '+b.names.join(', ')+'</span>';
+    if(b.type==='breadking')return '<span style="display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:20px;background:rgba(139,92,246,0.10);border:1px solid rgba(139,92,246,0.35);font-size:10px;font-weight:700;color:#7c3aed">🥖 제빵왕 · '+b.names.join(', ')+'</span>';
+    return '';
+  }).filter(Boolean);
+  if(!chips.length)return '';
+  return '<div style="display:flex;flex-wrap:wrap;gap:5px">'+chips.join('')+'</div>';
 }
 
 // 교류전·월례전·특별전 매치 카드 (상세 화면 + 대진표 화면 공통)
@@ -6905,7 +6994,40 @@ function renderHomeTab() {
       <button onclick="dismissAnnouncement('${ann.id}')" style="background:none;border:none;color:#94A3B8;font-size:20px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>
     </div>`).join('');
 
-  // 배치 순서: 공지배너 → 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 다가오는 일정 → 바로가기
+  // 최근 완료 정규시즌 날짜 하이라이트 카드
+  const _completedDays=days.filter(function(d){
+    const rds=d.rounds||[];
+    const tot=rds.reduce(function(a,r){return a+(r.matches||[]).filter(function(m){return !m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식';}).length;},0);
+    const done=rds.reduce(function(a,r){return a+(r.matches||[]).filter(function(m){return m.done&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식';}).length;},0);
+    return tot>0&&done===tot&&d.date;
+  }).sort(function(a,b){return (b.date||'')>(a.date||'')?1:(b.date||'')<(a.date||'')?-1:0;});
+  const _hDay=_completedDays[0];
+  let highlightHtml='';
+  if(_hDay){
+    let hBadges=_hDay.dayBadges;
+    let hSummary=_hDay.daySummary;
+    if(!hBadges||!hSummary){
+      const hNorm=_getAllMatchHistory(_hDay.date).filter(function(h){return h.date===_hDay.date;});
+      hBadges=buildDayBadges(hNorm,_hDay.date);
+      hSummary=buildDaySummary(hNorm,hBadges,_hDay.date);
+      if(hBadges.length&&hSummary){
+        _hDay.dayBadges=hBadges;_hDay.daySummary=hSummary;
+        const _dId=_hDay.id,_db=hBadges,_ds=hSummary;
+        (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds});}catch(e){}})();
+      }
+    }
+    const hChips=buildDayBadgesHtml(hBadges||[]);
+    const hDateLabel=_hDay.date?new Date(_hDay.date).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}):'';
+    if(hChips||hSummary){
+      highlightHtml='<div style="background:#FAFAFA;border:1px solid rgba(13,148,136,0.22);border-radius:14px;padding:14px 16px;margin-bottom:12px">'
+        +'<div style="font-size:12px;font-weight:800;color:#059669;margin-bottom:8px">✨ 하이라이트 · <span style="color:#64748B;font-weight:400;font-size:11px">'+hDateLabel+'</span></div>'
+        +hChips
+        +(hSummary?'<div style="font-size:11px;color:#475569;line-height:1.7;margin-top:8px;padding:8px 10px;background:rgba(13,148,136,0.05);border-radius:8px;border-left:2px solid rgba(13,148,136,0.2)">'+hSummary+'</div>':'')
+        +'</div>';
+    }
+  }
+
+  // 배치 순서: 공지배너 → 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 하이라이트 → 다가오는 일정 → 바로가기
   el.innerHTML = `
     <div style="padding-top:12px">
       <!-- 공지사항 배너 -->
@@ -6960,6 +7082,9 @@ function renderHomeTab() {
 
       <!-- 다음 게임 + 이벤트전 카드 쌍 (50/50 or 폴백) -->
       ${cardPairHtml}
+
+      <!-- 최근 날짜 하이라이트 -->
+      ${highlightHtml}
 
       <!-- 다가오는 일정 (관리자만 표시) -->
       ${isAdmin ? `<div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
