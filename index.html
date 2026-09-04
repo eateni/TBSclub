@@ -728,24 +728,6 @@ tr:nth-child(even){background:#F5FCFB;}
           <div id="promotionMigResult" style="margin-top:10px"></div>
         </div>
 
-        <!-- 커플/부부 설정 -->
-        <div class="admin-sec">
-          <h3>💑 커플/부부 설정</h3>
-          <div style="font-size:11px;color:#64748B;margin-bottom:10px">혼복 시 같은 팀으로 배정되지 않아요</div>
-          <div class="chips-wrap" id="coupleChips"></div>
-          <div style="margin-top:12px;padding-top:12px;border-top:1px solid #E0F2F1">
-            <div style="font-size:11px;color:#64748B;margin-bottom:6px">커플 추가 (남 + 여)</div>
-            <div class="row-form">
-              <select class="row-inp" id="coupleM" style="flex:1">
-                <option value="">남자 선택</option>
-              </select>
-              <select class="row-inp" id="coupleF" style="flex:1">
-                <option value="">여자 선택</option>
-              </select>
-              <button class="btn-add" onclick="addCouple()">추가</button>
-            </div>
-          </div>
-        </div>
       </div>
 
       <div id="adminGroup-match" style="display:none">
@@ -1244,7 +1226,6 @@ let schedulePage = 0;
 let openCategory = null; // 홈 바로가기 펼쳐진 카테고리 ID (null=모두 접힘)
 const SCHEDULE_PER_PAGE = 5;
 window.gotoSchedulePage = function(p){ schedulePage = p; renderSchedules(); const el = document.getElementById('scheduleList'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
-let couples = [];  // [{m, f}] 커플/부부
 let currentSeason = 1;      // 현재 진행 시즌
 let _analysisAutoSelected = false; // 개인별 분석 최초 자동 선택 완료 플래그
 let _openDayIds = new Set(); // 날짜 카드 열림 상태 (재렌더링 후 복원용)
@@ -1374,10 +1355,6 @@ function getTodayPairs(dayId, excludeRoundIdx) {
   return pairs;
 }
 
-// ── 커플 체크 ─────────────────────────────────────────────────────
-function isCouple(a, b) {
-  return couples.some(c => (c.m===a&&c.f===b)||(c.m===b&&c.f===a));
-}
 
 // ── 일자별 금지/지정 페어 헬퍼 ─────────────────────────────────────
 function dayPairKey(a,b){ return [a,b].sort().join('|'); }
@@ -1417,9 +1394,9 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
     for (let i=0; i<ms.length; i++) {
       const m = ms[i];
       if (usedM.has(m)) continue;
-      let c1 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !isBan(m,f) && !todayPairs.has(dayPairKey(m,f)) && !allPastPairs.has(dayPairKey(m,f)));
-      let c2 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !isBan(m,f) && !todayPairs.has(dayPairKey(m,f)));
-      let c3 = fs.filter(f => !usedF.has(f) && !isCouple(m,f) && !isBan(m,f));
+      let c1 = fs.filter(f => !usedF.has(f) && !isBan(m,f) && !todayPairs.has(dayPairKey(m,f)) && !allPastPairs.has(dayPairKey(m,f)));
+      let c2 = fs.filter(f => !usedF.has(f) && !isBan(m,f) && !todayPairs.has(dayPairKey(m,f)));
+      let c3 = fs.filter(f => !usedF.has(f) && !isBan(m,f));
       let c4 = fs.filter(f => !usedF.has(f));
       const candidates = c1.length ? c1 : c2.length ? c2 : c3.length ? c3 : c4;
       if (candidates.length === 0) break;
@@ -1430,7 +1407,7 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
 
     // 시드(지정)는 강제이므로 평가 제외, 자유 페어만 위반 평가
     const freePairs = pairs.slice(seeds.length);
-    const bad = freePairs.filter(p=>isCouple(p[0],p[1])||isBan(p[0],p[1])).length;
+    const bad = freePairs.filter(p=>isBan(p[0],p[1])).length;
     const todayDup = freePairs.filter(p=>todayPairs.has(dayPairKey(p[0],p[1]))).length;
     const pastDup = freePairs.filter(p=>allPastPairs.has(dayPairKey(p[0],p[1]))).length;
 
@@ -2569,17 +2546,6 @@ window.submitScoreEdit = async function() {
   hide('scoreEditModal');
 };
 
-// ── 커플/부부 관리 ────────────────────────────────────────────────
-window.addCouple = async function() {
-  const m=document.getElementById('coupleM').value;
-  const f=document.getElementById('coupleF').value;
-  if(!m||!f){alert('남자와 여자를 모두 선택해주세요');return;}
-  if(couples.some(c=>c.m===m&&c.f===f)){alert('이미 등록된 커플이에요');return;}
-  await setDoc(doc(db,'club','couples'),{list:[...couples,{m,f}]});
-};
-window.deleteCouple = async function(m, f) {
-  await setDoc(doc(db,'club','couples'),{list:couples.filter(c=>!(c.m===m&&c.f===f))});
-};
 
 // ── 일자별 금지/지정 페어 UI ───────────────────────────────────────
 window.changeDatePairSel = function(){ renderDatePairs(); };
@@ -5113,29 +5079,6 @@ function renderAdmin(){
     }
   }
 
-  // ── 커플/부부 칩 + 셀렉터 ──
-  const coupleEl = document.getElementById('coupleChips');
-  if (coupleEl) {
-    coupleEl.innerHTML = couples.length
-      ? couples.map(c=>`
-          <span class="chip" style="border-color:rgba(244,114,182,0.4)">
-            <span style="color:#f472b6">💑</span> ${c.m} & ${c.f}
-            <button class="chip-x" onclick="deleteCouple('${c.m}','${c.f}')">×</button>
-          </span>`).join('')
-      : '<span style="color:#64748B;font-size:12px">등록된 커플/부부 없음</span>';
-  }
-  // 커플 셀렉터 옵션 업데이트
-  const mSel=document.getElementById('coupleM'), fSel=document.getElementById('coupleF');
-  if(mSel){
-    const mCur=mSel.value;
-    mSel.innerHTML='<option value="">남자 선택</option>'+members.filter(m=>m.gender==='m').map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
-    if(mCur) mSel.value=mCur;
-  }
-  if(fSel){
-    const fCur=fSel.value;
-    fSel.innerHTML='<option value="">여자 선택</option>'+[...members,...guests].filter(m=>m.gender==='f').map(m=>`<option value="${m.name}">${m.name}</option>`).join('');
-    if(fCur) fSel.value=fCur;
-  }
   // ── 일자별 금지/지정 페어 (드롭다운/칩 갱신) ──
   renderDatePairs();
   // ── 날짜별 참석자 관리 (아코디언) ──
@@ -8191,16 +8134,7 @@ async function cascadeRename(oldName, newName) {
   });
   await Promise.all(terraUpdates);
 
-  // 3) 커플 설정 이름 변경
-  if (couples.some(c=>c.m===oldName||c.f===oldName)) {
-    const newCouples = couples.map(c=>({
-      m: c.m===oldName?newName:c.m,
-      f: c.f===oldName?newName:c.f
-    }));
-    await setDoc(doc(db,'club','couples'),{list:newCouples});
-  }
-
-  // 4) 날짜별 참석자(attendance/guests) 이름 변경
+  // 3) 날짜별 참석자(attendance/guests) 이름 변경
   const attUpdates = [];
   days.forEach(day => {
     let changed = false;
@@ -9151,10 +9085,6 @@ onSnapshot(collection(db,'terra'), snap => {
 onSnapshot(doc(db,'club','season'), snap => {
   currentSeason = snap.exists() ? (snap.data().current||1) : 1;
   if (!seasonUserPicked || viewSeason > currentSeason) viewSeason = currentSeason;
-  renderAll();
-});
-onSnapshot(doc(db,'club','couples'), snap => {
-  couples = snap.exists() ? (snap.data().list||[]) : [];
   renderAll();
 });
 onSnapshot(doc(db,'club','guests'), snap => {
