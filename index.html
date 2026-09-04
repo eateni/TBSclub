@@ -1850,7 +1850,7 @@ function generateOneRoundByType(type, numCourts) {
 }
 
 // ── 코트별 방식으로 한 라운드 생성 (커플/중복 회피) ──────────────
-function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
+function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   const pool = dayId ? getAttendees(dayId) : allPlayers();
   const allPastPairs = getPastPairs();
   const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
@@ -1942,6 +1942,26 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
   };
   _adjPairs(fPool,forcedFemale.filter(p=>fPool.includes(p[0])&&fPool.includes(p[1])),mixedCourts*2);
   _adjPairs(mPool,forcedMale.filter(p=>mPool.includes(p[0])&&mPool.includes(p[1])),mixedCourts*2);
+  // 사전 결정된 코트타입 라운드 스케줄 강제 적용 (rollAllBalanced에서 전달)
+  if (pairSchedule && Object.keys(pairSchedule).length) {
+    const overridePool = (pool, pairs) => {
+      pairs.forEach(pair => {
+        const key=[...pair].sort().join('|');
+        if(!(key in pairSchedule))return;
+        const [a,b]=pair;
+        if(!pool.includes(a)||!pool.includes(b))return;
+        const others=pool.filter(n=>n!==a&&n!==b);
+        pool.length=0;
+        if(pairSchedule[key].has(rIdx)){
+          pool.push(...others,a,b); // 뒤 → 지정 코트타입(여복/남복) 풀
+        } else {
+          pool.push(a,b,...others); // 앞 → 혼복 풀
+        }
+      });
+    };
+    overridePool(fPool, forcedFemale.filter(p=>fPool.includes(p[0])&&fPool.includes(p[1])));
+    overridePool(mPool, forcedMale.filter(p=>mPool.includes(p[0])&&mPool.includes(p[1])));
+  }
   // 1) 혼복 페어
   const mForMix = mPool.splice(0, mixedCourts*2);
   const fForMix = fPool.splice(0, mixedCourts*2);
@@ -2064,9 +2084,19 @@ window.rollAllBalanced = function() {
   const dayId = document.getElementById('rndDayId')?.value || '';
   // 공유 이력으로 전 라운드 균형 생성
   const typeHistory = {};
+  // 지정 페어(여복/남복) 코트타입 배정 라운드를 사전에 랜덤 결정 → 누를 때마다 다른 패턴
+  const _pairSchedule = {};
+  const _poolForSched = dayId ? getAttendees(dayId) : allPlayers();
+  getDayFixPairs(dayId).forEach(([a,b,ct])=>{
+    if(ct==='전체')return;
+    if(!_poolForSched.some(p=>p.name===a)||!_poolForSched.some(p=>p.name===b))return;
+    const key=[a,b].sort().join('|');
+    const tgt=Math.max(1,Math.round(nR/2));
+    _pairSchedule[key]=new Set(shuffle(Array.from({length:nR},(_,i)=>i)).slice(0,tgt));
+  });
   generatedAllRounds = Array.from({length:nR},(_,r)=>({name:`${r+1}라운드`,matches:[]}));
   for (let r=0; r<nR; r++) {
-    generatedAllRounds[r] = {name:`${r+1}라운드`, matches:generateRoundByCourtTypes(r, nC, dayId, typeHistory)};
+    generatedAllRounds[r] = {name:`${r+1}라운드`, matches:generateRoundByCourtTypes(r, nC, dayId, typeHistory, _pairSchedule)};
   }
   // 3) 미리보기 렌더링
   for (let r=0; r<nR; r++) {
