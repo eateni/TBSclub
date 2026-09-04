@@ -4074,7 +4074,7 @@ function buildDayBadges(dayMatches, date) {
     if(s1===s2){[...(h.team1||[]),...(h.team2||[])].forEach(function(p){streaks[p]=0;});}
     else{const W=s1>s2?h.team1:h.team2,L=s1>s2?h.team2:h.team1;(W||[]).forEach(function(p){streaks[p]=(streaks[p]||0)+1;});(L||[]).forEach(function(p){streaks[p]=0;});}
   });
-  const sC=Object.entries(streaks).filter(function(e){return e[1]>=2;});
+  const sC=Object.entries(streaks).filter(function(e){return e[1]>=2&&(e[0] in ds);});
   if(sC.length){sC.sort(function(a,b){return b[1]-a[1];});badges.push({type:'streak',name:sC[0][0],count:sC[0][1]});}
   const unbeaten=Object.entries(ds).filter(function(e){return e[1].games>=2&&e[1].wins===e[1].games;}).sort(function(a,b){return b[1].games-a[1].games;}).map(function(e){return e[0];});
   if(unbeaten.length)badges.push({type:'unbeaten',names:unbeaten});
