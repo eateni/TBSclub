@@ -1174,7 +1174,7 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup,
   setPersistence, browserLocalPersistence, signInAnonymously }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs }
+import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs, deleteField }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 
 const FIREBASE_CONFIG = {
@@ -1227,6 +1227,7 @@ let openCategory = null; // 홈 바로가기 펼쳐진 카테고리 ID (null=모
 const SCHEDULE_PER_PAGE = 5;
 window.gotoSchedulePage = function(p){ schedulePage = p; renderSchedules(); const el = document.getElementById('scheduleList'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
 let currentSeason = 1;      // 현재 진행 시즌
+const COURT_NAMES = ['코트1','코트2','코트3','코트4'];
 let _analysisAutoSelected = false; // 개인별 분석 최초 자동 선택 완료 플래그
 let _openDayIds = new Set(); // 날짜 카드 열림 상태 (재렌더링 후 복원용)
 let viewSeason = 1;         // 화면에서 보고 있는 시즌
@@ -1484,17 +1485,23 @@ function getAttendees(dayId) {
   if (!day) return allPlayers();
   const att = day.attendance || {};
   const dayGuests = day.guests || [];
-  const attending = members.filter(m => att[m.name] !== false); // 기본 참석
+  const isV2 = day.attendancePolicy === 'v2';
+  const attending = members.filter(m => isV2 ? att[m.name] === true : att[m.name] !== false);
   const guestAttending = guests.filter(g => dayGuests.includes(g.name));
   return [...attending, ...guestAttending];
 }
 
-// 참석 여부 저장
+// 참석 여부 저장 (attending: true=참석, false=불참, null=v2 무응답 초기화)
 window.setAttendance = async function(dayId, name, attending) {
   const day = days.find(d=>d.id===dayId); if(!day) return;
-  const att = {...(day.attendance||{})};
-  att[name] = attending;
-  await updateDoc(doc(db,'days',dayId), { attendance: att });
+  if (!day.attendance) day.attendance = {};
+  if (attending === null) {
+    delete day.attendance[name];
+    await updateDoc(doc(db,'days',dayId), { [`attendance.${name}`]: deleteField() });
+  } else {
+    day.attendance[name] = attending;
+    await updateDoc(doc(db,'days',dayId), { [`attendance.${name}`]: attending });
+  }
 };
 
 // 날짜별 게스트 토글
@@ -1514,8 +1521,9 @@ function calcAttendance() {
   days.filter(d=>(d.season||1)===viewSeason).forEach(day => {
     const dayAtt = day.attendance || {};
     const dayGuests = new Set(day.guests || []);
+    const isV2Day = day.attendancePolicy === 'v2';
     members.forEach(m => {
-      if (dayAtt[m.name] === false) return;
+      if (isV2Day ? dayAtt[m.name] !== true : dayAtt[m.name] === false) return;
       // 게스트 출신 회원: promotedAt 이전 날은 day.guests[] 기준으로만 출석 인정
       if (m.promotedAt && day.date < m.promotedAt) {
         if (dayGuests.has(m.name)) att[m.name] = (att[m.name]||0)+1;
@@ -5261,7 +5269,9 @@ function renderAdmin(){
       attEl.innerHTML = adminDays.map(day => {
         const att = day.attendance || {};
         const dayGuests = day.guests || [];
-        const attendingCount = members.filter(m=>(att[m.name]??true)).length + guests.filter(g=>dayGuests.includes(g.name)).length;
+        const isV2 = day.attendancePolicy === 'v2';
+        const attendingCount = members.filter(m => isV2 ? att[m.name] === true : (att[m.name]??true)).length
+          + guests.filter(g=>dayGuests.includes(g.name)).length;
         const dateStr = day.date ? new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : day.date;
         const bodyId = `att_body_${day.id}`;
         const arrId  = `att_arr_${day.id}`;
@@ -5271,17 +5281,35 @@ function renderAdmin(){
         const matchSch = schedules.find(s => s.date === day.date && s.isGameMeetup);
         const schAttend = matchSch ? (matchSch.attend || {}) : {};
 
-        // 정규회원 행
+        // 정규회원 행 — v2: 🟢/🔴/⚪ 3단계, legacy: ✅/❌ 2단계
         const memberRows = members.map(m => {
-          const status = att[m.name] ?? true;
           const fromSch = schAttend[m.name] === '참석';
           const badge = fromSch
             ? `<span style="font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(37,99,235,0.12);color:#2563EB;border:1px solid rgba(37,99,235,0.28);vertical-align:middle;margin-left:5px;font-weight:700">📅 일정 참석</span>`
             : '';
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #EEF7F6">
-            <span style="font-size:13px;font-weight:600;color:#1E293B">
+          const nameHtml = `<span style="font-size:13px;font-weight:600;color:#1E293B">
               <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span> ${m.name}${badge}
-            </span>
+            </span>`;
+          if (isV2) {
+            const s = att[m.name]; // true/false/undefined
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #EEF7F6">
+              ${nameHtml}
+              <div style="display:flex;gap:4px">
+                <button onclick="setAttendance('${day.id}','${m.name}',true)"
+                  style="padding:4px 9px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
+                    background:${s===true?'#34d399':'rgba(3,12,45,0.8)'};color:${s===true?'#fff':'#4a8ab5'}">🟢 참석</button>
+                <button onclick="setAttendance('${day.id}','${m.name}',false)"
+                  style="padding:4px 9px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
+                    background:${s===false?'#f87171':'rgba(3,12,45,0.8)'};color:${s===false?'#fff':'#4a8ab5'}">🔴 불참</button>
+                <button onclick="setAttendance('${day.id}','${m.name}',null)"
+                  style="padding:4px 9px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
+                    background:${s===undefined?'#94A3B8':'rgba(3,12,45,0.8)'};color:${s===undefined?'#fff':'#4a8ab5'}">⚪ 미정</button>
+              </div>
+            </div>`;
+          }
+          const status = att[m.name] ?? true;
+          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #EEF7F6">
+            ${nameHtml}
             <div style="display:flex;gap:6px">
               <button onclick="setAttendance('${day.id}','${m.name}',true)"
                 style="padding:4px 12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
@@ -5312,21 +5340,55 @@ function renderAdmin(){
             }).join('')}
           </div>` : '';
 
+        // 코트 예약 관리 (관리자)
+        const cr = day.courtReservation || {};
+        const crSlots = cr.timeSlots || [];
+        const crCourts = cr.courts || {};
+        const courtResHtml = `
+          <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(37,99,235,0.15)">
+            <div style="font-size:11px;font-weight:700;color:#2563EB;margin-bottom:6px">🏟️ 코트 예약 현황</div>
+            ${crSlots.length ? crSlots.map(slot => {
+              const slotC = crCourts[slot] || {};
+              return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;flex-wrap:wrap">
+                <span style="font-size:11px;color:#64748B;min-width:38px;flex-shrink:0">${slot}</span>
+                ${COURT_NAMES.map(c => {
+                  const ok = slotC[c] === true;
+                  return `<button onclick="toggleCourtSlotCourt('${day.id}','${slot}','${c}')"
+                    style="padding:3px 8px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;
+                      background:${ok?'#2563EB':'rgba(3,12,45,0.7)'};color:${ok?'#fff':'#4a8ab5'}">${c}</button>`;
+                }).join('')}
+                <button onclick="removeCourtSlot('${day.id}','${slot}')"
+                  style="padding:3px 7px;border-radius:7px;border:none;cursor:pointer;font-size:11px;background:none;color:#f87171">✕</button>
+              </div>`;
+            }).join('') : '<div style="font-size:11px;color:#94A3B8;margin-bottom:4px">등록된 시간대 없음</div>'}
+            <div style="display:flex;gap:5px;margin-top:4px">
+              <input id="newSlot_${day.id}" placeholder="시간 예: 9:00" maxlength="10"
+                style="flex:1;padding:4px 8px;border:1px solid rgba(37,99,235,0.3);border-radius:7px;font-size:11px;color:#1E293B;background:#fff">
+              <button onclick="addCourtSlot('${day.id}')"
+                style="padding:4px 10px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;background:#2563EB;color:#fff">+ 추가</button>
+            </div>
+          </div>`;
+
+        const v2Badge = isV2
+          ? `<span style="font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(37,99,235,0.12);color:#2563EB;border:1px solid rgba(37,99,235,0.25);font-weight:700">무응답 기본값</span>`
+          : '';
+
         return `<div style="background:#F5FAFA;border-radius:10px;border:1px solid #C8E0DE;margin-bottom:6px;overflow:hidden">
           <button onclick="toggleAtt('${bodyId}','${arrId}')"
             style="width:100%;padding:12px 14px;background:transparent;border:none;color:#1E293B;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
-            <div style="display:flex;align-items:center;gap:8px">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
               <span style="font-size:13px;font-weight:800;color:#f59e0b">📅 ${dateStr}${day.place?' · '+day.place:''}</span>
               <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;
                 background:rgba(5,150,105,0.2);color:#059669;border:1px solid rgba(52,211,153,0.3)">
                 참석 ${attendingCount}명
               </span>
+              ${v2Badge}
             </div>
             <span id="${arrId}" style="color:#64748B;font-size:14px;transition:transform 0.2s;${isOpen?'transform:rotate(90deg)':''}">›</span>
           </button>
           <div id="${bodyId}" style="display:${isOpen?'block':'none'};padding:0 14px 14px">
             ${matchSch ? `<div style="font-size:10px;color:#2563EB;background:rgba(37,99,235,0.07);border:1px solid rgba(37,99,235,0.2);border-radius:8px;padding:5px 9px;margin-bottom:8px">📅 같은 날짜의 일정(${matchSch.place||matchSch.content||'게임 모임'}) 참석 데이터가 반영되어 있어요. <b>📅 일정 참석</b> 뱃지로 구분됩니다.</div>` : ''}
-            ${memberRows}${guestRows}
+            ${memberRows}${guestRows}${courtResHtml}
           </div>
         </div>`;
       }).join('');
@@ -6773,10 +6835,11 @@ function renderHomeTab() {
     const d = nextGameDay;
     const dd = new Date(d.date+'T00:00:00');
     const dl = `${dd.getMonth()+1}/${dd.getDate()}(${weekdays[dd.getDay()]})`;
-    // 참석자: attendance obj (false=불참, undefined/true=참석 기본)
+    // 참석자: v2=명시 true만, legacy=false가 아니면 참석
     const att = d.attendance || {};
     const guestList = d.guests || [];
-    const attendingM = members.filter(m => att[m.name] !== false).length;
+    const _dIsV2 = d.attendancePolicy === 'v2';
+    const attendingM = members.filter(m => _dIsV2 ? att[m.name] === true : att[m.name] !== false).length;
     const attendingG = guests.filter(g => guestList.includes(g.name)).length;
     const totalAttend = attendingM + attendingG;
     // 내 참석 여부 (admin은 myClaim=null이므로 isMemberLoggedIn 체크 필수)
@@ -6784,7 +6847,9 @@ function renderHomeTab() {
     const attendBadge = isMemberLoggedIn
       ? (myAtt === false
         ? `<span style="font-size:11px;font-weight:700;color:#f87171;background:rgba(248,113,113,0.15);padding:2px 7px;border-radius:10px">❌ 불참</span>`
-        : `<span style="font-size:11px;font-weight:700;color:#059669;background:rgba(52,211,153,0.15);padding:2px 7px;border-radius:10px">✅ 참석</span>`)
+        : myAtt === true || !_dIsV2
+          ? `<span style="font-size:11px;font-weight:700;color:#059669;background:rgba(52,211,153,0.15);padding:2px 7px;border-radius:10px">✅ 참석</span>`
+          : `<span style="font-size:11px;font-weight:700;color:#94A3B8;background:rgba(148,163,184,0.12);padding:2px 7px;border-radius:10px">⚪ 미정</span>`)
       : '';
     // 라운드/경기 요약
     const rds = d.rounds || [];
@@ -6797,6 +6862,7 @@ function renderHomeTab() {
     const gameMatchSch = schedules.find(s => s.date === d.date && s.isGameMeetup);
     const schId = gameMatchSch ? gameMatchSch.id : '';
     // 현재 상태: 스케줄 있으면 schedules.attend 값, 없으면 days.attendance 값(boolean→문자열 변환)
+    // v2이고 schId 없는 경우: undefined → null (아직 미응답 = 버튼 표시)
     let mySchStatus = null;
     if (isMemberLoggedIn) {
       if (gameMatchSch) {
@@ -6808,7 +6874,7 @@ function renderHomeTab() {
     const attendBtns = isMemberLoggedIn ? makeAttendBtns(mySchStatus, schId, d.id, d.id + '_ng') : '';
     window._attCache = window._attCache || {};
     window._attCache[d.id] = {
-      members: members.filter(m => att[m.name] !== false).map(m => ({name:m.name, gender:m.gender, tennisStartDate:m.tennisStartDate||''})),
+      members: members.filter(m => _dIsV2 ? att[m.name] === true : att[m.name] !== false).map(m => ({name:m.name, gender:m.gender, tennisStartDate:m.tennisStartDate||''})),
       guests: guests.filter(g => guestList.includes(g.name)).map(g => ({name:g.name, gender:g.gender, tennisStartDate:g.tennisStartDate||''})),
       date: d.date,
       myName: isMemberLoggedIn && myClaim ? myClaim.name : ''
@@ -6867,7 +6933,7 @@ function renderHomeTab() {
       const _dd = new Date(_d.date+'T00:00:00');
       const _dl = `${_dd.getMonth()+1}/${_dd.getDate()}(${weekdays[_dd.getDay()]})`;
       const _att = _d.attendance || {};
-      const _aM = members.filter(m => _att[m.name] !== false).length;
+      const _aM = members.filter(m => _d.attendancePolicy==='v2' ? _att[m.name]===true : _att[m.name]!==false).length;
       const _aG = guests.filter(g => (_d.guests||[]).includes(g.name)).length;
       const _tot = _aM + _aG;
       bParts.push(`<div style="display:flex;align-items:center;gap:6px;font-size:12.5px;min-width:0">
@@ -6974,7 +7040,8 @@ function renderHomeTab() {
     const _wd = new Date(d.date+'T00:00:00');
     const _wdl = `${_wd.getMonth()+1}/${_wd.getDate()}(${weekdays[_wd.getDay()]})`;
     const _watt = d.attendance || {};
-    const _waM = members.filter(function(m){ return _watt[m.name] !== false; }).length;
+    const _wIsV2 = d.attendancePolicy === 'v2';
+    const _waM = members.filter(function(m){ return _wIsV2 ? _watt[m.name] === true : _watt[m.name] !== false; }).length;
     const _waG = guests.filter(function(g){ return (d.guests||[]).includes(g.name); }).length;
     const _wRds = d.rounds || [];
     const _wTM = _wRds.reduce(function(a,r){ return a+(r.matches||[]).length; }, 0);
@@ -6993,7 +7060,7 @@ function renderHomeTab() {
     const _wAttBtns = isMemberLoggedIn ? makeAttendBtns(_wMyStatus, _wSchId, d.id, d.id + '_wk') : '';
     window._attCache = window._attCache || {};
     window._attCache[d.id] = {
-      members: members.filter(function(m){ return _watt[m.name] !== false; }).map(function(m){ return {name:m.name, gender:m.gender, tennisStartDate:m.tennisStartDate||''}; }),
+      members: members.filter(function(m){ return _wIsV2 ? _watt[m.name] === true : _watt[m.name] !== false; }).map(function(m){ return {name:m.name, gender:m.gender, tennisStartDate:m.tennisStartDate||''}; }),
       guests: guests.filter(function(g){ return (d.guests||[]).includes(g.name); }).map(function(g){ return {name:g.name, gender:g.gender, tennisStartDate:g.tennisStartDate||''}; }),
       date: d.date,
       myName: isMemberLoggedIn && myClaim ? myClaim.name : ''
@@ -7034,6 +7101,37 @@ function renderHomeTab() {
          <div style="flex:1;min-width:0">${_friCardHtml}</div>
          <div style="flex:1;min-width:0">${_satCardHtml}</div>
        </div>`;
+
+  // ── 코트 예약 현황 카드 (예약 데이터가 있는 가장 가까운 게임 날) ──
+  let _courtCardHtml = '';
+  {
+    const _crDays = [fridayGame, saturdayGame, nextGameDay].filter(Boolean);
+    const _crDay = _crDays.find(d => d.courtReservation && (d.courtReservation.timeSlots||[]).length > 0);
+    if (_crDay) {
+      const _cr = _crDay.courtReservation;
+      const _crSlots = _cr.timeSlots || [];
+      const _crCourts = _cr.courts || {};
+      const _crDd = new Date(_crDay.date+'T00:00:00');
+      const _crDl = `${_crDd.getMonth()+1}/${_crDd.getDate()}(${weekdays[_crDd.getDay()]})`;
+      _courtCardHtml = `<div style="background:#F0F9FF;border:1px solid rgba(37,99,235,0.22);border-radius:14px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:800;color:#2563EB;margin-bottom:8px">🏟️ 코트 예약 현황 · <span style="color:#64748B;font-weight:400;font-size:11px">${_crDl}</span></div>
+        ${_crSlots.map(slot => {
+          const sc = _crCourts[slot] || {};
+          return `<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">
+            <span style="font-size:11px;color:#64748B;min-width:36px;flex-shrink:0">${slot}</span>
+            ${COURT_NAMES.map(c => {
+              const ok = sc[c] === true;
+              return `<span style="font-size:11px;padding:2px 8px;border-radius:8px;
+                background:${ok?'#DBEAFE':'rgba(100,116,139,0.07)'};
+                color:${ok?'#2563EB':'#CBD5E1'};
+                border:1px solid ${ok?'rgba(37,99,235,0.28)':'rgba(100,116,139,0.13)'};
+                font-weight:${ok?'700':'400'}">${c}${ok?' ✓':''}</span>`;
+            }).join('')}
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+  }
 
   // ── 공지사항 배너 (배너 타입만, 여러 개 동시 표시) ──────────────
   const today0 = new Date().toISOString().slice(0,10);
@@ -7139,6 +7237,9 @@ function renderHomeTab() {
 
       <!-- 이벤트전(1행 전체) + 금/토 정규시즌(2단 고정) -->
       ${cardPairHtml}
+
+      <!-- 코트 예약 현황 (데이터 있을 때만 표시) -->
+      ${_courtCardHtml}
 
       <!-- 최근 날짜 하이라이트 -->
       ${highlightHtml}
@@ -8200,6 +8301,39 @@ window.delRound=async function(dayId,rIdx){
   await updateDoc(doc(db,'days',dayId),{rounds});
 };
 
+// 코트 예약 관리
+window.addCourtSlot = async function(dayId) {
+  const day = days.find(d=>d.id===dayId); if(!day) return;
+  const inp = document.getElementById(`newSlot_${dayId}`);
+  const slot = inp ? inp.value.trim() : '';
+  if (!slot) { alert('시간을 입력해주세요 (예: 9:00)'); return; }
+  const cr = day.courtReservation ? JSON.parse(JSON.stringify(day.courtReservation)) : {timeSlots:[], courts:{}};
+  if (!cr.timeSlots) cr.timeSlots = [];
+  if (!cr.courts) cr.courts = {};
+  if (cr.timeSlots.includes(slot)) { alert('이미 추가된 시간입니다'); return; }
+  cr.timeSlots = [...cr.timeSlots, slot].sort();
+  day.courtReservation = cr;
+  await updateDoc(doc(db,'days',dayId), { courtReservation: cr });
+  if (inp) inp.value = '';
+};
+window.removeCourtSlot = async function(dayId, slot) {
+  const day = days.find(d=>d.id===dayId); if(!day) return;
+  const cr = day.courtReservation ? JSON.parse(JSON.stringify(day.courtReservation)) : {timeSlots:[], courts:{}};
+  cr.timeSlots = (cr.timeSlots||[]).filter(s=>s!==slot);
+  if (cr.courts) delete cr.courts[slot];
+  day.courtReservation = cr;
+  await updateDoc(doc(db,'days',dayId), { courtReservation: cr });
+};
+window.toggleCourtSlotCourt = async function(dayId, slot, court) {
+  const day = days.find(d=>d.id===dayId); if(!day) return;
+  const cr = day.courtReservation ? JSON.parse(JSON.stringify(day.courtReservation)) : {timeSlots:[], courts:{}};
+  if (!cr.courts) cr.courts = {};
+  if (!cr.courts[slot]) cr.courts[slot] = {};
+  cr.courts[slot][court] = !cr.courts[slot][court];
+  day.courtReservation = cr;
+  await updateDoc(doc(db,'days',dayId), { courtReservation: cr });
+};
+
 // 날짜 그룹
 window.addDay=async function(){
   const date=document.getElementById('dayDate').value;
@@ -8218,7 +8352,7 @@ window.addDay=async function(){
     });
   }
 
-  const docData = {date, place, rounds:[], season:currentSeason, createdAt:serverTimestamp()};
+  const docData = {date, place, rounds:[], season:currentSeason, attendancePolicy:'v2', createdAt:serverTimestamp()};
   if (Object.keys(initAttendance).length) docData.attendance = initAttendance;
 
   await addDoc(collection(db,'days'), docData);
