@@ -1856,6 +1856,7 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
   const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
   let mPool = shuffle(pool.filter(m=>m.gender==='m').map(m=>m.name));
   let fPool = shuffle(pool.filter(m=>m.gender==='f').map(m=>m.name));
+  const guestNameSet = new Set(guests.map(g=>g.name));
 
   // ── 일자별 금지/지정 페어 준비 ──
   const banSet = getDayBanSet(dayId);
@@ -1971,9 +1972,20 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory) {
       const threeP = majorityIsM ? mPool : fPool;
       const oneP = majorityIsM ? fPool : mPool;
       if (threeP.length >= 3 && oneP.length >= 1) {
-        const t1 = [threeP.shift(), threeP.shift()];
-        const t2 = [threeP.shift(), oneP.shift()];
-        matches.push({team1: t1, team2: t2, court, tag:'잡복'});
+        // 소수 성별 1자리: 정회원 우선 (게스트 배정 제외)
+        const regIdx = oneP.findIndex(n => !guestNameSet.has(n));
+        if (regIdx > 0) oneP.unshift(oneP.splice(regIdx, 1)[0]); // 정회원을 앞으로
+        if (regIdx < 0 && threeP.length >= 2 && oneP.length >= 2) {
+          // 소수 자리 정회원 없음 → 2:2로 재조정 (양쪽 1명씩)
+          const t1 = [threeP.shift(), oneP.shift()];
+          const t2 = [threeP.shift(), oneP.shift()];
+          matches.push({team1: t1, team2: t2, court, tag:'잡복'});
+        } else {
+          if (regIdx < 0) console.warn('[잡복] 소수 성별 정회원 없음, 게스트 배정 불가피:', court);
+          const t1 = [threeP.shift(), threeP.shift()];
+          const t2 = [threeP.shift(), oneP.shift()];
+          matches.push({team1: t1, team2: t2, court, tag:'잡복'});
+        }
       }
     }
   }
