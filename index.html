@@ -2235,6 +2235,12 @@ window.addManualToRound = function(rIdx) {
   }
   if (!generatedAllRounds[rIdx].matches) generatedAllRounds[rIdx] = {name:`${rIdx+1}라운드`,matches:[]};
 
+  // 같은 라운드 다른 코트 중복 배정 체크 (교체 시 해당 코트는 제외)
+  const _otherMs = generatedAllRounds[rIdx].matches.filter(m => m.court !== court);
+  const _usedNames = new Set(_otherMs.flatMap(m => [...(m.team1||[]), ...(m.team2||[])]));
+  const _dup = all.find(n => _usedNames.has(n));
+  if (_dup) { alert(`${_dup}님은 이미 이 라운드의 다른 코트에 배정되어 있어요`); return; }
+
   // 같은 코트에 이미 경기가 있으면 교체할지 확인
   const existing = generatedAllRounds[rIdx].matches.findIndex(m=>m.court===court);
   if (existing >= 0) {
@@ -4012,9 +4018,9 @@ function buildMatchEval(norm, date) {
     const priorWL=winner===1?h2wL:h2wW;
     const newWW=priorWW+1,tot=h2wT+1;
     if (h2wT===0) {
-      sentences.push(pick([`이 조합 첫 맞대결, ${wN}가 선수를 쳤다.`,`처음 맞붙은 두 팀, ${wN}가 첫 승을 가져갔다.`]));
+      sentences.push(pick([`이 조합 첫 맞대결, ${wN}${getJosa(wN,'이가')} 선수를 쳤다.`,`처음 맞붙은 두 팀, ${wN}${getJosa(wN,'이가')} 첫 승을 가져갔다.`]));
     } else {
-      sentences.push(pick([`통산 ${tot}번째 맞대결, ${wN}가 ${newWW}승 ${priorWL}패로 앞서게 됐다.`,`맞대결 통산 ${newWW}승 ${priorWL}패, ${wN} 리드가 계속된다.`]));
+      sentences.push(pick([`통산 ${tot}번째 맞대결, ${wN}${getJosa(wN,'이가')} ${newWW}승 ${priorWL}패로 앞서게 됐다.`,`맞대결 통산 ${newWW}승 ${priorWL}패, ${wN} 리드가 계속된다.`]));
     }
   }
 
@@ -4040,7 +4046,7 @@ function buildMatchEval(norm, date) {
     if (bestStreak>=3&&sentences.length<3) {
       sentences.push(pick([`${bestSName}의 ${bestStreak}연승 행진이 계속되고 있다.`,`멈추지 않는 ${bestSName}, 이번 승리로 ${bestStreak}연승을 이어갔다.`,`${bestStreak}연승 중인 ${bestSName}, 이번에도 해냈다.`]));
     } else if (bestStreak===2&&sentences.length<3) {
-      sentences.push(pick([`${bestSName}가 연속 2연승으로 분위기를 이어가고 있다.`,`${bestSName}의 2연승 도전, 성공.`]));
+      sentences.push(pick([`${bestSName}${getJosa(bestSName,'이가')} 연속 2연승으로 분위기를 이어가고 있다.`,`${bestSName}의 2연승 도전, 성공.`]));
     }
     if (!norm.isExchange&&winTeam.length===2&&sentences.length<3) {
       const wkey=[...winTeam].sort().join('|');
@@ -4088,6 +4094,15 @@ function buildDayBadges(dayMatches, date) {
   return badges;
 }
 
+function getJosa(name, type) {
+  const last = name ? name[name.length - 1] : '';
+  const code = last.charCodeAt(0);
+  const hasBatchim = code >= 0xAC00 && code <= 0xD7A3 && (code - 0xAC00) % 28 !== 0;
+  if (type === '이가') return hasBatchim ? '이' : '가';
+  if (type === '은는') return hasBatchim ? '은' : '는';
+  if (type === '을를') return hasBatchim ? '을' : '를';
+  return '';
+}
 function buildDaySummary(dayMatches, badges, date) {
   if (!dayMatches||!dayMatches.length) return '';
   function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
@@ -4095,11 +4110,11 @@ function buildDaySummary(dayMatches, badges, date) {
   const sentences=[];
   sentences.push(pick(['총 '+total+'경기가 펼쳐진 하루였다.','오늘은 '+total+'경기의 열전이 이어졌다.',total+'번의 승부, 코트 위 열기가 뜨거웠다.']));
   const mvpB=badges.find(function(b){return b.type==='mvp';});
-  if(mvpB)sentences.push(pick([mvpB.name+'이(가) '+mvpB.wins+'승으로 오늘의 MVP에 등극했다.',mvpB.wins+'승을 챙긴 '+mvpB.name+'이(가) 단연 돋보였다.','최다 '+mvpB.wins+'승을 기록한 '+mvpB.name+'이(가) 코트를 지배했다.']));
+  if(mvpB)sentences.push(pick([mvpB.name+getJosa(mvpB.name,'이가')+' '+mvpB.wins+'승으로 오늘의 MVP에 등극했다.',mvpB.wins+'승을 챙긴 '+mvpB.name+getJosa(mvpB.name,'이가')+' 단연 돋보였다.','최다 '+mvpB.wins+'승을 기록한 '+mvpB.name+getJosa(mvpB.name,'이가')+' 코트를 지배했다.']));
   const strkB=badges.find(function(b){return b.type==='streak';});
-  if(strkB)sentences.push(pick([strkB.name+'은(는) '+strkB.count+'연승 행진 중으로, 오늘도 그 기세를 이어갔다.',strkB.count+'연승째를 달리는 '+strkB.name+'의 질주는 어디까지 계속될까.']));
+  if(strkB)sentences.push(pick([strkB.name+getJosa(strkB.name,'은는')+' '+strkB.count+'연승 행진 중으로, 오늘도 그 기세를 이어갔다.',strkB.count+'연승째를 달리는 '+strkB.name+'의 질주는 어디까지 계속될까.']));
   const brdB=badges.find(function(b){return b.type==='breadking';});
-  if(brdB){const nm=brdB.names.join(', ');sentences.push(pick([nm+'은(는) 상대에게 단 한 점도 내주지 않는 완봉승을 거뒀다.',nm+'의 완봉 승리는 오늘 하이라이트 중 하나였다.']));}
+  if(brdB){const nm=brdB.names.join(', ');sentences.push(pick([nm+getJosa(nm,'은는')+' 상대에게 단 한 점도 내주지 않는 완봉승을 거뒀다.',nm+'의 완봉 승리는 오늘 하이라이트 중 하나였다.']));}
   return sentences.slice(0,4).join(' ');
 }
 
@@ -8634,7 +8649,7 @@ window.promoteGuest = async function(name){
     const newMember = {name:g.name, gender:g.gender, promotedAt: today};
     if (g.uid) newMember.uid = g.uid;
     await setDoc(doc(db,'club','members'),{list:[...members, newMember]});
-    alert(`✅ "${name}"이(가) 정규회원이 됐어요!\n기존 경기 기록은 모두 유지됩니다.`);
+    alert(`✅ "${name}"${getJosa(name,'이가')} 정규회원이 됐어요!\n기존 경기 기록은 모두 유지됩니다.`);
   }catch(e){
     alert('전환 실패: '+e.code);
   }
@@ -8649,7 +8664,7 @@ window.demoteMember = async function(name){
   const newGuest = {name:m.name, gender:m.gender, isGuest:true};
   if (m.uid) newGuest.uid = m.uid;
   await setDoc(doc(db,'club','guests'),{list:[...guests, newGuest]});
-  alert(`✅ "${name}"이(가) 게스트가 됐어요!`);
+  alert(`✅ "${name}"${getJosa(name,'이가')} 게스트가 됐어요!`);
 };
 
 // 관리자 인증
