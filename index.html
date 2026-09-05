@@ -1269,6 +1269,26 @@ function getPastPairs() {
   });
   return pairs;
 }
+// 시즌별 파트너 조합 횟수 Map 반환 (key: "A|B", value: count)
+function getPastPairCounts(season) {
+  const counts = new Map();
+  const s = season != null ? season : currentSeason;
+  days.filter(d => (d.season||1) === s).forEach(day => {
+    (day.rounds||[]).forEach(r => {
+      (r.matches||[]).forEach(m => {
+        [m.team1||[], m.team2||[]].forEach(team => {
+          for (let i=0; i<team.length; i++)
+            for (let j=i+1; j<team.length; j++)
+              if (team[i]&&team[j]) {
+                const k = [team[i],team[j]].sort().join('|');
+                counts.set(k, (counts.get(k)||0)+1);
+              }
+        });
+      });
+    });
+  });
+  return counts;
+}
 function wasPaired(a, b, pairs) {
   return pairs.has([a,b].sort().join('|'));
 }
@@ -1371,11 +1391,13 @@ function getDayFixPairs(dayId){
   return (day && Array.isArray(day.fixPairs)) ? day.fixPairs.map(p=>[p.a,p.b,p.courtType||'전체']) : [];
 }
 
-// ── 혼복 페어 생성 (부부/금지 절대금지 + 지정 강제 + 당일 중복 회피) ──
+// ── 혼복 페어 생성 (부부/금지 절대금지 + 지정 강제 + 당일/시즌 중복 회피) ──
 function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundIdx, banSet, forcedPairs) {
   banSet = banSet || new Set();
   forcedPairs = forcedPairs || [];
   const isBan = (a,b)=> banSet.has(dayPairKey(a,b));
+  // allPastPairs: Map<"A|B", count> — 시즌 내 파트너 조합 횟수
+  const _pCnt = (a,b) => allPastPairs.get(dayPairKey(a,b)) || 0;
   // 지정 페어(혼복: 남+여) 시드 — 이 풀에 둘 다 있는 것만
   const mSet=new Set(males), fSet=new Set(females);
   const seeds=[]; const seedM=new Set(), seedF=new Set();
@@ -1396,11 +1418,23 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
     for (let i=0; i<ms.length; i++) {
       const m = ms[i];
       if (usedM.has(m)) continue;
-      let c1 = fs.filter(f => !usedF.has(f) && !isBan(m,f) && !todayPairs.has(dayPairKey(m,f)) && !allPastPairs.has(dayPairKey(m,f)));
-      let c2 = fs.filter(f => !usedF.has(f) && !isBan(m,f) && !todayPairs.has(dayPairKey(m,f)));
-      let c3 = fs.filter(f => !usedF.has(f) && !isBan(m,f));
-      let c4 = fs.filter(f => !usedF.has(f));
-      const candidates = c1.length ? c1 : c2.length ? c2 : c3.length ? c3 : c4;
+      // 당일 중복 없는 후보군 (기본 요건)
+      const _base = fs.filter(f => !usedF.has(f) && !isBan(m,f) && !todayPairs.has(dayPairKey(m,f)));
+      // c1: 이 시즌 한 번도 함께 안 한 조합 우선
+      const _c1 = _base.filter(f => _pCnt(m,f) === 0);
+      let candidates;
+      if (_c1.length) {
+        candidates = _c1;
+      } else if (_base.length) {
+        // c2: 가장 적게 함께한 조합
+        const _min = Math.min(..._base.map(f => _pCnt(m,f)));
+        candidates = _base.filter(f => _pCnt(m,f) === _min);
+      } else {
+        // c3/c4: 폴백 (당일 중복 허용)
+        const _c3 = fs.filter(f => !usedF.has(f) && !isBan(m,f));
+        const _c4 = fs.filter(f => !usedF.has(f));
+        candidates = _c3.length ? _c3 : _c4;
+      }
       if (candidates.length === 0) break;
       const pick = candidates[Math.floor(Math.random()*candidates.length)];
       pairs.push([m, pick]);
@@ -1411,7 +1445,8 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
     const freePairs = pairs.slice(seeds.length);
     const bad = freePairs.filter(p=>isBan(p[0],p[1])).length;
     const todayDup = freePairs.filter(p=>todayPairs.has(dayPairKey(p[0],p[1]))).length;
-    const pastDup = freePairs.filter(p=>allPastPairs.has(dayPairKey(p[0],p[1]))).length;
+    // pastDup: 시즌 내 함께한 횟수 합산 (많을수록 페널티)
+    const pastDup = freePairs.reduce((s,p) => s + _pCnt(p[0],p[1]), 0);
 
     if (bad < best.bad ||
         (bad===best.bad && (todayDup < best.todayDup ||
@@ -1423,11 +1458,13 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
   return best.pairs;
 }
 
-// ── 일반복식(남복/여복) 페어 생성 (금지 회피 + 지정 강제 + 당일 중복 회피) ──
+// ── 일반복식(남복/여복/잡복) 페어 생성 (금지 회피 + 지정 강제 + 당일/시즌 중복 회피) ──
 function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtNames, tag, banSet, forcedTeams, pastOpp, todayOpp) {
   banSet = banSet || new Set();
   forcedTeams = forcedTeams || [];
   const isBan = (a,b)=> banSet.has(dayPairKey(a,b));
+  // allPastPairs: Map<"A|B", count> — 시즌 내 파트너 조합 횟수
+  const _pCnt = (a,b) => allPastPairs.get(dayPairKey(a,b)) || 0;
   const poolSet = new Set(pool);
   // 지정 팀 시드 (둘 다 풀에 있는 것만)
   const seedTeams=[]; const usedSeed=new Set();
@@ -1437,7 +1474,7 @@ function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtName
     }
   });
 
-  let best = { matches:[], bad:Infinity, todayDup:Infinity };
+  let best = { matches:[], bad:Infinity, todayDup:Infinity, pastDupSum:Infinity };
   for (let attempt=0; attempt<80; attempt++) {
     const rest = shuffle(pool.filter(p=>!usedSeed.has(p)));
     const teams = seedTeams.map(t=>[...t]);
@@ -1445,10 +1482,22 @@ function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtName
     for (let i=0;i<rest.length;i++){
       const a = rest[i];
       if(used.has(a)) continue;
-      let c1 = rest.filter(p=>p!==a && !used.has(p) && !isBan(a,p) && !todayPairs.has(dayPairKey(a,p)));
-      let c2 = rest.filter(p=>p!==a && !used.has(p) && !isBan(a,p));
-      let c3 = rest.filter(p=>p!==a && !used.has(p));
-      const cands = c1.length?c1:c2.length?c2:c3;
+      // 당일 중복 없는 후보군 (기본 요건)
+      const _base = rest.filter(p=>p!==a && !used.has(p) && !isBan(a,p) && !todayPairs.has(dayPairKey(a,p)));
+      // c1: 이 시즌 한 번도 함께 안 한 조합 우선
+      const _c1 = _base.filter(p => _pCnt(a,p) === 0);
+      let cands;
+      if (_c1.length) {
+        cands = _c1;
+      } else if (_base.length) {
+        // c2: 가장 적게 함께한 조합
+        const _min = Math.min(..._base.map(p => _pCnt(a,p)));
+        cands = _base.filter(p => _pCnt(a,p) === _min);
+      } else {
+        // c3/c4: 폴백 (당일 중복 허용)
+        const _c3 = rest.filter(p=>p!==a && !used.has(p) && !isBan(a,p));
+        cands = _c3.length ? _c3 : rest.filter(p=>p!==a && !used.has(p));
+      }
       if(!cands.length) break;
       const partner = cands[Math.floor(Math.random()*cands.length)];
       teams.push([a,partner]); used.add(a); used.add(partner);
@@ -1460,10 +1509,13 @@ function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtName
     const freeTeams = teams.slice(seedTeams.length);
     const bad = freeTeams.filter(t=>isBan(t[0],t[1])).length;
     const todayDup = teams.reduce((acc,t)=> acc + (todayPairs.has(dayPairKey(t[0],t[1]))?1:0), 0);
+    // pastDupSum: 시즌 내 함께한 횟수 합산 (많을수록 페널티)
+    const pastDupSum = freeTeams.reduce((s,t) => s + _pCnt(t[0],t[1]), 0);
 
-    if (bad < best.bad || (bad===best.bad && todayDup < best.todayDup)) {
-      best = { matches, bad, todayDup };
-      if (bad===0 && todayDup===0) break;
+    if (bad < best.bad || (bad===best.bad && todayDup < best.todayDup) ||
+        (bad===best.bad && todayDup===best.todayDup && pastDupSum < best.pastDupSum)) {
+      best = { matches, bad, todayDup, pastDupSum };
+      if (bad===0 && todayDup===0 && pastDupSum===0) break;
     }
   }
   return best.matches;
@@ -1861,7 +1913,7 @@ function generateOneRoundByType(type, numCourts) {
 // ── 코트별 방식으로 한 라운드 생성 (커플/중복 회피) ──────────────
 function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   const pool = dayId ? getAttendees(dayId) : allPlayers();
-  const allPastPairs = getPastPairs();
+  const allPastPairs = getPastPairCounts(currentSeason);
   const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
   let mPool = shuffle(pool.filter(m=>m.gender==='m').map(m=>m.name));
   let fPool = shuffle(pool.filter(m=>m.gender==='f').map(m=>m.name));
@@ -4914,7 +4966,7 @@ window.generateEvExchangePairs=function(evId){
     const found=allP.find(p=>p.name===n);
     return {name:n,gender:found?(found.gender||'m'):'m'};
   });
-  const allPastPairs=getPastPairs();
+  const allPastPairs=getPastPairCounts(currentSeason);
   const emptySet=new Set();
   let pairs=[];
 
@@ -6147,7 +6199,7 @@ window.meetupGenerate = function() {
     return;
   }
 
-  const allPastPairs = getPastPairs();
+  const allPastPairs = getPastPairCounts(currentSeason);
   const allPastOpp = getPastOpponents();
   const emptyBanSet = new Set();
 
