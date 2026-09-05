@@ -703,7 +703,7 @@ tr:nth-child(even){background:#F5FCFB;}
             <div style="font-size:11px;color:#059669;margin-bottom:8px">게스트 추가</div>
             <div class="row-form">
               <input class="row-inp" id="newGuest" placeholder="이름 (예: 홍길동 게스트)" onkeydown="if(event.key==='Enter')addGuest()">
-              <input class="row-inp" id="newGuestYears" type="number" min="0" max="40" placeholder="구력(년)" style="width:72px;flex-shrink:0">
+              <input class="row-inp" id="newGuestYears" type="number" min="0" max="480" placeholder="구력(개월)" style="width:80px;flex-shrink:0">
               <div class="gender-toggle">
                 <button class="g-btn m active" id="ggBtnM" onclick="selectGuestGender('m')">♂ 남</button>
                 <button class="g-btn f" id="ggBtnF" onclick="selectGuestGender('f')">♀ 여</button>
@@ -1303,8 +1303,9 @@ async function recalculateAllRatings() {
   const R = {};
   members.forEach(p => { R[p.name] = 1500; });
   guests.forEach(p => {
-    const yr = p.years != null ? parseInt(p.years) : null;
-    R[p.name] = (yr!=null&&!isNaN(yr)) ? Math.min(1800, 1350 + yr*25) : 1500;
+    // months 우선, 구 필드 years가 있으면 ×12 환산
+    const mo = p.months!=null ? parseInt(p.months) : (p.years!=null ? parseInt(p.years)*12 : null);
+    R[p.name] = (mo!=null&&!isNaN(mo)) ? Math.min(1800, 1350 + mo*2) : 1500;
   });
   const sortedDays = [...days].sort((a,b) => (a.date||'') < (b.date||'') ? -1 : (a.date||'') > (b.date||'') ? 1 : 0);
   sortedDays.forEach(day => {
@@ -2500,8 +2501,10 @@ function renderRoundPreview(rIdx) {
       const _avg1=_t1.reduce((s,n)=>s+(ratings[n]||1500),0)/_t1.length;
       const _avg2=_t2.reduce((s,n)=>s+(ratings[n]||1500),0)/_t2.length;
       const _e1=1/(1+Math.pow(10,(_avg2-_avg1)/400));
-      const _est=_hasGuest?'<span style="color:#CBD5E1;font-size:8px;margin-left:2px">추정</span>':'';
-      winRateHtml=`<span style="color:#94A3B8;font-size:9px;margin-left:5px">(예상 ${Math.round(_e1*100)}:${Math.round((1-_e1)*100)}${_hasGuest?'*':''})</span>${_est}`;
+      const _est=_hasGuest?'<span style="color:#94A3B8;font-size:9px;margin-left:3px">추정</span>':'';
+      const _p1=Math.round(_e1*100),_p2=Math.round((1-_e1)*100);
+      const _pc1=_p1>_p2?'#2563EB':'#64748B',_pc2=_p2>_p1?'#2563EB':'#64748B';
+      winRateHtml=`<span style="font-size:10px;font-weight:600;margin-left:6px"><span style="color:${_pc1}">${_p1}%</span><span style="color:#94A3B8;margin:0 3px">vs</span><span style="color:${_pc2}">${_p2}%</span>${_est}</span>`;
     }
     return `<div style="padding:6px 0;border-bottom:1px solid rgba(50,110,200,0.12);font-size:12px">
       <span style="color:${tagColor};font-weight:700;font-size:10px">[${m.court}·${m.tag}]</span>
@@ -3101,8 +3104,11 @@ function renderDays() {
           const _a1=_wr_t1.reduce((s,n)=>s+(ratings[n]||1500),0)/_wr_t1.length;
           const _a2=_wr_t2.reduce((s,n)=>s+(ratings[n]||1500),0)/_wr_t2.length;
           const _e1=1/(1+Math.pow(10,(_a2-_a1)/400));
-          const _estLabel=_wr_hasGuest?'<span style="color:#CBD5E1;font-size:8px;margin-left:3px">추정</span>':'';
-          _winRateHtml=`<div style="text-align:center;font-size:9px;color:#94A3B8;margin-top:3px">예상 ${Math.round(_e1*100)}:${Math.round((1-_e1)*100)}${_wr_hasGuest?'*':''}${_estLabel}</div>`;
+          const _estLabel=_wr_hasGuest?'<span style="color:#94A3B8;font-size:9px;margin-left:3px">추정</span>':'';
+          const _p1=Math.round(_e1*100),_p2=Math.round((1-_e1)*100);
+          const _c1=_p1>_p2?'#2563EB':_p1<_p2?'#64748B':'#64748B';
+          const _c2=_p2>_p1?'#2563EB':_p2<_p1?'#64748B':'#64748B';
+          _winRateHtml=`<div style="text-align:center;font-size:11px;font-weight:600;margin-top:4px"><span style="color:${_c1}">${_p1}%</span><span style="color:#94A3B8;margin:0 4px">vs</span><span style="color:${_c2}">${_p2}%</span>${_estLabel}</div>`;
         }
         return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
           <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#64748B">${m.court||''} ${tagBadge}</span></div>
@@ -8759,9 +8765,9 @@ window.addGuest=async function(){
   const name=document.getElementById('newGuest').value.trim();if(!name)return;
   if(allPlayers().find(m=>m.name===name)){alert('이미 있는 이름이에요');return;}
   const _yRaw=document.getElementById('newGuestYears')?.value;
-  const _years=_yRaw!==''&&_yRaw!=null&&!isNaN(parseInt(_yRaw))?parseInt(_yRaw):null;
+  const _months=_yRaw!==''&&_yRaw!=null&&!isNaN(parseInt(_yRaw))?parseInt(_yRaw):null;
   const _gObj={name,gender:selectedGuestGender,isGuest:true};
-  if(_years!=null)_gObj.years=_years;
+  if(_months!=null)_gObj.months=_months;
   await setDoc(doc(db,'club','guests'),{list:[...guests,_gObj]});
   document.getElementById('newGuest').value='';
   if(document.getElementById('newGuestYears'))document.getElementById('newGuestYears').value='';
@@ -9823,6 +9829,7 @@ onSnapshot(collection(db,'announcements'), snap => {
 });
 onSnapshot(doc(db,'club','ratings'), snap => {
   ratings = snap.exists() ? snap.data() : {};
+  renderDays();
 });
 // ── 실시간 스코어 ──
 const LS_PTS = ['0','15','30','40'];
