@@ -703,6 +703,7 @@ tr:nth-child(even){background:#F5FCFB;}
             <div style="font-size:11px;color:#059669;margin-bottom:8px">게스트 추가</div>
             <div class="row-form">
               <input class="row-inp" id="newGuest" placeholder="이름 (예: 홍길동 게스트)" onkeydown="if(event.key==='Enter')addGuest()">
+              <input class="row-inp" id="newGuestYears" type="number" min="0" max="40" placeholder="구력(년)" style="width:72px;flex-shrink:0">
               <div class="gender-toggle">
                 <button class="g-btn m active" id="ggBtnM" onclick="selectGuestGender('m')">♂ 남</button>
                 <button class="g-btn f" id="ggBtnF" onclick="selectGuestGender('f')">♀ 여</button>
@@ -1300,7 +1301,11 @@ function getPastPairCounts(season) {
 }
 async function recalculateAllRatings() {
   const R = {};
-  [...members, ...guests].forEach(p => { R[p.name] = 1500; });
+  members.forEach(p => { R[p.name] = 1500; });
+  guests.forEach(p => {
+    const yr = p.years != null ? parseInt(p.years) : null;
+    R[p.name] = (yr!=null&&!isNaN(yr)) ? Math.min(1800, 1350 + yr*25) : 1500;
+  });
   const sortedDays = [...days].sort((a,b) => (a.date||'') < (b.date||'') ? -1 : (a.date||'') > (b.date||'') ? 1 : 0);
   sortedDays.forEach(day => {
     (day.rounds||[]).forEach(round => {
@@ -2491,11 +2496,12 @@ function renderRoundPreview(rIdx) {
     const _guestSet=new Set(guests.map(g=>g.name));
     const _hasGuest=[..._t1,..._t2].some(n=>_guestSet.has(n));
     let winRateHtml='';
-    if(!_hasGuest&&_t1.length&&_t2.length){
+    if(_t1.length&&_t2.length){
       const _avg1=_t1.reduce((s,n)=>s+(ratings[n]||1500),0)/_t1.length;
       const _avg2=_t2.reduce((s,n)=>s+(ratings[n]||1500),0)/_t2.length;
       const _e1=1/(1+Math.pow(10,(_avg2-_avg1)/400));
-      winRateHtml=`<span style="color:#94A3B8;font-size:9px;margin-left:5px">(예상 ${Math.round(_e1*100)}:${Math.round((1-_e1)*100)})</span>`;
+      const _est=_hasGuest?'<span style="color:#CBD5E1;font-size:8px;margin-left:2px">추정</span>':'';
+      winRateHtml=`<span style="color:#94A3B8;font-size:9px;margin-left:5px">(예상 ${Math.round(_e1*100)}:${Math.round((1-_e1)*100)}${_hasGuest?'*':''})</span>${_est}`;
     }
     return `<div style="padding:6px 0;border-bottom:1px solid rgba(50,110,200,0.12);font-size:12px">
       <span style="color:${tagColor};font-weight:700;font-size:10px">[${m.court}·${m.tag}]</span>
@@ -3091,11 +3097,12 @@ function renderDays() {
         const _wr_t1=(m.team1||[]).filter(Boolean),_wr_t2=(m.team2||[]).filter(Boolean);
         const _wr_hasGuest=[..._wr_t1,..._wr_t2].some(n=>_wr_guestSet.has(n));
         let _winRateHtml='';
-        if(!m.done&&!_wr_hasGuest&&_wr_t1.length&&_wr_t2.length){
+        if(_wr_t1.length&&_wr_t2.length){
           const _a1=_wr_t1.reduce((s,n)=>s+(ratings[n]||1500),0)/_wr_t1.length;
           const _a2=_wr_t2.reduce((s,n)=>s+(ratings[n]||1500),0)/_wr_t2.length;
           const _e1=1/(1+Math.pow(10,(_a2-_a1)/400));
-          _winRateHtml=`<div style="text-align:center;font-size:9px;color:#94A3B8;margin-top:3px">예상 ${Math.round(_e1*100)}:${Math.round((1-_e1)*100)}</div>`;
+          const _estLabel=_wr_hasGuest?'<span style="color:#CBD5E1;font-size:8px;margin-left:3px">추정</span>':'';
+          _winRateHtml=`<div style="text-align:center;font-size:9px;color:#94A3B8;margin-top:3px">예상 ${Math.round(_e1*100)}:${Math.round((1-_e1)*100)}${_wr_hasGuest?'*':''}${_estLabel}</div>`;
         }
         return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
           <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#64748B">${m.court||''} ${tagBadge}</span></div>
@@ -8751,8 +8758,13 @@ window.delMember=async function(name){
 window.addGuest=async function(){
   const name=document.getElementById('newGuest').value.trim();if(!name)return;
   if(allPlayers().find(m=>m.name===name)){alert('이미 있는 이름이에요');return;}
-  await setDoc(doc(db,'club','guests'),{list:[...guests,{name,gender:selectedGuestGender,isGuest:true}]});
+  const _yRaw=document.getElementById('newGuestYears')?.value;
+  const _years=_yRaw!==''&&_yRaw!=null&&!isNaN(parseInt(_yRaw))?parseInt(_yRaw):null;
+  const _gObj={name,gender:selectedGuestGender,isGuest:true};
+  if(_years!=null)_gObj.years=_years;
+  await setDoc(doc(db,'club','guests'),{list:[...guests,_gObj]});
   document.getElementById('newGuest').value='';
+  if(document.getElementById('newGuestYears'))document.getElementById('newGuestYears').value='';
 };
 window.delGuest=async function(name){
   if(!confirm(`${name}을(를) 삭제할까요?\n\n* 게스트 통계와 개인별 분석에서 자동으로 제외돼요\n* 과거 경기 기록은 보존돼요`))return;
