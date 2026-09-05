@@ -3087,6 +3087,16 @@ function renderDays() {
             <span><b style="color:#2563EB">${c.name}</b> ${c.text}</span>
             ${isAdmin?`<button onclick="delMatchComment('${day.id}','${rIdx}','${m.id}',${ci})" style="background:none;border:none;color:#f87171;font-size:10px;cursor:pointer">×</button>`:''}
           </div>`).join('');
+        const _wr_guestSet=new Set(guests.map(g=>g.name));
+        const _wr_t1=(m.team1||[]).filter(Boolean),_wr_t2=(m.team2||[]).filter(Boolean);
+        const _wr_hasGuest=[..._wr_t1,..._wr_t2].some(n=>_wr_guestSet.has(n));
+        let _winRateHtml='';
+        if(!m.done&&!_wr_hasGuest&&_wr_t1.length&&_wr_t2.length){
+          const _a1=_wr_t1.reduce((s,n)=>s+(ratings[n]||1500),0)/_wr_t1.length;
+          const _a2=_wr_t2.reduce((s,n)=>s+(ratings[n]||1500),0)/_wr_t2.length;
+          const _e1=1/(1+Math.pow(10,(_a2-_a1)/400));
+          _winRateHtml=`<div style="text-align:center;font-size:9px;color:#94A3B8;margin-top:3px">예상 ${Math.round(_e1*100)}:${Math.round((1-_e1)*100)}</div>`;
+        }
         return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
           <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#64748B">${m.court||''} ${tagBadge}</span></div>
           <div class="match-row">
@@ -3094,6 +3104,7 @@ function renderDays() {
             ${scoreEl}
             <div class="m-team ${w2?'win':''}">${(m.team2||[]).join(' / ')}</div>
           </div>
+          ${_winRateHtml}
           ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(13,148,136,0.05);border-radius:7px;border-left:2px solid rgba(13,148,136,0.2)">${evalHtml}</div>`:''}
           <div style="display:flex;align-items:center;gap:5px;margin-top:8px">
             ${basicInputBtn}${editBtn}${pairEditBtn}${delBtn}
