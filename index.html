@@ -2266,11 +2266,6 @@ function renderTypeStatTable() {
       <td style="text-align:center;font-weight:800;color:#1E293B;padding:3px 4px">${tot}</td>
     </tr>`;
   }).join('');
-  const avgRow = `<tr style="background:#F0F9FF;border-top:2px solid #C8E0DE">
-    <td style="padding:3px 6px;font-weight:700;font-size:10px;color:#64748B">평균</td>
-    ${TYPES.map(t=>`<td style="text-align:center;font-size:10px;font-weight:700;color:${TYPE_COLOR[t]};padding:3px 4px">${avg[t].toFixed(1)}</td>`).join('')}
-    <td style="text-align:center;font-size:10px;color:#64748B;padding:3px 4px">-</td>
-  </tr>`;
   el.innerHTML = `<div style="background:#F5FAFA;border-radius:10px;padding:10px 12px;border:1px solid #C8E0DE">
     <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:7px">📊 인원별 게임수</div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
@@ -2282,7 +2277,7 @@ function renderTypeStatTable() {
         <th style="text-align:center;padding:3px 4px;color:${TYPE_COLOR['잡복']}">잡복</th>
         <th style="text-align:center;padding:3px 4px;color:#1E293B">합계</th>
       </tr></thead>
-      <tbody>${rows}${avgRow}</tbody>
+      <tbody>${rows}</tbody>
     </table></div>
   </div>`;
 }
