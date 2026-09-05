@@ -822,6 +822,7 @@ tr:nth-child(even){background:#F5FCFB;}
 
           <!-- 라운드별 코트 방식 + 개별 주사위 -->
           <div id="roundTypeSelectors" style="display:flex;flex-direction:column;gap:10px"></div>
+          <div id="typeStatTable" style="margin-top:10px"></div>
 
           <div style="margin-top:10px">
             <button class="btn-add" style="width:100%;background:rgba(124,58,237,0.85)" onclick="rollAllBalanced()">🗓️ 하루 전체 섞기</button>
@@ -1998,6 +1999,14 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
     mPool = _thBs(mPool, new Set(), '잡복');
     fPool = _thBs(fPool, new Set(), '잡복');
   }
+  // 잡복 소수 성별: 균등 정렬 후 정회원이 앞에 오도록 재정렬
+  // (혼복/남복에서 정회원이 소진되더라도 소수 자리에 게스트 배정 방지)
+  if (usableCourtTypes.includes('잡복')) {
+    const _minPool = mPool.length <= fPool.length ? mPool : fPool;
+    const _minReg = _minPool.filter(n => !guestNameSet.has(n));
+    const _minGuest = _minPool.filter(n => guestNameSet.has(n));
+    _minPool.splice(0, _minPool.length, ..._minReg, ..._minGuest);
+  }
 
   // 코트 순서대로 배치
   let mixIdx = 0, maleIdx = 0, femIdx = 0;
@@ -2117,7 +2126,65 @@ window.rollAllBalanced = function() {
       : `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team1.join(' / ')}</div><span style="color:#64748B;font-size:10px;margin:0 6px">vs</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team2.join(' / ')}</div></div>`
     ).join('');
   }
+  renderTypeStatTable();
 };
+
+// 인원별 코트타입 게임수 요약 표
+function renderTypeStatTable() {
+  const el = document.getElementById('typeStatTable');
+  if (!el) return;
+  if (!generatedAllRounds || !generatedAllRounds.some(r => r && (r.matches||[]).length)) {
+    el.innerHTML = ''; return;
+  }
+  const dayId = document.getElementById('rndDayId')?.value || '';
+  const pool = dayId ? getAttendees(dayId) : allPlayers();
+  const gOf = {}; pool.forEach(p => { gOf[p.name] = p.gender; });
+  const stat = {};
+  generatedAllRounds.forEach(rd => {
+    (rd?.matches||[]).forEach(m => {
+      const tag = m.tag;
+      if (!['혼복','남복','여복','잡복'].includes(tag)) return;
+      [...(m.team1||[]),...(m.team2||[])].filter(Boolean).forEach(n => {
+        if (!stat[n]) stat[n] = {혼복:0,남복:0,여복:0,잡복:0};
+        stat[n][tag]++;
+      });
+    });
+  });
+  const names = Object.keys(stat).sort((a,b) => {
+    const ga = gOf[a]||'m', gb = gOf[b]||'m';
+    if (ga !== gb) return ga==='m'?-1:1;
+    return a.localeCompare(b,'ko');
+  });
+  if (!names.length) { el.innerHTML=''; return; }
+  const rows = names.map(n => {
+    const s = stat[n], g = gOf[n]||'m';
+    const tot = (s.혼복)+(s.남복)+(s.여복)+(s.잡복);
+    const c = (v,t) => {
+      if (t==='남복'&&g==='f') return `<td style="text-align:center;color:#CBD5E1">-</td>`;
+      if (t==='여복'&&g==='m') return `<td style="text-align:center;color:#CBD5E1">-</td>`;
+      return `<td style="text-align:center;font-weight:700;color:${v>0?TYPE_COLOR[t]:'#94A3B8'}">${v}</td>`;
+    };
+    return `<tr style="border-bottom:1px solid #EEF7F6">
+      <td style="padding:3px 6px;font-weight:700;font-size:11px;white-space:nowrap">${n}<span style="font-size:9px;margin-left:3px;color:${g==='f'?'#f472b6':'#60a5fa'}">${g==='f'?'♀':'♂'}</span></td>
+      ${c(s.남복,'남복')}${c(s.여복,'여복')}${c(s.혼복,'혼복')}${c(s.잡복,'잡복')}
+      <td style="text-align:center;font-weight:800;color:#1E293B;padding:3px 4px">${tot}</td>
+    </tr>`;
+  }).join('');
+  el.innerHTML = `<div style="background:#F5FAFA;border-radius:10px;padding:10px 12px;border:1px solid #C8E0DE">
+    <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:7px">📊 인원별 게임수</div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr style="border-bottom:2px solid #C8E0DE">
+        <th style="text-align:left;padding:3px 6px;font-weight:700;color:#1E293B">이름</th>
+        <th style="text-align:center;padding:3px 4px;color:${TYPE_COLOR['남복']}">남복</th>
+        <th style="text-align:center;padding:3px 4px;color:${TYPE_COLOR['여복']}">여복</th>
+        <th style="text-align:center;padding:3px 4px;color:${TYPE_COLOR['혼복']}">혼복</th>
+        <th style="text-align:center;padding:3px 4px;color:${TYPE_COLOR['잡복']}">잡복</th>
+        <th style="text-align:center;padding:3px 4px;color:#1E293B">합계</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+  </div>`;
+}
 
 // 코트 방식 변경 시: 수동 등록 경기가 있으면 자동 섞기 안 함 (보호)
 window.onCourtTypeChange = function(rIdx) {
@@ -2197,6 +2264,7 @@ window.rollRound = function(rIdx) {
       <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team2.join(' / ')}</div>
     </div>`;
   }).join('');
+  renderTypeStatTable();
 };
 
 // ── ✋수동 버튼: 해당 라운드 카드 안 수동 입력 영역 펼치기/접기 ──
