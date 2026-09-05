@@ -1911,6 +1911,32 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   const maleCourts = usableCourtTypes.filter(t=>t==='남복').length;
   const femaleCourts = usableCourtTypes.filter(t=>t==='여복').length;
 
+  // 잡복 소수 성별 정회원 완전 분리: _thBs 정렬 이전에 실행
+  // → 분리된 인원은 혼복/남복 pool에서 제외되어 _thBs에 노출되지 않고, 잡복 배정 시 복귀
+  const jaspokCourts = usableCourtTypes.filter(t => t === '잡복').length;
+  const reservedForJaspok = [];
+  let jaspokMinorityIsM = false;
+  if (jaspokCourts > 0) {
+    const mAfter = mPool.length - mixedCourts*2 - maleCourts*4;
+    const fAfter = fPool.length - mixedCourts*2 - femaleCourts*4;
+    const canExtractM = mAfter < fAfter && mAfter > 0;
+    const canExtractF = fAfter < mAfter && fAfter > 0;
+    if (canExtractM || canExtractF) {
+      jaspokMinorityIsM = canExtractM;
+      const _exPool = canExtractM ? mPool : fPool;
+      const _exLimit = Math.min(jaspokCourts, canExtractM ? mAfter : fAfter);
+      const _forcedNames = new Set([...forcedMix.flat(), ...forcedMale.flat(), ...forcedFemale.flat()]);
+      for (let i = _exPool.length - 1; i >= 0 && reservedForJaspok.length < _exLimit; i--) {
+        if (!guestNameSet.has(_exPool[i]) && !_forcedNames.has(_exPool[i])) {
+          reservedForJaspok.push(_exPool.splice(i, 1)[0]);
+        }
+      }
+      if (reservedForJaspok.length < jaspokCourts) {
+        console.warn('[잡복] 소수 성별 정회원 부족 — 일부 코트 2:2 재조정 예정');
+      }
+    }
+  }
+
   // typeHistory 균형 정렬 헬퍼 (하루 전체 섞기 시에만 활성화)
   // 1순위: 휴식 많은 사람 먼저, 2순위: 해당 타입 적게 배정된 사람 먼저
   // 3순위(동점 타이브레이크): 다른 타입을 더 많이 한 사람 우선 → 타입 다양성 극대화
@@ -1992,6 +2018,11 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
     [...mForMix,...fForMix].forEach(n=>{if(typeHistory[n])typeHistory[n].혼복++;});
     malePool.forEach(n=>{if(typeHistory[n])typeHistory[n].남복++;});
     femalePool.forEach(n=>{if(typeHistory[n])typeHistory[n].여복++;});
+  }
+  // 예약된 정회원을 소수 풀에 복귀 (혼복/남복 배정 완료 후)
+  if (reservedForJaspok.length > 0) {
+    if (jaspokMinorityIsM) mPool.push(...reservedForJaspok);
+    else fPool.push(...reservedForJaspok);
   }
 
   // 4) 잡복 — 남은 pool을 잡복 배정 횟수 오름차순 정렬 (균등화)
@@ -2156,13 +2187,26 @@ function renderTypeStatTable() {
     return a.localeCompare(b,'ko');
   });
   if (!names.length) { el.innerHTML=''; return; }
+  const TYPES = ['남복','여복','혼복','잡복'];
+  const avg = {};
+  TYPES.forEach(t => {
+    const eligible = names.filter(n => {
+      if (t === '남복') return (gOf[n]||'m') === 'm';
+      if (t === '여복') return (gOf[n]||'m') === 'f';
+      return true;
+    });
+    avg[t] = eligible.length ? eligible.reduce((s,n) => s + (stat[n][t]||0), 0) / eligible.length : 0;
+  });
   const rows = names.map(n => {
     const s = stat[n], g = gOf[n]||'m';
     const tot = (s.혼복)+(s.남복)+(s.여복)+(s.잡복);
-    const c = (v,t) => {
-      if (t==='남복'&&g==='f') return `<td style="text-align:center;color:#CBD5E1">-</td>`;
-      if (t==='여복'&&g==='m') return `<td style="text-align:center;color:#CBD5E1">-</td>`;
-      return `<td style="text-align:center;font-weight:700;color:${v>0?TYPE_COLOR[t]:'#94A3B8'}">${v}</td>`;
+    const c = (v, t) => {
+      if (t==='남복'&&g==='f') return `<td style="text-align:center;color:#CBD5E1;padding:3px 4px">-</td>`;
+      if (t==='여복'&&g==='m') return `<td style="text-align:center;color:#CBD5E1;padding:3px 4px">-</td>`;
+      const diff = v - avg[t];
+      const bg = diff >= 2 ? 'rgba(251,146,60,0.25)' : diff <= -2 ? 'rgba(96,165,250,0.20)' : '';
+      const bgSt = bg ? `background:${bg};border-radius:4px;` : '';
+      return `<td style="text-align:center;font-weight:700;color:${v>0?TYPE_COLOR[t]:'#94A3B8'};padding:3px 4px;${bgSt}">${v}</td>`;
     };
     return `<tr style="border-bottom:1px solid #EEF7F6">
       <td style="padding:3px 6px;font-weight:700;font-size:11px;white-space:nowrap">${n}<span style="font-size:9px;margin-left:3px;color:${g==='f'?'#f472b6':'#60a5fa'}">${g==='f'?'♀':'♂'}</span></td>
@@ -2170,6 +2214,11 @@ function renderTypeStatTable() {
       <td style="text-align:center;font-weight:800;color:#1E293B;padding:3px 4px">${tot}</td>
     </tr>`;
   }).join('');
+  const avgRow = `<tr style="background:#F0F9FF;border-top:2px solid #C8E0DE">
+    <td style="padding:3px 6px;font-weight:700;font-size:10px;color:#64748B">평균</td>
+    ${TYPES.map(t=>`<td style="text-align:center;font-size:10px;font-weight:700;color:${TYPE_COLOR[t]};padding:3px 4px">${avg[t].toFixed(1)}</td>`).join('')}
+    <td style="text-align:center;font-size:10px;color:#64748B;padding:3px 4px">-</td>
+  </tr>`;
   el.innerHTML = `<div style="background:#F5FAFA;border-radius:10px;padding:10px 12px;border:1px solid #C8E0DE">
     <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:7px">📊 인원별 게임수</div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:11px">
@@ -2181,7 +2230,7 @@ function renderTypeStatTable() {
         <th style="text-align:center;padding:3px 4px;color:${TYPE_COLOR['잡복']}">잡복</th>
         <th style="text-align:center;padding:3px 4px;color:#1E293B">합계</th>
       </tr></thead>
-      <tbody>${rows}</tbody>
+      <tbody>${rows}${avgRow}</tbody>
     </table></div>
   </div>`;
 }
