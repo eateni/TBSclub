@@ -741,6 +741,14 @@ tr:nth-child(even){background:#F5FCFB;}
           <div id="datePairBody"><div style="color:#64748B;font-size:12px">날짜를 선택하세요</div></div>
         </div>
 
+        <!-- Elo 레이팅 재계산 -->
+        <div class="admin-sec" style="border-color:rgba(139,92,246,0.4);background:rgba(20,10,50,0.2)">
+          <h3>⚡ Elo 레이팅 관리</h3>
+          <div style="font-size:11px;color:#94A3B8;margin-bottom:10px">시즌1부터 전체 정규시즌 경기를 시간순 재생해 개인 레이팅을 초기화합니다. 배포 직후 최초 1회 또는 데이터 불일치 시 사용하세요.</div>
+          <button onclick="window._adminRecalcRatings()" style="width:100%;padding:9px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.45);border-radius:8px;color:#a78bfa;font-size:12px;font-weight:700;cursor:pointer">🔄 레이팅 전체 재계산</button>
+          <div id="ratingRecalcResult" style="margin-top:8px;font-size:11px;color:#64748B"></div>
+        </div>
+
         <!-- 시즌 관리 -->
         <div class="admin-sec">
           <h3>🗓️ 시즌 관리</h3>
@@ -1234,6 +1242,7 @@ let _openDayIds = new Set(); // 날짜 카드 열림 상태 (재렌더링 후 �
 let viewSeason = 1;         // 화면에서 보고 있는 시즌
 let seasonUserPicked = false; // 사용자가 과거 시즌을 직접 선택했는지
 let adminDaySeason = null;  // null = currentSeason, -1 = 전체
+let ratings = {};
 let pendingScore = null;
 let pendingScoreEdit = null;
 let pendingDayId = null;
@@ -1289,6 +1298,35 @@ function getPastPairCounts(season) {
   });
   return counts;
 }
+async function recalculateAllRatings() {
+  const R = {};
+  [...members, ...guests].forEach(p => { R[p.name] = 1500; });
+  const sortedDays = [...days].sort((a,b) => (a.date||'') < (b.date||'') ? -1 : (a.date||'') > (b.date||'') ? 1 : 0);
+  sortedDays.forEach(day => {
+    (day.rounds||[]).forEach(round => {
+      (round.matches||[]).forEach(m => {
+        if (!m.done || m.isRally || m.tag==='랠리' || m.tag==='휴식') return;
+        if (m.score1==null || m.score2==null) return;
+        const t1 = (m.team1||[]).filter(Boolean);
+        const t2 = (m.team2||[]).filter(Boolean);
+        if (!t1.length || !t2.length) return;
+        t1.forEach(n => { if (R[n]==null) R[n]=1500; });
+        t2.forEach(n => { if (R[n]==null) R[n]=1500; });
+        const avg1 = t1.reduce((s,n)=>s+R[n],0)/t1.length;
+        const avg2 = t2.reduce((s,n)=>s+R[n],0)/t2.length;
+        const exp1 = 1/(1+Math.pow(10,(avg2-avg1)/400));
+        const s1=Number(m.score1), s2=Number(m.score2);
+        const act1 = s1>s2?1:s1<s2?0:0.5;
+        const delta = 24*(act1-exp1);
+        t1.forEach(n=>{ R[n]+=delta; });
+        t2.forEach(n=>{ R[n]-=delta; });
+      });
+    });
+  });
+  await setDoc(doc(db,'club','ratings'), R);
+  ratings = R;
+}
+
 function wasPaired(a, b, pairs) {
   return pairs.has([a,b].sort().join('|'));
 }
@@ -2449,11 +2487,21 @@ function renderRoundPreview(rIdx) {
     }
     const tagColor = {'혼복':'#a78bfa','남복':'#60a5fa','여복':'#f472b6'}[m.tag]||'#a78bfa';
     const manualMark = m.tag2==='수동'||r.matches.tag==='수동' ? '' : '';
+    const _t1=(m.team1||[]).filter(Boolean), _t2=(m.team2||[]).filter(Boolean);
+    const _guestSet=new Set(guests.map(g=>g.name));
+    const _hasGuest=[..._t1,..._t2].some(n=>_guestSet.has(n));
+    let winRateHtml='';
+    if(!_hasGuest&&_t1.length&&_t2.length){
+      const _avg1=_t1.reduce((s,n)=>s+(ratings[n]||1500),0)/_t1.length;
+      const _avg2=_t2.reduce((s,n)=>s+(ratings[n]||1500),0)/_t2.length;
+      const _e1=1/(1+Math.pow(10,(_avg2-_avg1)/400));
+      winRateHtml=`<span style="color:#94A3B8;font-size:9px;margin-left:5px">(예상 ${Math.round(_e1*100)}:${Math.round((1-_e1)*100)})</span>`;
+    }
     return `<div style="padding:6px 0;border-bottom:1px solid rgba(50,110,200,0.12);font-size:12px">
       <span style="color:${tagColor};font-weight:700;font-size:10px">[${m.court}·${m.tag}]</span>
-      <span style="color:#1E293B;font-weight:700;margin-left:4px">${(m.team1||[]).join('/')}</span>
+      <span style="color:#1E293B;font-weight:700;margin-left:4px">${_t1.join('/')}</span>
       <span style="color:#64748B;margin:0 4px">vs</span>
-      <span style="color:#1E293B;font-weight:700">${(m.team2||[]).join('/')}</span>
+      <span style="color:#1E293B;font-weight:700">${_t2.join('/')}</span>${winRateHtml}
     </div>`;
   }).join('');
 }
@@ -2783,6 +2831,7 @@ window.submitScoreEdit = async function() {
   rounds[pendingScoreEdit.rIdx]={...rounds[pendingScoreEdit.rIdx],matches};
   await updateDoc(doc(db,'days',pendingScoreEdit.dayId),{rounds});
   hide('scoreEditModal');
+  recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
 };
 
 
@@ -8429,6 +8478,7 @@ window.submitScore=async function(){
   rounds[pendingScore.rIdx]={...rounds[pendingScore.rIdx],matches};
   await updateDoc(doc(db,'days',pendingScore.dayId),{rounds});
   hide('scoreModal');
+  recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
 };
 
 // 경기 직접 추가
@@ -8546,12 +8596,27 @@ window.delMatch=async function(dayId,rIdx,mId){
   const rounds=[...(day.rounds||[])];
   rounds[parseInt(rIdx)]={...rounds[parseInt(rIdx)],matches:(rounds[parseInt(rIdx)].matches||[]).filter(m=>m.id!==mId)};
   await updateDoc(doc(db,'days',dayId),{rounds});
+  recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
 };
 window.delRound=async function(dayId,rIdx){
   if(!confirm('이 라운드를 삭제할까요?'))return;
   const day=days.find(d=>d.id===dayId);
   const rounds=(day.rounds||[]).filter((_,i)=>i!==parseInt(rIdx));
   await updateDoc(doc(db,'days',dayId),{rounds});
+};
+
+window._adminRecalcRatings = async function() {
+  const el = document.getElementById('ratingRecalcResult');
+  if (el) el.textContent = '⏳ 재계산 중...';
+  try {
+    await recalculateAllRatings();
+    const entries = Object.entries(ratings).sort((a,b)=>b[1]-a[1]);
+    if (el) el.innerHTML = `✅ 완료 (${entries.length}명)<br>`
+      + entries.slice(0,5).map(([n,r])=>`${n}: ${Math.round(r)}`).join(' · ')
+      + (entries.length>5?` 외 ${entries.length-5}명`:'');
+  } catch(e) {
+    if (el) el.textContent = '❌ 실패: ' + (e.message||e.code||e);
+  }
 };
 
 // 코트 예약 관리 (attendance 맵 전체 저장 방식 — deleteField 미사용)
@@ -9732,6 +9797,9 @@ onSnapshot(collection(db,'announcements'), snap => {
   renderHomeTab();
   renderAdminAnnouncements();
   triggerAnnPopups();
+});
+onSnapshot(doc(db,'club','ratings'), snap => {
+  ratings = snap.exists() ? snap.data() : {};
 });
 // ── 실시간 스코어 ──
 const LS_PTS = ['0','15','30','40'];
