@@ -804,8 +804,8 @@ tr:nth-child(even){background:#F5FCFB;}
           <div style="margin-bottom:10px">
             <div style="font-size:11px;color:#64748B;margin-bottom:5px">코트 번호</div>
             <div style="display:flex;gap:6px;margin-bottom:8px">
-              <input id="dayCourtNumInput" type="number" min="1" placeholder="번호 입력 (예: 3)"
-                style="flex:1;padding:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:13px;outline:none"
+              <input id="dayCourtNumInput" type="text" inputmode="numeric" placeholder="번호 입력 (예: 3)"
+                class="row-inp" style="flex:1"
                 onkeydown="if(event.key==='Enter'){event.preventDefault();addCourtChip()}" />
               <button type="button" onclick="addCourtChip()" style="padding:8px 12px;background:rgba(37,99,235,0.8);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">추가</button>
             </div>
