@@ -5828,6 +5828,7 @@ function renderAdmin(){
         const cr = day.courtReservation || {};
         const crSlots = cr.timeSlots || [];
         const crCourts = cr.courts || {};
+        const resvCourts = (day.courtNumbers && day.courtNumbers.length) ? day.courtNumbers : RESV_COURT_NAMES;
         const courtResHtml = `
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(37,99,235,0.15)">
             <div style="font-size:11px;font-weight:700;color:#2563EB;margin-bottom:6px">🏟️ 코트 예약 현황</div>
@@ -5835,7 +5836,7 @@ function renderAdmin(){
               const slotC = crCourts[slot] || {};
               return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;flex-wrap:wrap">
                 <span style="font-size:11px;color:#64748B;min-width:38px;flex-shrink:0">${slot}</span>
-                ${RESV_COURT_NAMES.map(c => {
+                ${resvCourts.map(c => {
                   const ok = slotC[c] === true;
                   return `<button onclick="toggleCourtSlotCourt('${day.id}','${slot}','${c}')"
                     style="padding:3px 8px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;
@@ -7603,7 +7604,7 @@ function renderHomeTab() {
             const sc = _crCourts[slot] || {};
             return '<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
               + '<span style="font-size:11px;color:#64748B;min-width:36px;flex-shrink:0">'+slot+'</span>'
-              + RESV_COURT_NAMES.map(function(c) {
+              + (_crDay.courtNumbers && _crDay.courtNumbers.length ? _crDay.courtNumbers : RESV_COURT_NAMES).map(function(c) {
                   const ok = sc[c] === true;
                   return '<span style="font-size:11px;padding:2px 8px;border-radius:8px;'
                     + 'background:'+(ok?'#DBEAFE':'rgba(100,116,139,0.07)')+';'
