@@ -754,6 +754,14 @@ tr:nth-child(even){background:#F5FCFB;}
           <div id="ratingRecalcResult" style="margin-top:8px;font-size:11px;color:#64748B"></div>
         </div>
 
+        <!-- 하이라이트 캐시 초기화 -->
+        <div class="admin-sec" style="border-color:rgba(13,148,136,0.4);background:rgba(0,30,20,0.2)">
+          <h3>🗑️ 하이라이트 캐시 초기화</h3>
+          <div style="font-size:11px;color:#94A3B8;margin-bottom:10px">days 컬렉션의 dayBadges/daySummary 캐시를 삭제해 뱃지 로직 변경 사항을 재적용합니다. 버튼 클릭 시 대상 건수를 먼저 표시합니다.</div>
+          <button onclick="window._adminClearBadgeCache()" style="width:100%;padding:9px;background:rgba(13,148,136,0.15);border:1px solid rgba(13,148,136,0.45);border-radius:8px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">🗑️ 캐시 현황 확인 → 초기화</button>
+          <div id="badgeCacheResult" style="margin-top:8px;font-size:11px;color:#64748B"></div>
+        </div>
+
         <!-- 시즌 관리 -->
         <div class="admin-sec">
           <h3>🗓️ 시즌 관리</h3>
@@ -1222,6 +1230,7 @@ let currentEvView = 'detail';
 let isAdmin = false;
 let members = [];
 let guests = [];
+let guestsLoaded = false;
 let days = [];
 let openAttBodies = new Set();
 let events = [];
@@ -3163,7 +3172,7 @@ function renderDays() {
     if(totalMatches>0&&doneMatches===totalMatches){
       let dBadges=day.dayBadges;
       let dSummary=day.daySummary;
-      if(!dBadges||!dSummary){
+      if((!dBadges||!dSummary)&&guestsLoaded){
         const dayNorm=_getAllMatchHistory(day.date).filter(function(h){return h.date===day.date;});
         dBadges=buildDayBadges(dayNorm,day.date);
         dSummary=buildDaySummary(dayNorm,dBadges,day.date);
@@ -7413,7 +7422,7 @@ function renderHomeTab() {
   if(_hDay){
     let hBadges=_hDay.dayBadges;
     let hSummary=_hDay.daySummary;
-    if(!hBadges||!hSummary){
+    if((!hBadges||!hSummary)&&guestsLoaded){
       const hNorm=_getAllMatchHistory(_hDay.date).filter(function(h){return h.date===_hDay.date;});
       hBadges=buildDayBadges(hNorm,_hDay.date);
       hSummary=buildDaySummary(hNorm,hBadges,_hDay.date);
@@ -8666,6 +8675,29 @@ window._adminRecalcRatings = async function() {
     if (el) el.textContent = '❌ 실패: ' + (e.message||e.code||e);
   }
 };
+window._adminClearBadgeCache = async function() {
+  const el = document.getElementById('badgeCacheResult');
+  if (el) el.textContent = '⏳ 대상 건수 확인 중...';
+  try {
+    const snap = await getDocs(collection(db, 'days'));
+    const toClear = snap.docs.filter(d => d.data().dayBadges || d.data().daySummary);
+    if (el) el.textContent = `대상: ${toClear.length}건 — 확인 창을 확인해주세요`;
+    if (!confirm(`총 ${toClear.length}건의 days 문서에서\ndayBadges / daySummary 캐시를 초기화합니다.\n\n계속하시겠습니까?`)) {
+      if (el) el.textContent = '취소됨';
+      return;
+    }
+    let done = 0;
+    for (const docSnap of toClear) {
+      await updateDoc(docSnap.ref, { dayBadges: null, daySummary: null });
+      done++;
+    }
+    if (el) el.innerHTML = `✅ ${done}건 초기화 완료 — 페이지를 새로고침하면 뱃지가 재계산됩니다`;
+    console.log(`✅ dayBadges 캐시 ${done}건 초기화 완료`);
+  } catch(e) {
+    if (el) el.textContent = '❌ 실패: ' + (e.message||e.code||e);
+    console.error('badge cache clear 실패:', e);
+  }
+};
 
 // 코트 예약 관리 (attendance 맵 전체 저장 방식 — deleteField 미사용)
 window.addCourtSlot = async function(dayId) {
@@ -9810,6 +9842,7 @@ onSnapshot(doc(db,'club','season'), snap => {
 });
 onSnapshot(doc(db,'club','guests'), snap => {
   guests = snap.exists() ? (snap.data().list||[]) : [];
+  guestsLoaded = true;
   populateSignupNameSelect();
   renderAll();
   resolveMyClaim();
