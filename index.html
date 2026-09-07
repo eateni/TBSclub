@@ -994,6 +994,10 @@ tr:nth-child(even){background:#F5FCFB;}
     <div style="font-size:11px;color:#64748B;margin-bottom:6px">비밀번호</div>
     <input class="f-input" id="adminPw" type="password" placeholder="비밀번호" onkeydown="if(event.key==='Enter')doAdminLogin()">
     <div class="err" id="adminLoginErr"></div>
+    <div style="text-align:right;margin-top:-2px;margin-bottom:6px">
+      <button onclick="doResetPassword()" style="background:none;border:none;color:#64748B;font-size:11px;cursor:pointer;text-decoration:underline;padding:0">비밀번호를 잊으셨나요?</button>
+    </div>
+    <div id="pwResetMsg" style="display:none;font-size:11px;text-align:center;padding:8px 10px;border-radius:8px;margin-bottom:8px"></div>
     <div class="mft">
       <button class="btn-cancel" onclick="hide('adminLoginModal')">취소</button>
       <button class="btn-ok" onclick="doAdminLogin()">로그인</button>
@@ -1186,7 +1190,8 @@ tr:nth-child(even){background:#F5FCFB;}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup,
-  setPersistence, browserLocalPersistence, signInAnonymously }
+  setPersistence, browserLocalPersistence, signInAnonymously,
+  sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
@@ -5341,6 +5346,7 @@ function renderAdmin(){
             <button onclick="editMemberField('${m.name}','tennisStartDate')" title="테니스 시작: ${m.tennisStartDate||'미입력'}"
               style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎾 ${m.tennisStartDate||'—'}</button>
           </span>
+          ${m.email ? `<span style="font-size:9px;color:#64748B;word-break:break-all;padding-top:1px">✉ ${m.email}</span>` : ''}
         </span>`).join('')
     : '<span style="color:#64748B;font-size:12px">등록된 회원 없음</span>';
 
@@ -9213,6 +9219,23 @@ window.doAdminLogin=async function(){
     if (btn) { btn.disabled = false; btn.textContent = '로그인'; }
   }
 };
+window.doResetPassword = async function(){
+  const email = document.getElementById('adminEmail').value.trim();
+  const errEl = document.getElementById('adminLoginErr');
+  const msgEl = document.getElementById('pwResetMsg');
+  if (msgEl) { msgEl.style.display = 'none'; msgEl.textContent = ''; }
+  if (!email) { if (errEl) errEl.textContent = '이메일을 먼저 입력해주세요'; return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { if (errEl) errEl.textContent = '이메일 형식이 올바르지 않아요'; return; }
+  if (errEl) errEl.textContent = '';
+  try { await sendPasswordResetEmail(auth, email); } catch(_) { /* 계정 존재 여부 노출 방지 */ }
+  if (msgEl) {
+    msgEl.textContent = '입력하신 이메일로 처리되었습니다. 메일함을 확인해주세요.';
+    msgEl.style.display = 'block';
+    msgEl.style.background = 'rgba(52,211,153,0.12)';
+    msgEl.style.color = '#059669';
+    msgEl.style.border = '1px solid rgba(52,211,153,0.3)';
+  }
+};
 window.doLogout=async function(){
   const msg = isAdmin ? '관리자 모드에서 로그아웃 할까요?' : `${myClaim?.name||''}님, 로그아웃 할까요?`;
   if(!confirm(msg))return;
@@ -9412,6 +9435,7 @@ window.approveSignup = async function(reqId){
 
   if (req.isNewName) {
     const newMemberObj = { name:newName, gender:req.gender, uid:req.uid };
+    if (req.email) newMemberObj.email = req.email;
     if (req.birthDate) newMemberObj.birthDate = req.birthDate;
     if (req.isLunarBirth) newMemberObj.isLunarBirth = true;
     if (req.tennisStartDate) newMemberObj.tennisStartDate = req.tennisStartDate;
@@ -9424,6 +9448,7 @@ window.approveSignup = async function(reqId){
       list: targetList.map(x => {
         if (x.name !== req.claimedName) return x;
         const u = { ...x, uid: req.uid };
+        if (req.email) u.email = req.email;
         if (req.birthDate) u.birthDate = req.birthDate;
         if (req.isLunarBirth) u.isLunarBirth = true;
         if (req.tennisStartDate) u.tennisStartDate = req.tennisStartDate;
@@ -9461,6 +9486,7 @@ window.mergeSimilarMember = async function(reqId, existingName, isGuest) {
   if (!ok) return;
   try {
     const infoFromReq = {};
+    if (req.email) infoFromReq.email = req.email;
     if (req.birthDate) infoFromReq.birthDate = req.birthDate;
     if (req.isLunarBirth) infoFromReq.isLunarBirth = true;
     if (req.tennisStartDate) infoFromReq.tennisStartDate = req.tennisStartDate;
