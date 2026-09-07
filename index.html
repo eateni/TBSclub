@@ -319,6 +319,9 @@ tr:nth-child(even){background:#F5FCFB;}
 </style>
 <!-- 음양력 변환 라이브러리 (korean-lunar-calendar by usingsky, MIT) -->
 <script src="https://cdn.jsdelivr.net/npm/korean-lunar-calendar/src/korean-lunar-calendar.js"></script>
+<!-- 지도 (Leaflet + OpenStreetMap, 무료/무API키) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 
@@ -794,18 +797,8 @@ tr:nth-child(even){background:#F5FCFB;}
             </div>
             <div>
               <div style="font-size:11px;color:#64748B;margin-bottom:5px">장소 (선택)</div>
-              <select class="row-sel" id="dayPlaceSelect" style="width:100%" onchange="onDayPlaceChange()">
-                <option value="">장소 선택...</option>
-                <option value="포동">포동</option>
-                <option value="포동체육관">포동체육관</option>
-                <option value="비둘기">비둘기</option>
-                <option value="비둘기체육관">비둘기체육관</option>
-                <option value="능곡">능곡</option>
-                <option value="일산">일산</option>
-                <option value="__other__">기타 (직접 입력)</option>
-              </select>
-              <input class="row-inp" id="dayPlaceOther" placeholder="장소 직접 입력" style="width:100%;margin-top:5px;display:none">
-              <div id="dayPlaceOtherWarn" style="display:none;font-size:10px;color:#F59E0B;margin-top:3px">⚠️ 날씨가 정확하지 않을 수 있습니다</div>
+              <div id="dayPlaceDisplay" style="font-size:11px;color:#94A3B8;min-height:16px;margin-bottom:5px;word-break:break-all"></div>
+              <button type="button" onclick="openPlaceModal()" style="width:100%;padding:9px;background:rgba(37,99,235,0.12);border:1px solid rgba(37,99,235,0.3);border-radius:8px;color:#2563EB;font-size:12px;font-weight:700;cursor:pointer">📍 지도에서 장소 선택</button>
             </div>
           </div>
           <div style="margin-bottom:10px">
@@ -1295,6 +1288,12 @@ let selectedGender = 'm';
 let selectedGuestGender = 'm';
 let generatedPairing = [];
 let generatedAllRounds = [];
+let _placeMapInstance = null;
+let _placeMarker = null;
+let _selectedPlaceLat = null;
+let _selectedPlaceLon = null;
+let _selectedPlaceName = '';
+let favoritePlaces = [];
 // 코트 수/라운드 수 변경 시 전역에서 호출되는 핸들러 (module 밖 onchange용)
 window.rndConfigChanged = async function(){
   generatedAllRounds = [];
@@ -1306,10 +1305,161 @@ window.rndConfigChanged = async function(){
   }
 };
 
-window.onDayPlaceChange = function() {
-  const isOther = document.getElementById('dayPlaceSelect').value === '__other__';
-  document.getElementById('dayPlaceOther').style.display = isOther ? 'block' : 'none';
-  document.getElementById('dayPlaceOtherWarn').style.display = isOther ? 'block' : 'none';
+// ── 장소 지도 선택 ─────────────────────────────────────────────────
+function _setPlaceMarker(lat, lon) {
+  if (!_placeMapInstance) return;
+  if (_placeMarker) {
+    _placeMarker.setLatLng([lat, lon]);
+  } else {
+    _placeMarker = L.marker([lat, lon], {draggable: true}).addTo(_placeMapInstance);
+    _placeMarker.on('dragend', function(ev) {
+      const pos = ev.target.getLatLng();
+      _selectedPlaceLat = pos.lat;
+      _selectedPlaceLon = pos.lng;
+    });
+  }
+}
+
+function renderFavChips() {
+  const wrap = document.getElementById('favChipsWrap');
+  const list = document.getElementById('favChipsList');
+  if (!wrap || !list) return;
+  if (!favoritePlaces.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  list.innerHTML = favoritePlaces.map(function(f, i) {
+    return '<div style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.3);border-radius:20px">'
+      + '<span onclick="selectFavoritePlace(' + i + ')" style="font-size:12px;color:#F59E0B;font-weight:600;cursor:pointer">' + f.name + '</span>'
+      + '<span onclick="removeFavoritePlace(' + i + ')" style="font-size:14px;color:#94A3B8;cursor:pointer;padding:0 3px;line-height:1">×</span>'
+      + '</div>';
+  }).join('');
+}
+
+window.openPlaceModal = function() {
+  const modal = document.getElementById('placeModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  const nameInput = document.getElementById('placeNameInput');
+  if (nameInput) nameInput.value = _selectedPlaceName || '';
+  const srEl = document.getElementById('placeSearchResults');
+  if (srEl) srEl.innerHTML = '';
+  const siEl = document.getElementById('placeSearchInput');
+  if (siEl) siEl.value = '';
+  const addFavChk = document.getElementById('placeAddFav');
+  if (addFavChk) addFavChk.checked = false;
+  renderFavChips();
+  setTimeout(function() {
+    if (!_placeMapInstance) {
+      _placeMapInstance = L.map('placeMapDiv').setView([37.661, 126.769], 14);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(_placeMapInstance);
+      _placeMapInstance.on('click', function(e) {
+        const lat = e.latlng.lat, lon = e.latlng.lng;
+        _selectedPlaceLat = lat;
+        _selectedPlaceLon = lon;
+        _setPlaceMarker(lat, lon);
+      });
+    } else {
+      _placeMapInstance.invalidateSize();
+    }
+    if (_selectedPlaceLat != null && _selectedPlaceLon != null) {
+      _placeMapInstance.setView([_selectedPlaceLat, _selectedPlaceLon], 15);
+      _setPlaceMarker(_selectedPlaceLat, _selectedPlaceLon);
+    }
+  }, 120);
+};
+
+window.closePlaceModal = function() {
+  const modal = document.getElementById('placeModal');
+  if (modal) modal.style.display = 'none';
+};
+
+window.searchPlaceNominatim = async function() {
+  const q = (document.getElementById('placeSearchInput')?.value || '').trim();
+  if (!q) return;
+  const resultsEl = document.getElementById('placeSearchResults');
+  if (resultsEl) resultsEl.innerHTML = '<div style="font-size:11px;color:#64748B;padding:6px 0">⏳ 검색 중...</div>';
+  try {
+    const url = 'https://nominatim.openstreetmap.org/search?format=json&q='
+      + encodeURIComponent(q) + '&countrycodes=kr&limit=5&accept-language=ko&addressdetails=0';
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.length) {
+      if (resultsEl) resultsEl.innerHTML = '<div style="font-size:11px;color:#94A3B8;padding:6px 0">검색 결과가 없습니다</div>';
+      return;
+    }
+    if (resultsEl) resultsEl.innerHTML = data.map(function(r) {
+      return '<div onclick="selectNominatimResult(' + r.lat + ',' + r.lon + ',this)"'
+        + ' style="padding:8px 10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);border-radius:8px;margin-bottom:5px;cursor:pointer;font-size:11px;color:#E2E8F0;line-height:1.5">'
+        + '📌 ' + (r.display_name || '')
+        + '</div>';
+    }).join('');
+  } catch(e) {
+    if (resultsEl) resultsEl.innerHTML = '<div style="font-size:11px;color:#F87171;padding:6px 0">검색 실패: ' + (e.message || '네트워크 오류') + '</div>';
+  }
+};
+
+window.selectNominatimResult = function(lat, lon, el) {
+  lat = parseFloat(lat);
+  lon = parseFloat(lon);
+  _selectedPlaceLat = lat;
+  _selectedPlaceLon = lon;
+  _setPlaceMarker(lat, lon);
+  if (_placeMapInstance) _placeMapInstance.setView([lat, lon], 16);
+  const nameInput = document.getElementById('placeNameInput');
+  if (nameInput && !nameInput.value.trim()) {
+    const text = el ? (el.textContent || '').replace(/📌\s*/, '').split(',')[0].trim() : '';
+    if (text) nameInput.value = text;
+  }
+};
+
+window.selectFavoritePlace = function(i) {
+  const f = favoritePlaces[i];
+  if (!f) return;
+  _selectedPlaceLat = f.lat;
+  _selectedPlaceLon = f.lon;
+  _setPlaceMarker(f.lat, f.lon);
+  if (_placeMapInstance) _placeMapInstance.setView([f.lat, f.lon], 16);
+  const nameInput = document.getElementById('placeNameInput');
+  if (nameInput) nameInput.value = f.name;
+};
+
+window.removeFavoritePlace = async function(i) {
+  const f = favoritePlaces[i];
+  if (!f || !confirm('\'' + f.name + '\' 즐겨찾기를 삭제할까요?')) return;
+  favoritePlaces = favoritePlaces.filter(function(_, idx) { return idx !== i; });
+  try {
+    await setDoc(doc(db,'club','settings'), {favoritePlaces: favoritePlaces}, {merge: true});
+  } catch(e) { console.error('즐겨찾기 삭제 실패:', e); }
+  renderFavChips();
+};
+
+window.confirmPlaceSelection = async function() {
+  if (_selectedPlaceLat == null || _selectedPlaceLon == null) {
+    alert('지도에서 장소를 먼저 선택해주세요');
+    return;
+  }
+  const name = (document.getElementById('placeNameInput')?.value || '').trim();
+  _selectedPlaceName = name;
+  const disp = document.getElementById('dayPlaceDisplay');
+  if (disp) disp.textContent = name
+    ? '📍 ' + name
+    : '📍 좌표만 저장됨 (' + _selectedPlaceLat.toFixed(4) + ', ' + _selectedPlaceLon.toFixed(4) + ')';
+  const addFav = document.getElementById('placeAddFav')?.checked;
+  if (addFav) {
+    if (!name) { alert('즐겨찾기에 추가하려면 장소명을 입력해주세요'); return; }
+    if (favoritePlaces.some(function(f) { return f.name === name; })) {
+      alert('\'' + name + '\'은(는) 이미 즐겨찾기에 있습니다');
+    } else {
+      favoritePlaces = [...favoritePlaces, {name: name, lat: _selectedPlaceLat, lon: _selectedPlaceLon}];
+      try {
+        await setDoc(doc(db,'club','settings'), {favoritePlaces: favoritePlaces}, {merge: true});
+      } catch(e) { console.error('즐겨찾기 저장 실패:', e); }
+    }
+  }
+  closePlaceModal();
 };
 
 window.hide = id => document.getElementById(id).style.display = 'none';
@@ -6902,8 +7052,8 @@ function wxEmoji(code) {
   return '⛈️';
 }
 
-async function fetchDayWeather(dateStr, place) {
-  const coords = (place && VENUE_COORDS[place]) || DEFAULT_COORDS;
+async function fetchDayWeather(dateStr, place, lat, lon) {
+  const coords = (lat != null && lon != null) ? {lat, lon} : ((place && VENUE_COORDS[place]) || DEFAULT_COORDS);
   const cacheKey = dateStr + '_' + coords.lat + '_' + coords.lon;
   if (homeWeatherCache[cacheKey]) return homeWeatherCache[cacheKey];
   try {
@@ -6925,29 +7075,29 @@ async function fetchDayWeather(dateStr, place) {
   } catch (e) { return null; }
 }
 
-async function updateHomeWeather(gameDate, gamePlace, evDate, evPlace, schedArr, weeklyArr) {
+async function updateHomeWeather(gameDate, gamePlace, gameLat, gameLon, evDate, evPlace, evLat, evLon, schedArr, weeklyArr) {
   const now = new Date();
   const cutoffMs = now.getTime() + 16 * 24 * 60 * 60 * 1000;
   const cutoff = new Date(cutoffMs).toISOString().slice(0, 10);
   if (gameDate && gameDate <= cutoff) {
-    const wx = await fetchDayWeather(gameDate, gamePlace);
+    const wx = await fetchDayWeather(gameDate, gamePlace, gameLat, gameLon);
     if (wx) { const el = document.getElementById('wxBadgeGame'); if (el) el.textContent = wx; }
   }
   if (evDate && evDate <= cutoff) {
-    const wx = await fetchDayWeather(evDate, evPlace);
+    const wx = await fetchDayWeather(evDate, evPlace, evLat, evLon);
     if (wx) { const el = document.getElementById('wxBadgeEv'); if (el) el.textContent = wx; }
   }
   for (let i = 0; i < (schedArr || []).length; i++) {
-    const { date, place } = schedArr[i];
+    const { date, place, lat: sLat, lon: sLon } = schedArr[i];
     if (date && date <= cutoff) {
-      const wx = await fetchDayWeather(date, place);
+      const wx = await fetchDayWeather(date, place, sLat||null, sLon||null);
       if (wx) { const el = document.getElementById('wxBadgeSched_' + i); if (el) el.textContent = wx; }
     }
   }
   for (let i = 0; i < (weeklyArr || []).length; i++) {
-    const { date, place } = weeklyArr[i];
+    const { date, place, lat: wLat, lon: wLon } = weeklyArr[i];
     if (date && date <= cutoff) {
-      const wx = await fetchDayWeather(date, place);
+      const wx = await fetchDayWeather(date, place, wLat||null, wLon||null);
       if (wx) { const el = document.getElementById('wxBadgeWeekly_' + date); if (el) el.textContent = wx; }
     }
   }
@@ -7557,10 +7707,14 @@ function renderHomeTab() {
   updateHomeWeather(
     nextGameDay ? nextGameDay.date : null,
     nextGameDay ? nextGameDay.place : null,
+    nextGameDay ? (nextGameDay.lat||null) : null,
+    nextGameDay ? (nextGameDay.lon||null) : null,
     nextExchangeEv ? nextExchangeEv.date : null,
     nextExchangeEv ? nextExchangeEv.place : null,
-    memberScheds.map(s => ({ date: s.date, place: s.place || null })),
-    [fridayGame, saturdayGame].filter(Boolean).map(function(d){ return { date: d.date, place: d.place || null }; })
+    nextExchangeEv ? (nextExchangeEv.lat||null) : null,
+    nextExchangeEv ? (nextExchangeEv.lon||null) : null,
+    memberScheds.map(s => ({ date: s.date, place: s.place||null, lat: s.lat||null, lon: s.lon||null })),
+    [fridayGame, saturdayGame].filter(Boolean).map(function(d){ return { date: d.date, place: d.place||null, lat: d.lat||null, lon: d.lon||null }; })
   );
 }
 
@@ -8773,10 +8927,9 @@ window.toggleCourtSlotCourt = async function(dayId, slot, court) {
 // 날짜 그룹
 window.addDay=async function(){
   const date=document.getElementById('dayDate').value;
-  const placeSelect=document.getElementById('dayPlaceSelect').value;
-  const place=placeSelect==='__other__'
-    ? (document.getElementById('dayPlaceOther').value.trim())
-    : placeSelect;
+  const place=_selectedPlaceName||'';
+  const lat=_selectedPlaceLat;
+  const lon=_selectedPlaceLon;
   const numCourts=parseInt(document.getElementById('dayNumCourts')?.value)||2;
   if(!date){alert('날짜를 선택해주세요');return;}
 
@@ -8793,14 +8946,14 @@ window.addDay=async function(){
   }
 
   const docData = {date, place, numCourts, rounds:[], season:currentSeason, attendancePolicy:'v2', createdAt:serverTimestamp()};
+  if (lat != null && lon != null) { docData.lat = lat; docData.lon = lon; }
   if (Object.keys(initAttendance).length) docData.attendance = initAttendance;
 
   await addDoc(collection(db,'days'), docData);
   document.getElementById('dayDate').value='';
-  document.getElementById('dayPlaceSelect').value='';
-  document.getElementById('dayPlaceOther').value='';
-  document.getElementById('dayPlaceOther').style.display='none';
-  document.getElementById('dayPlaceOtherWarn').style.display='none';
+  _selectedPlaceName=''; _selectedPlaceLat=null; _selectedPlaceLon=null;
+  const dispEl=document.getElementById('dayPlaceDisplay');
+  if(dispEl) dispEl.textContent='';
   document.getElementById('dayNumCourts').value='2';
 
   if (matchSch) {
@@ -9956,6 +10109,9 @@ onSnapshot(doc(db,'club','ratings'), snap => {
   ratings = snap.exists() ? snap.data() : {};
   renderDays();
 });
+onSnapshot(doc(db,'club','settings'), snap => {
+  favoritePlaces = snap.exists() ? (snap.data().favoritePlaces || []) : [];
+});
 // ── 실시간 스코어 ──
 const LS_PTS = ['0','15','30','40'];
 const LS_TB_WORDS = ['Love','One','Two','Three','Four','Five','Six'];
@@ -10559,6 +10715,35 @@ function lsRenderLog() {
       <input type="checkbox" id="annPopupDismissChk" style="accent-color:#0D9488;width:14px;height:14px"> 오늘 하루 안 보기
     </label>
     <button onclick="closeAnnPopup()" style="width:100%;padding:11px;background:linear-gradient(135deg,#0D9488,#0369a1);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer">확인</button>
+  </div>
+</div>
+
+<!-- 장소 선택 지도 모달 -->
+<div id="placeModal" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,0.65);align-items:flex-end;justify-content:center">
+  <div style="background:#0F1C2E;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:20px 16px 32px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <div style="font-size:15px;font-weight:900;color:#E2E8F0">📍 장소 선택</div>
+      <button onclick="closePlaceModal()" style="background:none;border:none;color:#64748B;font-size:22px;cursor:pointer;line-height:1;padding:0">×</button>
+    </div>
+    <div id="favChipsWrap" style="display:none;margin-bottom:10px">
+      <div style="font-size:10px;color:#64748B;margin-bottom:6px;font-weight:700">⭐ 즐겨찾기</div>
+      <div id="favChipsList" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:8px">
+      <input id="placeSearchInput" class="row-inp" placeholder="장소명이나 주소를 검색하세요" style="flex:1;font-size:12px" onkeydown="if(event.key==='Enter')searchPlaceNominatim()">
+      <button onclick="searchPlaceNominatim()" style="padding:9px 12px;background:rgba(37,99,235,0.85);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">검색</button>
+    </div>
+    <div id="placeSearchResults" style="margin-bottom:8px"></div>
+    <div id="placeMapDiv" style="height:260px;border-radius:12px;overflow:hidden;margin-bottom:10px"></div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;color:#64748B;margin-bottom:4px">장소명 (선택)</div>
+      <input id="placeNameInput" class="row-inp" placeholder="예: 포동체육관" style="width:100%;font-size:13px">
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer">
+      <input type="checkbox" id="placeAddFav" style="width:15px;height:15px;accent-color:#F59E0B;cursor:pointer">
+      <span style="font-size:12px;color:#94A3B8">⭐ 이 장소를 즐겨찾기에 추가</span>
+    </label>
+    <button onclick="confirmPlaceSelection()" style="width:100%;padding:12px;background:rgba(37,99,235,0.85);border:none;border-radius:10px;color:#fff;font-size:14px;font-weight:700;cursor:pointer">✅ 확인</button>
   </div>
 </div>
 
