@@ -416,6 +416,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="navTo('event')">🎉 이벤트전</button>
       <button class="more-menu-item" onclick="navTo('board')">📋 게시판</button>
       <button class="more-menu-item" onclick="navTo('photo')">📸 사진/동영상</button>
+      <button class="more-menu-item" id="moreGameSummaryBtn" style="display:none" onclick="navTo('gamesummary')">📊 경기 요약</button>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
     </div>
   </div>
@@ -658,6 +659,9 @@ tr:nth-child(even){background:#F5FCFB;}
 
     <!-- 사진/동영상 -->
     <div id="tab-photo" style="display:none"></div>
+
+    <!-- 경기 요약 -->
+    <div id="tab-gamesummary" style="display:none"></div>
 
     <!-- 관리자 -->
     <div id="tab-admin" style="display:none">
@@ -5832,7 +5836,7 @@ window.switchAdminSub = function(key, btn){
 };
 
 window.switchTab=function(tab,btn){
-  ['home','league','terra','schedule','fortune','event','board','photo','admin'].forEach(t=>{
+  ['home','league','terra','schedule','fortune','event','board','photo','gamesummary','admin'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
     if(el) el.style.display=t===tab?'block':'none';
   });
@@ -5846,18 +5850,19 @@ window.switchTab=function(tab,btn){
   if(tab==='board') populateBoardAuthorSelect();
   if(tab==='home') renderHomeTab();
   if(tab==='photo') renderPhotoTab();
+  if(tab==='gamesummary') renderGameSummaryTab();
 };
 
 window.navTo = function(tab){
   const origBtn = document.querySelector(`.tab-btn[onclick*="switchTab('${tab}'"]`);
   if (origBtn) {
     switchTab(tab, origBtn);
-  } else if (['home','photo'].includes(tab)) {
+  } else if (['home','photo','gamesummary'].includes(tab)) {
     switchTab(tab, null);
   }
 
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
-  const bucketMap = { home:'home', league:'home', terra:'terra', schedule:'schedule', fortune:'more', event:'more', board:'more', admin:'more', photo:'more' };
+  const bucketMap = { home:'home', league:'home', terra:'terra', schedule:'schedule', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
   const bucket = bucketMap[tab] || 'more';
   const bnBtn = document.querySelector(`.bn-btn[data-bucket="${bucket}"]`);
   if (bnBtn) bnBtn.classList.add('active');
@@ -7516,6 +7521,18 @@ function renderPhotoTab() {
       <div style="margin-top:20px;font-size:11px;color:rgba(74,138,181,0.6)">저장소 연동 후 업데이트 예정</div>
     </div>`;
 }
+
+window.renderGameSummaryTab = function renderGameSummaryTab() {
+  const el = document.getElementById('tab-gamesummary');
+  if (!el) return;
+  el.innerHTML = `
+    <div style="text-align:center;padding:64px 24px">
+      <div style="font-size:64px;margin-bottom:18px">📊</div>
+      <div style="font-size:20px;font-weight:900;color:#1E293B;margin-bottom:10px">경기 요약</div>
+      <div style="font-size:14px;color:#64748B;line-height:1.8">시즌별 경기 통계와 분석을<br>준비 중입니다 🎾</div>
+      <div style="margin-top:20px;font-size:11px;color:rgba(74,138,181,0.6)">업데이트 예정</div>
+    </div>`;
+};
 
 
 window.homeGoTo = function(target) {
@@ -9548,6 +9565,8 @@ function renderMyDashboardState(){
     btn.onclick = () => { populateSignupNameSelect(); document.getElementById('signupModal').style.display = 'flex'; };
   }
   updateSloganVisibility();
+  const gsBtn = document.getElementById('moreGameSummaryBtn');
+  if (gsBtn) gsBtn.style.display = (isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest)) ? 'block' : 'none';
   // renderMyRecordCard(); // topCardsRow 비활성화로 불필요 (tab-home 내 myRecordHtml로 대체)
   applyWriterAutoSelect();
   renderHomeTab();
