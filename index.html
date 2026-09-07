@@ -7587,34 +7587,44 @@ function renderHomeTab() {
          <div style="flex:1;min-width:0">${_satCardHtml}</div>
        </div>`;
 
-  // ── 코트 예약 현황 카드 (데이터 있는 가장 가까운 게임 날) ──
+  // ── 코트 예약 현황 카드 (데이터 있는 게임 날 – 복수이면 금/토와 동일 폭 배치) ──
   let _courtCardHtml = '';
   {
     const _crDays = [fridayGame, saturdayGame, nextGameDay].filter(Boolean);
-    const _crDay = _crDays.find(function(d){ return d.courtReservation && (d.courtReservation.timeSlots||[]).length > 0; });
-    if (_crDay) {
-      const _cr = _crDay.courtReservation;
+    const _crMatchedDays = _crDays.filter(function(d){ return d.courtReservation && (d.courtReservation.timeSlots||[]).length > 0; });
+    const _makeCourtCard = function(d) {
+      const _cr = d.courtReservation;
       const _crSlots = _cr.timeSlots || [];
       const _crCourts = _cr.courts || {};
-      const _crDd = new Date(_crDay.date+'T00:00:00');
+      const _crDd = new Date(d.date+'T00:00:00');
       const _crDl = (_crDd.getMonth()+1)+'/'+_crDd.getDate()+'('+weekdays[_crDd.getDay()]+')';
-      _courtCardHtml = '<div style="background:#F0F9FF;border:1px solid rgba(37,99,235,0.22);border-radius:14px;padding:12px 14px;margin-bottom:12px">'
+      return '<div style="background:#F0F9FF;border:1px solid rgba(37,99,235,0.22);border-radius:14px;padding:12px 14px">'
         + '<div style="font-size:12px;font-weight:800;color:#2563EB;margin-bottom:8px">🏟️ 코트 예약 현황 · <span style="color:#64748B;font-weight:400;font-size:11px">'+_crDl+'</span></div>'
         + _crSlots.map(function(slot) {
             const sc = _crCourts[slot] || {};
             return '<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
               + '<span style="font-size:11px;color:#64748B;min-width:36px;flex-shrink:0">'+slot+'</span>'
-              + (_crDay.courtNumbers && _crDay.courtNumbers.length ? _crDay.courtNumbers : RESV_COURT_NAMES).map(function(c) {
+              + (d.courtNumbers && d.courtNumbers.length ? d.courtNumbers : RESV_COURT_NAMES).map(function(c) {
                   const ok = sc[c] === true;
                   return '<span style="font-size:11px;padding:2px 8px;border-radius:8px;'
-                    + 'background:'+(ok?'#DBEAFE':'rgba(100,116,139,0.07)')+';'
-                    + 'color:'+(ok?'#2563EB':'#CBD5E1')+';'
-                    + 'border:1px solid '+(ok?'rgba(37,99,235,0.28)':'rgba(100,116,139,0.13)')+';'
+                    + 'background:'+(ok?'#DBEAFE':'rgba(100,116,139,0.12)')+';'
+                    + 'color:'+(ok?'#2563EB':'#94A3B8')+';'
+                    + 'border:1px solid '+(ok?'rgba(37,99,235,0.28)':'rgba(100,116,139,0.22)')+';'
                     + 'font-weight:'+(ok?'700':'400')+'">'+c+(ok?' ✓':'')+'</span>';
                 }).join('')
               + '</div>';
           }).join('')
         + '</div>';
+    };
+    if (_crMatchedDays.length === 2) {
+      _courtCardHtml = '<div class="home-card-pair" style="margin-bottom:12px">'
+        + '<div style="flex:1;min-width:0">'+_makeCourtCard(_crMatchedDays[0])+'</div>'
+        + '<div style="flex:1;min-width:0">'+_makeCourtCard(_crMatchedDays[1])+'</div>'
+        + '</div>';
+    } else if (_crMatchedDays.length === 1) {
+      _courtCardHtml = '<div style="margin-bottom:12px">'+_makeCourtCard(_crMatchedDays[0])+'</div>';
+    } else if (_crMatchedDays.length > 2) {
+      _courtCardHtml = _crMatchedDays.map(function(d){ return '<div style="margin-bottom:8px">'+_makeCourtCard(d)+'</div>'; }).join('');
     }
   }
 
