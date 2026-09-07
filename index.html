@@ -802,16 +802,14 @@ tr:nth-child(even){background:#F5FCFB;}
             </div>
           </div>
           <div style="margin-bottom:10px">
-            <div style="font-size:11px;color:#64748B;margin-bottom:5px">코트 수</div>
-            <select class="row-sel" id="dayNumCourts" style="width:100%">
-              <option value="2" selected>2코트</option>
-              <option value="3">3코트</option>
-              <option value="4">4코트</option>
-              <option value="5">5코트</option>
-              <option value="6">6코트</option>
-              <option value="7">7코트</option>
-              <option value="8">8코트</option>
-            </select>
+            <div style="font-size:11px;color:#64748B;margin-bottom:5px">코트 번호</div>
+            <div style="display:flex;gap:6px;margin-bottom:8px">
+              <input id="dayCourtNumInput" type="number" min="1" placeholder="번호 입력 (예: 3)"
+                style="flex:1;padding:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:13px;outline:none"
+                onkeydown="if(event.key==='Enter'){event.preventDefault();addCourtChip()}" />
+              <button type="button" onclick="addCourtChip()" style="padding:8px 12px;background:rgba(37,99,235,0.8);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;cursor:pointer">추가</button>
+            </div>
+            <div id="courtChipsWrap" style="display:flex;flex-wrap:wrap;gap:6px;min-height:0"></div>
           </div>
           <button class="btn-add" style="width:100%" onclick="addDay()">📅 날짜 그룹 추가</button>
         </div>
@@ -1294,6 +1292,34 @@ let _selectedPlaceLat = null;
 let _selectedPlaceLon = null;
 let _selectedPlaceName = '';
 let favoritePlaces = [];
+let _pendingCourtNumbers = [];
+
+function renderCourtChips() {
+  const wrap = document.getElementById('courtChipsWrap');
+  if (!wrap) return;
+  if (_pendingCourtNumbers.length === 0) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = _pendingCourtNumbers.map((n, i) =>
+    `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(37,99,235,0.2);border:1px solid rgba(37,99,235,0.4);border-radius:20px;color:#93c5fd;font-size:12px;font-weight:700">${n}<button type="button" onclick="removeCourtChip(${i})" style="background:none;border:none;color:#94A3B8;cursor:pointer;padding:0 0 0 4px;font-size:14px;line-height:1">×</button></span>`
+  ).join('');
+}
+
+window.addCourtChip = function() {
+  const inp = document.getElementById('dayCourtNumInput');
+  if (!inp) return;
+  const raw = inp.value.toString().trim().replace(/[^0-9]/g, '');
+  if (!raw) return;
+  const label = raw + '번';
+  if (_pendingCourtNumbers.includes(label)) { inp.value = ''; return; }
+  _pendingCourtNumbers.push(label);
+  renderCourtChips();
+  inp.value = '';
+};
+
+window.removeCourtChip = function(i) {
+  _pendingCourtNumbers.splice(i, 1);
+  renderCourtChips();
+};
+
 // 코트 수/라운드 수 변경 시 전역에서 호출되는 핸들러 (module 밖 onchange용)
 window.rndConfigChanged = async function(){
   generatedAllRounds = [];
@@ -2050,6 +2076,10 @@ function updateRoundTypeSelectors() {
   const el = document.getElementById('roundTypeSelectors');
   if (!el) return;
 
+  const _rtsDayId = document.getElementById('rndDayId')?.value || '';
+  const _rtsDay = days.find(d=>d.id===_rtsDayId);
+  const courtLabels = (_rtsDay && _rtsDay.courtNumbers && _rtsDay.courtNumbers.length) ? _rtsDay.courtNumbers : COURT_NAMES;
+
   // 기존 값 보존
   const prev = {};
   for (let r=0;r<10;r++) for (let c=0;c<8;c++) {
@@ -2082,7 +2112,7 @@ function updateRoundTypeSelectors() {
       <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">
         ${Array.from({length:nC}, (_,c) => `
           <div style="display:flex;align-items:center;gap:8px">
-            <span style="font-size:11px;color:#64748B;min-width:38px;font-weight:600">${COURT_NAMES[c]}</span>
+            <span style="font-size:11px;color:#64748B;min-width:38px;font-weight:600">${courtLabels[c]||COURT_NAMES[c]}</span>
             <select id="ct_${r}_${c}" onchange="onCourtTypeChange(${r})"
               style="flex:1;padding:7px 10px;background:#E8F4F3;border:1px solid #B8D8D5;border-radius:8px;color:#1E293B;font-size:12px;outline:none">
               ${TYPE_OPTS.map(t=>`<option value="${t}" ${(prev[`${r}_${c}`]||defaultCourtTypes[c]||'혼복')===t?'selected':''}>${t}</option>`).join('')}
@@ -2095,7 +2125,7 @@ function updateRoundTypeSelectors() {
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
           <span style="font-size:11px;color:#64748B;min-width:38px">코트</span>
           <select id="mc_court_${r}" class="row-sel" style="flex:1;padding:7px;font-size:12px">
-            ${Array.from({length:nC},(_,c)=>`<option value="${COURT_NAMES[c]}">${COURT_NAMES[c]}</option>`).join('')}
+            ${Array.from({length:nC},(_,c)=>`<option value="${courtLabels[c]||COURT_NAMES[c]}">${courtLabels[c]||COURT_NAMES[c]}</option>`).join('')}
           </select>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
@@ -2124,7 +2154,10 @@ window.onRndDayChange = function() {
   const dayId = document.getElementById('rndDayId')?.value || '';
   const day = days.find(d=>d.id===dayId);
   const ncSel = document.getElementById('rndCourts');
-  if (ncSel && day && day.numCourts) ncSel.value = String(day.numCourts);
+  if (ncSel && day) {
+    const nc = (day.courtNumbers && day.courtNumbers.length) ? day.courtNumbers.length : (day.numCourts || 0);
+    if (nc) { ncSel.value = String(nc); updateRoundTypeSelectors(); }
+  }
 };
 
 // 라운드별 수동 셀렉터에 선수 목록 채우기
@@ -2163,6 +2196,8 @@ function generateOneRoundByType(type, numCourts) {
 // ── 코트별 방식으로 한 라운드 생성 (커플/중복 회피) ──────────────
 function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   const pool = dayId ? getAttendees(dayId) : allPlayers();
+  const _gcDay = days.find(d=>d.id===dayId);
+  const courtLabels = (_gcDay && _gcDay.courtNumbers && _gcDay.courtNumbers.length) ? _gcDay.courtNumbers : COURT_NAMES;
   const allPastPairs = getPastPairCounts(currentSeason);
   const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
   let mPool = shuffle(pool.filter(m=>m.gender==='m').map(m=>m.name));
@@ -2345,7 +2380,7 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   let mixIdx = 0, maleIdx = 0, femIdx = 0;
   for (let c=0; c<maxCourts; c++) {
     const type = courtTypes[c];
-    const court = COURT_NAMES[c];
+    const court = courtLabels[c]||COURT_NAMES[c];
     if (type === '혼복') {
       const mu = mixedMatchups[mixIdx];
       mixIdx++;
@@ -2388,7 +2423,7 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   // 남은 인원이 있으면 → 대기 코트 (다음 코트 자리에 배치)
   const leftover = [...mPool, ...fPool];
   if (leftover.length > 0 && maxCourts < nC) {
-    const rallyCourt = COURT_NAMES[maxCourts];
+    const rallyCourt = courtLabels[maxCourts]||COURT_NAMES[maxCourts];
     matches.push({
       team1: leftover,
       team2: [],
@@ -8930,7 +8965,7 @@ window.addDay=async function(){
   const place=_selectedPlaceName||'';
   const lat=_selectedPlaceLat;
   const lon=_selectedPlaceLon;
-  const numCourts=parseInt(document.getElementById('dayNumCourts')?.value)||2;
+  const courtNumbers=[..._pendingCourtNumbers]; const numCourts=courtNumbers.length||2;
   if(!date){alert('날짜를 선택해주세요');return;}
 
   // 같은 날짜의 isGameMeetup 일정에서 참석 데이터 자동 반영
@@ -8945,7 +8980,7 @@ window.addDay=async function(){
     });
   }
 
-  const docData = {date, place, numCourts, rounds:[], season:currentSeason, attendancePolicy:'v2', createdAt:serverTimestamp()};
+  const docData = {date, place, numCourts, courtNumbers, rounds:[], season:currentSeason, attendancePolicy:'v2', createdAt:serverTimestamp()};
   if (lat != null && lon != null) { docData.lat = lat; docData.lon = lon; }
   if (Object.keys(initAttendance).length) docData.attendance = initAttendance;
 
@@ -8954,7 +8989,8 @@ window.addDay=async function(){
   _selectedPlaceName=''; _selectedPlaceLat=null; _selectedPlaceLon=null;
   const dispEl=document.getElementById('dayPlaceDisplay');
   if(dispEl) dispEl.textContent='';
-  document.getElementById('dayNumCourts').value='2';
+  _pendingCourtNumbers=[]; renderCourtChips();
+  const _courtInp=document.getElementById('dayCourtNumInput'); if(_courtInp) _courtInp.value='';
 
   if (matchSch) {
     const cnt = Object.values(initAttendance).filter(v=>v===true).length;
