@@ -7204,20 +7204,15 @@ function renderHomeTab() {
   const welcomeName = isAdmin ? '관리자 👑 환영합니다!' : (isMemberLoggedIn ? `${myClaim.name}님 환영합니다 👋` : 'TBS HISTORY 👋');
   const subMsg = isLoggedIn ? '오늘도 좋은 경기 되세요!' : '로그인하면 내 기록을 확인할 수 있어요';
 
-  // 이번 달 출석일 집계 (days.attendance[name] !== false인 날짜)
+  // 이번 달 게임 날짜 집계 (day 문서가 존재하는 날짜 — 참석 여부 무관)
   const calY = now.getFullYear();
   const calM = now.getMonth();
   const calMStr = `${calY}-${String(calM+1).padStart(2,'0')}`;
   const attendedSet = new Set();
-  if (isMemberLoggedIn) {
-    days.forEach(function(day) {
-      if (!day.date || !day.date.startsWith(calMStr)) return;
-      const dayAtt = day.attendance || {};
-      if (dayAtt[myClaim.name] !== false) {
-        attendedSet.add(parseInt(day.date.slice(8, 10), 10));
-      }
-    });
-  }
+  days.forEach(function(day) {
+    if (!day.date || !day.date.startsWith(calMStr)) return;
+    attendedSet.add(parseInt(day.date.slice(8, 10), 10));
+  });
   // 이번 달 이벤트전 날짜 집계 (교류전/월례대회/특별전)
   const eventDaysMap = {};
   events.filter(e => ['exchange','monthly','special'].includes(e.type) && e.date && e.date.startsWith(calMStr))
