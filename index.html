@@ -7234,6 +7234,8 @@ function renderHomeTab() {
     .reduce((a,d)=>a+(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).filter(m=>m.done&&!m.isRally&&m.tag!=='랠리').length,0),0);
   const seasonMatchCount = days.filter(d=>(d.season||1)===currentSeason)
     .reduce((a,d)=>a+(d.rounds||[]).reduce((b,r)=>b+(r.matches||[]).filter(m=>m.done&&!m.isRally&&m.tag!=='랠리').length,0),0);
+  const seasonRoundCount = days.filter(d=>(d.season||1)===currentSeason
+    &&(d.rounds||[]).some(r=>(r.matches||[]).some(m=>m.done&&!m.isRally&&m.tag!=='랠리'))).length;
 
   // ── 내 기록 상세 (기록탭 renderMyRecordCard와 동일 구성) ──────────
   let myRecordHtml = '';
@@ -7708,7 +7710,7 @@ function renderHomeTab() {
                 <span style="font-size:11px;font-weight:700;color:rgba(253,230,138,0.9)">S${currentSeason} 진행중</span>
               </div>
             </div>
-            <div style="margin-top:8px;font-size:11px;font-weight:700;color:rgba(255,255,255,0.65);text-shadow:0 1px 3px rgba(0,0,0,0.5)">S${currentSeason} · 누적 ${seasonMatchCount}경기</div>
+            <div style="margin-top:8px;font-size:15px;font-weight:800;color:rgba(255,255,255,0.8);text-shadow:0 1px 3px rgba(0,0,0,0.5)">S${currentSeason} ${seasonRoundCount}R ${seasonMatchCount}G</div>
           </div>
           <!-- 우측: 미니 캘린더 -->
           <div style="background:rgba(0,0,0,0.22);border-radius:10px;padding:4px 6px">${miniCalHtml}</div>
