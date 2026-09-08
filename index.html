@@ -3483,6 +3483,9 @@ function renderDays() {
     const dayId = `day_${day.id}`;
     const dayArr = `darr_${day.id}`;
     const progressPct = totalMatches > 0 ? Math.round(doneMatches/totalMatches*100) : 0;
+    const dayAddMatchBtn = (isFreeMode && (isAdmin || isDayRegularMember))
+      ? `<button class="btn-input" style="border-color:rgba(109,40,217,0.35);color:#7c3aed;margin-top:6px" onclick="openFreeAddMatch('${day.id}')">+ 경기 추가</button>`
+      : '';
 
     return `<div class="round-card" style="margin-bottom:10px;">
       <button class="round-hdr" onclick="toggleR('${dayId}','${dayArr}')">
@@ -3495,6 +3498,7 @@ function renderDays() {
       </button>
       <div class="round-body" id="${dayId}" style="display:none">
         ${roundsHtml || '<div style="color:#64748B;font-size:13px;padding:8px 0">아직 라운드가 없어요</div>'}
+        ${dayAddMatchBtn}
         ${daySummaryHtml}
       </div>
     </div>`;
@@ -8859,6 +8863,19 @@ window.openAddMatch=function(dayId, rIdx){
   ['t1p1','t1p2','t2p1','t2p2'].forEach(id=>document.getElementById(id).innerHTML=opts);
   document.getElementById('matchModal').style.display='flex';
 };
+window.openFreeAddMatch=function(dayId){
+  const day=days.find(d=>d.id===dayId);
+  if(!day) return;
+  const rIdx=Math.max(0,(day.rounds||[]).length-1);
+  pendingRoundKey={dayId, rIdx};
+  const round=(day.rounds||[])[rIdx];
+  const label=round?`${day.date} · ${round.name}`:`${day.date} · 1라운드 (자동 생성)`;
+  document.getElementById('matchRoundLabel').textContent=label;
+  const pool=getAttendees(dayId);
+  const opts='<option value="">-</option>'+pool.map(m=>`<option>${m.name}</option>`).join('');
+  ['t1p1','t1p2','t2p1','t2p2'].forEach(id=>document.getElementById(id).innerHTML=opts);
+  document.getElementById('matchModal').style.display='flex';
+};
 window.submitMatch=async function(){
   const t1p1=document.getElementById('t1p1').value,t1p2=document.getElementById('t1p2').value;
   const t2p1=document.getElementById('t2p1').value,t2p2=document.getElementById('t2p2').value;
@@ -8868,7 +8885,12 @@ window.submitMatch=async function(){
   const day=days.find(d=>d.id===dayId);
   const rounds=[...(day.rounds||[])];
   const nm={id:Date.now().toString(),team1:[t1p1,t1p2].filter(Boolean),team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court};
-  rounds[rIdx]={...rounds[rIdx],matches:[...(rounds[rIdx].matches||[]),nm]};
+  if(!rounds[rIdx]){
+    const ts=Date.now();
+    rounds[rIdx]={id:`${ts}_free`,name:`${rIdx+1}라운드`,type:'자유',matches:[nm]};
+  } else {
+    rounds[rIdx]={...rounds[rIdx],matches:[...(rounds[rIdx].matches||[]),nm]};
+  }
   await updateDoc(doc(db,'days',dayId),{rounds});
   hide('matchModal');
 };
