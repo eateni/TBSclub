@@ -7678,6 +7678,11 @@ function renderHomeTab() {
     }
   }
 
+  // 시간대에 따른 배경 이미지 선택 (06:00~18:59 주간, 그 외 야간)
+  const hour = new Date().getHours();
+  const isDaytime = hour >= 6 && hour < 19;
+  const bgUrl = isDaytime ? '배경 주간.PNG' : '배경 야간.PNG';
+
   // 배치 순서: 공지배너 → 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 하이라이트 → 다가오는 일정 → 바로가기
   el.innerHTML = `
     <div style="padding-top:12px">
@@ -7685,12 +7690,12 @@ function renderHomeTab() {
       ${annBannerHtml}
 
       <!-- 웰컴 배너 -->
-      <div style="background:linear-gradient(135deg,#0d1b6e 0%,#1e40af 45%,#0369a1 100%);border-radius:18px;padding:18px 16px 16px;margin-bottom:12px;position:relative;overflow:hidden">
+      <div style="background-image:linear-gradient(rgba(0,0,0,0.48),rgba(0,0,0,0.62)),url('${bgUrl}');background-size:cover;background-position:center;background-color:#1e40af;border-radius:18px;padding:18px 16px 16px;margin-bottom:12px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-24px;right:-16px;font-size:90px;opacity:0.07;pointer-events:none;user-select:none">🎾</div>
         <div style="display:flex;align-items:flex-start;gap:10px;position:relative">
           <!-- 좌측: 인사말 -->
           <div style="flex:1;min-width:0">
-            <div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${welcomeName}</div>
+            <div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 4px rgba(0,0,0,0.6)">${welcomeName}</div>
             <div style="font-size:13px;color:rgba(200,225,255,0.8);margin-bottom:12px">${subMsg}</div>
             <div style="display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;align-items:center;gap:6px">
               <div style="display:-webkit-inline-flex;display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.13);border-radius:20px;padding:4px 11px">
@@ -7703,7 +7708,7 @@ function renderHomeTab() {
             </div>
           </div>
           <!-- 우측: 미니 캘린더 -->
-          ${miniCalHtml}
+          <div style="background:rgba(0,0,0,0.22);border-radius:10px;padding:4px 6px">${miniCalHtml}</div>
         </div>
         ${bannerSummaryHtml}
       </div>
