@@ -861,7 +861,8 @@ tr:nth-child(even){background:#F5FCFB;}
           <div style="margin-top:10px">
             <button class="btn-add" style="width:100%;background:rgba(124,58,237,0.85)" onclick="rollAllBalanced()">🗓️ 하루 전체 섞기</button>
           </div>
-          <div id="typeStatTable" style="margin-top:10px"></div>
+          <div id="savedGameCountTable" style="margin-top:10px"></div>
+          <div id="typeStatTable" style="margin-top:6px"></div>
           <div style="margin-top:8px">
             <button class="btn-add" style="width:100%" onclick="saveAllRounds(this)">✅ 전체 라운드 저장</button>
           </div>
@@ -2158,7 +2159,33 @@ window.onRndDayChange = function() {
     const nc = (day.courtNumbers && day.courtNumbers.length) ? day.courtNumbers.length : (day.numCourts || 0);
     if (nc) { ncSel.value = String(nc); updateRoundTypeSelectors(); }
   }
+  renderSavedGameCount();
 };
+
+function renderSavedGameCount() {
+  const el = document.getElementById('savedGameCountTable');
+  if (!el) return;
+  const dayId = document.getElementById('rndDayId')?.value || '';
+  const day = days.find(d=>d.id===dayId);
+  if (!day || !(day.rounds||[]).length) { el.innerHTML=''; return; }
+  const gcMap={};
+  (day.rounds||[]).forEach(rd=>{
+    (rd.matches||[]).forEach(m=>{
+      if(m.isRally||m.tag==='랠리'||m.tag==='휴식') return;
+      [...(m.team1||[]),...(m.team2||[])].filter(Boolean).forEach(n=>{
+        gcMap[n]=(gcMap[n]||0)+1;
+      });
+    });
+  });
+  const names=Object.keys(gcMap);
+  if(!names.length){ el.innerHTML=''; return; }
+  const sorted=[...names].sort((a,b)=>gcMap[b]-gcMap[a]);
+  const rows=sorted.map(n=>`<span style="white-space:nowrap;display:inline-flex;align-items:baseline;gap:2px"><span style="font-weight:700;color:#1E293B">${n}</span><span style="color:#0D9488;font-size:11px"> ${gcMap[n]}게임</span></span>`).join('<span style="color:rgba(100,150,200,0.4);margin:0 4px">·</span>');
+  el.innerHTML=`<div style="padding:8px 10px;background:rgba(13,148,136,0.07);border:1px solid rgba(13,148,136,0.2);border-radius:10px">
+    <div style="font-size:11px;font-weight:700;color:#0D9488;margin-bottom:5px">📋 이미 저장된 게임수</div>
+    <div style="font-size:12px;line-height:2;display:flex;flex-wrap:wrap;gap:2px 0">${rows}</div>
+  </div>`;
+}
 
 // 라운드별 수동 셀렉터에 선수 목록 채우기
 function fillManualSelectors(rIdx) {
@@ -3331,9 +3358,9 @@ function renderDays() {
         const basicInputBtn = !m.done
           ? `<button class="btn-input" style="margin-top:0;flex:1" onclick="openScore('${day.id}','${rIdx}','${m.id}')">📝 결과 입력</button>`
           : '';
-        // 확장 영역: 실시간 스코어
+        // 항상 노출: 실시간 스코어 아이콘 버튼
         const liveBtn = !m.done
-          ? `<button class="btn-input" style="width:100%;margin-bottom:7px;border-color:rgba(52,211,153,0.4);color:#059669" onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')">🎾 실시간 스코어</button>`
+          ? `<button onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')" title="실시간 스코어" style="background:none;border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#059669;font-size:12px;cursor:pointer;padding:2px 9px;flex-shrink:0">🔴 라이브</button>`
           : '';
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
         const editBtn=(isAdmin||isRegularMember)&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
@@ -3384,11 +3411,10 @@ function renderDays() {
           ${_winRateHtml}
           ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(13,148,136,0.05);border-radius:7px;border-left:2px solid rgba(13,148,136,0.2)">${evalHtml}</div>`:''}
           <div style="display:flex;align-items:center;gap:5px;margin-top:8px">
-            ${basicInputBtn}${editBtn}${pairEditBtn}${delBtn}
+            ${basicInputBtn}${editBtn}${pairEditBtn}${liveBtn}${delBtn}
             <button onclick="toggleMatchCard('${m.id}')" id="marr_${m.id}" style="margin-left:auto;background:none;border:1px solid rgba(50,110,200,0.22);border-radius:7px;color:#64748B;font-size:12px;cursor:pointer;padding:2px 9px;transition:transform 0.2s;flex-shrink:0">⌄</button>
           </div>
           <div id="mex_${m.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
-            ${liveBtn}
             ${commentsListHtml}
             <div style="display:flex;gap:4px;margin-top:4px">
               <select id="mcmt_who_${m.id}" class="row-sel" style="width:70px;font-size:10px;padding:5px"><option value="">이름</option>${commentOpts}</select>
