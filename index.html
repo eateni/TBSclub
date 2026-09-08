@@ -7550,7 +7550,7 @@ function renderHomeTab() {
       date: d.date,
       myName: isMemberLoggedIn && myClaim ? myClaim.name : ''
     };
-    return `<div style="background:#F5F3FF;border:1.5px solid #7C3AED;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
+    return `<div style="background:#F5F3FF;border:1px solid rgba(124,58,237,0.18);border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div onclick="goToGameDay('${d.id}')" style="cursor:pointer">
         <div style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px">🎾 ${weekdays[_wd.getDay()]}요일 게임</div>
         <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${_wdl}</div>
@@ -7566,7 +7566,7 @@ function renderHomeTab() {
   };
   // ── 고정 카드 레이아웃: 이벤트전(1행 전체) + 금/토 정규시즌(2단 고정) ──────
   const _emptyGameCard = (label) =>
-    `<div style="background:#F8FAFC;border:1.5px dashed #CBD5E1;border-radius:14px;padding:10px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90px">
+    `<div style="background:#F8FAFC;border:1px dashed rgba(203,213,225,0.5);border-radius:14px;padding:10px;height:100%;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:90px">
       <div style="font-size:12px;font-weight:700;color:#94A3B8;text-align:center">${label}</div>
       <div style="font-size:11px;color:#CBD5E1;margin-top:4px;text-align:center">예정된 일정이 없습니다</div>
     </div>`;
@@ -7599,17 +7599,17 @@ function renderHomeTab() {
       const _crCourts = _cr.courts || {};
       const _crDd = new Date(d.date+'T00:00:00');
       const _crDl = (_crDd.getMonth()+1)+'/'+_crDd.getDate()+'('+weekdays[_crDd.getDay()]+')';
-      return '<div style="background:#F0F9FF;border:1px solid rgba(37,99,235,0.22);border-radius:14px;padding:12px 14px">'
+      return '<div style="background:#F0F9FF;border:1px solid rgba(37,99,235,0.12);border-radius:14px;padding:12px 14px">'
         + '<div style="font-size:12px;font-weight:800;color:#2563EB;margin-bottom:8px">🏟️ 코트 예약 현황 · <span style="color:#64748B;font-weight:400;font-size:11px">'+_crDl+'</span></div>'
         + _crSlots.map(function(slot) {
             const sc = _crCourts[slot] || {};
-            return '<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
+            return '<div style="display:flex;align-items:center;justify-content:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
               + '<span style="font-size:11px;color:#64748B;min-width:36px;flex-shrink:0">'+slot+'</span>'
               + (d.courtNumbers && d.courtNumbers.length ? d.courtNumbers : RESV_COURT_NAMES).map(function(c, ci) {
                   const ok = sc[ci] === true;
                   return '<span style="font-size:11px;padding:2px 8px;border-radius:8px;'
                     + 'background:'+(ok?'#DBEAFE':'rgba(100,116,139,0.12)')+';'
-                    + 'color:'+(ok?'#2563EB':'#94A3B8')+';'
+                    + 'color:#1D4ED8;'
                     + 'border:1px solid '+(ok?'rgba(37,99,235,0.28)':'rgba(100,116,139,0.22)')+';'
                     + 'font-weight:'+(ok?'700':'400')+'">'+c+(ok?' ✓':'')+'</span>';
                 }).join('')
@@ -7731,11 +7731,12 @@ function renderHomeTab() {
       <!-- 내 기록 상세 (로그인 시만) -->
       ${myRecordHtml}
 
-      <!-- 이벤트전(1행 전체) + 금/토 정규시즌(2단 고정) -->
-      ${cardPairHtml}
-
-      <!-- 코트 예약 현황 (데이터 있을 때만 표시) -->
-      ${_courtCardHtml}
+      <!-- 이번주 게임 현황 통합 박스 -->
+      <div style="background:#FAFBFF;border:1.5px solid rgba(109,40,217,0.18);border-radius:16px;padding:14px 14px 2px;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:900;color:#6D28D9;margin-bottom:10px">🎾 이번주 게임 현황</div>
+        ${cardPairHtml}
+        ${_courtCardHtml}
+      </div>
 
       <!-- 최근 날짜 하이라이트 -->
       ${highlightHtml}
