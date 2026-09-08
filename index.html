@@ -1091,7 +1091,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="mf"><label>팀1 선수2</label><select id="t1p2"></select></div>
       <div class="mf"><label>팀2 선수1</label><select id="t2p1"></select></div>
       <div class="mf"><label>팀2 선수2</label><select id="t2p2"></select></div>
-      <div class="mf"><label>코트</label><select id="mCourt"><option>A코트</option><option>B코트</option><option>C코트</option></select></div>
+      <div class="mf"><label>코트</label><select id="mCourt"></select></div>
     </div>
     <div class="mft">
       <button class="btn-cancel" onclick="hide('matchModal')">취소</button>
@@ -3444,6 +3444,11 @@ function renderDays() {
       const aid = `a_${day.id}_${rIdx}`;
       // 미완료 경기가 있는 라운드는 기본으로 펼침
       const roundOpen = (r.matches||[]).some(m => !m.done && !m.isRally && m.tag !== '랠리');
+      if (isFreeMode) {
+        return `<div style="display:flex;flex-direction:column;gap:6px;padding-bottom:4px">
+          ${matchesHtml}${addMatchBtn}
+        </div>`;
+      }
       return `<div style="background:#FAFEFE;border-radius:10px;margin-bottom:8px;border:1px solid #D1E7E5;">
         <button style="width:100%;padding:11px 14px;background:transparent;border:none;color:#1E293B;display:flex;align-items:center;justify-content:space-between;cursor:pointer;font-weight:600;font-size:13px;" onclick="toggleR('${rid}','${aid}')">
           <span>🎾 ${r.name} <span style="color:rgba(100,150,200,0.7);font-weight:400;font-size:11px">(${r.type})</span>${delRoundBtn}</span>
@@ -8861,6 +8866,8 @@ window.openAddMatch=function(dayId, rIdx){
   const pool = (day && day.matchMode === 'freeMatch') ? getAttendees(dayId) : allPlayers();
   const opts='<option value="">-</option>'+pool.map(m=>`<option>${m.name}</option>`).join('');
   ['t1p1','t1p2','t2p1','t2p2'].forEach(id=>document.getElementById(id).innerHTML=opts);
+  const courtLabels=(day&&day.courtNumbers&&day.courtNumbers.length)?day.courtNumbers:COURT_NAMES;
+  document.getElementById('mCourt').innerHTML=courtLabels.map(c=>`<option value="${c}">${c}</option>`).join('');
   document.getElementById('matchModal').style.display='flex';
 };
 window.openFreeAddMatch=function(dayId){
@@ -8874,6 +8881,8 @@ window.openFreeAddMatch=function(dayId){
   const pool=getAttendees(dayId);
   const opts='<option value="">-</option>'+pool.map(m=>`<option>${m.name}</option>`).join('');
   ['t1p1','t1p2','t2p1','t2p2'].forEach(id=>document.getElementById(id).innerHTML=opts);
+  const courtLabels=(day&&day.courtNumbers&&day.courtNumbers.length)?day.courtNumbers:COURT_NAMES;
+  document.getElementById('mCourt').innerHTML=courtLabels.map(c=>`<option value="${c}">${c}</option>`).join('');
   document.getElementById('matchModal').style.display='flex';
 };
 window.submitMatch=async function(){
