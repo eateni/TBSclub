@@ -5836,9 +5836,9 @@ function renderAdmin(){
               const slotC = crCourts[slot] || {};
               return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;flex-wrap:wrap">
                 <span style="font-size:11px;color:#64748B;min-width:38px;flex-shrink:0">${slot}</span>
-                ${resvCourts.map(c => {
-                  const ok = slotC[c] === true;
-                  return `<button onclick="toggleCourtSlotCourt('${day.id}','${slot}','${c}')"
+                ${resvCourts.map((c, ci) => {
+                  const ok = slotC[ci] === true;
+                  return `<button onclick="toggleCourtSlotCourt('${day.id}','${slot}',${ci})"
                     style="padding:3px 8px;border-radius:7px;border:none;cursor:pointer;font-size:11px;font-weight:700;
                       background:${ok?'#2563EB':'rgba(3,12,45,0.7)'};color:${ok?'#fff':'#4a8ab5'}">${c}</button>`;
                 }).join('')}
@@ -7590,7 +7590,8 @@ function renderHomeTab() {
   // ── 코트 예약 현황 카드 (데이터 있는 게임 날 – 복수이면 금/토와 동일 폭 배치) ──
   let _courtCardHtml = '';
   {
-    const _crDays = [fridayGame, saturdayGame, nextGameDay].filter(Boolean);
+    const _crDaysRaw = [fridayGame, saturdayGame, nextGameDay].filter(Boolean);
+    const _crDays = _crDaysRaw.filter(function(d, i, arr){ return arr.findIndex(function(x){ return x.date === d.date; }) === i; });
     const _crMatchedDays = _crDays.filter(function(d){ return d.courtReservation && (d.courtReservation.timeSlots||[]).length > 0; });
     const _makeCourtCard = function(d) {
       const _cr = d.courtReservation;
@@ -7604,8 +7605,8 @@ function renderHomeTab() {
             const sc = _crCourts[slot] || {};
             return '<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap">'
               + '<span style="font-size:11px;color:#64748B;min-width:36px;flex-shrink:0">'+slot+'</span>'
-              + (d.courtNumbers && d.courtNumbers.length ? d.courtNumbers : RESV_COURT_NAMES).map(function(c) {
-                  const ok = sc[c] === true;
+              + (d.courtNumbers && d.courtNumbers.length ? d.courtNumbers : RESV_COURT_NAMES).map(function(c, ci) {
+                  const ok = sc[ci] === true;
                   return '<span style="font-size:11px;padding:2px 8px;border-radius:8px;'
                     + 'background:'+(ok?'#DBEAFE':'rgba(100,116,139,0.12)')+';'
                     + 'color:'+(ok?'#2563EB':'#94A3B8')+';'
@@ -8960,12 +8961,13 @@ window.removeCourtSlot = async function(dayId, slot) {
   day.courtReservation = cr;
   await updateDoc(doc(db,'days',dayId), { courtReservation: cr });
 };
-window.toggleCourtSlotCourt = async function(dayId, slot, court) {
+// courts.{slot} 은 코트 이름이 아닌 코트 인덱스를 키로 사용 (예: {"0":true,"2":true})
+window.toggleCourtSlotCourt = async function(dayId, slot, courtIdx) {
   const day = days.find(d=>d.id===dayId); if(!day) return;
   const cr = day.courtReservation ? JSON.parse(JSON.stringify(day.courtReservation)) : {timeSlots:[], courts:{}};
   if (!cr.courts) cr.courts = {};
   if (!cr.courts[slot]) cr.courts[slot] = {};
-  cr.courts[slot][court] = !cr.courts[slot][court];
+  cr.courts[slot][courtIdx] = !cr.courts[slot][courtIdx];
   day.courtReservation = cr;
   await updateDoc(doc(db,'days',dayId), { courtReservation: cr });
 };
