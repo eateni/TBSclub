@@ -811,6 +811,18 @@ tr:nth-child(even){background:#F5FCFB;}
             </div>
             <div id="courtChipsWrap" style="display:flex;flex-wrap:wrap;gap:6px;min-height:0"></div>
           </div>
+          <div style="margin-bottom:10px">
+            <div style="font-size:11px;color:#64748B;margin-bottom:6px">경기 방식</div>
+            <div style="display:flex;gap:14px">
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer">
+                <input type="radio" name="dayMatchMode" value="bracket" checked style="accent-color:#0D9488"> 📋 대진표 방식
+              </label>
+              <label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer">
+                <input type="radio" name="dayMatchMode" value="freeMatch" style="accent-color:#7c3aed"> ⚡ 즉석 매칭
+              </label>
+            </div>
+            <div style="font-size:10px;color:#94A3B8;margin-top:4px">즉석 매칭: 정회원이 직접 경기를 자유롭게 등록할 수 있어요</div>
+          </div>
           <button class="btn-add" style="width:100%" onclick="addDay()">📅 날짜 그룹 추가</button>
         </div>
 
@@ -3322,7 +3334,8 @@ function renderDays() {
     const rounds = day.rounds || [];
     const totalMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).filter(m=>!m.isRally&&m.tag!=='랠리').length),0);
     const doneMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).filter(m=>m.done&&!m.isRally&&m.tag!=='랠리').length),0);
-
+    const isFreeMode = day.matchMode === 'freeMatch';
+    const isDayRegularMember = !isAdmin && myClaim && myClaim !== 'pending' && !myClaim.isGuest;
 
     // 참석자 정보
     const att = day.attendance || {};
@@ -3423,7 +3436,9 @@ function renderDays() {
           </div>
         </div>`;
       }).join('');
-      const addMatchBtn = isAdmin ? `<button class="btn-input" style="border-color:rgba(35,90,180,0.35);color:#64748B" onclick="openAddMatch('${day.id}','${rIdx}')">+ 경기 직접 추가</button>` : '';
+      const addMatchBtn = (isAdmin || (isFreeMode && isDayRegularMember))
+        ? `<button class="btn-input" style="border-color:rgba(35,90,180,0.35);color:#64748B" onclick="openAddMatch('${day.id}','${rIdx}')">+ 경기 추가</button>`
+        : '';
       const delRoundBtn = isAdmin ? `<button onclick="delRound('${day.id}','${rIdx}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:6px">삭제</button>` : '';
       const rid = `r_${day.id}_${rIdx}`;
       const aid = `a_${day.id}_${rIdx}`;
@@ -3473,7 +3488,7 @@ function renderDays() {
       <button class="round-hdr" onclick="toggleR('${dayId}','${dayArr}')">
         <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;">
           <span>📅 ${dateStr}${day.place?` <span style="color:rgba(100,150,200,0.6);font-size:11px;font-weight:400">· ${day.place}</span>`:''}${attendStr}</span>
-          <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료 ${delDayBtn}</span>
+          <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료 ${delDayBtn}${isFreeMode?` <span style="color:#7c3aed;font-size:10px;font-weight:700">⚡ 즉석 매칭</span>`:''}</span>
           ${totalMatches>0?`<div style="width:100%;height:3px;background:rgba(35,90,180,0.15);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#34d399':'#60a5fa'};border-radius:2px;transition:width 0.5s"></div></div>`:''}
         </div>
         <span id="${dayArr}" style="color:#64748B;transition:transform 0.2s">›</span>
@@ -8839,7 +8854,8 @@ window.openAddMatch=function(dayId, rIdx){
   const day=days.find(d=>d.id===dayId);
   const round=(day?.rounds||[])[rIdx];
   document.getElementById('matchRoundLabel').textContent=round?`${day.date} · ${round.name}`:'';
-  const opts='<option value="">-</option>'+allPlayers().map(m=>`<option>${m.name}</option>`).join('');
+  const pool = (day && day.matchMode === 'freeMatch') ? getAttendees(dayId) : allPlayers();
+  const opts='<option value="">-</option>'+pool.map(m=>`<option>${m.name}</option>`).join('');
   ['t1p1','t1p2','t2p1','t2p2'].forEach(id=>document.getElementById(id).innerHTML=opts);
   document.getElementById('matchModal').style.display='flex';
 };
@@ -9049,7 +9065,8 @@ window.addDay=async function(){
     });
   }
 
-  const docData = {date, place, numCourts, courtNumbers, rounds:[], season:currentSeason, attendancePolicy:'v2', createdAt:serverTimestamp()};
+  const matchMode = document.querySelector('input[name="dayMatchMode"]:checked')?.value || 'bracket';
+  const docData = {date, place, numCourts, courtNumbers, rounds:[], season:currentSeason, matchMode, attendancePolicy:'v2', createdAt:serverTimestamp()};
   if (lat != null && lon != null) { docData.lat = lat; docData.lon = lon; }
   if (Object.keys(initAttendance).length) docData.attendance = initAttendance;
 
@@ -9060,6 +9077,8 @@ window.addDay=async function(){
   if(dispEl) dispEl.textContent='';
   _pendingCourtNumbers=[]; renderCourtChips();
   const _courtInp=document.getElementById('dayCourtNumInput'); if(_courtInp) _courtInp.value='';
+  const _bracketRadio=document.querySelector('input[name="dayMatchMode"][value="bracket"]');
+  if(_bracketRadio) _bracketRadio.checked=true;
 
   if (matchSch) {
     const cnt = Object.values(initAttendance).filter(v=>v===true).length;
