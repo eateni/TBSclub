@@ -863,7 +863,7 @@ tr:nth-child(even){background:#F5FCFB;}
           </div>
           <div id="typeStatTable" style="margin-top:10px"></div>
           <div style="margin-top:8px">
-            <button class="btn-add" style="width:100%" onclick="saveAllRounds()">✅ 전체 라운드 저장</button>
+            <button class="btn-add" style="width:100%" onclick="saveAllRounds(this)">✅ 전체 라운드 저장</button>
           </div>
         </div>
       </div>
@@ -2102,7 +2102,7 @@ function updateRoundTypeSelectors() {
             style="padding:5px 12px;background:rgba(245,158,11,0.85);border:none;border-radius:8px;color:#000;font-size:11px;font-weight:700;cursor:pointer">
             ✋ 수동
           </button>
-          <button onclick="saveOneRound(${r})"
+          <button onclick="saveOneRound(${r}, this)"
             style="padding:5px 12px;background:rgba(37,99,235,0.85);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">
             💾 저장
           </button>
@@ -2756,7 +2756,7 @@ function renderRoundPreview(rIdx) {
   }).join('');
 }
 
-window.saveOneRound = async function(rIdx) {
+window.saveOneRound = async function(rIdx, btn) {
   const dayId = document.getElementById('rndDayId').value;
   if (!dayId) { alert('날짜 그룹을 선택해주세요'); return; }
   const r = generatedAllRounds[rIdx];
@@ -2764,32 +2764,39 @@ window.saveOneRound = async function(rIdx) {
     alert(`${rIdx+1}라운드를 먼저 생성(🎲 섞기 또는 ✋ 수동)해주세요`); return;
   }
   const day = days.find(d=>d.id===dayId);
-  const ts = Date.now();
-  const newRound = {
-    id: `${ts}_${rIdx}`,
-    name: r.name || `${rIdx+1}라운드`, type:'혼합',
-    matches: r.matches.map((m,mi)=>({
-      id:`${ts}_${rIdx}_${mi}`,
-      team1:m.team1, team2:m.team2,
-      score1:null, score2:null, done:false,
-      court:m.court, tag:m.tag, isRally:m.isRally||false
-    }))
-  };
-  await updateDoc(doc(db,'days',dayId), { rounds:[...(day.rounds||[]), newRound] });
-  // 저장한 라운드 미리보기 초기화
-  generatedAllRounds[rIdx] = { name:`${rIdx+1}라운드`, matches:[] };
-  const el = document.getElementById(`rndPreview_${rIdx}`);
-  if (el) el.innerHTML = '<span style="color:#059669;font-size:11px">✅ 저장 완료! 대진표 탭에서 확인하세요</span>';
-  alert(`✅ ${rIdx+1}라운드 저장 완료!`);
+  const roundName = r.name || `${rIdx+1}라운드`;
+  if ((day.rounds||[]).some(existing => existing.name === roundName)) {
+    alert(`"${roundName}"은 이미 저장된 라운드입니다.\n수정하려면 기존 라운드를 먼저 삭제하거나 별도 수정 기능을 이용하세요.`); return;
+  }
+  if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+  try {
+    const ts = Date.now();
+    const newRound = {
+      id: `${ts}_${rIdx}`,
+      name: roundName, type:'혼합',
+      matches: r.matches.map((m,mi)=>({
+        id:`${ts}_${rIdx}_${mi}`,
+        team1:m.team1, team2:m.team2,
+        score1:null, score2:null, done:false,
+        court:m.court, tag:m.tag, isRally:m.isRally||false
+      }))
+    };
+    await updateDoc(doc(db,'days',dayId), { rounds:[...(day.rounds||[]), newRound] });
+    generatedAllRounds[rIdx] = { name:`${rIdx+1}라운드`, matches:[] };
+    const el = document.getElementById(`rndPreview_${rIdx}`);
+    if (el) el.innerHTML = '<span style="color:#059669;font-size:11px">✅ 저장 완료! 대진표 탭에서 확인하세요</span>';
+    alert(`✅ ${rIdx+1}라운드 저장 완료!`);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 저장'; }
+  }
 };
 
 // ── 전체 저장 ─────────────────────────────────────────────────────
-window.saveAllRounds = async function() {
+window.saveAllRounds = async function(btn) {
   const dayId = document.getElementById('rndDayId').value;
   if (!dayId) { alert('날짜 그룹을 선택해주세요'); return; }
 
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
-  // 아직 섞지 않은 라운드는 자동 생성
   const nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
   for (let r=0; r<nR; r++) {
     if (!generatedAllRounds[r] || !generatedAllRounds[r].matches.length) {
@@ -2802,26 +2809,42 @@ window.saveAllRounds = async function() {
   }
 
   const day = days.find(d=>d.id===dayId);
+  const existingNames = new Set((day.rounds||[]).map(rd=>rd.name));
   const ts = Date.now();
-  const newRounds = generatedAllRounds.slice(0,nR).map((r,ri) => ({
-    id: `${ts}_${ri}`,
-    name: r.name, type: '혼합',
-    matches: r.matches.map((m,mi) => ({
-      id: `${ts}_${ri}_${mi}`,
-      team1: m.team1, team2: m.team2,
-      score1: null, score2: null, done: false,
-      court: m.court, tag: m.tag,
-      isRally: m.isRally || false
-    }))
-  }));
+  const newRounds = generatedAllRounds.slice(0,nR)
+    .map((r,ri) => ({ r, ri, name: r.name || `${ri+1}라운드` }))
+    .filter(({ name }) => {
+      if (existingNames.has(name)) { console.warn(`전체 저장: "${name}" 이미 존재 — 건너뜀`); return false; }
+      return true;
+    })
+    .map(({ r, ri, name }) => ({
+      id: `${ts}_${ri}`,
+      name, type: '혼합',
+      matches: r.matches.map((m,mi) => ({
+        id: `${ts}_${ri}_${mi}`,
+        team1: m.team1, team2: m.team2,
+        score1: null, score2: null, done: false,
+        court: m.court, tag: m.tag,
+        isRally: m.isRally || false
+      }))
+    }));
 
-  await updateDoc(doc(db,'days',dayId), { rounds: [...(day.rounds||[]), ...newRounds] });
-  generatedAllRounds = [];
-  for (let r=0; r<nR; r++) {
-    const el = document.getElementById(`rndPreview_${r}`);
-    if (el) el.innerHTML = '<span style="color:#64748B;font-size:11px">🎲 섞기를 눌러 대진을 생성해요</span>';
+  if (!newRounds.length) {
+    alert('저장할 라운드가 없습니다. 모든 라운드가 이미 저장돼 있어요.'); return;
   }
-  alert(`✅ ${newRounds.length}개 라운드 저장 완료!`);
+
+  if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
+  try {
+    await updateDoc(doc(db,'days',dayId), { rounds: [...(day.rounds||[]), ...newRounds] });
+    generatedAllRounds = [];
+    for (let r=0; r<nR; r++) {
+      const el = document.getElementById(`rndPreview_${r}`);
+      if (el) el.innerHTML = '<span style="color:#64748B;font-size:11px">🎲 섞기를 눌러 대진을 생성해요</span>';
+    }
+    alert(`✅ ${newRounds.length}개 라운드 저장 완료!`);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✅ 전체 라운드 저장'; }
+  }
 };
 
 // ── 테라리그 ──────────────────────────────────────────────────────
