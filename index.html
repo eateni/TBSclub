@@ -5578,8 +5578,9 @@ function renderAdmin(){
               style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎂 ${m.birthDate||'—'}${m.isLunarBirth?'<span style="font-size:8px;color:#7C3AED;margin-left:1px">(음)</span>':''}</button>
             <button onclick="editMemberField('${m.name}','tennisStartDate')" title="테니스 시작: ${m.tennisStartDate||'미입력'}"
               style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎾 ${m.tennisStartDate||'—'}</button>
+            <button onclick="editMemberField('${m.name}','email')" title="이메일: ${m.email||'미입력'}"
+              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">✉️ ${m.email||'—'}</button>
           </span>
-          ${m.email ? `<span style="font-size:9px;color:#64748B;word-break:break-all;padding-top:1px">✉ ${m.email}</span>` : ''}
         </span>`).join('')
     : '<span style="color:#64748B;font-size:12px">등록된 회원 없음</span>';
 
@@ -9355,10 +9356,13 @@ window.renameGuest = async function(oldName){
 window.editMemberField = async function(name, field){
   const m = members.find(x=>x.name===name);
   if (!m) return;
-  const labels = { birthDate:'생년월일 (YYYY-MM-DD 형식, 예: 1990-05-15)', tennisStartDate:'테니스 시작년월 (YYYY-MM 형식, 예: 2020-03)' };
+  const labels = { birthDate:'생년월일 (YYYY-MM-DD 형식, 예: 1990-05-15)', tennisStartDate:'테니스 시작년월 (YYYY-MM 형식, 예: 2020-03)', email:'이메일 주소 (예: hong@gmail.com)' };
   const val = prompt(`${name}님의 ${labels[field]}\n비우면 삭제됩니다:`, m[field]||'');
   if (val===null) return;
   const trimmed = val.trim();
+  if (trimmed && field==='email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    alert('이메일 형식이 올바르지 않아요 (예: hong@gmail.com)'); return;
+  }
   const newList = members.map(x=>{
     if (x.name!==name) return x;
     const u = {...x};
