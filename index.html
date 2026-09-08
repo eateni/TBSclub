@@ -1086,9 +1086,15 @@ tr:nth-child(even){background:#F5FCFB;}
   <div class="modal-bottom">
     <div class="modal-title">+ 경기 직접 추가</div>
     <div id="matchRoundLabel" style="font-size:12px;color:#64748B;margin-bottom:12px"></div>
+    <div id="mTypeSection" style="display:none;margin-bottom:10px">
+      <div style="font-size:10px;color:#64748B;margin-bottom:3px">타입 <span style="color:#94A3B8">(팀1 선택 시 자동 판별)</span></div>
+      <div id="mAutoType" style="font-size:12px;color:#94A3B8;padding:4px 0;min-height:22px"></div>
+      <select id="mManualType" class="row-inp" style="width:100%;font-size:12px;padding:6px;display:none"><option value="혼복">혼복</option><option value="남복">남복</option><option value="여복">여복</option></select>
+    </div>
     <div class="mg">
       <div class="mf"><label>팀1 선수1</label><select id="t1p1"></select></div>
       <div class="mf"><label>팀1 선수2</label><select id="t1p2"></select></div>
+      <div id="mTeam2Note" style="display:none;font-size:10px;color:#94A3B8;padding:2px 0 2px;grid-column:1/-1">(선택 — 나중에 입력 가능)</div>
       <div class="mf"><label>팀2 선수1</label><select id="t2p1"></select></div>
       <div class="mf"><label>팀2 선수2</label><select id="t2p2"></select></div>
       <div class="mf"><label>코트</label><select id="mCourt"></select></div>
@@ -8858,16 +8864,29 @@ window.submitScore=async function(){
 };
 
 // 경기 직접 추가
+function _initMatchModalFreeMode(isFree){
+  document.getElementById('mTypeSection').style.display=isFree?'block':'none';
+  document.getElementById('mTeam2Note').style.display=isFree?'block':'none';
+  const autoEl=document.getElementById('mAutoType');
+  const manualEl=document.getElementById('mManualType');
+  if(autoEl){autoEl.textContent='';autoEl.style.color='#94A3B8';}
+  if(manualEl)manualEl.style.display='none';
+  ['t1p1','t1p2'].forEach(function(id){
+    document.getElementById(id).onchange=isFree?window.updateMatchType:null;
+  });
+}
 window.openAddMatch=function(dayId, rIdx){
   pendingRoundKey={dayId, rIdx:parseInt(rIdx)};
   const day=days.find(d=>d.id===dayId);
   const round=(day?.rounds||[])[rIdx];
   document.getElementById('matchRoundLabel').textContent=round?`${day.date} · ${round.name}`:'';
-  const pool = (day && day.matchMode === 'freeMatch') ? getAttendees(dayId) : allPlayers();
+  const isFree=!!(day&&day.matchMode==='freeMatch');
+  const pool = isFree ? getAttendees(dayId) : allPlayers();
   const opts='<option value="">-</option>'+pool.map(m=>`<option>${m.name}</option>`).join('');
   ['t1p1','t1p2','t2p1','t2p2'].forEach(id=>document.getElementById(id).innerHTML=opts);
   const courtLabels=(day&&day.courtNumbers&&day.courtNumbers.length)?day.courtNumbers:COURT_NAMES;
   document.getElementById('mCourt').innerHTML=courtLabels.map(c=>`<option value="${c}">${c}</option>`).join('');
+  _initMatchModalFreeMode(isFree);
   document.getElementById('matchModal').style.display='flex';
 };
 window.openFreeAddMatch=function(dayId){
@@ -8883,21 +8902,52 @@ window.openFreeAddMatch=function(dayId){
   ['t1p1','t1p2','t2p1','t2p2'].forEach(id=>document.getElementById(id).innerHTML=opts);
   const courtLabels=(day&&day.courtNumbers&&day.courtNumbers.length)?day.courtNumbers:COURT_NAMES;
   document.getElementById('mCourt').innerHTML=courtLabels.map(c=>`<option value="${c}">${c}</option>`).join('');
+  _initMatchModalFreeMode(true);
   document.getElementById('matchModal').style.display='flex';
+};
+window.updateMatchType=function(){
+  const p1=document.getElementById('t1p1').value;
+  const p2=document.getElementById('t1p2').value;
+  const auto=(p1&&p2)?calcFreeMatchType(p1,p2):null;
+  const label=document.getElementById('mAutoType');
+  const manual=document.getElementById('mManualType');
+  if(!label)return;
+  if(auto){
+    label.textContent='🤖 '+auto+' (자동)';
+    label.style.color='#059669';
+    label.style.display='block';
+    if(manual)manual.style.display='none';
+  } else {
+    label.textContent=(p1&&p2)?'성별 정보 없음 — 수동 선택':'';
+    label.style.color='#94A3B8';
+    label.style.display=(p1&&p2)?'block':'none';
+    if(manual)manual.style.display=(p1&&p2)?'block':'none';
+  }
 };
 window.submitMatch=async function(){
   const t1p1=document.getElementById('t1p1').value,t1p2=document.getElementById('t1p2').value;
   const t2p1=document.getElementById('t2p1').value,t2p2=document.getElementById('t2p2').value;
   const court=document.getElementById('mCourt').value;
-  if(!t1p1||!t2p1){alert('각 팀 선수 1명 이상');return;}
   const {dayId,rIdx}=pendingRoundKey;
   const day=days.find(d=>d.id===dayId);
+  const isFree=!!(day&&day.matchMode==='freeMatch');
   const rounds=[...(day.rounds||[])];
-  const nm={id:Date.now().toString(),team1:[t1p1,t1p2].filter(Boolean),team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court};
-  if(!rounds[rIdx]){
-    const ts=Date.now();
-    rounds[rIdx]={id:`${ts}_free`,name:`${rIdx+1}라운드`,type:'자유',matches:[nm]};
+  if(isFree){
+    if(!t1p1||!t1p2){alert('팀1 선수 2명을 모두 선택해주세요');return;}
+    if((t2p1&&!t2p2)||(!t2p1&&t2p2)){alert('팀2는 2명 모두 선택하거나 비워두세요');return;}
+    const autoCalc=calcFreeMatchType(t1p1,t1p2);
+    const manualEl=document.getElementById('mManualType');
+    const tag=autoCalc||(manualEl&&manualEl.style.display!=='none'?manualEl.value:'')||'';
+    const nm={id:Date.now().toString(),team1:[t1p1,t1p2],team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court,tag};
+    if(!rounds[rIdx]){
+      const ts=Date.now();
+      rounds[rIdx]={id:`${ts}_free`,name:`${rIdx+1}라운드`,type:'자유',matches:[nm]};
+    } else {
+      rounds[rIdx]={...rounds[rIdx],matches:[...(rounds[rIdx].matches||[]),nm]};
+    }
   } else {
+    if(!t1p1||!t2p1){alert('각 팀 선수 1명 이상');return;}
+    const nm={id:Date.now().toString(),team1:[t1p1,t1p2].filter(Boolean),team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court};
     rounds[rIdx]={...rounds[rIdx],matches:[...(rounds[rIdx].matches||[]),nm]};
   }
   await updateDoc(doc(db,'days',dayId),{rounds});
