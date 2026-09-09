@@ -63,7 +63,7 @@ service cloud.firestore {
           'type', 'dayId', 'rIdx', 'matchId', 'team1', 'team2', 'positions',
           'score1', 'score2', 'status', 'submittedBy', 'submitterUid', 'submittedAt'
         ])
-        && request.resource.data.type == 'seasonMatch'
+        && request.resource.data.type in ['seasonMatch', 'eventMatch']
         && request.resource.data.status == 'pending'
         && request.resource.data.score1 is int && request.resource.data.score1 >= 0 && request.resource.data.score1 <= 99
         && request.resource.data.score2 is int && request.resource.data.score2 >= 0 && request.resource.data.score2 <= 99

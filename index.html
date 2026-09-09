@@ -4772,6 +4772,9 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
   const scoreEl=done
     ?`<div class="m-score" style="${won?'color:#059669':lost?'color:#f87171':'color:#D97706'}">${m.ourScore} : ${m.oppScore}</div>`
     :`<div class="m-score pend">예정</div>`;
+  const resultAuthorHtml = done && m.enteredBy
+    ? `<div style="font-size:10px;color:#64748B;text-align:center;margin-top:4px">✍️ 입력: ${m.enteredBy}${m.editedBy && m.editedBy !== m.enteredBy ? ` · 수정: ${m.editedBy}` : ''}</div>`
+    : '';
   const clubForDisplay=m.oppClub||evDefault;
   const oppRaw=(m.oppPair||[]).join(' / ')||'미입력';
   const oppLabel=clubForDisplay?`${oppRaw}<br><span style="font-size:9px;color:#2563EB">${clubForDisplay}</span>`:oppRaw;
@@ -4808,12 +4811,13 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
       ${scoreEl}
       <div class="m-team ${lost?'win':''}">${oppLabel}</div>
     </div>
+    ${resultAuthorHtml}
     ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(109,40,217,0.05);border-radius:7px;border-left:2px solid rgba(109,40,217,0.2)">${evalHtml}</div>`:''}
     ${isMember?`<div style="display:flex;gap:5px;margin-top:8px">
       <button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button>
       <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#059669" onclick="toggleEvMatchInput('${oppInpId}')">👤 상대팀 수정</button>
       <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(192,132,252,0.4);color:#c084fc" onclick="toggleEvMatchInput('${pairInpId}')">✏️ 우리팀 수정</button>
-    </div>`:''}
+    </div>`:(!done?`<div style="display:flex;gap:5px;margin-top:8px"><button class="btn-input" style="margin-top:0;flex:1" onclick="openEventScoreProposal('${evId}',${mi})">📝 점수 제안</button></div>`:'')}
     ${oppOnlySec}
     ${pairInpSec}
   </div>`;
@@ -5653,10 +5657,10 @@ function renderAdmin(){
     scoreProposalEl.innerHTML = pending.length ? `
       <div class="admin-sec" style="border-color:rgba(245,158,11,0.45);background:rgba(245,158,11,0.07)">
         <h3>📝 점수 확정 대기 (${pending.length})</h3>
-        <div style="font-size:11px;color:#64748B;margin:-4px 0 8px">승인하면 정규시즌 결과와 랭킹에 반영됩니다.</div>
+    <div style="font-size:11px;color:#64748B;margin:-4px 0 8px">승인하면 해당 경기 결과에 반영됩니다. 정규시즌은 랭킹에도 반영됩니다.</div>
         ${pending.map(s => {
           const submittedAt = s.submittedAt?.toDate ? s.submittedAt.toDate().toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '방금 전';
-          const matchLabel = `${(s.team1||[]).join(' · ')} ${s.score1} : ${s.score2} ${(s.team2||[]).join(' · ')}`;
+          const matchLabel = `${s.type==='eventMatch'?'🎉 이벤트전 · ':''}${(s.team1||[]).join(' · ')} ${s.score1} : ${s.score2} ${(s.team2||[]).join(' · ')}`;
           return `<div style="padding:10px 0;border-top:1px solid rgba(245,158,11,0.18)">
             <div style="font-size:13px;font-weight:800;color:#1E293B;line-height:1.5">${matchLabel}</div>
             <div style="font-size:10px;color:#64748B;margin-top:3px">입력자: ${s.submittedBy||'이름 미입력'} · ${submittedAt}</div>
@@ -5669,7 +5673,7 @@ function renderAdmin(){
       </div>` : `
       <div class="admin-sec" style="border-color:rgba(245,158,11,0.28);background:rgba(245,158,11,0.04)">
         <h3>📝 점수 확정 대기 (0)</h3>
-        <div style="font-size:12px;color:#64748B;line-height:1.6">현재 확인할 점수 제안이 없어요.<br>게스트 또는 정회원으로 로그인해, <b>미완료 경기</b>의 <b>📝 점수 제안</b>을 제출하면 여기에 표시됩니다.</div>
+        <div style="font-size:12px;color:#64748B;line-height:1.6">현재 확인할 점수 제안이 없어요.<br>게스트가 정규시즌 또는 이벤트전의 <b>📝 점수 제안</b>을 제출하면 여기에 표시됩니다.</div>
       </div>`;
   }
 
@@ -8733,10 +8737,29 @@ window.openScoreProposal = function(dayId, rIdx, mId){
   if (!match || match.done) return;
   const positions = {};
   Object.entries(match.positions||{}).forEach(([name,pos]) => { positions[name] = pos === 'fore' ? 'fore' : pos === 'back' ? 'back' : ''; });
-  pendingScoreProposal = { dayId, rIdx:parseInt(rIdx), mId, team1:[...(match.team1||[])], team2:[...(match.team2||[])], positions };
+  pendingScoreProposal = { type:'seasonMatch', dayId, rIdx:parseInt(rIdx), mId, team1:[...(match.team1||[])], team2:[...(match.team2||[])], positions };
   document.getElementById('scoreProposalInfo').textContent = `${pendingScoreProposal.team1.join(' / ')} vs ${pendingScoreProposal.team2.join(' / ')}`;
   document.getElementById('proposalS1Label').textContent = `${pendingScoreProposal.team1.join('/')} 스코어`;
   document.getElementById('proposalS2Label').textContent = `${pendingScoreProposal.team2.join('/')} 스코어`;
+  document.getElementById('proposalS1').value = '';
+  document.getElementById('proposalS2').value = '';
+  document.getElementById('proposalSubmitterName').value = myClaim && myClaim !== 'pending' ? myClaim.name : '';
+  renderProposalPositionSelectors();
+  document.getElementById('scoreProposalModal').style.display = 'flex';
+};
+
+// 이벤트전에서도 게스트는 결과를 바로 확정하지 않고 제안으로 남긴다.
+window.openEventScoreProposal = function(evId, mi){
+  const ev = events.find(e=>e.id===evId);
+  const match = (ev?.matches||[])[mi];
+  if (!match || (match.ourScore !== null && match.ourScore !== undefined && match.ourScore !== '')) return;
+  const positions = {};
+  Object.entries(match.positions||{}).forEach(([name,pos]) => { positions[name] = pos === 'fore' ? 'fore' : pos === 'back' ? 'back' : ''; });
+  const eventMatchKey = match.id ? `id:${match.id}` : `idx:${mi}`;
+  pendingScoreProposal = { type:'eventMatch', dayId:evId, rIdx:-1, mId:eventMatchKey, team1:[...(match.ourPair||[])], team2:[...(match.oppPair||[])], positions };
+  document.getElementById('scoreProposalInfo').textContent = `${pendingScoreProposal.team1.join(' / ')||'우리팀'} vs ${pendingScoreProposal.team2.join(' / ')||'상대팀'}`;
+  document.getElementById('proposalS1Label').textContent = '우리팀 스코어';
+  document.getElementById('proposalS2Label').textContent = '상대팀 스코어';
   document.getElementById('proposalS1').value = '';
   document.getElementById('proposalS2').value = '';
   document.getElementById('proposalSubmitterName').value = myClaim && myClaim !== 'pending' ? myClaim.name : '';
@@ -8800,7 +8823,7 @@ window.submitScoreProposal = async function(){
     }
     const user = auth.currentUser;
     await addDoc(collection(db,'scoreSubmissions'), {
-      type: 'seasonMatch',
+      type: pendingScoreProposal.type || 'seasonMatch',
       dayId: pendingScoreProposal.dayId,
       rIdx: pendingScoreProposal.rIdx,
       matchId: pendingScoreProposal.mId,
@@ -8828,6 +8851,31 @@ window.submitScoreProposal = async function(){
 window.approveScoreProposal = async function(submissionId){
   const submission = scoreSubmissions.find(s => s.id === submissionId);
   if (!submission || submission.status !== 'pending') return;
+  if (submission.type === 'eventMatch') {
+    const event = events.find(e => e.id === submission.dayId);
+    const matchIndex = String(submission.matchId||'').startsWith('id:')
+      ? (event?.matches||[]).findIndex(m => m.id === String(submission.matchId).slice(3))
+      : Number(String(submission.matchId||'').replace('idx:',''));
+    const match = (event?.matches||[])[matchIndex];
+    if (!event || !match) { alert('대상 이벤트 경기를 찾을 수 없어요. 제안을 반려하거나 경기 정보를 확인해주세요.'); return; }
+    if (match.ourScore !== null && match.ourScore !== undefined && match.ourScore !== '') { alert('이 경기는 이미 확정됐어요. 중복 제안은 반려해주세요.'); return; }
+    const summary = `${(submission.team1||[]).join(' · ')} ${submission.score1} : ${submission.score2} ${(submission.team2||[]).join(' · ')}`;
+    if (!confirm(`다음 이벤트전 점수를 확정할까요?\n\n${summary}`)) return;
+    try {
+      const matches = (event.matches||[]).map((m,i) => i !== matchIndex ? m : {
+        ...m, ourScore:submission.score1, oppScore:submission.score2,
+        positions:{...(m.positions||{}), ...(submission.positions||{})},
+        enteredBy:submission.submittedBy||'게스트', approvedSubmissionId:submissionId
+      });
+      await updateDoc(doc(db,'events',event.id), { matches });
+      await updateDoc(doc(db,'scoreSubmissions',submissionId), { status:'approved', resolvedAt:serverTimestamp(), resolvedBy:auth.currentUser?.uid||'' });
+      alert('✅ 이벤트전 점수를 확정했어요.');
+    } catch(e) {
+      console.error('이벤트전 점수 제안 승인 실패:', e);
+      alert('점수 확정 중 오류가 발생했어요. 다시 시도해주세요.');
+    }
+    return;
+  }
   const day = days.find(d => d.id === submission.dayId);
   const round = (day?.rounds||[])[submission.rIdx];
   const match = (round?.matches||[]).find(m => m.id === submission.matchId);
@@ -8841,7 +8889,7 @@ window.approveScoreProposal = async function(submissionId){
       matches: (r.matches||[]).map(m => m.id !== submission.matchId ? m : {
         ...m, score1:submission.score1, score2:submission.score2, done:true,
         positions:{...(m.positions||{}), ...(submission.positions||{})},
-        approvedSubmissionId:submissionId
+        enteredBy:submission.submittedBy||'게스트', approvedSubmissionId:submissionId
       })
     });
     await updateDoc(doc(db,'days',day.id), { rounds });
@@ -9112,7 +9160,9 @@ window.submitScore=async function(){
       if(fb?.dataset?.selected==='1')evPos[name]='fore';
       else if(bb?.dataset?.selected==='1')evPos[name]='back';
     });
-    matches[mi]={...m,ourScore:s1,oppScore:s2,positions:evPos};
+    const editorName = getSeasonScoreEditorName();
+    matches[mi]={...m,ourScore:s1,oppScore:s2,positions:evPos,
+      enteredBy:m.enteredBy||editorName, editedBy:m.enteredBy?editorName:undefined};
     if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon auth:',e.code);}}
     try{
       await updateDoc(doc(db,'events',evId),{matches});
