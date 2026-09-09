@@ -3403,19 +3403,19 @@ function renderDays() {
         const scoreEl=m.done
           ?`<div class="m-score">${m.score1} : ${m.score2}</div>`
           :`<div class="m-score pend">예정</div>`;
-        // 점수 확정은 관리자만, 회원·게스트는 관리자 확인 대기 제안으로 제출
+        // 정회원은 정규시즌 결과를 바로 확정, 방문자는 관리자 확인 대기로 제안
         const isRegularMember = !isAdmin && myClaim && myClaim !== 'pending' && !myClaim.isGuest;
         const basicInputBtn = !m.done
-          ? (isAdmin
+          ? ((isAdmin || isRegularMember)
             ? `<button class="btn-input" style="margin-top:0;flex:1" onclick="openScore('${day.id}','${rIdx}','${m.id}')">📝 결과 확정</button>`
             : `<button class="btn-input" style="margin-top:0;flex:1" onclick="openScoreProposal('${day.id}','${rIdx}','${m.id}')">📝 점수 제안</button>`)
           : '';
-        // 라이브 입력은 확정 결과를 저장하므로 관리자만 노출
-        const liveBtn = !m.done && isAdmin
+        // 라이브 입력은 정회원과 관리자가 사용
+        const liveBtn = !m.done && (isAdmin || isRegularMember)
           ? `<button onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')" title="실시간 스코어" style="background:none;border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#059669;font-size:12px;cursor:pointer;padding:2px 9px;flex-shrink:0">🔴 라이브</button>`
           : '';
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
-        const editBtn=isAdmin&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
+        const editBtn=(isAdmin||isRegularMember)&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const pairEditBtn=isAdmin&&!m.done&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식'?`<button class="btn-del-sm" style="color:#059669" onclick="openPairEdit('${day.id}','${rIdx}','${m.id}')">✏ 페어</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
         let evalHtml='';
