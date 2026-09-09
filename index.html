@@ -1286,6 +1286,27 @@ let scoreSubmissionsUnsub = null;
 let matchRequests = [];
 let matchRequestsUnsub = null;
 let myClaim = null;
+let lastRoleSyncKey = '';
+
+// 기존의 회원 목록(한 문서)을 서버 권한 검사용 회원별 문서로 동기화한다.
+// 관리자만 실행하며, 이후 Firestore 규칙에서 이 문서로 정회원 여부를 확인한다.
+async function syncMemberRoleDocs() {
+  if (!isAdmin) return;
+  const roles = [
+    ...members.filter(m=>m.uid).map(m=>({uid:m.uid, role:'member', name:m.name||''})),
+    ...guests.filter(g=>g.uid).map(g=>({uid:g.uid, role:'guest', name:g.name||''}))
+  ];
+  const syncKey = roles.map(r=>`${r.uid}:${r.role}:${r.name}`).sort().join('|');
+  if (!syncKey || syncKey === lastRoleSyncKey) return;
+  try {
+    await Promise.all(roles.map(r=>setDoc(doc(db,'memberRoles',r.uid), {
+      role:r.role, name:r.name, syncedAt:serverTimestamp()
+    }, {merge:true})));
+    lastRoleSyncKey = syncKey;
+  } catch (e) {
+    console.warn('회원 권한 동기화 실패:', e.code||e.message);
+  }
+}
 let lastAuthUser = null;
 let currentOpenEvId = null;
 let currentEvView = 'detail';
@@ -10640,6 +10661,7 @@ onSnapshot(doc(db,'club','guests'), snap => {
   populateSignupNameSelect();
   renderAll();
   resolveMyClaim();
+  syncMemberRoleDocs();
 });
 onSnapshot(doc(db,'club','members'), snap => {
   const raw = snap.exists() ? (snap.data().list||[]) : [];
@@ -10648,6 +10670,7 @@ onSnapshot(doc(db,'club','members'), snap => {
   updateTerraSelects();
   renderAll();
   resolveMyClaim();
+  syncMemberRoleDocs();
 });
 onSnapshot(collection(db,'days'), snap => {
   days = snap.docs.map(d=>({id:d.id,...d.data()}))
