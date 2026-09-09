@@ -6,6 +6,16 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
     }
 
+    function isMember() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/memberRoles/$(request.auth.uid))
+        && get(/databases/$(database)/documents/memberRoles/$(request.auth.uid)).data.role == 'member';
+    }
+
+    function canRecordResults() {
+      return isAdmin() || isMember();
+    }
+
     // 회원별 권한 문서: 관리자만 생성·수정하며 이후 데이터 쓰기 권한 검증에 사용
     match /memberRoles/{uid} {
       allow get: if request.auth != null && (request.auth.uid == uid || isAdmin());
@@ -13,54 +23,52 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
-    // 누구나 읽기 가능, days/terra/rounds는 누구나 쓰기 가능
+    // 공개 조회, 경기 결과 입력·수정은 정회원 또는 관리자만
     match /days/{document=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if canRecordResults();
     }
     match /terra/{document=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if canRecordResults();
     }
     match /rounds/{document=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if canRecordResults();
     }
 
-    // Elo 레이팅 — 누구나 읽기, 인증된 사용자 쓰기
+    // Elo 레이팅 — 누구나 읽기, 정회원·관리자만 쓰기
     match /club/ratings {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if canRecordResults();
     }
 
     // 회원/설정/이벤트는 관리자(로그인)만 쓰기 가능
     match /club/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
+      allow write: if isAdmin();
     }
     // 회원 본인의 생년월일/테니스시작년월 자기 수정 허용
     // (list 필드만, 크기 불변 — 멤버 추가/삭제 불가)
     match /club/members {
-      allow update: if request.auth != null
-        && request.resource.data.keys().hasOnly(['list'])
-        && request.resource.data.list.size() == resource.data.list.size();
+      allow update: if isAdmin();
     }
     match /events/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if canRecordResults();
     }
 
-    // 일정 공유 - 누구나 읽고 쓰기 가능
+    // 일정은 공개 조회, 관리는 관리자만
     match /schedules/{document=**} {
       allow read: if true;
-      allow write: if true;
+      allow write: if isAdmin();
     }
 
     // 회원가입 신청 - 본인 신청만 생성 가능, 승인/거절은 관리자만
     match /signupRequests/{reqId} {
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;
-      allow read: if request.auth != null;
-      allow update: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
+      allow read: if isAdmin() || (request.auth != null && resource.data.uid == request.auth.uid);
+      allow update: if isAdmin();
     }
 
     // 점수 제안 - 방문자는 로그인 없이도 제한된 형식의 제안만 생성할 수 있고,
@@ -83,29 +91,29 @@ service cloud.firestore {
         && request.resource.data.rIdx is int
         && request.resource.data.submittedBy is string
         && request.resource.data.submitterUid is string;
-      allow read, update, delete: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
+      allow read, update, delete: if isAdmin();
     }
 
     // 즉석매치 요청 - 정회원 UI에서 요청만 생성하고, 경기표 반영은 관리자만 처리
     match /matchRequests/{requestId} {
-      allow create: if request.auth != null
+      allow create: if isMember()
         && request.resource.data.status == 'pending'
         && request.resource.data.requesterUid == request.auth.uid
         && request.resource.data.dayId is string
         && request.resource.data.rIdx is int;
-      allow read, update, delete: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
+      allow read, update, delete: if isAdmin();
     }
 
-    // 게시판 - 누구나 읽고 쓰기 가능
+    // 게시판 - 공개 조회, 정회원·관리자만 작성
     match /boardPosts/{postId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if canRecordResults();
     }
 
     // 공지사항 - 누구나 읽기 가능, 관리자만 쓰기 가능
     match /announcements/{document=**} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
+      allow write: if isAdmin();
     }
 
   }
