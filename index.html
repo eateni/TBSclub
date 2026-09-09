@@ -8738,16 +8738,16 @@ function renderProposalPositionSelectors(){
   const teams = [pendingScoreProposal.team1, pendingScoreProposal.team2];
   el.innerHTML = teams.map((team, teamIdx) => {
     const names = team.filter(Boolean);
-    return `<div style="padding:7px 8px;background:#F8FCFC;border:1px solid #E0F2F1;border-radius:8px">
-      <div style="font-size:10px;color:#64748B;font-weight:700;margin-bottom:5px">${teamIdx===0?'팀 1':'팀 2'}</div>
+    return `<div style="padding:10px 12px;background:#F8FCFC;border:1px solid #E0F2F1;border-radius:10px">
+      <div style="font-size:13px;color:#64748B;font-weight:800;margin-bottom:7px">${teamIdx===0?'팀 1':'팀 2'}</div>
       ${names.map((name, idx) => {
         const partner = names.length===2 ? (idx===0 ? 1 : 0) : -1;
         const pos = pendingScoreProposal.positions[name] || '';
-        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 0">
-          <span style="font-size:12px;color:#1E293B;font-weight:700">${name}</span>
-          <span style="display:flex;gap:4px">
-            <button onclick="selectProposalPosition(${teamIdx},${idx},'fore')" style="padding:4px 9px;border-radius:6px;border:1px solid ${pos==='fore'?'#EF4444':'#CBD5E1'};background:${pos==='fore'?'rgba(239,68,68,0.12)':'#fff'};color:${pos==='fore'?'#DC2626':'#64748B'};font-size:11px;font-weight:700;cursor:pointer">포</button>
-            <button onclick="selectProposalPosition(${teamIdx},${idx},'back')" style="padding:4px 9px;border-radius:6px;border:1px solid ${pos==='back'?'#2563EB':'#CBD5E1'};background:${pos==='back'?'rgba(37,99,235,0.12)':'#fff'};color:${pos==='back'?'#2563EB':'#64748B'};font-size:11px;font-weight:700;cursor:pointer">백</button>
+        return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0">
+          <span style="font-size:18px;min-width:72px;color:#1E293B;font-weight:800;white-space:nowrap">${name}</span>
+          <span style="display:flex;gap:6px;flex:1">
+            <button onclick="selectProposalPosition(${teamIdx},${idx},'fore')" style="flex:1;padding:8px 0;border-radius:8px;border:1px solid ${pos==='fore'?'#EF4444':'#CBD5E1'};background:${pos==='fore'?'rgba(239,68,68,0.12)':'#fff'};color:${pos==='fore'?'#DC2626':'#64748B'};font-size:15px;font-weight:800;cursor:pointer">🔴 포</button>
+            <button onclick="selectProposalPosition(${teamIdx},${idx},'back')" style="flex:1;padding:8px 0;border-radius:8px;border:1px solid ${pos==='back'?'#2563EB':'#CBD5E1'};background:${pos==='back'?'rgba(37,99,235,0.12)':'#fff'};color:${pos==='back'?'#2563EB':'#64748B'};font-size:15px;font-weight:800;cursor:pointer">🔵 백</button>
           </span>
         </div>`;
       }).join('')}
