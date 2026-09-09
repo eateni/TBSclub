@@ -56,11 +56,11 @@ service cloud.firestore {
     match /scoreSubmissions/{submissionId} {
       allow create: if request.auth != null
         && request.resource.data.keys().hasAll([
-          'type', 'dayId', 'rIdx', 'matchId', 'team1', 'team2',
+          'type', 'dayId', 'rIdx', 'matchId', 'team1', 'team2', 'positions',
           'score1', 'score2', 'status', 'submittedBy', 'submitterUid', 'submittedAt'
         ])
         && request.resource.data.keys().hasOnly([
-          'type', 'dayId', 'rIdx', 'matchId', 'team1', 'team2',
+          'type', 'dayId', 'rIdx', 'matchId', 'team1', 'team2', 'positions',
           'score1', 'score2', 'status', 'submittedBy', 'submitterUid', 'submittedAt'
         ])
         && request.resource.data.type == 'seasonMatch'

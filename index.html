@@ -1095,6 +1095,10 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="mf"><label id="proposalS1Label">팀1 스코어</label><input type="number" id="proposalS1" min="0" max="99" inputmode="numeric" placeholder="0"></div>
       <div class="mf"><label id="proposalS2Label">팀2 스코어</label><input type="number" id="proposalS2" min="0" max="99" inputmode="numeric" placeholder="0"></div>
     </div>
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid #E8F4F3">
+      <div style="font-size:11px;color:#64748B;margin-bottom:8px">🎾 선수별 포/백 <span style="color:#94A3B8;font-size:10px">(선택 · 한 명을 고르면 파트너는 반대로 자동 선택)</span></div>
+      <div id="proposalPositionSelectors" style="display:flex;flex-direction:column;gap:7px"></div>
+    </div>
     <div class="mf" style="margin-top:10px"><label for="proposalSubmitterName">입력자 이름 <span style="color:#94A3B8;font-weight:400">(선택)</span></label><input id="proposalSubmitterName" maxlength="30" placeholder="예: 홍길동"></div>
     <div class="mft">
       <button class="btn-cancel" onclick="hide('scoreProposalModal')">취소</button>
@@ -8715,14 +8719,53 @@ window.openScoreProposal = function(dayId, rIdx, mId){
   const round = (day?.rounds||[])[rIdx];
   const match = (round?.matches||[]).find(m=>m.id===mId);
   if (!match || match.done) return;
-  pendingScoreProposal = { dayId, rIdx:parseInt(rIdx), mId, team1:[...(match.team1||[])], team2:[...(match.team2||[])] };
+  const positions = {};
+  Object.entries(match.positions||{}).forEach(([name,pos]) => { positions[name] = pos === 'fore' ? 'fore' : pos === 'back' ? 'back' : ''; });
+  pendingScoreProposal = { dayId, rIdx:parseInt(rIdx), mId, team1:[...(match.team1||[])], team2:[...(match.team2||[])], positions };
   document.getElementById('scoreProposalInfo').textContent = `${pendingScoreProposal.team1.join(' / ')} vs ${pendingScoreProposal.team2.join(' / ')}`;
   document.getElementById('proposalS1Label').textContent = `${pendingScoreProposal.team1.join('/')} 스코어`;
   document.getElementById('proposalS2Label').textContent = `${pendingScoreProposal.team2.join('/')} 스코어`;
   document.getElementById('proposalS1').value = '';
   document.getElementById('proposalS2').value = '';
   document.getElementById('proposalSubmitterName').value = myClaim && myClaim !== 'pending' ? myClaim.name : '';
+  renderProposalPositionSelectors();
   document.getElementById('scoreProposalModal').style.display = 'flex';
+};
+
+function renderProposalPositionSelectors(){
+  const el = document.getElementById('proposalPositionSelectors');
+  if (!el || !pendingScoreProposal) return;
+  const teams = [pendingScoreProposal.team1, pendingScoreProposal.team2];
+  el.innerHTML = teams.map((team, teamIdx) => {
+    const names = team.filter(Boolean);
+    return `<div style="padding:7px 8px;background:#F8FCFC;border:1px solid #E0F2F1;border-radius:8px">
+      <div style="font-size:10px;color:#64748B;font-weight:700;margin-bottom:5px">${teamIdx===0?'팀 1':'팀 2'}</div>
+      ${names.map((name, idx) => {
+        const partner = names.length===2 ? (idx===0 ? 1 : 0) : -1;
+        const pos = pendingScoreProposal.positions[name] || '';
+        return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 0">
+          <span style="font-size:12px;color:#1E293B;font-weight:700">${name}</span>
+          <span style="display:flex;gap:4px">
+            <button onclick="selectProposalPosition(${teamIdx},${idx},'fore')" style="padding:4px 9px;border-radius:6px;border:1px solid ${pos==='fore'?'#EF4444':'#CBD5E1'};background:${pos==='fore'?'rgba(239,68,68,0.12)':'#fff'};color:${pos==='fore'?'#DC2626':'#64748B'};font-size:11px;font-weight:700;cursor:pointer">포</button>
+            <button onclick="selectProposalPosition(${teamIdx},${idx},'back')" style="padding:4px 9px;border-radius:6px;border:1px solid ${pos==='back'?'#2563EB':'#CBD5E1'};background:${pos==='back'?'rgba(37,99,235,0.12)':'#fff'};color:${pos==='back'?'#2563EB':'#64748B'};font-size:11px;font-weight:700;cursor:pointer">백</button>
+          </span>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+window.selectProposalPosition = function(teamIdx, playerIdx, pos){
+  if (!pendingScoreProposal) return;
+  const team = (teamIdx===0 ? pendingScoreProposal.team1 : pendingScoreProposal.team2).filter(Boolean);
+  const name = team[playerIdx];
+  if (!name) return;
+  pendingScoreProposal.positions[name] = pos;
+  if (team.length===2) {
+    const partner = team[playerIdx===0 ? 1 : 0];
+    pendingScoreProposal.positions[partner] = pos === 'fore' ? 'back' : 'fore';
+  }
+  renderProposalPositionSelectors();
 };
 
 window.submitScoreProposal = async function(){
@@ -8749,6 +8792,7 @@ window.submitScoreProposal = async function(){
       team2: pendingScoreProposal.team2,
       score1,
       score2,
+      positions: pendingScoreProposal.positions,
       status: 'pending',
       submittedBy: submitterName,
       submitterUid: user.uid,
@@ -8780,6 +8824,7 @@ window.approveScoreProposal = async function(submissionId){
       ...r,
       matches: (r.matches||[]).map(m => m.id !== submission.matchId ? m : {
         ...m, score1:submission.score1, score2:submission.score2, done:true,
+        positions:{...(m.positions||{}), ...(submission.positions||{})},
         approvedSubmissionId:submissionId
       })
     });
