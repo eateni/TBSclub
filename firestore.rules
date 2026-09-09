@@ -52,10 +52,10 @@ service cloud.firestore {
       allow update: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
     }
 
-    // 점수 제안 - 로그인·익명 사용자는 제안만 생성, 확정·수정·삭제는 관리자만
+    // 점수 제안 - 방문자는 로그인 없이도 제한된 형식의 제안만 생성할 수 있고,
+    // 확정·수정·삭제는 관리자만 가능
     match /scoreSubmissions/{submissionId} {
-      allow create: if request.auth != null
-        && request.resource.data.keys().hasAll([
+      allow create: if request.resource.data.keys().hasAll([
           'type', 'dayId', 'rIdx', 'matchId', 'team1', 'team2', 'positions',
           'score1', 'score2', 'status', 'submittedBy', 'submitterUid', 'submittedAt'
         ])
@@ -65,13 +65,13 @@ service cloud.firestore {
         ])
         && request.resource.data.type == 'seasonMatch'
         && request.resource.data.status == 'pending'
-        && request.resource.data.submitterUid == request.auth.uid
         && request.resource.data.score1 is int && request.resource.data.score1 >= 0 && request.resource.data.score1 <= 99
         && request.resource.data.score2 is int && request.resource.data.score2 >= 0 && request.resource.data.score2 <= 99
         && request.resource.data.dayId is string
         && request.resource.data.matchId is string
         && request.resource.data.rIdx is int
-        && request.resource.data.submittedBy is string;
+        && request.resource.data.submittedBy is string
+        && request.resource.data.submitterUid is string;
       allow read, update, delete: if request.auth != null && request.auth.token.email == "mk5minki@gmail.com";
     }
 

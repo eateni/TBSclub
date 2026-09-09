@@ -1328,6 +1328,12 @@ let ratings = {};
 let pendingScore = null;
 let pendingScoreEdit = null;
 let pendingScoreProposal = null;
+
+function getSeasonScoreEditorName() {
+  const name = myClaim && myClaim !== 'pending' ? myClaim.name : '';
+  if (isAdmin) return name ? `${name} (관리자)` : '관리자';
+  return name || '정회원';
+}
 let pendingDayId = null;
 let pendingRoundKey = null;
 let pendingAddEvMatch = null;
@@ -3174,8 +3180,10 @@ window.submitScoreEdit = async function() {
     if(fb?.dataset?.selected==='1') positions[p]='fore';
     else if(bb?.dataset?.selected==='1') positions[p]='back';
   });
+  const editorName = getSeasonScoreEditorName();
   const matches=(rounds[pendingScoreEdit.rIdx].matches||[]).map(m=>
-    m.id===pendingScoreEdit.mId?{...m,score1:s1,score2:s2,done:true,positions}:m
+    m.id===pendingScoreEdit.mId?{...m,score1:s1,score2:s2,done:true,positions,
+      enteredBy:m.enteredBy||editorName, editedBy:editorName}:m
   );
   rounds[pendingScoreEdit.rIdx]={...rounds[pendingScoreEdit.rIdx],matches};
   await updateDoc(doc(db,'days',pendingScoreEdit.dayId),{rounds});
@@ -3453,6 +3461,9 @@ function renderDays() {
           const _c2=_p2>_p1?'#2563EB':_p2<_p1?'#64748B':'#64748B';
           _winRateHtml=`<div style="text-align:center;font-size:11px;font-weight:600;margin-top:4px"><span style="color:${_c1}">${_p1}%</span><span style="color:#94A3B8;margin:0 4px">vs</span><span style="color:${_c2}">${_p2}%</span>${_estLabel}</div>`;
         }
+        const resultAuthorHtml = m.done && m.enteredBy
+          ? `<div style="font-size:10px;color:#64748B;text-align:center;margin-top:4px">✍️ 입력: ${m.enteredBy}${m.editedBy && m.editedBy !== m.enteredBy ? ` · 수정: ${m.editedBy}` : ''}</div>`
+          : '';
         return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
           <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#64748B">${m.court||''} ${tagBadge}</span></div>
           <div class="match-row">
@@ -3461,6 +3472,7 @@ function renderDays() {
             <div class="m-team ${w2?'win':''}">${(m.team2||[]).join(' / ')}</div>
           </div>
           ${_winRateHtml}
+          ${resultAuthorHtml}
           ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(13,148,136,0.05);border-radius:7px;border-left:2px solid rgba(13,148,136,0.2)">${evalHtml}</div>`:''}
           <div style="display:flex;align-items:center;gap:5px;margin-top:8px">
             ${basicInputBtn}${editBtn}${pairEditBtn}${liveBtn}${delBtn}
@@ -8780,9 +8792,13 @@ window.submitScoreProposal = async function(){
   const submitBtn = document.querySelector('#scoreProposalModal .btn-ok');
   if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '제출 중...'; }
   try {
-    if (!auth.currentUser) await signInAnonymously(auth);
+    // 게스트 제안은 로그인 없이도 제출할 수 있어야 한다. 익명 인증이 가능한
+    // 환경에서는 식별값만 함께 저장하고, 실패해도 제안 자체는 계속 진행한다.
+    if (!auth.currentUser) {
+      try { await signInAnonymously(auth); }
+      catch (authError) { console.warn('익명 인증 없이 점수 제안 제출:', authError.code); }
+    }
     const user = auth.currentUser;
-    if (!user) throw new Error('익명 인증에 실패했습니다.');
     await addDoc(collection(db,'scoreSubmissions'), {
       type: 'seasonMatch',
       dayId: pendingScoreProposal.dayId,
@@ -8795,7 +8811,7 @@ window.submitScoreProposal = async function(){
       positions: pendingScoreProposal.positions,
       status: 'pending',
       submittedBy: submitterName,
-      submitterUid: user.uid,
+      submitterUid: user?.uid || '',
       submittedAt: serverTimestamp()
     });
     hide('scoreProposalModal');
@@ -8803,7 +8819,7 @@ window.submitScoreProposal = async function(){
     alert('✅ 점수 제안을 제출했어요. 관리자 확인 후 확정됩니다.');
   } catch(e) {
     console.error('점수 제안 제출 실패:', e);
-    alert('점수 제안을 제출하지 못했어요. 잠시 후 다시 시도해주세요.');
+    alert(`점수 제안을 제출하지 못했어요. (${e.code||'알 수 없는 오류'})`);
   } finally {
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '제안 제출'; }
   }
@@ -9127,7 +9143,9 @@ window.submitScore=async function(){
     if(fb?.dataset?.selected==='1') positions[p]='fore';
     else if(bb?.dataset?.selected==='1') positions[p]='back';
   });
-  const matches=(rounds[pendingScore.rIdx].matches||[]).map(m=>m.id===pendingScore.mId?{...m,score1:s1,score2:s2,done:true,positions}:m);
+  const editorName = getSeasonScoreEditorName();
+  const matches=(rounds[pendingScore.rIdx].matches||[]).map(m=>m.id===pendingScore.mId?{...m,score1:s1,score2:s2,done:true,positions,
+    enteredBy:m.enteredBy||editorName}:m);
   rounds[pendingScore.rIdx]={...rounds[pendingScore.rIdx],matches};
   await updateDoc(doc(db,'days',pendingScore.dayId),{rounds});
   hide('scoreModal');
