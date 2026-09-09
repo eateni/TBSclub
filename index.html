@@ -376,12 +376,15 @@ tr:nth-child(even){background:#F5FCFB;}
             <div style="font-size:17px; font-weight:900; color:#1e293b; letter-spacing:-0.5px; line-height:1.15; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">TBS HISTORY</div>
           </div>
         <div class="header-btn-row" style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
-          <button id="myDashboardBtn" class="u-badge badge-guest" style="cursor:pointer;border:none;background:rgba(35,90,180,0.2);font-size:11px;padding:5px 9px;">회원가입</button>
-          <button id="pushSetupBtn" class="u-badge badge-guest" onclick="enablePushNotifications()" title="알림 설정" style="cursor:pointer;border:none;background:rgba(245,158,11,0.14);font-size:11px;padding:5px 8px;display:none">🔔 알림</button>
           <span class="u-badge badge-guest" id="uBadge" style="font-size:11px;padding:5px 9px;">👤 게스트</span>
           <button id="loginBtn" class="btn-admin-toggle" onclick="openAdminLogin()" title="로그인" style="font-size:11px;padding:5px 9px;">🔑 로그인</button>
           <button class="btn-logout" id="logoutBtn" style="display:none" onclick="doLogout()">로그아웃</button>
         </div>
+      </div>
+
+      <div id="accountQuickActions" style="display:none;gap:6px;margin-top:9px;padding-top:8px;border-top:1px solid rgba(30,41,59,0.08)">
+        <button id="myDashboardBtn" class="u-badge badge-guest" style="cursor:pointer;border:none;background:rgba(35,90,180,0.12);font-size:12px;padding:7px 11px;">👤 내 정보</button>
+        <button id="pushSetupBtn" class="u-badge badge-guest" onclick="enablePushNotifications()" title="알림 설정" style="cursor:pointer;border:none;background:rgba(245,158,11,0.14);font-size:12px;padding:7px 11px;display:none">🔔 알림 설정</button>
       </div>
 
       <!-- 2줄: 슬로건, 전체 너비, 로고 줄 아래로 -->
@@ -1267,7 +1270,7 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   setPersistence, browserLocalPersistence, signInAnonymously,
   sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs }
+import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { getMessaging, getToken, onMessage, isSupported }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js";
@@ -1289,6 +1292,7 @@ const db = getFirestore(app);
 // Firebase Console에서 생성할 Web Push 인증서 공개키를 여기에 설정한다.
 const FCM_VAPID_KEY = '';
 let messaging = null;
+let pushEnabled = false;
 const googleProvider = new GoogleAuthProvider();
 let googleAuthedUser = null;
 let pendingSignups = [];
@@ -10473,8 +10477,16 @@ function updatePushButton() {
   const eligible = isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest);
   btn.style.display = eligible ? '' : 'none';
   if (!eligible) return;
-  if (!('Notification' in window)) { btn.textContent = '🔔 미지원'; return; }
-  btn.textContent = Notification.permission === 'granted' ? '🔔 알림 켬' : '🔔 알림';
+  btn.textContent = pushEnabled ? '🔔 알림 켬' : '🔔 알림 설정';
+}
+
+async function refreshPushStatus() {
+  if (!auth.currentUser) { pushEnabled = false; updatePushButton(); return; }
+  try {
+    const saved = await getDoc(doc(db,'pushTokens',auth.currentUser.uid));
+    pushEnabled = !!(saved.exists() && saved.data().enabled);
+  } catch(e) { pushEnabled = false; }
+  updatePushButton();
 }
 
 window.enablePushNotifications = async function() {
@@ -10484,6 +10496,15 @@ window.enablePushNotifications = async function() {
   }
   if (!window.isSecureContext) {
     alert('알림은 https 앱에서만 설정할 수 있어요. 배포된 TBS 앱으로 접속해주세요.');
+    return;
+  }
+  if (pushEnabled) {
+    try {
+      await updateDoc(doc(db,'pushTokens',auth.currentUser.uid), {enabled:false, updatedAt:serverTimestamp()});
+      pushEnabled = false;
+      updatePushButton();
+      alert('알림을 껐어요. 이 기기로는 TBS 푸시가 발송되지 않습니다.');
+    } catch(e) { alert('알림 설정을 바꾸지 못했어요. 잠시 후 다시 시도해주세요.'); }
     return;
   }
   if (!FCM_VAPID_KEY) {
@@ -10501,6 +10522,7 @@ window.enablePushNotifications = async function() {
       uid:auth.currentUser.uid, token, name:myClaim?.name || '관리자',
       role:isAdmin ? 'admin' : 'member', enabled:true, updatedAt:serverTimestamp()
     }, {merge:true});
+    pushEnabled = true;
     onMessage(messaging, payload => {
       const n = payload.notification || {};
       if (n.title) alert(`🔔 ${n.title}\n${n.body||''}`);
@@ -10541,7 +10563,7 @@ function renderMyDashboardState(){
     btn.textContent = '⏳ 승인 대기중';
     btn.onclick = () => alert('관리자 승인을 기다리고 있어요.');
   } else if (myClaim) {
-    btn.textContent = `👤 ${myClaim.name}님`;
+    btn.textContent = '👤 내 정보';
     btn.onclick = () => openMyDashboard();
   } else {
     btn.textContent = '회원가입';
@@ -10549,6 +10571,9 @@ function renderMyDashboardState(){
   }
   updateSloganVisibility();
   updatePushButton();
+  const quickActions = document.getElementById('accountQuickActions');
+  if (quickActions) quickActions.style.display = (isAdmin || (myClaim && myClaim !== 'pending')) ? 'flex' : 'none';
+  refreshPushStatus();
   const gsBtn = document.getElementById('moreGameSummaryBtn');
   if (gsBtn) gsBtn.style.display = (isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest)) ? 'block' : 'none';
   // renderMyRecordCard(); // topCardsRow 비활성화로 불필요 (tab-home 내 myRecordHtml로 대체)
