@@ -1290,7 +1290,7 @@ const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
 // Firebase Console에서 생성할 Web Push 인증서 공개키를 여기에 설정한다.
-const FCM_VAPID_KEY = '';
+const FCM_VAPID_KEY = 'BDX-Ii2n9p8XeOtjE21_HghKzvrUjdayZiFRIAoexbAs-RHsojTPeGpBNz2K8zFstD9IX-_BYXdkTcJS9D5qy9g';
 let messaging = null;
 let pushEnabled = false;
 const googleProvider = new GoogleAuthProvider();
