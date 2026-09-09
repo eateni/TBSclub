@@ -403,9 +403,8 @@ tr:nth-child(even){background:#F5FCFB;}
     <button class="bn-btn" data-bucket="league" onclick="navTo('league')">
       <span class="bn-icon">🏆</span><span class="bn-label">정규시즌</span>
     </button>
-    <button class="bn-btn" data-bucket="schedule" onclick="navTo('schedule')" style="position:relative">
-      <span class="bn-icon">📅</span><span class="bn-label">일정</span>
-      <span id="scheduleBadgeBottom" style="display:none;position:absolute;top:2px;right:14px;background:#ef4444;color:#fff;font-size:7px;font-weight:800;padding:1px 4px;border-radius:8px">NEW</span>
+    <button class="bn-btn" data-bucket="terra" onclick="navTo('terra')">
+      <span class="bn-icon">⚡</span><span class="bn-label">내 기록</span>
     </button>
     <button class="bn-btn" data-bucket="more" onclick="toggleMoreMenu()">
       <span class="bn-icon">☰</span><span class="bn-label">메뉴</span>
@@ -416,7 +415,6 @@ tr:nth-child(even){background:#F5FCFB;}
     <div class="more-menu-sheet">
       <div class="more-menu-title">기록 · 이벤트</div>
       <button class="more-menu-item" onclick="navTo('event')">🎉 이벤트전</button>
-      <button class="more-menu-item" onclick="navTo('terra')">⚡ 개인 게임 기록</button>
       <button class="more-menu-item" id="moreGameSummaryBtn" style="display:none" onclick="navTo('gamesummary')">📊 경기 요약</button>
       <div class="more-menu-title" style="margin-top:16px">클럽</div>
       <button class="more-menu-item" onclick="navTo('board')">📋 게시판</button>
@@ -6314,7 +6312,7 @@ window.navTo = function(tab){
   }
 
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
-  const bucketMap = { home:'home', league:'league', terra:'more', schedule:'schedule', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
+  const bucketMap = { home:'home', league:'league', terra:'terra', schedule:'home', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
   const bucket = bucketMap[tab] || 'more';
   const bnBtn = document.querySelector(`.bn-btn[data-bucket="${bucket}"]`);
   if (bnBtn) bnBtn.classList.add('active');
