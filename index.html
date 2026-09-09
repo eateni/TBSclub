@@ -403,8 +403,8 @@ tr:nth-child(even){background:#F5FCFB;}
     <button class="bn-btn" data-bucket="league" onclick="navTo('league')">
       <span class="bn-icon">🏆</span><span class="bn-label">정규시즌</span>
     </button>
-    <button class="bn-btn" data-bucket="terra" onclick="navTo('terra')">
-      <span class="bn-icon">⚡</span><span class="bn-label">내 기록</span>
+    <button class="bn-btn" data-bucket="analysis" onclick="navTo('analysis')">
+      <span class="bn-icon">📊</span><span class="bn-label">개인 분석</span>
     </button>
     <button class="bn-btn" data-bucket="more" onclick="toggleMoreMenu()">
       <span class="bn-icon">☰</span><span class="bn-label">메뉴</span>
@@ -6304,15 +6304,22 @@ window.switchTab=function(tab,btn){
 };
 
 window.navTo = function(tab){
-  const origBtn = document.querySelector(`.tab-btn[onclick*="switchTab('${tab}'"]`);
-  if (origBtn) {
+  if (tab === 'analysis') {
+    const leagueBtn = document.querySelector(`.tab-btn[onclick*="switchTab('league'"]`);
+    switchTab('league', leagueBtn);
+    const analysisBtn = document.querySelector('#tab-league .stab:nth-child(3)');
+    if (analysisBtn) switchSub('analysis', analysisBtn);
+  } else {
+    const origBtn = document.querySelector(`.tab-btn[onclick*="switchTab('${tab}'"]`);
+    if (origBtn) {
     switchTab(tab, origBtn);
-  } else if (['home','photo','gamesummary'].includes(tab)) {
+    } else if (['home','photo','gamesummary'].includes(tab)) {
     switchTab(tab, null);
+    }
   }
 
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
-  const bucketMap = { home:'home', league:'league', terra:'terra', schedule:'home', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
+  const bucketMap = { home:'home', league:'league', analysis:'analysis', terra:'more', schedule:'home', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
   const bucket = bucketMap[tab] || 'more';
   const bnBtn = document.querySelector(`.bn-btn[data-bucket="${bucket}"]`);
   if (bnBtn) bnBtn.classList.add('active');
