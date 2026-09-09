@@ -536,9 +536,10 @@ tr:nth-child(even){background:#F5FCFB;}
       <!-- 월 캘린더 -->
       <div id="scheduleCalendar" style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:14px;margin-bottom:16px"></div>
 
-      <!-- 새 일정 작성 (관리자만 표시) -->
+      <!-- 관리자 공지 등록 (관리자만 표시) -->
       <div id="scheduleNewSection" style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:16px;margin-bottom:16px">
-        <div style="font-size:14px;font-weight:800;color:#2563EB;margin-bottom:12px">✏️ 새 일정 올리기</div>
+        <div style="font-size:14px;font-weight:800;color:#2563EB;margin-bottom:4px">📢 관리자 공지 등록</div>
+        <div style="font-size:11px;color:#64748B;margin-bottom:12px">정규시즌과 이벤트전은 자동으로 캘린더에 표시됩니다.</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div>
             <div style="font-size:11px;color:#64748B;margin-bottom:4px">작성자</div>
@@ -589,7 +590,7 @@ tr:nth-child(even){background:#F5FCFB;}
             <input type="checkbox" id="schIsGameMeetup" style="width:16px;height:16px;cursor:pointer">
             <label for="schIsGameMeetup" style="font-size:12px;color:#6D28D9;font-weight:700;cursor:pointer">🎾 게임모임으로 표시 (참석자끼리 페어를 짜서 게임할 수 있어요)</label>
           </div>
-          <button onclick="addSchedule()" class="btn-add" style="width:100%;margin-top:4px">📅 일정 등록</button>
+          <button onclick="addSchedule()" class="btn-add" style="width:100%;margin-top:4px">📢 공지 등록</button>
         </div>
       </div>
 
@@ -8294,6 +8295,22 @@ window.clearCalFilter = function(){
   renderSchedules();
 };
 
+function getClubCalendarItems(){
+  const regular = days.map(d => ({
+    type:'regular', date:d.date, title:`정규시즌 · ${d.place||'경기'}`,
+    detail:`${(d.rounds||[]).length}라운드 · ${(d.rounds||[]).reduce((n,r)=>n+(r.matches||[]).length,0)}경기`, source:d
+  }));
+  const eventItems = events.map(e => ({
+    type:'event', date:e.date, title:`이벤트전 · ${e.name||e.title||'이벤트'}`,
+    detail:e.oppClub ? `상대: ${e.oppClub}` : (e.type||'이벤트전'), source:e
+  }));
+  const notices = schedules.map(s => ({
+    type:'notice', date:s.date, title:s.content||'클럽 공지',
+    detail:[s.time,s.place].filter(Boolean).join(' · ')||'관리자 공지', source:s
+  }));
+  return [...regular,...eventItems,...notices].filter(x=>x.date);
+}
+
 function renderCalendar(){
   const el = document.getElementById('scheduleCalendar');
   if (!el) return;
@@ -8306,13 +8323,16 @@ function renderCalendar(){
   for (let i=0;i<startDow;i++) cells.push('<div></div>');
   for (let d=1; d<=daysInMonth; d++){
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const count = schedules.filter(s=>s.date===dateStr).length;
+    const items = getClubCalendarItems().filter(s=>s.date===dateStr);
+    const hasRegular = items.some(s=>s.type==='regular');
+    const hasEvent = items.some(s=>s.type==='event');
+    const hasNotice = items.some(s=>s.type==='notice');
     const isToday = dateStr === todayStr;
     const isSelected = dateStr === calSelectedDate;
     cells.push(`
       <div onclick="selectCalDate('${dateStr}')" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:12px;position:relative;background:${isSelected?'rgba(245,158,11,0.25)':isToday?'rgba(96,165,250,0.15)':'transparent'};border:1px solid ${isSelected?'rgba(245,158,11,0.5)':isToday?'rgba(96,165,250,0.35)':'transparent'};color:${isSelected?'#f59e0b':isToday?'#93c5fd':'#e8edf2'};font-weight:${isToday||isSelected?800:500}">
         <span>${d}</span>
-        ${count ? `<span style="width:5px;height:5px;border-radius:50%;background:#34d399;margin-top:2px"></span>` : ''}
+        ${items.length ? `<span style="display:flex;gap:2px;margin-top:2px"><i style="width:4px;height:4px;border-radius:50%;background:${hasRegular?'#2563EB':'transparent'}"></i><i style="width:4px;height:4px;border-radius:50%;background:${hasEvent?'#7c3aed':'transparent'}"></i><i style="width:4px;height:4px;border-radius:50%;background:${hasNotice?'#D97706':'transparent'}"></i></span>` : ''}
       </div>`);
   }
 
@@ -8332,12 +8352,35 @@ function renderCalendar(){
       <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells.join('')}</div>
+    <div style="display:flex;justify-content:center;gap:9px;margin-top:10px;font-size:10px;color:#64748B"><span><b style="color:#2563EB">●</b> 정규시즌</span><span><b style="color:#7c3aed">●</b> 이벤트전</span><span><b style="color:#D97706">●</b> 공지</span></div>
     ${filterChip}`;
 }
 
 function renderSchedules() {
   const el = document.getElementById('scheduleList');
   if (!el) return;
+  const clubItems = getClubCalendarItems()
+    .filter(item => !calSelectedDate || item.date === calSelectedDate)
+    .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const typeStyle = {
+    regular:{icon:'🏆', label:'정규시즌', color:'#2563EB', bg:'rgba(37,99,235,0.07)'},
+    event:{icon:'🎉', label:'이벤트전', color:'#7c3aed', bg:'rgba(124,58,237,0.07)'},
+    notice:{icon:'📢', label:'클럽 공지', color:'#D97706', bg:'rgba(245,158,11,0.08)'}
+  };
+  if (!clubItems.length) {
+    el.innerHTML = '<div class="empty">이번 기간에 등록된 클럽 일정이 없어요.</div>';
+    return;
+  }
+  el.innerHTML = `<div style="font-size:16px;font-weight:900;color:#1E293B;margin:4px 0 10px">📅 클럽 일정</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:12px">정규시즌과 이벤트전은 자동으로 표시됩니다.</div>` + clubItems.map(item => {
+      const s = typeStyle[item.type];
+      const dateLabel = new Date(item.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+      return `<div style="display:flex;gap:11px;align-items:center;background:${s.bg};border:1px solid ${s.color}33;border-radius:12px;padding:12px;margin-bottom:8px">
+        <div style="font-size:22px">${s.icon}</div>
+        <div style="min-width:0;flex:1"><div style="font-size:10px;font-weight:800;color:${s.color};margin-bottom:3px">${s.label} · ${dateLabel}</div><div style="font-size:13px;font-weight:800;color:#1E293B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.title}</div><div style="font-size:11px;color:#64748B;margin-top:3px">${item.detail}</div></div>
+      </div>`;
+    }).join('');
+  return;
   if (!schedules.length) {
     el.innerHTML = '<div style="text-align:center;padding:30px;color:#64748B;font-size:13px">아직 등록된 일정이 없어요 📭<br>위에서 첫 일정을 올려보세요!</div>';
     return;
