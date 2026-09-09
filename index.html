@@ -6,6 +6,10 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1E3A8A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TBS HISTORY">
 <title>🎾 TBS HISTORY</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -373,6 +377,7 @@ tr:nth-child(even){background:#F5FCFB;}
           </div>
         <div class="header-btn-row" style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
           <button id="myDashboardBtn" class="u-badge badge-guest" style="cursor:pointer;border:none;background:rgba(35,90,180,0.2);font-size:11px;padding:5px 9px;">회원가입</button>
+          <button id="pushSetupBtn" class="u-badge badge-guest" onclick="enablePushNotifications()" title="알림 설정" style="cursor:pointer;border:none;background:rgba(245,158,11,0.14);font-size:11px;padding:5px 8px;display:none">🔔 알림</button>
           <span class="u-badge badge-guest" id="uBadge" style="font-size:11px;padding:5px 9px;">👤 게스트</span>
           <button id="loginBtn" class="btn-admin-toggle" onclick="openAdminLogin()" title="로그인" style="font-size:11px;padding:5px 9px;">🔑 로그인</button>
           <button class="btn-logout" id="logoutBtn" style="display:none" onclick="doLogout()">로그아웃</button>
@@ -1264,6 +1269,8 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
 import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
+import { getMessaging, getToken, onMessage, isSupported }
+  from "https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js";
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyDFLmFELSX2zakDRTbNYzrBr4r9UBi-HMY",
@@ -1279,6 +1286,9 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
+// Firebase Console에서 생성할 Web Push 인증서 공개키를 여기에 설정한다.
+const FCM_VAPID_KEY = '';
+let messaging = null;
 const googleProvider = new GoogleAuthProvider();
 let googleAuthedUser = null;
 let pendingSignups = [];
@@ -10457,6 +10467,52 @@ function updateSloganVisibility() {
   el.style.display = loggedIn ? 'none' : '';
 }
 
+function updatePushButton() {
+  const btn = document.getElementById('pushSetupBtn');
+  if (!btn) return;
+  const eligible = isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest);
+  btn.style.display = eligible ? '' : 'none';
+  if (!eligible) return;
+  if (!('Notification' in window)) { btn.textContent = '🔔 미지원'; return; }
+  btn.textContent = Notification.permission === 'granted' ? '🔔 알림 켬' : '🔔 알림';
+}
+
+window.enablePushNotifications = async function() {
+  if (!auth.currentUser || !(isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest))) {
+    alert('푸시 알림은 로그인한 정회원에게만 제공됩니다.');
+    return;
+  }
+  if (!window.isSecureContext) {
+    alert('알림은 https 앱에서만 설정할 수 있어요. 배포된 TBS 앱으로 접속해주세요.');
+    return;
+  }
+  if (!FCM_VAPID_KEY) {
+    alert('푸시 인증서를 설정하는 중이에요. 관리자 설정이 완료되면 이 버튼으로 알림을 켤 수 있습니다.');
+    return;
+  }
+  try {
+    if (await isSupported() === false) throw new Error('이 브라우저는 푸시 알림을 지원하지 않습니다.');
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') { alert('알림 권한이 허용되지 않았어요. 브라우저 설정에서 알림을 허용해주세요.'); return; }
+    messaging = messaging || getMessaging(app);
+    const token = await getToken(messaging, { vapidKey: FCM_VAPID_KEY });
+    if (!token) throw new Error('알림 기기 정보를 만들지 못했습니다.');
+    await setDoc(doc(db,'pushTokens',auth.currentUser.uid), {
+      uid:auth.currentUser.uid, token, name:myClaim?.name || '관리자',
+      role:isAdmin ? 'admin' : 'member', enabled:true, updatedAt:serverTimestamp()
+    }, {merge:true});
+    onMessage(messaging, payload => {
+      const n = payload.notification || {};
+      if (n.title) alert(`🔔 ${n.title}\n${n.body||''}`);
+    });
+    updatePushButton();
+    alert('✅ 알림 받기가 설정됐어요. Firebase 콘솔에서 이 기기로 테스트 알림을 보낼 수 있습니다.');
+  } catch (e) {
+    console.error('푸시 설정 실패:', e);
+    alert(`알림 설정에 실패했어요. (${e.message||e.code||'알 수 없는 오류'})`);
+  }
+};
+
 function renderMyDashboardState(){
   const btn = document.getElementById('myDashboardBtn');
   if (!btn) return;
@@ -10492,6 +10548,7 @@ function renderMyDashboardState(){
     btn.onclick = () => { populateSignupNameSelect(); document.getElementById('signupModal').style.display = 'flex'; };
   }
   updateSloganVisibility();
+  updatePushButton();
   const gsBtn = document.getElementById('moreGameSummaryBtn');
   if (gsBtn) gsBtn.style.display = (isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest)) ? 'block' : 'none';
   // renderMyRecordCard(); // topCardsRow 비활성화로 불필요 (tab-home 내 myRecordHtml로 대체)

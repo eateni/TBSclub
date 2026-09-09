@@ -23,6 +23,14 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // 푸시 수신 기기 정보: 본인 기기만 등록·해제, 발송 관리는 관리자만
+    match /pushTokens/{uid} {
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.uid == request.auth.uid;
+      allow get, delete: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow list: if isAdmin();
+    }
+
     // 공개 조회, 경기 결과 입력·수정은 정회원 또는 관리자만
     match /days/{document=**} {
       allow read: if true;
