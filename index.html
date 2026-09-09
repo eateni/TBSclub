@@ -5650,7 +5650,11 @@ function renderAdmin(){
             </div>
           </div>`;
         }).join('')}
-      </div>` : '';
+      </div>` : `
+      <div class="admin-sec" style="border-color:rgba(245,158,11,0.28);background:rgba(245,158,11,0.04)">
+        <h3>📝 점수 확정 대기 (0)</h3>
+        <div style="font-size:12px;color:#64748B;line-height:1.6">현재 확인할 점수 제안이 없어요.<br>게스트 또는 정회원으로 로그인해, <b>미완료 경기</b>의 <b>📝 점수 제안</b>을 제출하면 여기에 표시됩니다.</div>
+      </div>`;
   }
 
   // ── 즉석매치 생성 승인 대기 목록 ──
@@ -5675,7 +5679,11 @@ function renderAdmin(){
             </div>
           </div>`;
         }).join('')}
-      </div>` : '';
+      </div>` : `
+      <div class="admin-sec" style="border-color:rgba(109,40,217,0.25);background:rgba(109,40,217,0.04)">
+        <h3>🎾 즉석매치 승인 대기 (0)</h3>
+        <div style="font-size:12px;color:#64748B;line-height:1.6">현재 확인할 즉석매치 생성 요청이 없어요.<br>정회원으로 로그인해 즉석매치 날짜의 <b>+ 경기 추가</b>를 누르면 여기에 표시됩니다.</div>
+      </div>`;
   }
 
   // ── 가입 승인 대기 목록 ──
