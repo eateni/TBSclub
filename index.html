@@ -396,7 +396,7 @@ tr:nth-child(even){background:#F5FCFB;}
     <div class="main-tabs">
       <button class="tab-btn active" onclick="switchTab('league',this)">🏆 정규리그</button>
       <button class="tab-btn" onclick="switchTab('terra',this)">⚡ 개인별 게임 기록</button>
-      <button class="tab-btn" onclick="switchTab('schedule',this)" style="position:relative">📅 일정 공유<span id="scheduleBadge" style="display:none;position:absolute;top:2px;right:4px;background:#ef4444;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px">NEW</span></button>
+      <button class="tab-btn" onclick="switchTab('schedule',this)" style="position:relative">📰 클럽소식<span id="scheduleBadge" style="display:none;position:absolute;top:2px;right:4px;background:#ef4444;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px">NEW</span></button>
       <button class="tab-btn" onclick="switchTab('fortune',this)">🔮 오늘의 운세</button>
       <button class="tab-btn" onclick="switchTab('event',this)">🎉 이벤트전</button>
       <button class="tab-btn" onclick="switchTab('board',this)">📋 게시판</button>
@@ -425,6 +425,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="navTo('event')">🎉 이벤트전</button>
       <button class="more-menu-item" id="moreGameSummaryBtn" style="display:none" onclick="navTo('gamesummary')">📊 경기 요약</button>
       <div class="more-menu-title" style="margin-top:16px">클럽</div>
+      <button class="more-menu-item" onclick="navTo('schedule')" style="position:relative">📰 클럽소식<span id="scheduleBadgeMore" style="display:none;margin-left:6px;background:#ef4444;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px">NEW</span></button>
       <button class="more-menu-item" onclick="navTo('board')">📋 게시판</button>
       <button class="more-menu-item" onclick="navTo('photo')">📸 사진/동영상</button>
       <button class="more-menu-item" onclick="navTo('fortune')">🔮 오늘의 운세</button>
@@ -540,16 +541,37 @@ tr:nth-child(even){background:#F5FCFB;}
       </div>
     </div>
 
-    <!-- 📅 일정 공유 -->
+    <!-- 📰 클럽소식 -->
     <div id="tab-schedule" style="display:none">
       <div style="margin-top:16px"></div>
 
+      <div style="background:linear-gradient(135deg,#0F766E,#1D4ED8);border-radius:18px;padding:18px 16px;margin-bottom:14px;color:#fff;box-shadow:0 8px 24px rgba(15,118,110,.18)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+          <div>
+            <div style="font-size:20px;font-weight:900">📰 클럽소식</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.78);margin-top:5px;line-height:1.5">공지와 정규시즌·이벤트전 일정을 한곳에서 확인하세요.</div>
+          </div>
+          <a id="clubInstagramLink" href="#" target="_blank" rel="noopener noreferrer" style="display:none;flex-shrink:0;text-decoration:none;background:rgba(255,255,255,.96);color:#C13584;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:900">📷 Instagram</a>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:14px">
+          <button id="clubNewsFeedBtn" onclick="setClubNewsView('feed')" style="padding:9px;border:none;border-radius:10px;background:#fff;color:#0F766E;font-size:12px;font-weight:900;cursor:pointer">☰ 소식 모아보기</button>
+          <button id="clubNewsCalendarBtn" onclick="setClubNewsView('calendar')" style="padding:9px;border:1px solid rgba(255,255,255,.48);border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font-size:12px;font-weight:800;cursor:pointer">📅 달력으로 보기</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px">
+        <button id="clubNewsFilter-all" onclick="setClubNewsFilter('all')" class="stab active" style="white-space:nowrap">전체</button>
+        <button id="clubNewsFilter-notice" onclick="setClubNewsFilter('notice')" class="stab" style="white-space:nowrap">📢 공지</button>
+        <button id="clubNewsFilter-regular" onclick="setClubNewsFilter('regular')" class="stab" style="white-space:nowrap">🏆 정규시즌</button>
+        <button id="clubNewsFilter-event" onclick="setClubNewsFilter('event')" class="stab" style="white-space:nowrap">🎉 이벤트전</button>
+      </div>
+
       <!-- 월 캘린더 -->
-      <div id="scheduleCalendar" style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:14px;margin-bottom:16px"></div>
+      <div id="scheduleCalendar" style="display:none;background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:14px;margin-bottom:16px"></div>
 
       <!-- 관리자 공지 등록 (관리자만 표시) -->
-      <div id="scheduleNewSection" style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:16px;margin-bottom:16px">
-        <div style="font-size:14px;font-weight:800;color:#2563EB;margin-bottom:4px">📢 관리자 공지 등록</div>
+      <details id="scheduleNewSection" style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:14px 16px;margin-bottom:16px">
+        <summary style="font-size:14px;font-weight:800;color:#2563EB;cursor:pointer">📢 새 클럽 공지 등록</summary>
         <div style="font-size:11px;color:#64748B;margin-bottom:12px">정규시즌과 이벤트전은 자동으로 캘린더에 표시됩니다.</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <div>
@@ -595,15 +617,12 @@ tr:nth-child(even){background:#F5FCFB;}
           </div>
           <div>
             <div style="font-size:11px;color:#64748B;margin-bottom:4px">내용</div>
-            <textarea id="schContent" class="row-inp" placeholder="예: 주말 번개 모임! 끝나고 저녁 같이 먹어요" style="width:100%;font-size:13px;padding:9px;min-height:60px;resize:vertical;font-family:inherit"></textarea>
+            <textarea id="schContent" class="row-inp" placeholder="예: 이번 주 정기모임 장소와 시간을 안내합니다" style="width:100%;font-size:13px;padding:9px;min-height:60px;resize:vertical;font-family:inherit"></textarea>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
-            <input type="checkbox" id="schIsGameMeetup" style="width:16px;height:16px;cursor:pointer">
-            <label for="schIsGameMeetup" style="font-size:12px;color:#6D28D9;font-weight:700;cursor:pointer">🎾 게임모임으로 표시 (참석자끼리 페어를 짜서 게임할 수 있어요)</label>
-          </div>
+          <input type="checkbox" id="schIsGameMeetup" style="display:none">
           <button onclick="addSchedule()" class="btn-add" style="width:100%;margin-top:4px">📢 공지 등록</button>
         </div>
-      </div>
+      </details>
 
       <!-- 일정 목록 -->
       <div id="scheduleList"></div>
@@ -1355,6 +1374,10 @@ let evExchangeCurrentInputs = {};
 let calYear = new Date().getFullYear();
 let calMonth = new Date().getMonth();
 let calSelectedDate = null;
+let clubNewsView = 'feed';
+let clubNewsFilter = 'all';
+// 클럽 인스타그램 주소를 받으면 이 값만 채우면 상단 버튼이 자동으로 표시됩니다.
+const CLUB_INSTAGRAM_URL = '';
 let schedulePage = 0;
 let openCategory = null; // 홈 바로가기 펼쳐진 카테고리 ID (null=모두 접힘)
 const SCHEDULE_PER_PAGE = 5;
@@ -6499,7 +6522,7 @@ window.navTo = function(tab){
   }
 
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
-  const bucketMap = { home:'home', league:'league', analysis:'analysis', terra:'more', schedule:'home', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
+  const bucketMap = { home:'home', league:'league', analysis:'analysis', terra:'more', schedule:'more', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
   const bucket = bucketMap[tab] || 'more';
   const bnBtn = document.querySelector(`.bn-btn[data-bucket="${bucket}"]`);
   if (bnBtn) bnBtn.classList.add('active');
@@ -6547,6 +6570,12 @@ function initSchedule() {
   // "새 일정 올리기" 섹션: 관리자만 표시
   const newSection = document.getElementById('scheduleNewSection');
   if (newSection) newSection.style.display = isAdmin ? '' : 'none';
+  const instagramLink = document.getElementById('clubInstagramLink');
+  if (instagramLink) {
+    instagramLink.href = CLUB_INSTAGRAM_URL || '#';
+    instagramLink.style.display = CLUB_INSTAGRAM_URL ? 'inline-flex' : 'none';
+  }
+  applyClubNewsView();
   renderSchedules();
   // 마지막 확인 시각 저장 (NEW 배지 제거)
   try { localStorage.setItem('schLastSeen', Date.now()); } catch(e){}
@@ -6562,7 +6591,44 @@ function updateScheduleBadge() {
   badge.style.display = hasNew ? 'block' : 'none';
   const badgeBottom = document.getElementById('scheduleBadgeBottom');
   if (badgeBottom) badgeBottom.style.display = hasNew ? 'block' : 'none';
+  const badgeMore = document.getElementById('scheduleBadgeMore');
+  if (badgeMore) badgeMore.style.display = hasNew ? 'inline-block' : 'none';
 }
+
+function applyClubNewsView() {
+  const calendar = document.getElementById('scheduleCalendar');
+  const feedBtn = document.getElementById('clubNewsFeedBtn');
+  const calendarBtn = document.getElementById('clubNewsCalendarBtn');
+  if (calendar) calendar.style.display = clubNewsView === 'calendar' ? 'block' : 'none';
+  if (feedBtn) {
+    feedBtn.style.background = clubNewsView === 'feed' ? '#fff' : 'rgba(255,255,255,.12)';
+    feedBtn.style.color = clubNewsView === 'feed' ? '#0F766E' : '#fff';
+    feedBtn.style.border = clubNewsView === 'feed' ? 'none' : '1px solid rgba(255,255,255,.48)';
+  }
+  if (calendarBtn) {
+    calendarBtn.style.background = clubNewsView === 'calendar' ? '#fff' : 'rgba(255,255,255,.12)';
+    calendarBtn.style.color = clubNewsView === 'calendar' ? '#1D4ED8' : '#fff';
+    calendarBtn.style.border = clubNewsView === 'calendar' ? 'none' : '1px solid rgba(255,255,255,.48)';
+  }
+}
+
+window.setClubNewsView = function(view) {
+  clubNewsView = view === 'calendar' ? 'calendar' : 'feed';
+  applyClubNewsView();
+  if (clubNewsView === 'calendar') renderCalendar();
+};
+
+window.setClubNewsFilter = function(filter) {
+  clubNewsFilter = ['notice','regular','event'].includes(filter) ? filter : 'all';
+  ['all','notice','regular','event'].forEach(key => {
+    const btn = document.getElementById(`clubNewsFilter-${key}`);
+    if (btn) btn.classList.toggle('active', key === clubNewsFilter);
+  });
+  calSelectedDate = null;
+  schedulePage = 0;
+  renderCalendar();
+  renderSchedules();
+};
 
 window.addSchedule = async function() {
   const writer = document.getElementById('schWriter').value;
@@ -7435,10 +7501,10 @@ window.shareKakao = function(id) {
   if (!sch) return;
   const dateStr = sch.date ? new Date(sch.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '';
   const shareUrl = location.origin + location.pathname + '#schedule';
-  const text = `🎾 TBS 일정 공유\n\n📅 ${dateStr}${sch.time?' '+sch.time:''}\n📍 ${sch.place||'장소 미정'}\n\n${sch.content}\n\n👉 ${shareUrl}`;
+  const text = `📰 TBS 클럽소식\n\n📅 ${dateStr}${sch.time?' '+sch.time:''}\n📍 ${sch.place||'장소 미정'}\n\n${sch.content}\n\n👉 ${shareUrl}`;
   // 클립보드 복사 후 카카오톡 공유 안내
   if (navigator.share) {
-    navigator.share({ title:'TBS 일정 공유', text }).catch(()=>{});
+    navigator.share({ title:'TBS 클럽소식', text }).catch(()=>{});
   } else {
     navigator.clipboard.writeText(text).then(()=>{
       alert('📋 일정이 복사됐어요!\n카카오톡 단톡방에 붙여넣기 하세요 😊');
@@ -8487,6 +8553,17 @@ window.clearCalFilter = function(){
   renderSchedules();
 };
 
+window.openClubNewsItem = function(type, id) {
+  if (type === 'regular') {
+    goToGameDay(id);
+    return;
+  }
+  if (type === 'event') {
+    navTo('event');
+    openEventDetail(id);
+  }
+};
+
 function getClubCalendarItems(){
   const regular = days.map(d => ({
     type:'regular', date:d.date, title:`정규시즌 · ${d.place||'경기'}`,
@@ -8496,7 +8573,7 @@ function getClubCalendarItems(){
     type:'event', date:e.date, title:`이벤트전 · ${e.name||e.title||'이벤트'}`,
     detail:e.oppClub ? `상대: ${e.oppClub}` : (e.type||'이벤트전'), source:e
   }));
-  const notices = schedules.map(s => ({
+  const notices = schedules.filter(s => !s.isGameMeetup).map(s => ({
     type:'notice', date:s.date, title:s.content||'클럽 공지',
     detail:[s.time,s.place].filter(Boolean).join(' · ')||'관리자 공지', source:s
   }));
@@ -8515,7 +8592,7 @@ function renderCalendar(){
   for (let i=0;i<startDow;i++) cells.push('<div></div>');
   for (let d=1; d<=daysInMonth; d++){
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const items = getClubCalendarItems().filter(s=>s.date===dateStr);
+    const items = getClubCalendarItems().filter(s=>s.date===dateStr && (clubNewsFilter==='all' || s.type===clubNewsFilter));
     const hasRegular = items.some(s=>s.type==='regular');
     const hasEvent = items.some(s=>s.type==='event');
     const hasNotice = items.some(s=>s.type==='notice');
@@ -8552,6 +8629,7 @@ function renderSchedules() {
   const el = document.getElementById('scheduleList');
   if (!el) return;
   const clubItems = getClubCalendarItems()
+    .filter(item => clubNewsFilter === 'all' || item.type === clubNewsFilter)
     .filter(item => !calSelectedDate || item.date === calSelectedDate)
     .sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const typeStyle = {
@@ -8560,18 +8638,38 @@ function renderSchedules() {
     notice:{icon:'📢', label:'클럽 공지', color:'#D97706', bg:'rgba(245,158,11,0.08)'}
   };
   if (!clubItems.length) {
-    el.innerHTML = '<div class="empty">이번 기간에 등록된 클럽 일정이 없어요.</div>';
+    el.innerHTML = '<div class="empty">해당하는 클럽소식이 없어요.</div>';
     return;
   }
-  el.innerHTML = `<div style="font-size:16px;font-weight:900;color:#1E293B;margin:4px 0 10px">📅 클럽 일정</div>
-    <div style="font-size:11px;color:#64748B;margin-bottom:12px">정규시즌과 이벤트전은 자동으로 표시됩니다.</div>` + clubItems.map(item => {
+
+  const todayStr = new Date().toISOString().slice(0,10);
+  const cardHtml = item => {
       const s = typeStyle[item.type];
       const dateLabel = new Date(item.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
-      return `<div style="display:flex;gap:11px;align-items:center;background:${s.bg};border:1px solid ${s.color}33;border-radius:12px;padding:12px;margin-bottom:8px">
+      const sourceId = item.source?.id || '';
+      const clickable = item.type !== 'notice' && sourceId;
+      const openAction = clickable ? `onclick="openClubNewsItem('${item.type}','${sourceId}')"` : '';
+      const noticeActions = item.type === 'notice' && sourceId ? `<div style="display:flex;gap:6px;margin-top:9px"><button onclick="shareKakao('${sourceId}')" style="padding:6px 9px;background:#FEE500;border:none;border-radius:7px;color:#3c1e1e;font-size:10px;font-weight:800;cursor:pointer">💬 공유</button><button onclick="openGoogleCal('${sourceId}')" style="padding:6px 9px;background:#fff;border:1px solid #D7E3E2;border-radius:7px;color:#475569;font-size:10px;font-weight:800;cursor:pointer">📅 캘린더 추가</button></div>` : '';
+      return `<div ${openAction} style="display:flex;gap:11px;align-items:center;background:${s.bg};border:1px solid ${s.color}33;border-radius:12px;padding:12px;margin-bottom:8px;${clickable?'cursor:pointer':''}">
         <div style="font-size:22px">${s.icon}</div>
-        <div style="min-width:0;flex:1"><div style="font-size:10px;font-weight:800;color:${s.color};margin-bottom:3px">${s.label} · ${dateLabel}</div><div style="font-size:13px;font-weight:800;color:#1E293B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.title}</div><div style="font-size:11px;color:#64748B;margin-top:3px">${item.detail}</div></div>
+        <div style="min-width:0;flex:1"><div style="font-size:10px;font-weight:800;color:${s.color};margin-bottom:3px">${s.label} · ${dateLabel}</div><div style="font-size:13px;font-weight:800;color:#1E293B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.title}</div><div style="font-size:11px;color:#64748B;margin-top:3px">${item.detail}${clickable?' · 상세보기 ›':''}</div>${noticeActions}</div>
       </div>`;
-    }).join('');
+  };
+
+  if (calSelectedDate) {
+    el.innerHTML = `<div style="font-size:15px;font-weight:900;color:#1E293B;margin:4px 0 10px">📅 ${calSelectedDate} 소식</div>` + clubItems.map(cardHtml).join('');
+    return;
+  }
+
+  const upcoming = clubItems.filter(item => item.date >= todayStr).sort((a,b)=>a.date.localeCompare(b.date)).slice(0,8);
+  const recent = clubItems.filter(item => item.date < todayStr).sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  const upcomingHtml = upcoming.length
+    ? `<div style="font-size:15px;font-weight:900;color:#1E293B;margin:4px 0 10px">📌 다가오는 소식</div>${upcoming.map(cardHtml).join('')}`
+    : `<div style="font-size:12px;color:#64748B;background:#F8FBFB;border:1px solid #DCEAE9;border-radius:12px;padding:14px;margin-bottom:14px">예정된 소식이 없어요.</div>`;
+  const recentHtml = recent.length
+    ? `<div style="font-size:15px;font-weight:900;color:#1E293B;margin:18px 0 10px">🕘 지난 소식</div>${recent.map(cardHtml).join('')}`
+    : '';
+  el.innerHTML = upcomingHtml + recentHtml;
   return;
   if (!schedules.length) {
     el.innerHTML = '<div style="text-align:center;padding:30px;color:#64748B;font-size:13px">아직 등록된 일정이 없어요 📭<br>위에서 첫 일정을 올려보세요!</div>';
