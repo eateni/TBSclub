@@ -103,6 +103,32 @@ body::after {
 .home-card-pair > div { -webkit-flex:1; flex:1; min-width:0; }
 @media (max-width:360px) { .home-card-pair { -webkit-flex-direction:column; flex-direction:column; } }
 
+/* 홈 웰컴 카드: 데스크톱은 한 화면, 모바일은 달력을 접어서 분리 */
+.home-mobile-calendar { display:none; }
+@media (max-width:480px) {
+  .home-welcome-hero { padding:16px 14px 14px !important; }
+  .home-welcome-row { display:block !important; }
+  .home-welcome-copy { width:100%; }
+  .home-mini-cal-desktop { display:none !important; }
+  .home-mobile-calendar {
+    display:block; margin-top:13px; border-radius:12px;
+    background:rgba(0,0,0,0.28); border:1px solid rgba(255,255,255,0.16);
+    overflow:hidden;
+  }
+  .home-mobile-calendar summary {
+    list-style:none; cursor:pointer; padding:10px 12px; color:#E0F2FE;
+    font-size:12px; font-weight:800; display:flex; align-items:center;
+    justify-content:space-between; -webkit-tap-highlight-color:transparent;
+  }
+  .home-mobile-calendar summary::-webkit-details-marker { display:none; }
+  .home-mobile-calendar summary::after { content:'펼치기 ＋'; color:#A7F3D0; font-size:10px; }
+  .home-mobile-calendar[open] summary { border-bottom:1px solid rgba(255,255,255,0.14); }
+  .home-mobile-calendar[open] summary::after { content:'접기 －'; }
+  .home-mobile-calendar-body { display:flex; justify-content:center; padding:12px 8px 14px; }
+  .home-season-meta { margin-top:9px !important; font-size:12px !important; }
+  .home-banner-summary { margin-top:12px !important; padding:10px 11px 0 !important; }
+}
+
 .round-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
 .round-card { background:#FFFFFF; border-radius:12px; overflow:hidden; border:1px solid #C8E0DE; box-shadow:0 2px 12px rgba(0,0,0,0.4); }
 .round-hdr { width:100%; padding:14px 16px; background:transparent; border:none; color:#1E293B; display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; font-size:14px; }
@@ -7947,7 +7973,7 @@ function renderHomeTab() {
     }
     if (bParts.length) {
       bannerSummaryHtml = `
-        <div style="border-top:1px solid rgba(255,255,255,0.18);margin-top:12px;padding-top:10px;display:flex;flex-direction:column;gap:6px">
+        <div class="home-banner-summary" style="border-top:1px solid rgba(255,255,255,0.18);margin-top:12px;padding-top:10px;display:flex;flex-direction:column;gap:6px">
           <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.5px;margin-bottom:1px">다가오는 일정</div>
           ${bParts.join('')}
         </div>`;
@@ -8197,11 +8223,11 @@ function renderHomeTab() {
       ${annBannerHtml}
 
       <!-- 웰컴 배너 -->
-      <div style="background-image:linear-gradient(rgba(0,0,0,0.70),rgba(0,0,0,0.80)),url('${bgUrl}');background-size:cover;background-position:center;background-color:#1e40af;border-radius:18px;padding:18px 16px 16px;margin-bottom:12px;position:relative;overflow:hidden">
+      <div class="home-welcome-hero" style="background-image:linear-gradient(rgba(0,0,0,0.70),rgba(0,0,0,0.80)),url('${bgUrl}');background-size:cover;background-position:center;background-color:#1e40af;border-radius:18px;padding:18px 16px 16px;margin-bottom:12px;position:relative;overflow:hidden">
         <div style="position:absolute;top:-24px;right:-16px;font-size:90px;opacity:0.07;pointer-events:none;user-select:none">🎾</div>
-        <div style="display:flex;align-items:flex-start;gap:10px;position:relative">
+        <div class="home-welcome-row" style="display:flex;align-items:flex-start;gap:10px;position:relative">
           <!-- 좌측: 인사말 -->
-          <div style="flex:1;min-width:0">
+          <div class="home-welcome-copy" style="flex:1;min-width:0">
             <div style="font-size:17px;font-weight:900;color:#fff;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-shadow:0 1px 4px rgba(0,0,0,0.6)">${welcomeName}</div>
             <div style="font-size:13px;color:rgba(200,225,255,0.8);margin-bottom:12px">${subMsg}</div>
             <div style="display:-webkit-flex;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;align-items:center;gap:6px">
@@ -8213,11 +8239,15 @@ function renderHomeTab() {
                 <span style="font-size:11px;font-weight:700;color:rgba(253,230,138,0.9)">S${currentSeason} 진행중</span>
               </div>
             </div>
-            <div style="margin-top:8px;font-size:13px;font-weight:800;color:rgba(255,255,255,0.8);text-shadow:0 1px 3px rgba(0,0,0,0.5);white-space:nowrap">시즌${currentSeason} / ${seasonRoundCount}라운드 / ${seasonGameCount}게임</div>
+            <div class="home-season-meta" style="margin-top:8px;font-size:13px;font-weight:800;color:rgba(255,255,255,0.8);text-shadow:0 1px 3px rgba(0,0,0,0.5);white-space:nowrap">시즌${currentSeason} / ${seasonRoundCount}라운드 / ${seasonGameCount}게임</div>
           </div>
           <!-- 우측: 미니 캘린더 -->
-          <div style="background:rgba(0,0,0,0.22);border-radius:10px;padding:4px 6px">${miniCalHtml}</div>
+          <div class="home-mini-cal-desktop" style="background:rgba(0,0,0,0.22);border-radius:10px;padding:4px 6px">${miniCalHtml}</div>
         </div>
+        <details class="home-mobile-calendar">
+          <summary>📅 ${calM + 1}월 경기 일정</summary>
+          <div class="home-mobile-calendar-body">${miniCalHtml}</div>
+        </details>
         ${bannerSummaryHtml}
       </div>
 
