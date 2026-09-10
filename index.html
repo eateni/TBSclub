@@ -8066,10 +8066,11 @@ function renderHomeTab() {
     const hChips=buildDayBadgesHtml(hBadges||[]);
     const hDateLabel=_hDay.date?new Date(_hDay.date).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}):'';
     if(hChips||hSummary){
-      highlightHtml='<div style="background:#FAFAFA;border:1px solid rgba(13,148,136,0.22);border-radius:14px;padding:14px 16px;margin-bottom:12px">'
-        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div style="font-size:12px;font-weight:800;color:#059669">✨ 하이라이트 · <span style="color:#64748B;font-weight:400;font-size:11px">'+hDateLabel+'</span></div><button onclick="shareDayHighlightCard(\''+_hDay.id+'\')" style="border:1px solid rgba(13,148,136,.38);background:#fff;color:#047857;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">🖼️ 카드 공유</button></div>'
-        +hChips
-        +(hSummary?'<div style="font-size:11px;color:#475569;line-height:1.7;margin-top:8px;padding:8px 10px;background:rgba(13,148,136,0.05);border-radius:8px;border-left:2px solid rgba(13,148,136,0.2)">'+hSummary+'</div>':'')
+      const hMatchCount=(_hDay.rounds||[]).reduce(function(n,r){return n+(r.matches||[]).filter(function(m){return m.done&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식';}).length;},0);
+      highlightHtml='<div onclick="goToGameDay(\''+_hDay.id+'\')" style="cursor:pointer;background:linear-gradient(135deg,#063047,#0B6770);border:1px solid rgba(94,234,212,.46);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 5px 16px rgba(6,48,71,.18);position:relative;overflow:hidden">'
+        +'<div style="position:absolute;right:-7px;bottom:-30px;font-size:110px;opacity:.08;pointer-events:none">🎾</div>'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;position:relative"><div><div style="font-size:11px;color:#A7F3D0;font-weight:900;letter-spacing:.4px">📰 최신 하이라이트</div><div style="font-size:18px;color:#fff;font-weight:900;margin-top:4px">'+hDateLabel+'</div><div style="font-size:11px;color:rgba(226,255,250,.76);margin-top:3px">정규시즌 · '+hMatchCount+'경기 완료 · 상세 보기 ›</div></div><button onclick="event.stopPropagation();shareDayHighlightCard(\''+_hDay.id+'\')" style="border:1px solid rgba(255,255,255,.54);background:#F6FFFD;color:#047857;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap">🖼️ 카드 공유</button></div>'
+        +'<div style="margin-top:12px;padding:11px 12px;border-radius:11px;background:rgba(255,255,255,.95);position:relative">'+hChips+(hSummary?'<div style="font-size:12px;color:#334155;line-height:1.65;margin-top:'+(hChips?'9':'0')+'px">'+hSummary+'</div>':'')+'</div>'
         +'</div>';
     }
   }
@@ -8338,6 +8339,12 @@ window.showAttendList = function(dayId) {
 
 // 홈 "다음 게임" 카드 클릭 → 정규리그 탭 해당 날짜 아코디언 열고 스크롤
 window.goToGameDay = function(dayId) {
+  const targetDay = days.find(d => d.id === dayId);
+  if (targetDay && viewSeason !== (targetDay.season || 1)) {
+    viewSeason = targetDay.season || 1;
+    seasonUserPicked = (viewSeason !== currentSeason);
+    renderAll();
+  }
   navTo('league');
   setTimeout(function() {
     const bracketBtn = document.querySelector('#tab-league .stab:nth-child(1)');
