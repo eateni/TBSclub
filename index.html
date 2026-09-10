@@ -569,61 +569,6 @@ tr:nth-child(even){background:#F5FCFB;}
       <!-- 월 캘린더 -->
       <div id="scheduleCalendar" style="display:none;background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:14px;margin-bottom:16px"></div>
 
-      <!-- 관리자 공지 등록 (관리자만 표시) -->
-      <details id="scheduleNewSection" style="background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:14px 16px;margin-bottom:16px">
-        <summary style="font-size:14px;font-weight:800;color:#2563EB;cursor:pointer">📢 새 클럽 공지 등록</summary>
-        <div style="font-size:11px;color:#64748B;margin-bottom:12px">정규시즌과 이벤트전은 자동으로 캘린더에 표시됩니다.</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div>
-            <div style="font-size:11px;color:#64748B;margin-bottom:4px">작성자</div>
-            <select id="schWriter" class="row-sel" style="width:100%;font-size:13px;padding:9px">
-              <option value="">이름 선택</option>
-            </select>
-            <div id="schWriterLockNotice" style="display:none;font-size:10px;color:#059669;margin-top:4px">🔒 로그인한 본인 이름으로 자동 설정됨</div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-            <div>
-              <div style="font-size:11px;color:#64748B;margin-bottom:4px">날짜</div>
-              <input type="date" id="schDate" class="row-inp" style="width:100%;font-size:13px;padding:9px">
-            </div>
-            <div>
-              <div style="font-size:11px;color:#64748B;margin-bottom:4px">시간</div>
-              <select id="schTime" class="row-sel" style="width:100%;font-size:13px;padding:9px">
-                <option value="">시간 선택</option>
-                <option value="오전 6시">오전 6시</option>
-                <option value="오전 7시">오전 7시</option>
-                <option value="오전 8시">오전 8시</option>
-                <option value="오전 9시">오전 9시</option>
-                <option value="오전 10시">오전 10시</option>
-                <option value="오전 11시">오전 11시</option>
-                <option value="낮 12시">낮 12시</option>
-                <option value="오후 1시">오후 1시</option>
-                <option value="오후 2시">오후 2시</option>
-                <option value="오후 3시">오후 3시</option>
-                <option value="오후 4시">오후 4시</option>
-                <option value="오후 5시">오후 5시</option>
-                <option value="오후 6시">오후 6시</option>
-                <option value="오후 7시">오후 7시</option>
-                <option value="오후 8시">오후 8시</option>
-                <option value="오후 9시">오후 9시</option>
-                <option value="오후 10시">오후 10시</option>
-                <option value="오후 11시">오후 11시</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:11px;color:#64748B;margin-bottom:4px">장소</div>
-            <input id="schPlace" class="row-inp" placeholder="예: 포동 테니스장" style="width:100%;font-size:13px;padding:9px">
-          </div>
-          <div>
-            <div style="font-size:11px;color:#64748B;margin-bottom:4px">내용</div>
-            <textarea id="schContent" class="row-inp" placeholder="예: 이번 주 정기모임 장소와 시간을 안내합니다" style="width:100%;font-size:13px;padding:9px;min-height:60px;resize:vertical;font-family:inherit"></textarea>
-          </div>
-          <input type="checkbox" id="schIsGameMeetup" style="display:none">
-          <button onclick="addSchedule()" class="btn-add" style="width:100%;margin-top:4px">📢 공지 등록</button>
-        </div>
-      </details>
-
       <!-- 일정 목록 -->
       <div id="scheduleList"></div>
     </div>
@@ -6392,7 +6337,7 @@ window.createAnnouncement = async function(){
   const active = document.getElementById('annActiveChk').checked;
   const displayType = document.querySelector('input[name="annDisplayType"]:checked')?.value || 'banner';
   try {
-    const ref = await addDoc(collection(db,'announcements'), { title, content, active, displayType, updatedAt: serverTimestamp() });
+    const ref = await addDoc(collection(db,'announcements'), { title, content, active, displayType, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
     announcements.push({ id: ref.id, title, content, active, displayType });
     document.getElementById('annTitleInp').value = '';
     document.getElementById('annContentInp').value = '';
@@ -6587,7 +6532,10 @@ function updateScheduleBadge() {
   if (!badge) return;
   let lastSeen = 0;
   try { lastSeen = parseInt(localStorage.getItem('schLastSeen')||'0'); } catch(e){}
-  const hasNew = schedules.some(s => (s.createdAt?.toMillis ? s.createdAt.toMillis() : s.ts||0) > lastSeen);
+  const hasNew = announcements.some(a => {
+    const stamp = a.createdAt || a.updatedAt;
+    return (stamp?.toMillis ? stamp.toMillis() : (stamp?.seconds||0)*1000) > lastSeen;
+  });
   badge.style.display = hasNew ? 'block' : 'none';
   const badgeBottom = document.getElementById('scheduleBadgeBottom');
   if (badgeBottom) badgeBottom.style.display = hasNew ? 'block' : 'none';
@@ -7510,6 +7458,22 @@ window.shareKakao = function(id) {
       alert('📋 일정이 복사됐어요!\n카카오톡 단톡방에 붙여넣기 하세요 😊');
     }).catch(()=>{
       prompt('아래 내용을 복사해서 카톡에 붙여넣으세요:', text);
+    });
+  }
+};
+
+window.shareAnnouncement = function(id) {
+  const ann = announcements.find(a => a.id === id);
+  if (!ann) return;
+  const shareUrl = location.origin + location.pathname + '#schedule';
+  const text = `📰 TBS 클럽소식\n\n${ann.title}\n\n${ann.content}\n\n👉 ${shareUrl}`;
+  if (navigator.share) {
+    navigator.share({ title:ann.title || 'TBS 클럽소식', text }).catch(()=>{});
+  } else {
+    navigator.clipboard.writeText(text).then(()=>{
+      alert('📋 공지 내용이 복사됐어요!\n카카오톡에 붙여넣어 공유하세요.');
+    }).catch(()=>{
+      prompt('아래 내용을 복사해서 공유하세요:', text);
     });
   }
 };
@@ -8573,10 +8537,19 @@ function getClubCalendarItems(){
     type:'event', date:e.date, title:`이벤트전 · ${e.name||e.title||'이벤트'}`,
     detail:e.oppClub ? `상대: ${e.oppClub}` : (e.type||'이벤트전'), source:e
   }));
-  const notices = schedules.filter(s => !s.isGameMeetup).map(s => ({
-    type:'notice', date:s.date, title:s.content||'클럽 공지',
-    detail:[s.time,s.place].filter(Boolean).join(' · ')||'관리자 공지', source:s
-  }));
+  const notices = announcements.map(a => {
+    const stamp = a.createdAt || a.updatedAt;
+    let published = null;
+    if (stamp?.toDate) published = stamp.toDate();
+    else if (stamp?.seconds) published = new Date(stamp.seconds * 1000);
+    const date = published && !isNaN(published)
+      ? `${published.getFullYear()}-${String(published.getMonth()+1).padStart(2,'0')}-${String(published.getDate()).padStart(2,'0')}`
+      : '';
+    return {
+      type:'notice', date, title:a.title||'클럽 공지',
+      detail:a.content||'', source:a
+    };
+  });
   return [...regular,...eventItems,...notices].filter(x=>x.date);
 }
 
@@ -8649,10 +8622,10 @@ function renderSchedules() {
       const sourceId = item.source?.id || '';
       const clickable = item.type !== 'notice' && sourceId;
       const openAction = clickable ? `onclick="openClubNewsItem('${item.type}','${sourceId}')"` : '';
-      const noticeActions = item.type === 'notice' && sourceId ? `<div style="display:flex;gap:6px;margin-top:9px"><button onclick="shareKakao('${sourceId}')" style="padding:6px 9px;background:#FEE500;border:none;border-radius:7px;color:#3c1e1e;font-size:10px;font-weight:800;cursor:pointer">💬 공유</button><button onclick="openGoogleCal('${sourceId}')" style="padding:6px 9px;background:#fff;border:1px solid #D7E3E2;border-radius:7px;color:#475569;font-size:10px;font-weight:800;cursor:pointer">📅 캘린더 추가</button></div>` : '';
+      const noticeActions = item.type === 'notice' && sourceId ? `<div style="display:flex;gap:6px;margin-top:9px"><button onclick="shareAnnouncement('${sourceId}')" style="padding:6px 9px;background:#FEE500;border:none;border-radius:7px;color:#3c1e1e;font-size:10px;font-weight:800;cursor:pointer">💬 공유</button></div>` : '';
       return `<div ${openAction} style="display:flex;gap:11px;align-items:center;background:${s.bg};border:1px solid ${s.color}33;border-radius:12px;padding:12px;margin-bottom:8px;${clickable?'cursor:pointer':''}">
         <div style="font-size:22px">${s.icon}</div>
-        <div style="min-width:0;flex:1"><div style="font-size:10px;font-weight:800;color:${s.color};margin-bottom:3px">${s.label} · ${dateLabel}</div><div style="font-size:13px;font-weight:800;color:#1E293B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.title}</div><div style="font-size:11px;color:#64748B;margin-top:3px">${item.detail}${clickable?' · 상세보기 ›':''}</div>${noticeActions}</div>
+        <div style="min-width:0;flex:1"><div style="font-size:10px;font-weight:800;color:${s.color};margin-bottom:3px">${s.label} · ${dateLabel}</div><div style="font-size:13px;font-weight:800;color:#1E293B;${item.type==='notice'?'line-height:1.45':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis'}">${item.title}</div><div style="font-size:11px;color:#64748B;margin-top:3px;line-height:1.5;${item.type==='notice'?'white-space:pre-wrap':''}">${item.detail}${clickable?' · 상세보기 ›':''}</div>${noticeActions}</div>
       </div>`;
   };
 
@@ -11129,6 +11102,9 @@ onSnapshot(collection(db,'boardPosts'), snap => {
 onSnapshot(collection(db,'announcements'), snap => {
   announcements = snap.docs.map(d=>({id:d.id,...d.data()}));
   renderHomeTab();
+  renderCalendar();
+  renderSchedules();
+  updateScheduleBadge();
   renderAdminAnnouncements();
   triggerAnnPopups();
 });
