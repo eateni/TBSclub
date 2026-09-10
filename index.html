@@ -457,6 +457,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <button class="stab" onclick="switchSub('ranking',this)">랭킹</button>
         <button class="stab" onclick="switchSub('analysis',this)">개인별</button>
         <button class="stab" onclick="switchSub('pairs',this)">👫 페어랭킹</button>
+        <button class="stab" onclick="switchSub('report',this)">✨ 시즌 리포트</button>
       </div>
       <div id="sub-bracket">
         <div class="sec-header" style="color:#f59e0b">🏆 실시간 순위</div>
@@ -490,6 +491,10 @@ tr:nth-child(even){background:#F5FCFB;}
           <button id="pairScopeMember" class="stab" onclick="setPairScope('member')" style="flex:1">정회원만</button>
         </div>
         <div id="pairRankingBody"></div>
+      </div>
+
+      <div id="sub-report" style="display:none">
+        <div id="seasonReportBody"></div>
       </div>
     </div>
 
@@ -2044,6 +2049,89 @@ function calcStats() {
   return [...withRank, ...guestWithRank];
 }
 
+// ── 시즌 리포트 (현재 선택한 시즌 기준, 정회원만 집계) ──────────────
+function renderSeasonReport() {
+  const el = document.getElementById('seasonReportBody');
+  if (!el) return;
+  const regularNames = new Set(members.map(m => m.name));
+  const stats = calcStats().filter(s => !s.isGuest);
+  const played = stats.filter(s => s.games > 0);
+  const seasonDays = days.filter(d => (d.season || 1) === viewSeason);
+  const doneMatches = allRounds().flatMap(r => r.matches || []).filter(m => m.done && !m.isRally && m.tag !== '랠리');
+
+  if (!played.length) {
+    el.innerHTML = `<div class="empty" style="margin-top:16px">시즌 ${viewSeason}의 완료된 경기 결과가 아직 없어요.</div>`;
+    return;
+  }
+
+  const top = [...played].sort((a,b) => a.rank - b.rank || b.pts - a.pts || b.diff - a.diff || b.wins - a.wins);
+  const mvp = top[0];
+  const attendance = [...stats].sort((a,b) => b.attendance - a.attendance || b.games - a.games || a.name.localeCompare(b.name,'ko'))[0];
+
+  // 경기 날짜 순서로 승패를 이어 붙여 최장 연승을 계산한다.
+  const sequences = {};
+  stats.forEach(s => { sequences[s.name] = { current:0, longest:0 }; });
+  [...allRounds()].sort((a,b) => String(a.date || '').localeCompare(String(b.date || ''))).forEach(r => {
+    (r.matches || []).filter(m => m.done && !m.isRally && m.tag !== '랠리').forEach(m => {
+      const apply = (team, won) => (team || []).forEach(name => {
+        if (!sequences[name]) return;
+        if (won) {
+          sequences[name].current++;
+          sequences[name].longest = Math.max(sequences[name].longest, sequences[name].current);
+        } else sequences[name].current = 0;
+      });
+      if (m.score1 > m.score2) { apply(m.team1, true); apply(m.team2, false); }
+      else if (m.score2 > m.score1) { apply(m.team2, true); apply(m.team1, false); }
+      else { apply(m.team1, false); apply(m.team2, false); }
+    });
+  });
+  const streak = Object.entries(sequences)
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((a,b) => b.longest - a.longest || b.current - a.current || a.name.localeCompare(b.name,'ko'))[0];
+
+  // 같은 팀으로 뛴 정회원 두 명의 조합만 베스트 파트너로 표시한다.
+  const pairs = {};
+  doneMatches.forEach(m => {
+    [[m.team1, m.score1, m.score2], [m.team2, m.score2, m.score1]].forEach(([team, mine, theirs]) => {
+      const names = (team || []).filter(name => regularNames.has(name));
+      if (names.length !== 2) return;
+      const key = [...names].sort().join(' · ');
+      if (!pairs[key]) pairs[key] = { names:[...names].sort(), games:0, wins:0, draws:0, diff:0 };
+      const p = pairs[key]; p.games++; p.diff += Number(mine || 0) - Number(theirs || 0);
+      if (mine > theirs) p.wins++; else if (mine === theirs) p.draws++;
+    });
+  });
+  const bestPair = Object.values(pairs).sort((a,b) =>
+    b.wins - a.wins || (b.wins / b.games) - (a.wins / a.games) || b.diff - a.diff || b.games - a.games
+  )[0];
+  const winRate = s => s.games ? Math.round(s.wins / s.games * 100) : 0;
+  const rankRows = top.slice(0,5).map(s => `
+    <div style="display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:7px;padding:9px 2px;border-bottom:1px solid #E5F1F0">
+      <b style="color:${s.rank===1?'#D97706':'#64748B'}">${s.rank}</b>
+      <span style="font-weight:800;color:#1E293B">${s.name}</span>
+      <span style="color:#2563EB;font-weight:800">${s.pts}점 <small style="color:#64748B;font-weight:600">${s.wins}승 ${s.draws}무 ${s.losses}패</small></span>
+    </div>`).join('');
+
+  el.innerHTML = `
+    <div style="margin-top:16px;padding:16px;border:1px solid #BFE4DC;border-radius:16px;background:linear-gradient(135deg,#F1FCF8,#F8FAFF)">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div><div style="font-size:19px;font-weight:900;color:#047857">✨ 시즌 ${viewSeason} 리포트</div><div style="font-size:11px;color:#64748B;margin-top:4px">정규회원 · 입력 완료된 정규시즌 경기 기준</div></div>
+        <span style="padding:6px 9px;border-radius:99px;background:#DCFCE7;color:#047857;font-size:11px;font-weight:800">${seasonDays.length}일 · ${doneMatches.length}경기</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px">
+        <div style="padding:12px;border-radius:12px;background:#FFF8E8;border:1px solid #FAD68A"><div style="font-size:11px;color:#B45309;font-weight:800">🏆 시즌 MVP</div><b style="display:block;font-size:17px;color:#1E293B;margin-top:5px">${mvp.name}</b><span style="font-size:12px;color:#64748B">${mvp.pts}점 · ${mvp.wins}승 · 득실 ${mvp.diff>=0?'+':''}${mvp.diff}</span></div>
+        <div style="padding:12px;border-radius:12px;background:#EEF8FF;border:1px solid #BFDBFE"><div style="font-size:11px;color:#2563EB;font-weight:800">📅 출석왕</div><b style="display:block;font-size:17px;color:#1E293B;margin-top:5px">${attendance.name}</b><span style="font-size:12px;color:#64748B">출석 ${attendance.attendance}일 · ${attendance.games}경기</span></div>
+        <div style="padding:12px;border-radius:12px;background:#FFF1F2;border:1px solid #FECDD3"><div style="font-size:11px;color:#E11D48;font-weight:800">🔥 연승왕</div><b style="display:block;font-size:17px;color:#1E293B;margin-top:5px">${streak.longest ? streak.name : '기록 없음'}</b><span style="font-size:12px;color:#64748B">최장 ${streak.longest}연승${streak.current ? ` · 현재 ${streak.current}연승` : ''}</span></div>
+        <div style="padding:12px;border-radius:12px;background:#F3E8FF;border:1px solid #DDD6FE"><div style="font-size:11px;color:#7C3AED;font-weight:800">🤝 베스트 파트너</div><b style="display:block;font-size:15px;color:#1E293B;margin-top:5px">${bestPair ? bestPair.names.join(' · ') : '기록 없음'}</b><span style="font-size:12px;color:#64748B">${bestPair ? `${bestPair.wins}승 ${bestPair.draws}무 · 승률 ${Math.round(bestPair.wins / bestPair.games * 100)}%` : '같은 팀 경기부터 집계돼요'}</span></div>
+      </div>
+    </div>
+    <div style="margin-top:14px;padding:14px 16px;border-radius:14px;background:#F8FFFE;border:1px solid #C8E0DE">
+      <div style="font-size:15px;font-weight:900;color:#1E293B">🏅 시즌 순위 TOP 5</div>
+      <div style="margin-top:7px">${rankRows}</div>
+      <div style="font-size:11px;color:#64748B;margin-top:10px">MVP는 승점 → 득실 → 승수 순으로 정합니다. 승률은 참고 지표예요.</div>
+    </div>`;
+}
+
 // ── 페어 랭킹 ──────────────────────────────────────────────────────
 let pairScope = 'all';
 
@@ -3380,6 +3468,7 @@ function renderAll() {
   const stats = calcStats();
   renderTop3(stats); renderDays(); renderStats(stats);
   renderRanking(stats); renderAnalysis(stats); renderAdmin();
+  renderSeasonReport();
   renderSeasonSelect();
   fillScheduleWriter();
   renderHomeTab();
@@ -8774,10 +8863,11 @@ window.getFortune = function() {
   }, 800);
 };
 window.switchSub=function(sub,btn){
-  ['bracket','ranking','analysis','pairs'].forEach(s=>document.getElementById('sub-'+s).style.display=s===sub?'block':'none');
+  ['bracket','ranking','analysis','pairs','report'].forEach(s=>document.getElementById('sub-'+s).style.display=s===sub?'block':'none');
   document.querySelectorAll('#tab-league .stab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   if (sub === 'pairs') renderPairRanking();
+  if (sub === 'report') renderSeasonReport();
   // 랭킹 서브탭에서는 topCardsRow 내 기록 카드 숨김
   const rc = document.getElementById('myRecordCard');
   if (rc) {
