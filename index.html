@@ -3654,7 +3654,7 @@ function renderDays() {
       const chipsHtml=buildDayBadgesHtml(dBadges||[]);
       if(chipsHtml||dSummary){
         daySummaryHtml='<div style="margin-top:10px;padding:12px;background:rgba(13,148,136,0.04);border-radius:10px;border:1px solid rgba(13,148,136,0.12)">'
-          +'<div style="font-size:11px;font-weight:800;color:#059669;margin-bottom:6px">✨ 오늘의 하이라이트</div>'
+          +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="font-size:11px;font-weight:800;color:#059669">✨ 오늘의 하이라이트</div><button onclick="shareDayHighlightCard(\''+day.id+'\')" style="border:1px solid rgba(13,148,136,.38);background:#fff;color:#047857;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer">🖼️ 카드 공유</button></div>'
           +chipsHtml
           +(dSummary?'<div style="font-size:11px;color:#475569;line-height:1.7;margin-top:'+(chipsHtml?'8':'0')+'px;padding:8px 10px;background:rgba(13,148,136,0.05);border-radius:8px;border-left:2px solid rgba(13,148,136,0.2)">'+dSummary+'</div>':'')
           +'</div>';
@@ -4871,6 +4871,61 @@ function buildDayBadgesHtml(badges) {
   if(!chips.length)return '';
   return '<div style="display:flex;flex-wrap:wrap;gap:5px">'+chips.join('')+'</div>';
 }
+
+// 현재 화면의 하이라이트 문구를 그대로 담은 공유용 이미지 카드
+function _highlightBadgeLabel(b) {
+  if (b.type==='mvp') return '🏅 MVP · '+b.name+' ('+b.wins+'승)';
+  if (b.type==='streak') return '🔥 연승왕 · '+b.name+' ('+b.count+'연승)';
+  if (b.type==='unbeaten') return '💯 무패 · '+b.names.join(', ');
+  if (b.type==='breadking') return '🥖 제빵왕 · '+b.names.join(', ');
+  return '';
+}
+function _cardRoundRect(ctx,x,y,w,h,r) {
+  const rr=Math.min(r,w/2,h/2); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr); ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath();
+}
+function _cardWrap(ctx,text,maxWidth) {
+  const lines=[]; let line='';
+  for (const ch of String(text||'')) {
+    const next=line+ch;
+    if (ctx.measureText(next).width>maxWidth && line) { lines.push(line); line=ch; }
+    else line=next;
+  }
+  if(line) lines.push(line); return lines;
+}
+window.shareDayHighlightCard = async function(dayId) {
+  const day=days.find(d=>d.id===dayId); if(!day) return;
+  let badges=day.dayBadges||[]; let summary=day.daySummary||'';
+  if(!badges.length || !summary) {
+    const norm=_getAllMatchHistory(day.date).filter(h=>h.date===day.date);
+    badges=buildDayBadges(norm,day.date); summary=buildDaySummary(norm,badges,day.date);
+  }
+  if(!badges.length && !summary) { alert('완료된 경기 하이라이트가 아직 없어요.'); return; }
+  const canvas=document.createElement('canvas'); canvas.width=1080; canvas.height=1350;
+  const ctx=canvas.getContext('2d');
+  const bg=ctx.createLinearGradient(0,0,1080,1350); bg.addColorStop(0,'#061D35'); bg.addColorStop(.55,'#0D3E55'); bg.addColorStop(1,'#061C2D'); ctx.fillStyle=bg; ctx.fillRect(0,0,1080,1350);
+  // 코트 라인처럼 은은한 배경 장식
+  ctx.strokeStyle='rgba(255,211,110,.22)'; ctx.lineWidth=4; ctx.strokeRect(78,95,924,1160); ctx.beginPath(); ctx.moveTo(78,675); ctx.lineTo(1002,675); ctx.moveTo(540,95); ctx.lineTo(540,1255); ctx.stroke();
+  ctx.fillStyle='#F7D47A'; ctx.font='700 42px Arial, sans-serif'; ctx.textAlign='center'; ctx.fillText('TBS HISTORY',540,170);
+  ctx.fillStyle='rgba(255,255,255,.84)'; ctx.font='500 25px Arial, sans-serif'; const dLabel=day.date?new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}):'정규시즌'; ctx.fillText('🎾 '+dLabel+' · 정규시즌',540,220);
+  ctx.textAlign='left'; _cardRoundRect(ctx,115,290,850,760,34); ctx.fillStyle='rgba(248,255,254,.96)'; ctx.fill();
+  ctx.fillStyle='#059669'; ctx.font='800 48px Arial, sans-serif'; ctx.fillText('✨ 오늘의 하이라이트',170,385);
+  let y=445;
+  badges.slice(0,4).forEach((b,i)=>{
+    const label=_highlightBadgeLabel(b); if(!label)return;
+    const colors=['#FFF4D8','#FFF0F2','#EAF9F4','#F3EEFF']; const strokes=['#F3B84A','#FB7185','#34D399','#A78BFA'];
+    ctx.font='700 29px Arial, sans-serif'; const width=Math.min(740,ctx.measureText(label).width+66);
+    _cardRoundRect(ctx,170,y,width,58,29); ctx.fillStyle=colors[i]; ctx.fill(); ctx.strokeStyle=strokes[i]; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='#334155'; ctx.fillText(label,201,y+38); y+=78;
+  });
+  y+=20; _cardRoundRect(ctx,160,y,760,260,24); ctx.fillStyle='#E9F7F5'; ctx.fill();
+  ctx.fillStyle='#334155'; ctx.font='500 31px Arial, sans-serif'; const lines=_cardWrap(ctx,summary,700).slice(0,5); lines.forEach((line,i)=>ctx.fillText(line,202,y+58+i*43));
+  ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,.75)'; ctx.font='500 23px Arial, sans-serif'; ctx.fillText('AFTER MATCH, START AGAIN',540,1180);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png')); if(!blob){alert('카드 이미지를 만들지 못했어요.');return;}
+  const file=new File([blob],`TBS-${day.date||'highlight'}-highlight.png`,{type:'image/png'});
+  try {
+    if(navigator.canShare && navigator.canShare({files:[file]})) await navigator.share({title:'TBS 오늘의 하이라이트',text:summary,files:[file]});
+    else { const url=URL.createObjectURL(blob), a=document.createElement('a'); a.href=url; a.download=file.name; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); alert('이미지가 저장됐어요. 카카오톡에서 사진을 선택해 공유하세요.'); }
+  } catch(e) { if(e && e.name!=='AbortError') alert('공유하지 못했어요. 다시 시도해주세요.'); }
+};
 
 // 교류전·월례전·특별전 매치 카드 (상세 화면 + 대진표 화면 공통)
 function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMember) {
@@ -7990,7 +8045,7 @@ function renderHomeTab() {
     const hDateLabel=_hDay.date?new Date(_hDay.date).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}):'';
     if(hChips||hSummary){
       highlightHtml='<div style="background:#FAFAFA;border:1px solid rgba(13,148,136,0.22);border-radius:14px;padding:14px 16px;margin-bottom:12px">'
-        +'<div style="font-size:12px;font-weight:800;color:#059669;margin-bottom:8px">✨ 하이라이트 · <span style="color:#64748B;font-weight:400;font-size:11px">'+hDateLabel+'</span></div>'
+        +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px"><div style="font-size:12px;font-weight:800;color:#059669">✨ 하이라이트 · <span style="color:#64748B;font-weight:400;font-size:11px">'+hDateLabel+'</span></div><button onclick="shareDayHighlightCard(\''+_hDay.id+'\')" style="border:1px solid rgba(13,148,136,.38);background:#fff;color:#047857;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap">🖼️ 카드 공유</button></div>'
         +hChips
         +(hSummary?'<div style="font-size:11px;color:#475569;line-height:1.7;margin-top:8px;padding:8px 10px;background:rgba(13,148,136,0.05);border-radius:8px;border-left:2px solid rgba(13,148,136,0.2)">'+hSummary+'</div>':'')
         +'</div>';
