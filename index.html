@@ -101,6 +101,7 @@ body::after {
 .rcN{background:#FFFFFF;border:1px solid #C8E0DE;}
 .home-card-pair { display:-webkit-flex; display:flex; gap:10px; margin-bottom:12px; -webkit-align-items:stretch; align-items:stretch; }
 .home-card-pair > div { -webkit-flex:1; flex:1; min-width:0; }
+.court-reservation-mobile { display:none; }
 @media (max-width:360px) { .home-card-pair { -webkit-flex-direction:column; flex-direction:column; } }
 
 /* 홈 웰컴 카드: 데스크톱은 한 화면, 모바일은 달력을 접어서 분리 */
@@ -127,6 +128,23 @@ body::after {
   .home-mobile-calendar-body { display:flex; justify-content:center; padding:12px 8px 14px; }
   .home-season-meta { margin-top:9px !important; font-size:12px !important; }
   .home-banner-summary { margin-top:12px !important; padding:10px 11px 0 !important; }
+  .weekly-game-card { display:flex; flex-direction:column; }
+  .weekly-game-main { order:1; }
+  .weekly-attendance-actions { order:2; }
+  .weekly-attendance-count { order:3; margin-top:7px; }
+  .weekly-weather { order:4; margin-top:4px; min-height:16px; }
+  .court-reservation-desktop { display:none !important; }
+  .court-reservation-mobile {
+    display:block; background:#F0F9FF; border:1px solid rgba(37,99,235,0.14);
+    border-radius:12px; padding:8px 10px; margin-bottom:12px;
+  }
+  .court-reservation-mobile-row {
+    display:flex; align-items:center; gap:6px; min-width:0; color:#1D4ED8;
+    font-size:10.5px; line-height:1.5; white-space:nowrap;
+  }
+  .court-reservation-mobile-row + .court-reservation-mobile-row {
+    border-top:1px solid rgba(37,99,235,0.10); margin-top:5px; padding-top:5px;
+  }
 }
 
 .round-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
@@ -7648,28 +7666,34 @@ async function updateHomeWeather(gameDate, gamePlace, gameLat, gameLon, evDate, 
   const now = new Date();
   const cutoffMs = now.getTime() + 16 * 24 * 60 * 60 * 1000;
   const cutoff = new Date(cutoffMs).toISOString().slice(0, 10);
-  if (gameDate && gameDate <= cutoff) {
+  const jobs = [];
+  if (gameDate && gameDate <= cutoff) jobs.push((async function() {
     const wx = await fetchDayWeather(gameDate, gamePlace, gameLat, gameLon);
-    if (wx) { const el = document.getElementById('wxBadgeGame'); if (el) el.textContent = wx; }
-  }
-  if (evDate && evDate <= cutoff) {
+    const el = document.getElementById('wxBadgeGame');
+    if (el) el.textContent = wx || '날씨 정보 없음';
+  })());
+  if (evDate && evDate <= cutoff) jobs.push((async function() {
     const wx = await fetchDayWeather(evDate, evPlace, evLat, evLon);
-    if (wx) { const el = document.getElementById('wxBadgeEv'); if (el) el.textContent = wx; }
-  }
-  for (let i = 0; i < (schedArr || []).length; i++) {
-    const { date, place, lat: sLat, lon: sLon } = schedArr[i];
-    if (date && date <= cutoff) {
+    const el = document.getElementById('wxBadgeEv');
+    if (el) el.textContent = wx || '날씨 정보 없음';
+  })());
+  (schedArr || []).forEach(function(item, i) {
+    const { date, place, lat: sLat, lon: sLon } = item;
+    if (date && date <= cutoff) jobs.push((async function() {
       const wx = await fetchDayWeather(date, place, sLat||null, sLon||null);
-      if (wx) { const el = document.getElementById('wxBadgeSched_' + i); if (el) el.textContent = wx; }
-    }
-  }
-  for (let i = 0; i < (weeklyArr || []).length; i++) {
-    const { date, place, lat: wLat, lon: wLon } = weeklyArr[i];
-    if (date && date <= cutoff) {
+      const el = document.getElementById('wxBadgeSched_' + i);
+      if (el) el.textContent = wx || '날씨 정보 없음';
+    })());
+  });
+  (weeklyArr || []).forEach(function(item) {
+    const { date, place, lat: wLat, lon: wLon } = item;
+    if (date && date <= cutoff) jobs.push((async function() {
       const wx = await fetchDayWeather(date, place, wLat||null, wLon||null);
-      if (wx) { const el = document.getElementById('wxBadgeWeekly_' + date); if (el) el.textContent = wx; }
-    }
-  }
+      const el = document.getElementById('wxBadgeWeekly_' + date);
+      if (el) el.textContent = wx || '날씨 정보 없음';
+    })());
+  });
+  await Promise.all(jobs);
 }
 
 function renderMiniCalendar(year, month, attendedSet, eventDaysMap) {
@@ -8082,8 +8106,8 @@ function renderHomeTab() {
       date: d.date,
       myName: isMemberLoggedIn && myClaim ? myClaim.name : ''
     };
-    return `<div style="background:#F5F3FF;border:1px solid rgba(124,58,237,0.18);border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
-      <div onclick="goToGameDay('${d.id}')" style="cursor:pointer">
+    return `<div class="weekly-game-card" style="background:#F5F3FF;border:1px solid rgba(124,58,237,0.18);border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
+      <div class="weekly-game-main" onclick="goToGameDay('${d.id}')" style="cursor:pointer">
         <div style="font-size:11px;font-weight:800;color:#6D28D9;background:#EDE9FE;padding:2px 8px;border-radius:8px;display:inline-block;margin-bottom:6px">🎾 ${weekdays[_wd.getDay()]}요일 게임</div>
         <div style="font-size:13px;font-weight:900;color:#D97706;margin-bottom:4px;text-align:center">${_wdl}</div>
         <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;-webkit-justify-content:center;justify-content:center;-webkit-flex-wrap:wrap;flex-wrap:wrap;margin-bottom:4px">
@@ -8091,9 +8115,9 @@ function renderHomeTab() {
           ${_wTM?`<span style="font-size:11px;color:#6D28D9">${_wRds.length}라운드 · ${_wTM}경기</span>`:''}
         </div>
       </div>
-      <div onclick="showAttendList('${d.id}')" style="cursor:pointer;font-size:11px;color:#059669;margin-bottom:4px;text-align:center">✅ ${_waM+_waG}명 참석 ›</div>
-      ${_wAttBtns}
-      <div style="text-align:center"><span id="wxBadgeWeekly_${d.date}" style="font-size:11px;color:#64748B;font-weight:700"></span></div>
+      <div class="weekly-attendance-actions">${_wAttBtns}</div>
+      <div class="weekly-attendance-count" onclick="showAttendList('${d.id}')" style="cursor:pointer;font-size:11px;color:#059669;margin-bottom:4px;text-align:center">✅ ${_waM+_waG}명 참석 ›</div>
+      <div class="weekly-weather" style="text-align:center"><span id="wxBadgeWeekly_${d.date}" style="font-size:11px;color:#64748B;font-weight:700">⛅ 날씨 확인 중</span></div>
     </div>`;
   };
   // ── 고정 카드 레이아웃: 이벤트전(1행 전체) + 금/토 정규시즌(2단 고정) ──────
@@ -8149,16 +8173,35 @@ function renderHomeTab() {
           }).join('')
         + '</div>';
     };
+    const _mobileCourtHtml = _crMatchedDays.length ? '<div class="court-reservation-mobile">'
+      + _crMatchedDays.map(function(d) {
+          const cr = d.courtReservation || {};
+          const slots = cr.timeSlots || [];
+          const courts = cr.courts || {};
+          const courtNames = d.courtNumbers && d.courtNumbers.length ? d.courtNumbers : RESV_COURT_NAMES;
+          const dd = new Date(d.date+'T00:00:00');
+          const dayLabel = weekdays[dd.getDay()];
+          const slotText = slots.map(function(slot) {
+            const state = courts[slot] || {};
+            const active = courtNames.filter(function(c, ci){ return state[ci] === true; });
+            if (!active.length) return '';
+            return slot.replace(':00','시') + ' ' + active.join('·');
+          }).filter(Boolean).join(' / ');
+          return '<div class="court-reservation-mobile-row"><span style="font-weight:900;flex-shrink:0">🏟️ '+dayLabel+'</span><span style="overflow:hidden;text-overflow:ellipsis">'+(slotText||'예약 정보 없음')+'</span></div>';
+        }).join('')
+      + '</div>' : '';
+    let _desktopCourtHtml = '';
     if (_crMatchedDays.length === 2) {
-      _courtCardHtml = '<div class="home-card-pair" style="margin-bottom:12px">'
+      _desktopCourtHtml = '<div class="court-reservation-desktop home-card-pair" style="margin-bottom:12px">'
         + '<div style="flex:1;min-width:0">'+_makeCourtCard(_crMatchedDays[0])+'</div>'
         + '<div style="flex:1;min-width:0">'+_makeCourtCard(_crMatchedDays[1])+'</div>'
         + '</div>';
     } else if (_crMatchedDays.length === 1) {
-      _courtCardHtml = '<div style="margin-bottom:12px">'+_makeCourtCard(_crMatchedDays[0])+'</div>';
+      _desktopCourtHtml = '<div class="court-reservation-desktop" style="margin-bottom:12px">'+_makeCourtCard(_crMatchedDays[0])+'</div>';
     } else if (_crMatchedDays.length > 2) {
-      _courtCardHtml = _crMatchedDays.map(function(d){ return '<div style="margin-bottom:8px">'+_makeCourtCard(d)+'</div>'; }).join('');
+      _desktopCourtHtml = '<div class="court-reservation-desktop">'+_crMatchedDays.map(function(d){ return '<div style="margin-bottom:8px">'+_makeCourtCard(d)+'</div>'; }).join('')+'</div>';
     }
+    _courtCardHtml = _desktopCourtHtml + _mobileCourtHtml;
   }
 
   // ── 공지사항 배너 (배너 타입만, 여러 개 동시 표시) ──────────────
