@@ -3522,14 +3522,15 @@ function renderDays() {
         const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
         let evalHtml='';
         if (m.done) {
-          if (m.evalText) {
+          if (m.evalText && m.highlightVersion === HIGHLIGHT_VERSION) {
             evalHtml=m.evalText;
           } else {
             evalHtml=buildMatchEval({team1:m.team1||[],team2:m.team2||[],score1:m.score1,score2:m.score2,matchType:m.tag||'',isExchange:false},day.date||'');
             if (evalHtml) {
               m.evalText=evalHtml;
-              const _dId=day.id,_rI=rIdx,_mId=m.id,_et=evalHtml;
-              (async()=>{const _d=days.find(d=>d.id===_dId);if(!_d)return;const nr=(_d.rounds||[]).map((rn,ri)=>ri!==_rI?rn:{...rn,matches:(rn.matches||[]).map(mx=>mx.id===_mId?{...mx,evalText:_et}:mx)});try{await updateDoc(doc(db,'days',_dId),{rounds:nr});}catch(e){}})();
+              m.highlightVersion=HIGHLIGHT_VERSION;
+              const _dId=day.id,_rI=rIdx,_mId=m.id,_et=evalHtml,_hv=HIGHLIGHT_VERSION;
+              (async()=>{const _d=days.find(d=>d.id===_dId);if(!_d)return;const nr=(_d.rounds||[]).map((rn,ri)=>ri!==_rI?rn:{...rn,matches:(rn.matches||[]).map(mx=>mx.id===_mId?{...mx,evalText:_et,highlightVersion:_hv}:mx)});try{await updateDoc(doc(db,'days',_dId),{rounds:nr});}catch(e){}})();
             }
           }
         }
@@ -3616,14 +3617,14 @@ function renderDays() {
     if(totalMatches>0&&doneMatches===totalMatches){
       let dBadges=day.dayBadges;
       let dSummary=day.daySummary;
-      if((!dBadges||!dSummary)&&guestsLoaded){
+      if((!dBadges||!dSummary||day.highlightVersion!==HIGHLIGHT_VERSION)&&guestsLoaded){
         const dayNorm=_getAllMatchHistory(day.date).filter(function(h){return h.date===day.date;});
         dBadges=buildDayBadges(dayNorm,day.date);
         dSummary=buildDaySummary(dayNorm,dBadges,day.date);
         if(dBadges.length&&dSummary){
-          day.dayBadges=dBadges;day.daySummary=dSummary;
-          const _dId=day.id,_db=dBadges,_ds=dSummary;
-          (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds});}catch(e){}})();
+          day.dayBadges=dBadges;day.daySummary=dSummary;day.highlightVersion=HIGHLIGHT_VERSION;
+          const _dId=day.id,_db=dBadges,_ds=dSummary,_hv=HIGHLIGHT_VERSION;
+          (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds,highlightVersion:_hv});}catch(e){}})();
         }
       }
       const chipsHtml=buildDayBadgesHtml(dBadges||[]);
@@ -4665,6 +4666,20 @@ window.openEventDetail=function(evId){
 };
 
 // ── 경기별 평가 엔진 ──────────────────────────────────────────
+const HIGHLIGHT_VERSION = 2;
+
+// 같은 경기·날짜에는 같은 문장을, 서로 다른 경기에는 다양한 문장을 선택한다.
+function stableHighlightPick(arr, seed) {
+  if (!arr || !arr.length) return '';
+  let hash = 2166136261;
+  const str = String(seed || 'tbs');
+  for (let i=0; i<str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return arr[Math.abs(hash >>> 0) % arr.length];
+}
+
 function _getAllMatchHistory(upToDate) {
   const res = [];
   days.forEach(function(day) {
@@ -4698,21 +4713,38 @@ function buildMatchEval(norm, date) {
   const winTeam=winner===1?(norm.team1||[]):winner===2?(norm.team2||[]):[];
   const t1k=[...(norm.team1||[])].sort().join('|');
   const t2k=[...(norm.team2||[])].sort().join('|');
-  function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+  const winName=winTeam.join('·');
+  let pickSeq=0;
+  function pick(arr){return stableHighlightPick(arr,[date,t1k,t2k,s1,s2,pickSeq++].join('|'));}
   const sentences=[];
 
   // 1. 점수차 묘사
   const diff=Math.abs(s1-s2);
   if (winner===0) {
-    sentences.push(pick(['팽팽한 접전 끝에 동점으로 마무리됐다.','막상막하, 비겨도 아쉽지 않은 승부였다.','끝까지 긴장감 넘쳤던 드로 한 판이었다.']));
+    sentences.push(pick(['팽팽한 접전 끝에 승부를 가리지 못했다.','막상막하, 어느 쪽도 물러서지 않은 무승부였다.','끝까지 균형이 깨지지 않은 긴장감 넘치는 한 판이었다.','마지막까지 팽팽했다. 두 팀이 같은 점수로 경기를 마쳤다.','서로의 장점을 주고받은 끝에 사이좋게 승점을 나눴다.']));
   } else if (Math.min(s1,s2)===0) {
-    sentences.push(pick(['상대에게 단 한 포인트도 내주지 않는 완봉 승리!','완전한 셧아웃, 상대의 흔적이 없다.','완벽한 지배력, 0대 완봉으로 끝냈다.']));
-  } else if (diff>=6) {
-    sentences.push(pick(['압도적인 스코어로 상대를 완전히 따돌렸다.','여유로운 승리, 실력 차를 여실히 드러냈다.','한 수 위의 경기력으로 크게 앞서 승리했다.']));
-  } else if (diff>=3) {
-    sentences.push(pick(['안정적인 경기 운영으로 확실한 승리를 챙겼다.','명확한 우위를 바탕으로 승부를 결정지었다.','선명한 점수 차로 흔들림 없이 이겼다.']));
+    sentences.push(pick([`${winName}, 단 한 점도 허용하지 않은 완봉승!`,`${winName}${getJosa(winName,'은는')} 빈틈없는 경기력으로 셧아웃을 완성했다.`,`스코어가 말해준다. ${winName}의 완벽한 완봉 승리였다.`,`${winName}${getJosa(winName,'이가')} 처음부터 끝까지 흐름을 놓치지 않고 무실점 승리를 거뒀다.`,`상대의 반격을 완전히 막아낸 ${winName}, 깨끗한 승리였다.`]));
+  } else if (diff>=4) {
+    sentences.push(pick([`${winName}${getJosa(winName,'이가')} 초반부터 주도권을 잡고 크게 앞서 승리했다.`,`${winName}의 강한 압박이 경기 내내 이어진 일방적인 승부였다.`,`한 수 위의 경기력을 보여준 ${winName}, 여유 있게 승리를 챙겼다.`,`${winName}${getJosa(winName,'은는')} 흔들림 없는 운영으로 상대를 멀찌감치 따돌렸다.`,`공수 양면에서 앞선 ${winName}${getJosa(winName,'이가')} 확실한 승리를 완성했다.`]));
+  } else if (diff>=2) {
+    sentences.push(pick([`${winName}${getJosa(winName,'은는')} 안정적인 경기 운영으로 승리를 챙겼다.`,`${winName}${getJosa(winName,'이가')} 중요한 순간마다 점수를 보태며 우위를 지켰다.`,`흐름을 먼저 가져온 ${winName}, 끝까지 리드를 놓치지 않았다.`,`${winName}의 집중력이 승부처에서 빛난 경기였다.`,`차분하게 점수 차를 만든 ${winName}${getJosa(winName,'이가')} 기분 좋은 승리를 거뒀다.`]));
   } else {
-    sentences.push(pick(['아슬아슬한 접전, 마지막 순간까지 긴장을 놓을 수 없었다.','끝까지 손에 땀을 쥐게 한 박빙 승부였다.',(diff===1?'1점 차':'2점 차')+'로 간신히 웃었다.']));
+    sentences.push(pick([`${winName}${getJosa(winName,'이가')} 단 1점 차의 숨 막히는 승부에서 웃었다.`,`끝까지 손에 땀을 쥐게 한 박빙전, 마지막 승자는 ${winName}였다.`,`한 포인트가 승부를 갈랐다. ${winName}${getJosa(winName,'이가')} 집중력에서 앞섰다.`,`팽팽했던 승부의 끝, ${winName}${getJosa(winName,'이가')} 간발의 차로 승리를 가져갔다.`,`마지막까지 결과를 알 수 없었던 접전에서 ${winName}${getJosa(winName,'이가')} 버텨냈다.`]));
+  }
+
+  // 전력상 열세 팀이 이긴 경우
+  if (winner!==0) {
+    const allPlayers=[...(norm.team1||[]),...(norm.team2||[])];
+    if (allPlayers.length>=2 && allPlayers.every(function(n){return Number.isFinite(Number(ratings[n]));})) {
+      const r1=(norm.team1||[]).reduce(function(sum,n){return sum+Number(ratings[n]);},0)/(norm.team1||[]).length;
+      const r2=(norm.team2||[]).reduce(function(sum,n){return sum+Number(ratings[n]);},0)/(norm.team2||[]).length;
+      const expected1=1/(1+Math.pow(10,(r2-r1)/400));
+      const winnerExpected=winner===1?expected1:1-expected1;
+      if (winnerExpected<=0.40) {
+        const pct=Math.round(winnerExpected*100);
+        sentences.push(pick([`예상 승률 ${pct}%의 열세를 뒤집은 인상적인 결과였다.`,`전력 예상을 넘어선 승리, ${winName}${getJosa(winName,'이가')} 이변의 주인공이 됐다.`,`수치상 열세였지만 코트 위 결과는 달랐다. ${winName}의 값진 승리였다.`]));
+      }
+    }
   }
 
   // 2. 맞대결 전적 (정규시즌 2vs2만)
@@ -4821,16 +4853,63 @@ function getJosa(name, type) {
 }
 function buildDaySummary(dayMatches, badges, date) {
   if (!dayMatches||!dayMatches.length) return '';
-  function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
   const total=dayMatches.length;
+  let pickSeq=0;
+  function pick(arr){return stableHighlightPick(arr,[date,total,pickSeq++].join('|'));}
   const sentences=[];
-  sentences.push(pick(['총 '+total+'경기가 펼쳐진 하루였다.','오늘은 '+total+'경기의 열전이 이어졌다.',total+'번의 승부, 코트 위 열기가 뜨거웠다.']));
+  const closeCount=dayMatches.filter(function(h){return Math.abs(Number(h.score1)-Number(h.score2))===1;}).length;
+  const drawCount=dayMatches.filter(function(h){return Number(h.score1)===Number(h.score2);}).length;
+  const shutoutCount=dayMatches.filter(function(h){return Number(h.score1)!==Number(h.score2)&&Math.min(Number(h.score1),Number(h.score2))===0;}).length;
+  let openingPool=[
+    `총 ${total}경기가 펼쳐지며 코트마다 저마다의 이야기가 쌓였다.`,
+    `오늘은 ${total}번의 승부가 이어지며 뜨거운 경쟁과 유쾌한 웃음이 함께했다.`,
+    `${total}경기를 모두 마친 하루, 마지막 포인트까지 집중력 있는 승부가 이어졌다.`,
+    `코트 위에서 펼쳐진 ${total}경기, 기록만큼이나 다채로운 장면이 남았다.`,
+    `오늘도 ${total}경기가 무사히 마무리됐다. 승패를 넘어 모두가 주인공인 하루였다.`,
+    `${total}경기의 결과가 새로 기록됐다. 익숙한 조합과 새로운 호흡이 함께 빛났다.`
+  ];
+  if(closeCount>=2) openingPool=openingPool.concat([
+    `${closeCount}경기가 단 1점 차로 끝날 만큼 유난히 팽팽한 하루였다.`,
+    `오늘의 키워드는 접전이었다. ${closeCount}번의 승부가 한 포인트 차로 갈렸다.`
+  ]);
+  if(drawCount>0) openingPool.push(`${total}경기 가운데 ${drawCount}경기는 끝내 승부를 가리지 못할 만큼 팽팽했다.`);
+  if(shutoutCount>=2) openingPool.push(`${shutoutCount}번의 완봉승이 나온 가운데 강한 집중력이 결과를 갈랐다.`);
+  sentences.push(pick(openingPool));
   const mvpB=badges.find(function(b){return b.type==='mvp';});
-  if(mvpB)sentences.push(pick([mvpB.name+getJosa(mvpB.name,'이가')+' '+mvpB.wins+'승으로 오늘의 MVP에 등극했다.',mvpB.wins+'승을 챙긴 '+mvpB.name+getJosa(mvpB.name,'이가')+' 단연 돋보였다.','최다 '+mvpB.wins+'승을 기록한 '+mvpB.name+getJosa(mvpB.name,'이가')+' 코트를 지배했다.']));
+  if(mvpB)sentences.push(pick([
+    `${mvpB.name}${getJosa(mvpB.name,'이가')} ${mvpB.wins}승으로 오늘의 MVP에 이름을 올렸다.`,
+    `${mvpB.wins}승을 챙긴 ${mvpB.name}${getJosa(mvpB.name,'이가')} 가장 돋보이는 활약을 펼쳤다.`,
+    `오늘 가장 많은 승리를 수확한 선수는 ${mvpB.name}. ${mvpB.wins}승으로 하루를 빛냈다.`,
+    `승부처마다 강했던 ${mvpB.name}${getJosa(mvpB.name,'이가')} ${mvpB.wins}승과 함께 MVP를 차지했다.`,
+    `${mvpB.name}${getJosa(mvpB.name,'은는')} ${mvpB.wins}승을 기록하며 오늘의 최고 활약을 남겼다.`,
+    `꾸준한 집중력을 보여준 ${mvpB.name}, ${mvpB.wins}승으로 MVP의 주인공이 됐다.`
+  ]));
   const strkB=badges.find(function(b){return b.type==='streak';});
-  if(strkB)sentences.push(pick([strkB.name+getJosa(strkB.name,'은는')+' '+strkB.count+'연승 행진 중으로, 오늘도 그 기세를 이어갔다.',strkB.count+'연승째를 달리는 '+strkB.name+'의 질주는 어디까지 계속될까.']));
+  const unbeatenB=badges.find(function(b){return b.type==='unbeaten';});
+  if(strkB)sentences.push(pick([
+    `${strkB.name}${getJosa(strkB.name,'은는')} ${strkB.count}연승으로 좋은 흐름을 이어갔다.`,
+    `${strkB.count}연승째를 달리는 ${strkB.name}, 상승세가 좀처럼 꺾이지 않는다.`,
+    `연승 행진의 주인공은 ${strkB.name}. 이번 승리로 ${strkB.count}연승을 완성했다.`,
+    `한 번 잡은 흐름을 놓치지 않은 ${strkB.name}${getJosa(strkB.name,'이가')} ${strkB.count}경기 연속 승리를 기록했다.`,
+    `${strkB.name}의 라켓이 다시 한번 빛났다. 현재 기록은 ${strkB.count}연승이다.`
+  ]));
+  else if(unbeatenB){const nm=unbeatenB.names.join(', ');sentences.push(pick([
+    `${nm}${getJosa(nm,'은는')} 오늘 치른 경기를 모두 이기며 무패로 일정을 마쳤다.`,
+    `패배 없이 하루를 마친 ${nm}, 안정적인 경기력이 돋보였다.`,
+    `${nm}${getJosa(nm,'이가')} 오늘만큼은 빈틈없는 무패 행진을 보여줬다.`
+  ]));}
   const brdB=badges.find(function(b){return b.type==='breadking';});
-  if(brdB){const nm=brdB.names.join(', ');sentences.push(pick([nm+getJosa(nm,'은는')+' 상대에게 단 한 점도 내주지 않는 완봉승을 거뒀다.',nm+'의 완봉 승리는 오늘 하이라이트 중 하나였다.']));}
+  if(brdB){const nm=brdB.names.join(', ');sentences.push(pick([
+    `${nm}${getJosa(nm,'은는')} 상대에게 한 점도 허용하지 않는 완봉승을 거뒀다.`,
+    `${nm}의 무실점 승리는 오늘 빼놓을 수 없는 장면이었다.`,
+    `완벽한 수비와 집중력으로 셧아웃을 만든 ${nm}${getJosa(nm,'이가')} 제빵왕에 올랐다.`,
+    `오늘의 베이글 스코어 주인공은 ${nm}. 깔끔한 완봉승을 완성했다.`,
+    `상대의 득점을 끝까지 막아낸 ${nm}, 인상적인 무실점 경기를 남겼다.`
+  ]));}
+  else if(closeCount>0&&sentences.length<4)sentences.push(pick([
+    `특히 ${closeCount}번의 1점 차 승부가 마지막까지 긴장감을 더했다.`,
+    `작은 실수 하나가 결과를 바꿀 만큼 치열한 접전도 이어졌다.`
+  ]));
   return sentences.slice(0,4).join(' ');
 }
 
@@ -4928,15 +5007,16 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
   if (!m.id) m.id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
   let evalHtml='';
   if (done) {
-    if (m.evalText) {
+    if (m.evalText && m.highlightVersion === HIGHLIGHT_VERSION) {
       evalHtml=m.evalText;
     } else {
       evalHtml=buildMatchEval({team1:m.ourPair||[],team2:m.oppPair||[],score1:Number(m.ourScore),score2:Number(m.oppScore),matchType:m.courtType||'',isExchange:true},evDate);
       if (evalHtml) {
         m.evalText=evalHtml;
-        const _eId=evId,_mId=m.id,_eMi=mi,_et=evalHtml;
+        m.highlightVersion=HIGHLIGHT_VERSION;
+        const _eId=evId,_mId=m.id,_eMi=mi,_et=evalHtml,_hv=HIGHLIGHT_VERSION;
         // ID 기반으로 매치 탐색, 없으면 인덱스 폴백 (하위호환)
-        (async()=>{const _ev2=events.find(e=>e.id===_eId);if(!_ev2)return;const nm=(_ev2.matches||[]).map((mx,i)=>(_mId?mx.id===_mId:i===_eMi)?{...mx,id:_mId,evalText:_et}:mx);try{await updateDoc(doc(db,'events',_eId),{matches:nm});}catch(e){}})();
+        (async()=>{const _ev2=events.find(e=>e.id===_eId);if(!_ev2)return;const nm=(_ev2.matches||[]).map((mx,i)=>(_mId?mx.id===_mId:i===_eMi)?{...mx,id:_mId,evalText:_et,highlightVersion:_hv}:mx);try{await updateDoc(doc(db,'events',_eId),{matches:nm});}catch(e){}})();
       }
     }
   }
@@ -8083,14 +8163,14 @@ function renderHomeTab() {
   if(_hDay){
     let hBadges=_hDay.dayBadges;
     let hSummary=_hDay.daySummary;
-    if((!hBadges||!hSummary)&&guestsLoaded){
+    if((!hBadges||!hSummary||_hDay.highlightVersion!==HIGHLIGHT_VERSION)&&guestsLoaded){
       const hNorm=_getAllMatchHistory(_hDay.date).filter(function(h){return h.date===_hDay.date;});
       hBadges=buildDayBadges(hNorm,_hDay.date);
       hSummary=buildDaySummary(hNorm,hBadges,_hDay.date);
       if(hBadges.length&&hSummary){
-        _hDay.dayBadges=hBadges;_hDay.daySummary=hSummary;
-        const _dId=_hDay.id,_db=hBadges,_ds=hSummary;
-        (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds});}catch(e){}})();
+        _hDay.dayBadges=hBadges;_hDay.daySummary=hSummary;_hDay.highlightVersion=HIGHLIGHT_VERSION;
+        const _dId=_hDay.id,_db=hBadges,_ds=hSummary,_hv=HIGHLIGHT_VERSION;
+        (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds,highlightVersion:_hv});}catch(e){}})();
       }
     }
     const hChips=buildDayBadgesHtml(hBadges||[]);
