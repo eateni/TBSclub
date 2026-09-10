@@ -8599,9 +8599,9 @@ function renderCalendar(){
     const isToday = dateStr === todayStr;
     const isSelected = dateStr === calSelectedDate;
     cells.push(`
-      <div onclick="selectCalDate('${dateStr}')" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:12px;position:relative;background:${isSelected?'rgba(245,158,11,0.25)':isToday?'rgba(96,165,250,0.15)':'transparent'};border:1px solid ${isSelected?'rgba(245,158,11,0.5)':isToday?'rgba(96,165,250,0.35)':'transparent'};color:${isSelected?'#f59e0b':isToday?'#93c5fd':'#e8edf2'};font-weight:${isToday||isSelected?800:500}">
+      <div onclick="selectCalDate('${dateStr}')" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:13px;position:relative;background:${isSelected?'rgba(245,158,11,0.18)':isToday?'rgba(37,99,235,0.12)':'transparent'};border:1.5px solid ${isSelected?'rgba(217,119,6,0.55)':isToday?'rgba(37,99,235,0.4)':'transparent'};color:${isSelected?'#B45309':isToday?'#2563EB':'#334155'};font-weight:${isToday||isSelected?900:700}">
         <span>${d}</span>
-        ${items.length ? `<span style="display:flex;gap:2px;margin-top:2px"><i style="width:4px;height:4px;border-radius:50%;background:${hasRegular?'#2563EB':'transparent'}"></i><i style="width:4px;height:4px;border-radius:50%;background:${hasEvent?'#7c3aed':'transparent'}"></i><i style="width:4px;height:4px;border-radius:50%;background:${hasNotice?'#D97706':'transparent'}"></i></span>` : ''}
+        ${items.length ? `<span style="display:flex;gap:2px;margin-top:3px"><i style="width:5px;height:5px;border-radius:50%;background:${hasRegular?'#2563EB':'transparent'}"></i><i style="width:5px;height:5px;border-radius:50%;background:${hasEvent?'#7c3aed':'transparent'}"></i><i style="width:5px;height:5px;border-radius:50%;background:${hasNotice?'#D97706':'transparent'}"></i></span>` : ''}
       </div>`);
   }
 
@@ -8617,8 +8617,8 @@ function renderCalendar(){
       <div style="font-size:14px;font-weight:800;color:#2563EB">${calYear}년 ${calMonth+1}월</div>
       <button onclick="changeCalMonth(1)" style="background:none;border:none;color:#2563EB;font-size:16px;cursor:pointer;padding:4px 10px">›</button>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;color:#64748B;text-align:center;margin-bottom:4px">
-      <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:11px;color:#475569;font-weight:800;text-align:center;margin-bottom:4px">
+      <div style="color:#DC2626">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div style="color:#2563EB">토</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells.join('')}</div>
     <div style="display:flex;justify-content:center;gap:9px;margin-top:10px;font-size:10px;color:#64748B"><span><b style="color:#2563EB">●</b> 정규시즌</span><span><b style="color:#7c3aed">●</b> 이벤트전</span><span><b style="color:#D97706">●</b> 공지</span></div>
