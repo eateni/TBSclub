@@ -8183,7 +8183,12 @@ function renderHomeTab() {
           const dayLabel = weekdays[dd.getDay()];
           const slotText = slots.map(function(slot) {
             const state = courts[slot] || {};
-            const active = courtNames.filter(function(c, ci){ return state[ci] === true; });
+            // 예전 예약 데이터는 시간대만 저장하고 해당 날짜의 courtNumbers 전체를 사용한다.
+            // 시간별 선택값이 있는 새 데이터만 true인 코트를 골라 표시한다.
+            const hasSlotSelection = Object.keys(state).length > 0;
+            const active = hasSlotSelection
+              ? courtNames.filter(function(c, ci){ return state[ci] === true; })
+              : courtNames;
             if (!active.length) return '';
             return slot.replace(':00','시') + ' ' + active.join('·');
           }).filter(Boolean).join(' / ');
