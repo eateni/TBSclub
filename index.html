@@ -383,6 +383,29 @@ tr:nth-child(even){background:#F5FCFB;}
 .sc-body.sc-open   { max-height:440px; }
 @keyframes scItemIn { from{opacity:0;transform:translateY(10px) scale(0.87)} to{opacity:1;transform:translateY(0) scale(1)} }
 
+/* ── 통합 경기 운영 ── */
+.admin-ops-switcher{margin-bottom:12px;padding:14px;background:linear-gradient(135deg,#0F766E,#155E75);border-radius:14px;color:#fff;box-shadow:0 7px 20px rgba(15,118,110,.16)}
+.admin-ops-title{font-size:16px;font-weight:800;margin-bottom:3px}
+.admin-ops-desc{font-size:11px;color:rgba(255,255,255,.78);line-height:1.5;margin-bottom:11px}
+.admin-ops-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:4px;background:rgba(255,255,255,.13);border-radius:11px}
+.admin-ops-tab{border:0;border-radius:8px;padding:10px 8px;background:transparent;color:rgba(255,255,255,.78);font-size:12px;font-weight:800;cursor:pointer}
+.admin-ops-tab.active{background:#fff;color:#0F766E;box-shadow:0 3px 10px rgba(0,0,0,.13)}
+.admin-ops-guide{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.admin-ops-step{padding:9px 7px;border:1px solid #D7E8E5;border-radius:10px;background:#fff;text-align:center;font-size:10px;color:#64748B}
+.admin-ops-step b{display:block;color:#1E293B;font-size:11px;margin-bottom:2px}
+.match-kind-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:999px;font-size:9px;font-weight:800;white-space:nowrap}
+.match-kind-official{color:#8A650D;background:#FFF1BF;border:1px solid #F4D675}
+.match-kind-instant{color:#6D28D9;background:#F0E9FF;border:1px solid #D7C6FF}
+.day-match-summary{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px}
+.day-play-count{margin-top:9px;border:1px solid #D7E8E5;border-radius:10px;overflow:hidden;background:#FBFEFD}
+.day-play-count>button{width:100%;display:flex;align-items:center;justify-content:space-between;border:0;background:transparent;padding:10px 12px;color:#334155;font-size:11px;font-weight:800;cursor:pointer}
+.day-play-count-grid{display:none;grid-template-columns:repeat(auto-fill,minmax(135px,1fr));gap:6px;padding:0 10px 10px}
+.day-play-count-grid.open{display:grid}
+.day-play-count-item{padding:7px 9px;border:1px solid #E0ECE9;border-radius:8px;background:#fff;font-size:10px;color:#64748B}
+.day-play-count-item b{display:block;color:#1E293B;font-size:11px;margin-bottom:2px}
+.score-kind-line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-7px 0 12px;padding:8px 10px;border-radius:10px;background:#F5FAFA;border:1px solid #DCEBE8;font-size:10px;color:#64748B}
+@media(max-width:520px){.admin-ops-guide{grid-template-columns:1fr}.admin-ops-step{text-align:left;padding:8px 10px}.day-play-count-grid{grid-template-columns:1fr 1fr}}
+
 </style>
 <!-- 음양력 변환 라이브러리 (korean-lunar-calendar by usingsky, MIT) -->
 <script src="https://cdn.jsdelivr.net/npm/korean-lunar-calendar/src/korean-lunar-calendar.js"></script>
@@ -715,8 +738,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="subtabs" style="margin-bottom:14px">
         <button class="stab active" onclick="switchAdminSub('members',this)">👥 회원·승인</button>
         <button class="stab" onclick="switchAdminSub('match',this)">🎾 경기 설정</button>
-        <button class="stab" onclick="switchAdminSub('schedule',this)">🗓️ 일정·라운드</button>
-        <button class="stab" onclick="switchAdminSub('events',this)">🎉 이벤트전</button>
+        <button class="stab" onclick="switchAdminSub('operations',this)">📅 경기 운영</button>
         <button class="stab" onclick="switchAdminSub('status',this)">📊 현황</button>
         <button class="stab" onclick="switchAdminSub('announce',this)">📢 공지사항</button>
       </div>
@@ -816,6 +838,22 @@ tr:nth-child(even){background:#F5FCFB;}
           <h3>🗓️ 시즌 관리</h3>
           <div style="font-size:11px;color:#64748B;margin-bottom:10px">현재 <b id="curSeasonLabel">시즌 1</b> 진행 중 · 마감하면 기록이 보존되고 새 시즌부터 랭킹이 새로 집계돼요</div>
           <button class="btn-add" style="width:100%;background:#f59e0b;color:#1a120a;font-weight:800" onclick="startNewSeason()">🏁 이번 시즌 마감하고 새 시즌 시작</button>
+        </div>
+      </div>
+
+      <div id="adminGroup-operations" style="display:none">
+        <div class="admin-ops-switcher">
+          <div class="admin-ops-title">📅 경기 운영</div>
+          <div class="admin-ops-desc">날짜와 참석자를 정한 뒤 공식 대진을 만들고, 현장에서 필요한 즉석 매치를 추가합니다.</div>
+          <div class="admin-ops-tabs">
+            <button id="adminOpsRegularBtn" class="admin-ops-tab active" onclick="switchMatchOpsMode('regular',this)">🏆 정규시즌</button>
+            <button id="adminOpsEventBtn" class="admin-ops-tab" onclick="switchMatchOpsMode('event',this)">🤝 교류·이벤트전</button>
+          </div>
+        </div>
+        <div class="admin-ops-guide">
+          <div class="admin-ops-step"><b>1. 일정·참석</b>날짜와 참가자 확인</div>
+          <div class="admin-ops-step"><b>2. 공식 대진</b>관리자 자동·수동 생성</div>
+          <div class="admin-ops-step"><b>3. 즉석 매치</b>현장 추가 경기 관리</div>
         </div>
       </div>
 
@@ -1110,6 +1148,7 @@ tr:nth-child(even){background:#F5FCFB;}
 <div class="overlay-bottom" id="scoreModal" style="display:none;z-index:400" onclick="if(event.target.id==='scoreModal')hide('scoreModal')">
   <div class="modal-bottom">
     <div class="modal-title">⚡ 경기 결과 입력</div>
+    <div class="score-kind-line"><span id="scoreMatchKind" class="match-kind-badge match-kind-official">🛡️ 공식 대진</span><span id="scoreMatchContext">스코어와 포·백을 입력하세요</span></div>
     <div id="scoreInfo" style="font-size:13px;color:#78909C;margin-bottom:14px;line-height:1.6"></div>
     <div class="mg">
       <div class="mf"><label id="s1Label">팀1 스코어</label><input type="number" id="s1" min="0" placeholder="0"></div>
@@ -3538,6 +3577,26 @@ function renderDays() {
     const doneMatches = rounds.reduce((a,r)=>(a+(r.matches||[]).filter(m=>m.done&&!m.isRally&&m.tag!=='랠리').length),0);
     const isFreeMode = day.matchMode === 'freeMatch';
     const isDayRegularMember = !isAdmin && myClaim && myClaim !== 'pending' && !myClaim.isGuest;
+    const playableMatches = rounds.flatMap(r=>(r.matches||[])).filter(m=>!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식');
+    const instantMatchCount = playableMatches.filter(m=>isFreeMode||m.matchKind==='instant').length;
+    const officialMatchCount = Math.max(0, playableMatches.length-instantMatchCount);
+    const playCounts = {};
+    playableMatches.forEach(m=>{
+      const instant = isFreeMode || m.matchKind === 'instant';
+      [...(m.team1||[]),...(m.team2||[])].filter(Boolean).forEach(name=>{
+        if(!playCounts[name]) playCounts[name]={official:0,instant:0,total:0};
+        playCounts[name].total++;
+        if(instant) playCounts[name].instant++; else playCounts[name].official++;
+      });
+    });
+    const playCountRows = Object.entries(playCounts).sort((a,b)=>b[1].total-a[1].total||a[0].localeCompare(b[0]));
+    const playCountId = `playCount_${day.id}`;
+    const playCountHtml = playCountRows.length ? `<div class="day-play-count">
+      <button onclick="toggleDayPlayCount('${playCountId}',this)" aria-expanded="false"><span>👥 오늘 출전 횟수</span><span>펼치기 ↓</span></button>
+      <div id="${playCountId}" class="day-play-count-grid">
+        ${playCountRows.map(([name,c])=>`<div class="day-play-count-item"><b>${name} · 총 ${c.total}경기</b>공식 ${c.official} · 즉석 ${c.instant}</div>`).join('')}
+      </div>
+    </div>` : '';
 
     // 참석자 정보
     const att = day.attendance || {};
@@ -3565,6 +3624,8 @@ function renderDays() {
           </div>`;
         }
         const w1=m.done&&m.score1>m.score2, w2=m.done&&m.score2>m.score1;
+        const isInstantMatch = isFreeMode || m.matchKind === 'instant';
+        const matchKindBadge = `<span class="match-kind-badge ${isInstantMatch?'match-kind-instant':'match-kind-official'}">${isInstantMatch?'⚡ 즉석 매치':'🛡️ 공식 대진'}</span>`;
         const scoreEl=m.done
           ?`<div class="m-score">${m.score1} : ${m.score2}</div>`
           :`<div class="m-score pend">예정</div>`;
@@ -3629,7 +3690,7 @@ function renderDays() {
             </div>`
           : '';
         return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px">
-          <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#64748B">${m.court||''} ${tagBadge}</span></div>
+          <div class="match-ct" style="margin-bottom:4px"><span style="font-size:10px;color:#64748B">${m.court||''} ${tagBadge}</span>${matchKindBadge}</div>
           <div class="match-row">
             <div class="m-team ${w1?'win':''}">${(m.team1||[]).join(' / ')}</div>
             ${scoreEl}
@@ -3652,9 +3713,13 @@ function renderDays() {
           </div>
         </div>`;
       }).join('');
-      const addMatchBtn = (isAdmin || (isFreeMode && isDayRegularMember))
-        ? `<button class="btn-input" style="border-color:rgba(35,90,180,0.35);color:#64748B" onclick="openAddMatch('${day.id}','${rIdx}')">+ 경기 추가</button>`
+      const officialAddBtn = isAdmin && !isFreeMode
+        ? `<button class="btn-input" style="border-color:rgba(180,140,35,.38);color:#8A650D" onclick="openAddMatch('${day.id}','${rIdx}',false)">🛡️ 공식 경기 추가</button>`
         : '';
+      const instantAddBtn = (isAdmin || isDayRegularMember)
+        ? `<button class="btn-input" style="border-color:rgba(109,40,217,.35);color:#7c3aed" onclick="openAddMatch('${day.id}','${rIdx}',true)">⚡ 즉석 매치 추가</button>`
+        : '';
+      const addMatchBtn = isFreeMode ? instantAddBtn : `${officialAddBtn}${instantAddBtn}`;
       const delRoundBtn = isAdmin ? `<button onclick="delRound('${day.id}','${rIdx}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:6px">삭제</button>` : '';
       const rid = `r_${day.id}_${rIdx}`;
       const aid = `a_${day.id}_${rIdx}`;
@@ -3712,7 +3777,8 @@ function renderDays() {
       <button class="round-hdr" onclick="toggleR('${dayId}','${dayArr}')">
         <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;">
           <span>📅 ${dateStr}${day.place?` <span style="color:rgba(100,150,200,0.6);font-size:11px;font-weight:400">· ${day.place}</span>`:''}${attendStr}</span>
-          <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료 ${delDayBtn}${isFreeMode?` <span style="color:#7c3aed;font-size:10px;font-weight:700">⚡ 즉석 매칭</span>`:''}</span>
+          <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료 ${delDayBtn}</span>
+          <span class="day-match-summary"><span class="match-kind-badge match-kind-official">🛡️ 공식 ${officialMatchCount}</span><span class="match-kind-badge match-kind-instant">⚡ 즉석 ${instantMatchCount}</span></span>
           ${totalMatches>0?`<div style="width:100%;height:3px;background:rgba(35,90,180,0.15);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#34d399':'#60a5fa'};border-radius:2px;transition:width 0.5s"></div></div>`:''}
         </div>
         <span id="${dayArr}" style="color:#64748B;transition:transform 0.2s">›</span>
@@ -3720,6 +3786,7 @@ function renderDays() {
       <div class="round-body" id="${dayId}" style="display:none">
         ${roundsHtml || '<div style="color:#64748B;font-size:13px;padding:8px 0">아직 라운드가 없어요</div>'}
         ${dayAddMatchBtn}
+        ${playCountHtml}
         ${daySummaryHtml}
       </div>
     </div>`;
@@ -5116,10 +5183,14 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
     <button onclick="saveEvPairEdit('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(192,132,252,0.15);border:1px solid rgba(192,132,252,0.4);border-radius:7px;color:#c084fc;font-size:12px;font-weight:700;cursor:pointer">저장</button>
   </div>`:'';
   const delBtn=isAdmin?`<button onclick="deleteEvMatch('${evId}',${mi})" title="매치 삭제" style="position:absolute;top:5px;right:6px;background:none;border:none;color:rgba(248,113,113,0.4);font-size:15px;line-height:1;cursor:pointer;padding:2px 4px">×</button>`:'';
-  const courtLabel=m.court?`${m.court}게임${m.courtType?' · '+m.courtType:''}`:''
+  const courtLabel=m.court?`${m.court}게임${m.courtType?' · '+m.courtType:''}`:'';
+  const isInstant=m.matchKind==='instant';
+  const kindBadge=`<span class="match-kind-badge ${isInstant?'match-kind-instant':'match-kind-official'}">${isInstant?'⚡ 즉석 매치':'🛡️ 공식 대진'}</span>`;
   return `<div class="match-card" style="padding:10px 12px;margin-bottom:6px;position:relative">
     ${delBtn}
-    ${courtLabel?`<div style="font-size:10px;color:#6D28D9;font-weight:700;padding:2px 0 4px">${courtLabel}</div>`:''}
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:2px 0 4px">
+      <div style="font-size:10px;color:#6D28D9;font-weight:700">${courtLabel||'매치'}</div>${kindBadge}
+    </div>
     <div class="match-row">
       <div class="m-team ${won?'win':''}">${(m.ourPair||[]).join(' / ')||'—'}</div>
       ${scoreEl}
@@ -5439,7 +5510,7 @@ window.saveAddEvMatch=async function(){
   const matches=[...(ev.matches||[])];
   const roundMatches=matches.filter(m=>(m.round||1)===roundNum);
   const nextCourt=(roundMatches.length>0?Math.max(...roundMatches.map(m=>m.court||0)):0)+1;
-  matches.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:''});
+  matches.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:'',matchKind:'instant'});
   if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon:',e.code);}}
   try{
     await updateDoc(doc(db,'events',evId),{matches});
@@ -5470,7 +5541,7 @@ window.saveAddEvMatchFromFm=async function(evId){
   const roundNum=roundNums.length?Math.max(...roundNums):1;
   const roundMatches=matches.filter(function(m){return(m.round||1)===roundNum;});
   const nextCourt=(roundMatches.length>0?Math.max(...roundMatches.map(function(m){return m.court||0;})):0)+1;
-  matches.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub:ev.oppClub||'',ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:courtType});
+  matches.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub:ev.oppClub||'',ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:courtType,matchKind:'instant'});
   if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon:',e.code);}}
   try{
     await updateDoc(doc(db,'events',evId),{matches});
@@ -6566,13 +6637,36 @@ function triggerAnnPopups() {
 }
 
 // 탭
+let currentAdminOpsMode = 'regular';
+window.switchMatchOpsMode = function(mode, btn){
+  currentAdminOpsMode = mode === 'event' ? 'event' : 'regular';
+  const scheduleGroup = document.getElementById('adminGroup-schedule');
+  const eventGroup = document.getElementById('adminGroup-events');
+  if (scheduleGroup) scheduleGroup.style.display = currentAdminOpsMode === 'regular' ? 'block' : 'none';
+  if (eventGroup) eventGroup.style.display = currentAdminOpsMode === 'event' ? 'block' : 'none';
+  document.querySelectorAll('.admin-ops-tab').forEach(b => b.classList.remove('active'));
+  const activeBtn = btn || document.getElementById(currentAdminOpsMode === 'regular' ? 'adminOpsRegularBtn' : 'adminOpsEventBtn');
+  if (activeBtn) activeBtn.classList.add('active');
+  if (currentAdminOpsMode === 'event') renderAdminEvents();
+};
+
 window.switchAdminSub = function(key, btn){
-  ['members','match','schedule','events','status','announce'].forEach(k => {
+  ['members','match','operations','schedule','events','status','announce'].forEach(k => {
     const el = document.getElementById(`adminGroup-${k}`);
-    if (el) el.style.display = (k === key) ? 'block' : 'none';
+    if (el) el.style.display = (k === key && !['schedule','events'].includes(k)) ? 'block' : 'none';
   });
+  if (key === 'schedule' || key === 'events') {
+    key = 'operations';
+    currentAdminOpsMode = arguments[0] === 'events' ? 'event' : 'regular';
+    const ops = document.getElementById('adminGroup-operations');
+    if (ops) ops.style.display = 'block';
+  }
+  if (key === 'operations') switchMatchOpsMode(currentAdminOpsMode);
   document.querySelectorAll('#tab-admin .subtabs .stab').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
+  const activeTopBtn = key === 'operations'
+    ? document.querySelector(`#tab-admin .subtabs .stab[onclick*="switchAdminSub('operations'"]`)
+    : btn;
+  if (activeTopBtn) activeTopBtn.classList.add('active');
   if (key === 'announce') renderAdminAnnouncements();
 };
 
@@ -8088,7 +8182,7 @@ function renderHomeTab() {
   ];
   if (isAdmin) {
     CATS.push({ id:'admin-panel', icon:'⚙️', label:'관리자', grad:'linear-gradient(135deg,rgba(100,10,10,0.28),rgba(239,68,68,0.1))', border:'rgba(239,68,68,0.38)', cardCls:'sc-card-admin',
-      items:[{icon:'👥',name:'회원 관리',go:'admin-members'},{icon:'🎾',name:'경기 설정',go:'admin-match'},{icon:'🗓️',name:'일정·라운드',go:'admin-schedule'},{icon:'📊',name:'현황/통계',go:'admin-status'}] });
+      items:[{icon:'👥',name:'회원 관리',go:'admin-members'},{icon:'🎾',name:'경기 설정',go:'admin-match'},{icon:'📅',name:'경기 운영',go:'admin-schedule'},{icon:'📊',name:'현황/통계',go:'admin-status'}] });
   }
   var shortcutsHtml = CATS.map(function(cat) {
     var isOpen = openCategory === cat.id;
@@ -8470,12 +8564,16 @@ window.homeGoTo = function(target) {
       const b = document.querySelector('#tab-league .stab:nth-child(4)');
       if (b) switchSub('pairs', b);
     }, 60);
-  } else if (target === 'admin-members' || target === 'admin-match' || target === 'admin-schedule' || target === 'admin-status') {
+  } else if (target === 'admin-members' || target === 'admin-match' || target === 'admin-schedule' || target === 'admin-events' || target === 'admin-status') {
     const sub = target.replace('admin-', '');
     navTo('admin');
     setTimeout(()=>{
-      const b = document.querySelector(`#tab-admin .stab[onclick*="switchAdminSub('${sub}'"]`);
-      if (b) switchAdminSub(sub, b);
+      const mappedSub = (sub === 'schedule' || sub === 'events') ? 'operations' : sub;
+      const b = document.querySelector(`#tab-admin .stab[onclick*="switchAdminSub('${mappedSub}'"]`);
+      if (b) {
+        if (mappedSub === 'operations') currentAdminOpsMode = sub === 'events' ? 'event' : 'regular';
+        switchAdminSub(mappedSub, b);
+      }
     }, 60);
   } else {
     navTo(target);
@@ -9278,6 +9376,14 @@ window.toggleMatchCard=function(mid){
   extra.style.display=isOpen?'none':'block';
   if(arrow)arrow.style.transform=isOpen?'':'rotate(180deg)';
 };
+window.toggleDayPlayCount=function(id,button){
+  const grid=document.getElementById(id);
+  if(!grid)return;
+  const open=grid.classList.toggle('open');
+  if(button)button.setAttribute('aria-expanded',String(open));
+  const label=button?.querySelector('span:last-child');
+  if(label)label.textContent=open?'접기 ↑':'펼치기 ↓';
+};
 window.toggleAtt=function(bodyId,arrId){
   const el=document.getElementById(bodyId),arr=document.getElementById(arrId);
   if(!el)return;
@@ -9480,7 +9586,7 @@ window.approveMatchRequest = async function(requestId){
   if (!request || request.status !== 'pending') return;
   const day = days.find(d => d.id === request.dayId);
   if (!day || !request.match) { alert('대상 날짜 또는 경기 정보를 찾을 수 없어요.'); return; }
-  const m = request.match;
+  const m = {...request.match, matchKind:'instant'};
   const label = `${(m.team1||[]).join(' · ')} vs ${(m.team2||[]).join(' · ') || '상대 팀 미정'}`;
   if (!confirm(`다음 즉석매치를 경기표에 추가할까요?\n\n${label}`)) return;
   try {
@@ -9537,6 +9643,17 @@ window.submitScore=async function(){
 };
 
 // 점수 입력
+function setScoreMatchKind(kind, context){
+  const badge=document.getElementById('scoreMatchKind');
+  const detail=document.getElementById('scoreMatchContext');
+  const instant=kind==='instant';
+  if(badge){
+    badge.className=`match-kind-badge ${instant?'match-kind-instant':'match-kind-official'}`;
+    badge.textContent=instant?'⚡ 즉석 매치':'🛡️ 공식 대진';
+  }
+  if(detail)detail.textContent=context||'스코어와 포·백을 입력하세요';
+}
+
 window.openScore=function(dayId, rIdx, mId){
   const day=days.find(d=>d.id===dayId);
   const round=(day?.rounds||[])[rIdx];
@@ -9547,6 +9664,7 @@ window.openScore=function(dayId, rIdx, mId){
   document.getElementById('s1Label').textContent=(match.team1||[]).join('/')+' 스코어';
   document.getElementById('s2Label').textContent=(match.team2||[]).join('/')+' 스코어';
   document.getElementById('s1').value=''; document.getElementById('s2').value='';
+  setScoreMatchKind(day.matchMode==='freeMatch'||match.matchKind==='instant'?'instant':'official','스코어와 포·백을 입력하세요');
   // 포지션 선택 UI (팀별 그룹, 상호배타)
   const existPos=match.positions||{};
   const teamGroups=[{label:(match.team1||[]).join('/')+'팀',players:match.team1||[]},{label:(match.team2||[]).join('/')+'팀',players:match.team2||[]}];
@@ -9573,6 +9691,7 @@ window.openMeetupScore=function(schId, rdIdx, mIdx){
   document.getElementById('s1Label').textContent=(m.team1||[]).join('/')+' 스코어';
   document.getElementById('s2Label').textContent=(m.team2||[]).join('/')+' 스코어';
   document.getElementById('s1').value=''; document.getElementById('s2').value='';
+  setScoreMatchKind('official','모임 대진 · 스코어와 포·백을 입력하세요');
   const mupExistPos=m.positions||{};
   const mupTeamGroups=[{label:(m.team1||[]).join('/')+'팀',players:m.team1||[]},{label:(m.team2||[]).join('/')+'팀',players:m.team2||[]}];
   document.getElementById('positionSelectors').innerHTML=mupTeamGroups.map(({label,players})=>{
@@ -9632,6 +9751,7 @@ window.openEvScore=function(evId, mi){
     `<strong style="color:#1E293B">${ourStr}</strong> <span style="color:#64748B">vs</span> <strong style="color:#2563EB">${oppStr}${clubLabel?` <span style="font-size:10px;color:#64748B">(${clubLabel})</span>`:''}</strong>`;
   document.getElementById('s1Label').textContent='우리팀 스코어';
   document.getElementById('s2Label').textContent='상대팀 스코어';
+  setScoreMatchKind(m.matchKind==='instant'?'instant':'official','교류·이벤트전 · 스코어와 포·백을 입력하세요');
   const done=m.ourScore!==null&&m.ourScore!==undefined;
   document.getElementById('s1').value=done?m.ourScore:'';
   document.getElementById('s2').value=done?m.oppScore:'';
@@ -9663,6 +9783,7 @@ window.openPendingEvScore=function(ri, mci, idx){
   const inp=evExchangeCurrentInputs[idx]||{};
   const opp1=inp.opp1!==undefined?inp.opp1:((ex.oppPair||[])[0]||'');
   const opp2=inp.opp2!==undefined?inp.opp2:((ex.oppPair||[])[1]||'');
+  pendingScore.players=[...pair,opp1,opp2].filter(Boolean);
   const clubLabel=inp.oppClub!==undefined?inp.oppClub:(ex.oppClub||'');
   const ourStr=pair.filter(Boolean).join(' / ')||'우리팀';
   const oppStr=[opp1,opp2].filter(Boolean).join(' / ')||'상대팀';
@@ -9670,12 +9791,26 @@ window.openPendingEvScore=function(ri, mci, idx){
     `<strong style="color:#1E293B">${ourStr}</strong> <span style="color:#64748B">vs</span> <strong style="color:#2563EB">${oppStr}${clubLabel?` <span style="font-size:10px;color:#64748B">(${clubLabel})</span>`:''}</strong>`;
   document.getElementById('s1Label').textContent='우리팀 스코어';
   document.getElementById('s2Label').textContent='상대팀 스코어';
+  setScoreMatchKind('official','교류·이벤트전 · 스코어와 포·백을 입력하세요');
   const inMemDone=m.score1!==null&&m.score1!==undefined;
   const exDone=ex.ourScore!==null&&ex.ourScore!==undefined;
   const done=inMemDone||exDone;
   document.getElementById('s1').value=done?(inMemDone?m.score1:ex.ourScore):'';
   document.getElementById('s2').value=done?(inMemDone?m.score2:ex.oppScore):'';
-  document.getElementById('positionSelectors').innerHTML='';
+  const pendingPlayers=[
+    {label:'우리팀',players:pair},
+    {label:'상대팀',players:[opp1,opp2].filter(Boolean)}
+  ];
+  const pendingPos=m.positions||ex.positions||{};
+  document.getElementById('positionSelectors').innerHTML=pendingPlayers.map(({label,players})=>{
+    const fp=players.filter(Boolean);
+    const [p0,p1]=fp;
+    if(!p0)return '';
+    const k0=p0.replace(/\s/g,'_'), k1=(p1||'').replace(/\s/g,'_');
+    return `<div style="font-size:10px;color:#64748B;font-weight:600;margin:5px 0 3px">${label}</div>`
+      +renderPosRow(p0,k0,k1,pendingPos[p0]||'')
+      +(p1?renderPosRow(p1,k1,k0,pendingPos[p1]||''):'');
+  }).join('');
   document.getElementById('scoreModal').style.display='flex';
 };
 
@@ -9732,8 +9867,18 @@ window.submitScore=async function(){
   }
   if(pendingScore.type==='pendingEvScore'){
     const {ri,mci}=pendingScore;
-    meetupCurrentRounds[ri].matches[mci].score1=s1;
-    meetupCurrentRounds[ri].matches[mci].score2=s2;
+    const pendingMatch=meetupCurrentRounds[ri].matches[mci];
+    pendingMatch.score1=s1;
+    pendingMatch.score2=s2;
+    const pendingPositions={...(pendingMatch.positions||{})};
+    (pendingScore.players||[...(pendingMatch.team1||[]),...(pendingMatch.team2||[])]).filter(Boolean).forEach(name=>{
+      const key=name.replace(/\s/g,'_');
+      const fb=document.getElementById(`pos_fore_${key}`);
+      const bb=document.getElementById(`pos_back_${key}`);
+      if(fb?.dataset?.selected==='1')pendingPositions[name]='fore';
+      else if(bb?.dataset?.selected==='1')pendingPositions[name]='back';
+    });
+    pendingMatch.positions=pendingPositions;
     hide('scoreModal');
     renderMeetupResultStep();
     return;
@@ -9772,12 +9917,12 @@ function _initMatchModalFreeMode(isFree){
     document.getElementById(id).onchange=isFree?window.updateMatchType:null;
   });
 }
-window.openAddMatch=function(dayId, rIdx){
-  pendingRoundKey={dayId, rIdx:parseInt(rIdx)};
+window.openAddMatch=function(dayId, rIdx, forceInstant=false){
+  pendingRoundKey={dayId, rIdx:parseInt(rIdx), forceInstant:!!forceInstant};
   const day=days.find(d=>d.id===dayId);
   const round=(day?.rounds||[])[rIdx];
-  document.getElementById('matchRoundLabel').textContent=round?`${day.date} · ${round.name}`:'';
-  const isFree=!!(day&&day.matchMode==='freeMatch');
+  const isFree=!!(day&&(day.matchMode==='freeMatch'||forceInstant));
+  document.getElementById('matchRoundLabel').textContent=round?`${day.date} · ${round.name} · ${isFree?'즉석 매치':'공식 경기'}`:'';
   const pool = isFree ? getAttendees(dayId) : allPlayers();
   const opts='<option value="">-</option>'+pool.map(m=>`<option>${m.name}</option>`).join('');
   ['t1p1','t1p2','t2p1','t2p2'].forEach(id=>document.getElementById(id).innerHTML=opts);
@@ -9790,9 +9935,9 @@ window.openFreeAddMatch=function(dayId){
   const day=days.find(d=>d.id===dayId);
   if(!day) return;
   const rIdx=Math.max(0,(day.rounds||[]).length-1);
-  pendingRoundKey={dayId, rIdx};
+  pendingRoundKey={dayId, rIdx, forceInstant:true};
   const round=(day.rounds||[])[rIdx];
-  const label=round?`${day.date} · ${round.name}`:`${day.date} · 1라운드 (자동 생성)`;
+  const label=round?`${day.date} · ${round.name} · 즉석 매치`:`${day.date} · 1라운드 · 즉석 매치 (자동 생성)`;
   document.getElementById('matchRoundLabel').textContent=label;
   const pool=getAttendees(dayId);
   const opts='<option value="">-</option>'+pool.map(m=>`<option>${m.name}</option>`).join('');
@@ -9827,7 +9972,7 @@ window.submitMatch=async function(){
   const court=document.getElementById('mCourt').value;
   const {dayId,rIdx}=pendingRoundKey;
   const day=days.find(d=>d.id===dayId);
-  const isFree=!!(day&&day.matchMode==='freeMatch');
+  const isFree=!!(day&&(day.matchMode==='freeMatch'||pendingRoundKey.forceInstant));
   const rounds=[...(day.rounds||[])];
   if(isFree){
     if(!t1p1||!t1p2){alert('팀1 선수 2명을 모두 선택해주세요');return;}
@@ -9835,7 +9980,7 @@ window.submitMatch=async function(){
     const autoCalc=calcFreeMatchType(t1p1,t1p2);
     const manualEl=document.getElementById('mManualType');
     const tag=autoCalc||(manualEl&&manualEl.style.display!=='none'?manualEl.value:'')||'';
-    const nm={id:Date.now().toString(),team1:[t1p1,t1p2],team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court,tag};
+    const nm={id:Date.now().toString(),team1:[t1p1,t1p2],team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court,tag,matchKind:'instant',createdByRole:isAdmin?'admin':'member',createdByName:isAdmin?'관리자':(myClaim?.name||'')};
     if(!rounds[rIdx]){
       const ts=Date.now();
       rounds[rIdx]={id:`${ts}_free`,name:`${rIdx+1}라운드`,type:'자유',matches:[nm]};
@@ -9844,7 +9989,7 @@ window.submitMatch=async function(){
     }
   } else {
     if(!t1p1||!t2p1){alert('각 팀 선수 1명 이상');return;}
-    const nm={id:Date.now().toString(),team1:[t1p1,t1p2].filter(Boolean),team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court};
+    const nm={id:Date.now().toString(),team1:[t1p1,t1p2].filter(Boolean),team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court,matchKind:'official'};
     rounds[rIdx]={...rounds[rIdx],matches:[...(rounds[rIdx].matches||[]),nm]};
   }
   // 정회원의 즉석매치는 확정 데이터에 직접 쓰지 않고 관리자 승인 대기로 저장
