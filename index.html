@@ -3642,7 +3642,7 @@ function renderDays() {
           : '';
         const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
         const editBtn=(isAdmin||isRegularMember)&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
-        const pairEditBtn=isAdmin&&!m.done&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식'?`<button class="btn-del-sm" style="color:#059669" onclick="openPairEdit('${day.id}','${rIdx}','${m.id}')">✏ 페어</button>`:'';
+        const pairEditBtn=isAdmin&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식'?`<button class="btn-del-sm" style="color:#059669" onclick="openPairEdit('${day.id}','${rIdx}','${m.id}')">✏ 페어</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
         let evalHtml='';
         if (m.done) {
@@ -5173,7 +5173,7 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
   </div>`:'';
   const pairOpts=(parts||[]).map(p=>`<option value="${p}"${(m.ourPair||[])[0]===p?' selected':''}>${p}</option>`).join('');
   const pairOpts2=(parts||[]).map(p=>`<option value="${p}"${(m.ourPair||[])[1]===p?' selected':''}>${p}</option>`).join('');
-  const doneWarn=done?`<div style="font-size:10px;color:#D97706;margin-bottom:5px;padding:4px 6px;background:rgba(251,191,36,0.1);border-radius:5px;border-left:2px solid rgba(251,191,36,0.4)">⚠️ 결과가 입력된 매치입니다. 수정 시 점수가 초기화됩니다.</div>`:'';
+  const doneWarn=done?`<div style="font-size:10px;color:#D97706;margin-bottom:5px;padding:4px 6px;background:rgba(251,191,36,0.1);border-radius:5px;border-left:2px solid rgba(251,191,36,0.4)">⚠️ 종료된 경기입니다. 페어를 수정해도 입력된 점수는 유지됩니다.</div>`:'';
   const pairInpSec=isMember?`<div id="${pairInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(192,132,252,0.2)">
     ${doneWarn}<div style="font-size:10px;color:#c084fc;font-weight:700;margin-bottom:4px">우리팀 선수 재선택</div>
     <div style="display:flex;gap:4px;margin-bottom:6px">
@@ -5980,8 +5980,10 @@ window.saveEvPairEdit=async function(evId,mi){
   const newCourtType=calcFreeMatchType(p1,p2)||m.courtType||'';
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
   if(done){
-    if(!confirm('결과가 입력된 매치입니다. 페어를 수정하면 점수가 초기화됩니다. 계속하시겠어요?'))return;
-    matches[mi]={...m,ourPair:[p1,p2],courtType:newCourtType,ourScore:null,oppScore:null};
+    if(!confirm(`종료된 경기의 페어를 수정할까요?\n점수 ${m.ourScore} : ${m.oppScore}는 그대로 유지됩니다.`))return;
+    const keepNames=new Set([p1,p2,...(m.oppPair||[])]);
+    const keptPositions=Object.fromEntries(Object.entries(m.positions||{}).filter(([name])=>keepNames.has(name)));
+    matches[mi]={...m,ourPair:[p1,p2],courtType:newCourtType,positions:keptPositions,evalText:'',highlightVersion:0,pairEditedBy:getSeasonScoreEditorName(),pairEditedAt:new Date().toISOString()};
   }else{
     matches[mi]={...m,ourPair:[p1,p2],courtType:newCourtType};
   }
@@ -10023,7 +10025,7 @@ window.openPairEdit = function(dayId, rIdx, mId) {
   const day = days.find(d => d.id === dayId);
   const round = (day?.rounds||[])[parseInt(rIdx)];
   const match = (round?.matches||[]).find(m => m.id === mId);
-  if (!match || match.done) return;
+  if (!match || !isAdmin) return;
 
   const att = day.attendance || {};
   const dayGuestList = day.guests || [];
@@ -10041,7 +10043,8 @@ window.openPairEdit = function(dayId, rIdx, mId) {
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
   modal.innerHTML = `<div style="background:#fff;border-radius:14px;padding:20px;width:100%;max-width:340px;box-shadow:0 8px 32px rgba(0,0,0,0.18)">
     <div style="font-size:13px;font-weight:800;color:#1E293B;margin-bottom:4px">✏ 페어 수정</div>
-    <div style="font-size:11px;color:#64748B;margin-bottom:14px">${match.court} · ${match.tag} — 결과 미입력 경기</div>
+    <div style="font-size:11px;color:#64748B;margin-bottom:${match.done?'8':'14'}px">${match.court||'코트'} · ${match.tag||'경기'} · ${match.done?`${match.score1} : ${match.score2} 종료`:'결과 미입력'}</div>
+    ${match.done?`<div style="font-size:11px;line-height:1.55;color:#92400E;background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:8px 10px;margin-bottom:14px">⚠️ 점수는 그대로 유지되고, 개인 기록과 승률은 수정한 페어 기준으로 다시 계산됩니다.</div>`:''}
     <div style="font-size:11px;font-weight:700;color:#2563EB;margin-bottom:6px">팀 1</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
       <select id="pe_t1p1" style="${selSt}">${blankOpt}${opts}</select>
@@ -10084,6 +10087,8 @@ window.savePairEdit = async function(dayId, rIdx, mId) {
   const day = days.find(d => d.id === dayId);
   const ri = parseInt(rIdx);
   const round = (day?.rounds||[])[ri];
+  const originalMatch = (round?.matches||[]).find(m => m.id === mId);
+  if (!day || !round || !originalMatch) { alert('수정할 경기를 찾을 수 없어요'); return; }
 
   // 같은 라운드 다른 경기 크로스-코트 중복 체크 (자기 자신 제외)
   const otherMs = (round?.matches||[]).filter(m => m.id !== mId);
@@ -10095,11 +10100,32 @@ window.savePairEdit = async function(dayId, rIdx, mId) {
   const gOf = n => (allPlayers().find(p => p.name===n)?.gender) || 'm';
   const tag = all.every(n => gOf(n)==='m') ? '남복' : all.every(n => gOf(n)==='f') ? '여복' : '혼복';
 
+  if (originalMatch.done) {
+    const before=`${(originalMatch.team1||[]).join(' / ')} vs ${(originalMatch.team2||[]).join(' / ')}`;
+    const after=`${team1.join(' / ')} vs ${team2.join(' / ')}`;
+    if (!confirm(`종료된 경기의 페어를 수정할까요?\n\n기존: ${before}\n변경: ${after}\n점수 ${originalMatch.score1} : ${originalMatch.score2}는 그대로 유지됩니다.`)) return;
+  }
+
+  const keptPositions={};
+  all.forEach(name=>{
+    if(originalMatch.positions?.[name])keptPositions[name]=originalMatch.positions[name];
+  });
+  const editorName=getSeasonScoreEditorName();
+
   const rounds = [...(day.rounds||[])];
-  rounds[ri] = { ...rounds[ri], matches: (rounds[ri].matches||[]).map(m => m.id===mId ? {...m, team1, team2, tag} : m) };
+  rounds[ri] = { ...rounds[ri], matches: (rounds[ri].matches||[]).map(m => m.id===mId ? {
+    ...m, team1, team2, tag, positions:keptPositions,
+    pairEditedBy:editorName, pairEditedAt:new Date().toISOString(),
+    evalText:'', highlightVersion:0
+  } : m) };
   try {
-    await updateDoc(doc(db, 'days', dayId), { rounds });
+    await updateDoc(doc(db, 'days', dayId), { rounds, dayBadges:[], daySummary:'', highlightVersion:0 });
+    day.rounds=rounds;
+    day.dayBadges=[];
+    day.daySummary='';
+    day.highlightVersion=0;
     document.getElementById('pairEditModal')?.remove();
+    recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
   } catch(e) {
     alert('저장 실패: ' + e.message);
   }
