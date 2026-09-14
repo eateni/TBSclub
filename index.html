@@ -413,6 +413,13 @@ tr:nth-child(even){background:#F5FCFB;}
 .day-play-count-grid.open{display:grid}
 .day-play-count-item{padding:7px 9px;border:1px solid #E0ECE9;border-radius:8px;background:#fff;font-size:10px;color:#64748B}
 .day-play-count-item b{display:block;color:#1E293B;font-size:11px;margin-bottom:2px}
+.instant-board{margin:0 0 10px;padding:12px;border-radius:13px;background:linear-gradient(145deg,#071F33,#0B5560);border:1px solid rgba(52,211,153,.45);box-shadow:0 6px 18px rgba(6,48,71,.18);color:#fff}
+.instant-board-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px}.instant-board-kicker{font-size:9px;font-weight:900;letter-spacing:.8px;color:#6EE7B7}.instant-board-title{font-size:15px;font-weight:900;margin-top:2px}.instant-board-time{font-size:9px;color:#A7C7D4;text-align:right;line-height:1.45}
+.instant-board-totals{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:9px}.instant-board-total{border-radius:9px;padding:7px 5px;text-align:center;background:rgba(255,255,255,.08);font-size:9px;color:#A7C7D4}.instant-board-total b{display:block;font-size:17px;color:#fff;margin-bottom:1px}
+.instant-board-list{display:flex;flex-direction:column;gap:6px}.instant-board-match{display:grid;grid-template-columns:56px minmax(0,1fr) auto;align-items:center;gap:7px;padding:8px;border-radius:9px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.1)}
+.instant-board-status{font-size:9px;font-weight:900;text-align:center;border-radius:20px;padding:4px 5px}.instant-board-status.live{background:#DC2626;color:#fff}.instant-board-status.paused{background:#F59E0B;color:#fff}.instant-board-status.wait{background:#EDE9FE;color:#6D28D9}.instant-board-status.done{background:#D1FAE5;color:#047857}
+.instant-board-teams{min-width:0;font-size:10px;color:#DCECF1;line-height:1.5}.instant-board-teams b{display:block;color:#fff;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.instant-board-score{font-size:15px;font-weight:900;white-space:nowrap;text-align:right}.instant-board-score small{display:block;font-size:8px;color:#A7C7D4;font-weight:600;margin-top:2px}.instant-board-action{border:1px solid rgba(110,231,183,.6);background:rgba(16,185,129,.14);color:#A7F3D0;border-radius:7px;padding:5px 7px;font-size:9px;font-weight:900;cursor:pointer;margin-left:4px}
+.instant-board-fair{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.13);font-size:9px;color:#A7C7D4;line-height:1.7}.instant-board-fair b{color:#FDE68A}
 .score-kind-line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-7px 0 12px;padding:8px 10px;border-radius:10px;background:#F5FAFA;border:1px solid #DCEBE8;font-size:10px;color:#64748B}
 @media(max-width:520px){.admin-ops-guide{grid-template-columns:1fr}.admin-ops-step{text-align:left;padding:8px 10px}.day-play-count-grid{grid-template-columns:1fr 1fr}}
 
@@ -528,7 +535,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.0.0</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.1.0</div>
     </div>
   </div>
 
@@ -537,7 +544,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.0.0</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.1.0</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -586,6 +593,7 @@ tr:nth-child(even){background:#F5FCFB;}
           <li>경기 카드의 결과 입력에서 양 팀 점수를 기록합니다.</li>
           <li>각 선수의 <b>포·백 위치</b>를 선택해 개인 기록에 반영합니다.</li>
           <li>라이브 스코어는 포인트를 누르면 게임 점수가 자동 계산되며, 실수 취소와 경기 종료를 사용할 수 있습니다.</li>
+          <li>즉석매치 날짜를 열면 <b>전체 상황판</b>에서 코트별 진행·대기·종료 경기와 실시간 점수를 한눈에 볼 수 있습니다.</li>
           <li>종료된 경기의 페어가 실제 경기와 다르면 관리자에게 수정을 요청합니다.</li>
         </ul>
       </div>
@@ -1492,7 +1500,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -3565,7 +3573,7 @@ window.submitScoreEdit = async function() {
   try {
     await updateDayMatchSafely(pendingScoreEdit.dayId,pendingScoreEdit.rIdx,pendingScoreEdit.mId,current=>({
       ...current,score1:s1,score2:s2,done:true,positions,
-      enteredBy:current.enteredBy||editorName,editedBy:editorName
+      enteredBy:current.enteredBy||editorName,editedBy:editorName,liveState:null
     }),{action:'점수 수정',editor:editorName,dayUpdates:{dayBadges:[],daySummary:'',highlightVersion:0}});
     hide('scoreEditModal');
     recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
@@ -3754,6 +3762,42 @@ function renderTop3(stats) {
     </div>`).join('');
 }
 
+function buildInstantMatchBoard(day,rounds,playCounts,attendingAll) {
+  const canControl=isAdmin||(!isAdmin&&myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
+  const entries=[];
+  rounds.forEach((round,rIdx)=>(round.matches||[]).forEach(match=>{
+    if(match.isRally||match.tag==='랠리'||match.tag==='휴식')return;
+    if(day.matchMode!=='freeMatch'&&match.matchKind!=='instant')return;
+    const live=match.liveState&&match.liveState.active&&!match.done;
+    const updatedAt=live?Date.parse(match.liveState.updatedAt||''):0;
+    const stale=updatedAt&&Date.now()-updatedAt>15*60*1000;
+    const paused=live&&(match.liveState.paused||stale);
+    const status=match.done?'done':live?(paused?'paused':'live'):'wait';
+    entries.push({match,round,rIdx,status,updatedAt});
+  }));
+  const rank={live:0,paused:1,wait:2,done:3};
+  entries.sort((a,b)=>rank[a.status]-rank[b.status]||(a.match.court||'').localeCompare(b.match.court||'')||(b.updatedAt||0)-(a.updatedAt||0));
+  const activeCount=entries.filter(e=>e.status==='live'||e.status==='paused').length;
+  const waitCount=entries.filter(e=>e.status==='wait').length;
+  const doneCount=entries.filter(e=>e.status==='done').length;
+  const rows=entries.map(({match:m,rIdx,status,updatedAt})=>{
+    const labels={live:'🔴 진행',paused:'⏸ 중지',wait:'⏳ 대기',done:'✅ 종료'};
+    const team1=(m.team1||[]).join(' · ')||'팀 1 미정';
+    const team2=(m.team2||[]).join(' · ')||'팀 2 미정';
+    const state=m.liveState||{};
+    const score=status==='live'||status==='paused'?`${state.gamesA||0} : ${state.gamesB||0}`:m.done?`${m.score1} : ${m.score2}`:'—';
+    const pointText=(status==='live'||status==='paused')?`${state.pointsA??0} - ${state.pointsB??0}${updatedAt?` · ${new Date(updatedAt).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'})}`:''}`:m.done?'최종 스코어':(m.court||'코트 미정');
+    const action=!m.done&&canControl?`<button class="instant-board-action" onclick="event.stopPropagation();openLiveScore('${day.id}','${rIdx}','${m.id}')">${status==='wait'?'시작':'열기'}</button>`:'';
+    return `<div class="instant-board-match"><div class="instant-board-status ${status}">${labels[status]}</div><div class="instant-board-teams"><b>${m.court||'코트 미정'} · ${team1}</b>vs ${team2}</div><div class="instant-board-score">${score}<small>${pointText}${action}</small></div></div>`;
+  }).join('')||'<div style="padding:10px;text-align:center;font-size:10px;color:#A7C7D4">등록된 경기가 없어요</div>';
+  const countRows=(attendingAll||[]).map(p=>({name:p.name,count:playCounts[p.name]?.instant||0}));
+  const min=countRows.length?Math.min(...countRows.map(p=>p.count)):0;
+  const max=countRows.length?Math.max(...countRows.map(p=>p.count)):0;
+  const nextNames=countRows.filter(p=>p.count===min).map(p=>p.name).slice(0,6).join(' · ');
+  const fairness=countRows.length?`최소 <b>${min}경기</b> · 최대 <b>${max}경기</b>${nextNames?` · 다음 경기 우선: <b>${nextNames}</b>`:''}`:'참석자가 등록되면 경기 수 균형을 보여드려요.';
+  return `<div class="instant-board"><div class="instant-board-head"><div><div class="instant-board-kicker">LIVE MATCH BOARD</div><div class="instant-board-title">📺 즉석매치 전체 상황판</div></div><div class="instant-board-time">코트·진행·점수<br>실시간 자동 반영</div></div><div class="instant-board-totals"><div class="instant-board-total"><b>${activeCount}</b>진행 중</div><div class="instant-board-total"><b>${waitCount}</b>대기</div><div class="instant-board-total"><b>${doneCount}</b>종료</div></div><div class="instant-board-list">${rows}</div><div class="instant-board-fair">⚖️ ${fairness}</div></div>`;
+}
+
 // ── 날짜별 대진표 렌더 ─────────────────────────────────────────────
 function renderDays() {
   const el = document.getElementById('roundList');
@@ -3791,14 +3835,11 @@ function renderDays() {
     </div>` : '';
 
     // 참석자 정보
-    const att = day.attendance || {};
-    const dayGuestList = day.guests || [];
-    const attendingM = members.filter(m => att[m.name] !== false);
-    const attendingG = guests.filter(g => dayGuestList.includes(g.name));
-    const attendingAll = [...attendingM, ...attendingG];
+    const attendingAll = getAttendees(day.id);
     const attendStr = attendingAll.length > 0
       ? `<span style="font-size:10px;color:rgba(100,200,150,0.8);font-weight:400;margin-left:6px">👥 ${attendingAll.length}명 참석</span>`
       : '';
+    const instantBoardHtml=(isFreeMode||instantMatchCount>0)?buildInstantMatchBoard(day,rounds,playCounts,attendingAll):'';
 
     const roundsHtml = rounds.map((r, rIdx) => {
       const matchesHtml = (r.matches||[]).map(m => {
@@ -3977,11 +4018,13 @@ function renderDays() {
           <span>📅 ${dateStr}${day.place?` <span style="color:rgba(100,150,200,0.6);font-size:11px;font-weight:400">· ${day.place}</span>`:''}${attendStr}</span>
           <span style="font-size:11px;color:rgba(100,150,200,0.6);font-weight:400">${rounds.length}라운드 · ${doneMatches}/${totalMatches}경기 완료 ${delDayBtn}</span>
           <span class="day-match-summary"><span class="match-kind-badge match-kind-official">🛡️ 공식 ${officialMatchCount}</span><span class="match-kind-badge match-kind-instant">⚡ 즉석 ${instantMatchCount}</span></span>
+          ${(isFreeMode||instantMatchCount>0)?'<span style="font-size:10px;color:#0D9488;font-weight:800">📺 전체 상황판 보기</span>':''}
           ${totalMatches>0?`<div style="width:100%;height:3px;background:rgba(35,90,180,0.15);border-radius:2px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${progressPct}%;background:${progressPct===100?'#34d399':'#60a5fa'};border-radius:2px;transition:width 0.5s"></div></div>`:''}
         </div>
         <span id="${dayArr}" style="color:#64748B;transition:transform 0.2s">›</span>
       </button>
       <div class="round-body" id="${dayId}" style="display:none">
+        ${instantBoardHtml}
         ${roundsHtml || '<div style="color:#64748B;font-size:13px;padding:8px 0">아직 라운드가 없어요</div>'}
         ${dayAddMatchBtn}
         ${playCountHtml}
@@ -10517,7 +10560,7 @@ window.submitScore=async function(){
   try {
     await updateDayMatchSafely(pendingScore.dayId,pendingScore.rIdx,pendingScore.mId,current=>({
       ...current,score1:s1,score2:s2,done:true,positions:{...(current.positions||{}),...positions},
-      enteredBy:current.enteredBy||editorName
+      enteredBy:current.enteredBy||editorName,liveState:null
     }),{action:'결과 입력',editor:editorName,dayUpdates:{dayBadges:[],daySummary:'',highlightVersion:0}});
     hide('scoreModal');
     recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
@@ -12287,32 +12330,46 @@ const liveScore = {
 let lsSoundMuted = false;
 let lsAudioCtx = null;
 let lsCachedEnVoice = null;
+let lsLiveSyncTimer = null;
 
 function lsDraftKey(dayId=liveScore.dayId,rIdx=liveScore.rIdx,mId=liveScore.mId) {
   return `tbs-live-draft-v1:${dayId}:${rIdx}:${mId}`;
 }
+function lsDeviceId() {
+  let id='';
+  try {
+    id=localStorage.getItem('tbs-live-device-id')||'';
+    if(!id){id=`device-${Date.now()}-${Math.random().toString(36).slice(2,8)}`;localStorage.setItem('tbs-live-device-id',id);}
+  } catch(e) { id='temporary-device'; }
+  return id;
+}
+function lsDraftPayload(screen='match') {
+  return {
+    savedAt:Date.now(),screen,
+    teamSignature:liveScore.players.map(p=>`${p.team}:${p.name}`).join('|'),
+    serveOrder:[...liveScore.serveOrder],positions:{...liveScore.positions},taps:[...liveScore.taps],
+    decidingSideChoice:liveScore.decidingSideChoice,matchPhase:liveScore.matchPhase,
+    tbTaps:[...liveScore.tbTaps],tbStartIdx:liveScore.tbStartIdx
+  };
+}
 function lsPersistDraft(screen='match') {
   if(!liveScore.dayId||liveScore.rIdx===null||!liveScore.mId)return;
   try {
-    localStorage.setItem(lsDraftKey(),JSON.stringify({
-      savedAt:Date.now(),screen,
-      teamSignature:liveScore.players.map(p=>`${p.team}:${p.name}`).join('|'),
-      serveOrder:liveScore.serveOrder,positions:liveScore.positions,taps:liveScore.taps,
-      decidingSideChoice:liveScore.decidingSideChoice,matchPhase:liveScore.matchPhase,
-      tbTaps:liveScore.tbTaps,tbStartIdx:liveScore.tbStartIdx
-    }));
+    localStorage.setItem(lsDraftKey(),JSON.stringify(lsDraftPayload(screen)));
   } catch(e) { console.warn('라이브 임시 저장 실패:',e); }
 }
 function lsClearDraft() {
   try { localStorage.removeItem(lsDraftKey()); } catch(e) {}
 }
-function lsRestoreDraftIfAvailable() {
+function lsRestoreDraftIfAvailable(serverSaved=null) {
   let saved=null;
   try { saved=JSON.parse(localStorage.getItem(lsDraftKey())||'null'); } catch(e) {}
+  const fromServer=!saved&&serverSaved;
+  if(fromServer)saved=serverSaved;
   if(!saved)return false;
   const signature=liveScore.players.map(p=>`${p.team}:${p.name}`).join('|');
   if(saved.teamSignature!==signature||!saved.savedAt||Date.now()-saved.savedAt>24*60*60*1000){lsClearDraft();return false;}
-  if(!confirm('이 기기에 저장된 진행 중 라이브 스코어가 있어요.\n이어서 입력할까요?')){lsClearDraft();return false;}
+  if(!confirm(`${fromServer?'서버에':'이 기기에'} 저장된 진행 중 라이브 스코어가 있어요.\n이어서 입력할까요?`)){if(!fromServer)lsClearDraft();return false;}
   liveScore.serveOrder=Array.isArray(saved.serveOrder)?saved.serveOrder:[];
   liveScore.positions=saved.positions||{};
   liveScore.taps=Array.isArray(saved.taps)?saved.taps:[];
@@ -12339,11 +12396,34 @@ function lsRestoreDraftIfAvailable() {
   return true;
 }
 
+function lsQueueLiveStateSync(paused=false,delay=450) {
+  if(!liveScore.dayId||liveScore.rIdx===null||!liveScore.mId)return;
+  clearTimeout(lsLiveSyncTimer);
+  const isTB=liveScore.matchPhase==='tiebreak'||(liveScore.matchPhase==='matchEnded'&&liveScore.tbTaps.length);
+  const payload={
+    active:true,paused,updatedAt:new Date().toISOString(),updatedBy:getSeasonScoreEditorName(),
+    deviceId:lsDeviceId(),syncSeq:Date.now(),
+    gamesA:liveScore.games.a,gamesB:liveScore.games.b,
+    pointsA:isTB?liveScore.tb.a:LS_PTS[Math.min(liveScore.points.a,3)],
+    pointsB:isTB?liveScore.tb.b:LS_PTS[Math.min(liveScore.points.b,3)],
+    phase:liveScore.matchPhase,draft:lsDraftPayload('match')
+  };
+  const {dayId,rIdx,mId}=liveScore;
+  lsLiveSyncTimer=setTimeout(async()=>{
+    try {
+      await updateDayMatchSafely(dayId,rIdx,mId,current=>(current.liveState?.syncSeq||0)>payload.syncSeq?current:{...current,liveState:payload},{history:false});
+    } catch(e) { console.warn('상황판 실시간 갱신 실패:',e); }
+  },delay);
+}
+
 window.openLiveScore = function(dayId, rIdx, mId) {
   const day = days.find(d=>d.id===dayId);
   const round = (day?.rounds||[])[rIdx];
   const match = (round?.matches||[]).find(m=>m.id===mId);
   if (!match) return;
+  const liveOwner=match.liveState;
+  const liveFresh=liveOwner?.active&&!liveOwner.paused&&Date.now()-Date.parse(liveOwner.updatedAt||'')<15*60*1000;
+  if(liveFresh&&liveOwner.deviceId&&liveOwner.deviceId!==lsDeviceId()&&!confirm(`${liveOwner.updatedBy||'다른 회원'}님이 다른 기기에서 이 경기 점수를 입력 중이에요.\n그래도 이 기기에서 이어서 입력할까요?`))return;
   liveScore.dayId = dayId;
   liveScore.rIdx = parseInt(rIdx);
   liveScore.mId = mId;
@@ -12382,7 +12462,8 @@ window.openLiveScore = function(dayId, rIdx, mId) {
   document.getElementById('ls-endOverlay').classList.remove('show');
   lsRenderPickGrid();
   document.getElementById('liveScoreOverlay').style.display = 'flex';
-  lsRestoreDraftIfAvailable();
+  const restored=lsRestoreDraftIfAvailable(match.liveState?.draft||null);
+  if(restored&&document.getElementById('ls-matchScreen')?.style.display==='flex')lsQueueLiveStateSync(false,0);
 };
 
 window.closeLiveScore = function() {
@@ -12391,6 +12472,7 @@ window.closeLiveScore = function() {
     const screen=document.getElementById('ls-matchScreen')?.style.display==='flex'?'match':document.getElementById('ls-stage2')?.style.display==='flex'?'setup2':'setup1';
     lsPersistDraft(screen);
     if(!confirm('현재 점수는 이 기기에 임시 저장됩니다.\n라이브 스코어를 닫을까요?'))return;
+    if(screen==='match')lsQueueLiveStateSync(true,0);
   }
   document.getElementById('liveScoreOverlay').style.display = 'none';
 };
@@ -12548,6 +12630,7 @@ window.lsStartMatch = function() {
   ms.style.display = 'flex'; ms.style.flexDirection = 'column';
   lsRecomputeAndRender();
   lsPersistDraft('match');
+  lsQueueLiveStateSync(false,0);
 };
 
 function lsNameTeam(name) { return liveScore.players.find(p=>p.name===name).team; }
@@ -12597,7 +12680,7 @@ function lsRecomputeTiebreak() {
   }
   lsRenderAllUI();
   if (winner) { lsPlayGameSound(); lsAnnounceGameSet(); lsAutoSave(); }
-  else { lsPlayPointSound(); lsSpeak('득점!','ko-KR',1,()=>setTimeout(()=>lsAnnounceTiebreakScore(),150)); }
+  else { lsQueueLiveStateSync(false);lsPlayPointSound(); lsSpeak('득점!','ko-KR',1,()=>setTimeout(()=>lsAnnounceTiebreakScore(),150)); }
 }
 function lsRenderAllUI() {
   const isTB = liveScore.matchPhase==='tiebreak';
@@ -12673,6 +12756,7 @@ window.lsPickDecidingSide = function(side) {
   lsRenderDecidingChooser();
   lsRenderServerBar();
   lsPersistDraft('match');
+  lsQueueLiveStateSync(false);
 };
 function lsRenderMatchChooser() {
   const el = document.getElementById('ls-matchChooser');
@@ -12698,6 +12782,7 @@ window.lsChooseTiebreak = function() {
   liveScore.tbStartIdx = liveScore.curGameIdx % 4;
   lsRenderAllUI();
   lsPersistDraft('match');
+  lsQueueLiveStateSync(false);
 };
 window.lsChooseDraw = function() {
   if (liveScore.matchPhase!=='choosing') return;
@@ -12713,11 +12798,12 @@ async function lsAutoSave() {
   const matchResult = matchPhase==='draw' ? 'draw' : 'decided';
   const tiebreakData = tbTaps.length ? {a:tb.a,b:tb.b} : null;
   const editorName=getSeasonScoreEditorName();
+  clearTimeout(lsLiveSyncTimer);
   try {
     await updateDayMatchSafely(dayId,rIdx,mId,current=>({
       ...current,score1:games.a,score2:games.b,done:true,
       positions:{...(current.positions||{}),...finalPos},liveLog:lsEvents,
-      tiebreak:tiebreakData,matchResult,enteredBy:current.enteredBy||editorName
+      tiebreak:tiebreakData,matchResult,enteredBy:current.enteredBy||editorName,liveState:null
     }),{action:'라이브 결과 저장',editor:editorName,dayUpdates:{dayBadges:[],daySummary:'',highlightVersion:0}});
     lsClearDraft();
     document.getElementById('liveScoreOverlay').style.display = 'none';
@@ -12746,6 +12832,7 @@ window.lsPoint = function(who) {
   liveScore.decidingSideChoice = null;
   lsPersistDraft('match');
   lsRecomputeAndRender();
+  lsQueueLiveStateSync(false);
   const gamesAfter = liveScore.games.a+liveScore.games.b;
   if (gamesAfter>gamesBefore) {
     lsPlayGameSound();
@@ -12779,6 +12866,7 @@ window.lsUndo = function() {
   liveScore.matchPhase = 'normal';
   lsRecomputeAndRender();
   lsPersistDraft('match');
+  lsQueueLiveStateSync(false);
 };
 window.lsForceEnd = function() {
   const t1 = liveScore.players.filter(p=>p.team==='a').map(p=>p.name).join('·');
