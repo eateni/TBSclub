@@ -86,6 +86,16 @@ body::after {
   border-bottom:1px solid #E8F4F3; color:#1E293B; font-size:15px; font-weight:700; cursor:pointer;
 }
 .more-menu-item:last-child { border-bottom:none; }
+.more-account-actions { display:flex; gap:8px; padding:0 0 10px; }
+.more-account-actions button { flex:1; min-width:0; justify-content:center; border-radius:11px !important; padding:10px 8px !important; font-size:12px !important; font-weight:800; }
+.app-guide-overlay { position:fixed; inset:0; z-index:91000; background:rgba(15,23,42,.58); display:none; align-items:flex-end; justify-content:center; }
+.app-guide-sheet { width:100%; max-width:640px; max-height:92vh; overflow-y:auto; background:#FAF8F3; border-radius:22px 22px 0 0; padding:18px 16px calc(24px + env(safe-area-inset-bottom)); box-shadow:0 -12px 40px rgba(15,23,42,.2); }
+.app-guide-top { position:sticky; top:-18px; z-index:2; display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 0 12px; background:#FAF8F3; }
+.app-guide-card { background:#fff; border:1px solid #D7E8E5; border-radius:14px; padding:14px; margin-bottom:10px; }
+.app-guide-card h3 { font-size:14px; color:#1E293B; margin-bottom:8px; }
+.app-guide-card p, .app-guide-card li { font-size:12px; color:#475569; line-height:1.7; }
+.app-guide-card ol, .app-guide-card ul { padding-left:20px; }
+.app-guide-tip { margin-top:9px; padding:9px 10px; border-radius:9px; background:#FFFBEB; color:#92400E !important; border:1px solid #FDE68A; }
 
 .subtabs { display:flex; gap:4px; background:rgba(255,255,255,0.8); border-radius:10px; padding:4px; margin-bottom:18px; }
 .stab { flex:1; padding:8px 0; border-radius:7px; border:1px solid transparent; cursor:pointer; font-weight:600; font-size:12px; transition:all 0.2s; }
@@ -468,11 +478,6 @@ tr:nth-child(even){background:#F5FCFB;}
         </div>
       </div>
 
-      <div id="accountQuickActions" style="display:none;gap:6px;margin-top:9px;padding-top:8px;border-top:1px solid rgba(30,41,59,0.08)">
-        <button id="myDashboardBtn" class="u-badge badge-guest" style="cursor:pointer;border:none;background:rgba(35,90,180,0.12);font-size:12px;padding:7px 11px;">👤 내 정보</button>
-        <button id="pushSetupBtn" class="u-badge badge-guest" onclick="enablePushNotifications()" title="알림 설정" style="cursor:pointer;border:none;background:rgba(245,158,11,0.14);font-size:12px;padding:7px 11px;display:none">🔔 알림 설정</button>
-      </div>
-
       <!-- 2줄: 슬로건, 전체 너비, 로고 줄 아래로 -->
       <div id="headerSlogan" style="margin-top:8px; padding-top:6px; border-top:1px solid rgba(30,41,59,0.08);">
         <span style="display:block; font-size:13px; color:rgba(30,41,59,0.85); letter-spacing:0.4px; font-weight:800; text-transform:uppercase; white-space:nowrap;">After Match, Start Again</span>
@@ -508,6 +513,11 @@ tr:nth-child(even){background:#F5FCFB;}
 
   <div id="moreMenuOverlay" class="more-menu-overlay" style="display:none" onclick="if(event.target===this) toggleMoreMenu()">
     <div class="more-menu-sheet">
+      <div class="more-menu-title">내 계정</div>
+      <div id="accountQuickActions" class="more-account-actions" style="display:none">
+        <button id="myDashboardBtn" class="u-badge badge-guest" style="cursor:pointer;border:none;background:rgba(35,90,180,0.12)">👤 내 정보</button>
+        <button id="pushSetupBtn" class="u-badge badge-guest" onclick="enablePushNotifications()" title="알림 설정" style="cursor:pointer;border:none;background:rgba(245,158,11,0.14);display:none">🔔 알림 설정</button>
+      </div>
       <div class="more-menu-title">기록 · 이벤트</div>
       <button class="more-menu-item" onclick="navTo('event')">🎉 이벤트전</button>
       <button class="more-menu-item" id="moreGameSummaryBtn" style="display:none" onclick="navTo('gamesummary')">✨ 나의 시즌</button>
@@ -515,8 +525,92 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="navTo('board')">📋 게시판</button>
       <button class="more-menu-item" onclick="navTo('photo')">📸 사진/동영상</button>
       <button class="more-menu-item" onclick="navTo('fortune')">🔮 오늘의 운세</button>
+      <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
+    </div>
+  </div>
+
+  <div id="appGuideOverlay" class="app-guide-overlay" onclick="if(event.target===this) closeAppGuide()">
+    <div class="app-guide-sheet">
+      <div class="app-guide-top">
+        <div>
+          <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서</div>
+        </div>
+        <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
+      </div>
+
+      <div class="app-guide-card" style="border-color:#A7F3D0;background:#F0FDF4">
+        <h3>🔔 알림 켜기</h3>
+        <p><b>아이폰</b></p>
+        <ol>
+          <li>Safari에서 TBS HISTORY를 엽니다.</li>
+          <li>하단 공유 버튼을 누르고 <b>홈 화면에 추가</b>를 선택합니다.</li>
+          <li>홈 화면에 생긴 TBS 아이콘으로 앱을 다시 엽니다.</li>
+          <li>로그인 후 <b>메뉴 → 알림 설정 → 허용</b>을 누릅니다.</li>
+        </ol>
+        <p style="margin-top:8px"><b>갤럭시·안드로이드</b></p>
+        <ol>
+          <li>Chrome에서 로그인합니다.</li>
+          <li><b>메뉴 → 알림 설정 → 허용</b>을 누릅니다.</li>
+          <li>원하면 Chrome 메뉴에서 홈 화면에 추가할 수 있습니다.</li>
+        </ol>
+        <p class="app-guide-tip">버튼이 <b>🔔 알림 켬</b>으로 보이면 설정 완료입니다. 기기를 바꾸거나 브라우저를 새로 설치하면 그 기기에서 다시 설정해주세요.</p>
+        <button onclick="closeAppGuide();enablePushNotifications()" style="width:100%;margin-top:10px;padding:10px;border:0;border-radius:10px;background:#0D9488;color:#fff;font-size:13px;font-weight:900;cursor:pointer">이 기기 알림 설정하기</button>
+      </div>
+
+      <div class="app-guide-card">
+        <h3>🏠 홈</h3>
+        <ul>
+          <li>오늘 날짜, 이번 달 경기 일정과 공지를 확인합니다.</li>
+          <li>내 승점·순위·승패·득실·출석 기록을 빠르게 확인합니다.</li>
+          <li>경기 안내 카드에서 예정된 일정과 참석 정보를 봅니다.</li>
+        </ul>
+      </div>
+
+      <div class="app-guide-card">
+        <h3>🏆 정규시즌</h3>
+        <ul>
+          <li><b>대진표:</b> 라운드별 코트, 페어, 점수와 경기 상태를 확인합니다.</li>
+          <li><b>랭킹·개인별:</b> 전체 순위와 회원별 상세 기록을 확인합니다.</li>
+          <li><b>페어랭킹:</b> 함께 경기한 조합의 성적을 확인합니다.</li>
+          <li><b>시즌 리포트:</b> 종료된 시즌의 개인 하이라이트를 확인합니다. 진행 중인 시즌은 종료 후 제공됩니다.</li>
+        </ul>
+      </div>
+
+      <div class="app-guide-card">
+        <h3>⚡ 경기 결과와 라이브 스코어</h3>
+        <ul>
+          <li>경기 카드의 결과 입력에서 양 팀 점수를 기록합니다.</li>
+          <li>각 선수의 <b>포·백 위치</b>를 선택해 개인 기록에 반영합니다.</li>
+          <li>라이브 스코어는 포인트를 누르면 게임 점수가 자동 계산되며, 실수 취소와 경기 종료를 사용할 수 있습니다.</li>
+          <li>종료된 경기의 페어가 실제 경기와 다르면 관리자에게 수정을 요청합니다.</li>
+        </ul>
+      </div>
+
+      <div class="app-guide-card">
+        <h3>📰 클럽소식과 일정</h3>
+        <ul>
+          <li>공지, 모임 일정과 참석 여부를 확인합니다.</li>
+          <li>경기 종료 후 그날의 하이라이트와 결과 요약을 봅니다.</li>
+          <li>하이라이트 카드는 이미지로 공유할 수 있습니다.</li>
+        </ul>
+      </div>
+
+      <div class="app-guide-card">
+        <h3>☰ 더 많은 기능</h3>
+        <ul>
+          <li><b>이벤트전:</b> 교류전 등 별도 경기의 대진과 결과를 확인합니다.</li>
+          <li><b>나의 시즌:</b> 종료된 시즌의 개인 기록과 하이라이트를 봅니다.</li>
+          <li><b>게시판·사진/동영상:</b> 클럽 이야기를 확인하고 공유합니다.</li>
+          <li><b>오늘의 운세:</b> 재미로 보는 오늘의 테니스 운세입니다.</li>
+          <li><b>내 정보:</b> 생년월일과 테니스 시작 시기 등 내 정보를 관리합니다.</li>
+        </ul>
+      </div>
+
+      <button onclick="shareAppGuide()" style="width:100%;padding:11px;border:1px solid #93C5FD;border-radius:11px;background:#EFF6FF;color:#1D4ED8;font-size:13px;font-weight:900;cursor:pointer;margin-bottom:8px">🔗 회원에게 설명서 공유</button>
+      <button onclick="closeAppGuide()" style="width:100%;padding:12px;border:0;border-radius:11px;background:#1E293B;color:#fff;font-size:13px;font-weight:900;cursor:pointer">닫기</button>
     </div>
   </div>
 
@@ -6947,6 +7041,39 @@ window.toggleMoreMenu = function(){
   el.style.display = (el.style.display === 'none') ? 'flex' : 'none';
 };
 
+window.openAppGuide = function(){
+  const menu = document.getElementById('moreMenuOverlay');
+  const guide = document.getElementById('appGuideOverlay');
+  if (menu) menu.style.display = 'none';
+  if (guide) guide.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeAppGuide = function(){
+  const guide = document.getElementById('appGuideOverlay');
+  if (guide) guide.style.display = 'none';
+  document.body.style.overflow = '';
+  if (location.hash === '#guide') history.replaceState(null, '', location.pathname + location.search);
+};
+
+window.shareAppGuide = async function(){
+  const url = location.origin + location.pathname + '#guide';
+  const shareData = {
+    title: 'TBS HISTORY 회원용 사용 안내',
+    text: 'TBS HISTORY 주요 기능과 알림 설정 방법을 확인하세요.',
+    url
+  };
+  try {
+    if (navigator.share) await navigator.share(shareData);
+    else {
+      await navigator.clipboard.writeText(url);
+      alert('설명서 링크를 복사했어요. 회원들에게 전달해주세요.');
+    }
+  } catch(e) {
+    if (e?.name !== 'AbortError') alert('공유하지 못했어요. 잠시 후 다시 시도해주세요.');
+  }
+};
+
 // ── 일정 공유 ──────────────────────────────────────────────────────
 function fillScheduleWriter() {
   const sel = document.getElementById('schWriter');
@@ -12484,6 +12611,10 @@ function lsRenderLog() {
   try {
     const tab = (location.hash || '').replace('#','').trim();
     if (!tab) return;
+    if (tab === 'guide') {
+      setTimeout(() => openAppGuide(), 0);
+      return;
+    }
     const btn = Array.from(document.querySelectorAll('.tab-btn'))
       .find(b => (b.getAttribute('onclick') || '').includes("switchTab('" + tab + "'"));
     if (btn) switchTab(tab, btn);
