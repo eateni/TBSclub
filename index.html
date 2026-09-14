@@ -510,7 +510,7 @@ tr:nth-child(even){background:#F5FCFB;}
     <div class="more-menu-sheet">
       <div class="more-menu-title">기록 · 이벤트</div>
       <button class="more-menu-item" onclick="navTo('event')">🎉 이벤트전</button>
-      <button class="more-menu-item" id="moreGameSummaryBtn" style="display:none" onclick="navTo('gamesummary')">📊 경기 요약</button>
+      <button class="more-menu-item" id="moreGameSummaryBtn" style="display:none" onclick="navTo('gamesummary')">✨ 나의 시즌</button>
       <div class="more-menu-title" style="margin-top:16px">클럽</div>
       <button class="more-menu-item" onclick="navTo('board')">📋 게시판</button>
       <button class="more-menu-item" onclick="navTo('photo')">📸 사진/동영상</button>
@@ -1431,6 +1431,8 @@ let openCategory = null; // 홈 바로가기 펼쳐진 카테고리 ID (null=모
 const SCHEDULE_PER_PAGE = 5;
 window.gotoSchedulePage = function(p){ schedulePage = p; renderSchedules(); const el = document.getElementById('scheduleList'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
 let currentSeason = 1;      // 현재 진행 시즌
+let personalHighlightSeason = null; // 나의 시즌에서 선택한 종료 시즌
+let personalHighlightPreviewName = ''; // 관리자 미리보기용 회원
 const RESV_COURT_NAMES = ['코트1','코트2','코트3','코트4']; // 코트 예약 현황용
 let _analysisAutoSelected = false; // 개인별 분석 최초 자동 선택 완료 플래그
 let _openDayIds = new Set(); // 날짜 카드 열림 상태 (재렌더링 후 복원용)
@@ -3543,6 +3545,10 @@ function renderAll() {
   renderSeasonSelect();
   fillScheduleWriter();
   renderHomeTab();
+  const personalTab = document.getElementById('tab-gamesummary');
+  if (personalTab && personalTab.style.display !== 'none' && typeof window.renderGameSummaryTab === 'function') {
+    window.renderGameSummaryTab();
+  }
 }
 
 const BADGES=['🥇','🥈','🥉'];
@@ -8561,16 +8567,183 @@ function renderPhotoTab() {
     </div>`;
 }
 
+function _personalSeasonData(name, season) {
+  const seasonDays = days.filter(d => (d.season || 1) === season);
+  const table = {};
+  members.forEach(m => { table[m.name] = {name:m.name,wins:0,draws:0,losses:0,pts:0,scored:0,conceded:0,games:0,attendance:0}; });
+
+  seasonDays.forEach(day => {
+    const att = day.attendance || {};
+    const isV2 = day.attendancePolicy === 'v2';
+    members.forEach(m => {
+      if (!table[m.name]) return;
+      if (isV2 ? att[m.name] === true : att[m.name] !== false) table[m.name].attendance++;
+    });
+    (day.rounds || []).forEach((round, rIdx) => {
+      (round.matches || []).forEach((match, mIdx) => {
+        if (!match.done || match.isRally || match.tag === '랠리' || match.tag === '휴식') return;
+        const s1 = Number(match.score1), s2 = Number(match.score2);
+        if (!Number.isFinite(s1) || !Number.isFinite(s2)) return;
+        const apply = (team, scored, conceded, result) => (team || []).filter(Boolean).forEach(player => {
+          const row = table[player]; if (!row) return;
+          row.games++; row.scored += scored; row.conceded += conceded;
+          if (result === 'w') { row.wins++; row.pts += 3; }
+          else if (result === 'd') { row.draws++; row.pts += 1; }
+          else row.losses++;
+        });
+        if (s1 > s2) { apply(match.team1,s1,s2,'w'); apply(match.team2,s2,s1,'l'); }
+        else if (s2 > s1) { apply(match.team2,s2,s1,'w'); apply(match.team1,s1,s2,'l'); }
+        else { apply(match.team1,s1,s2,'d'); apply(match.team2,s2,s1,'d'); }
+      });
+    });
+  });
+
+  const ranked = Object.values(table).filter(s => s.games > 0).sort((a,b) =>
+    b.pts-a.pts || (b.scored-b.conceded)-(a.scored-a.conceded) || b.wins-a.wins || a.name.localeCompare(b.name,'ko'));
+  ranked.forEach((row, idx) => { row.rank = idx + 1; });
+  const base = table[name] || {name,wins:0,draws:0,losses:0,pts:0,scored:0,conceded:0,games:0,attendance:0};
+  base.rank = (ranked.find(r => r.name === name) || {}).rank || null;
+  base.wr = base.games ? Math.round(base.wins / base.games * 100) : 0;
+  base.diff = base.scored - base.conceded;
+
+  const matches = [], partners = {}, opponents = {};
+  const positions = {fore:{games:0,wins:0,draws:0,losses:0},back:{games:0,wins:0,draws:0,losses:0}};
+  seasonDays.forEach(day => (day.rounds || []).forEach((round,rIdx) => (round.matches || []).forEach((match,mIdx) => {
+    if (!match.done || match.isRally || match.tag === '랠리' || match.tag === '휴식') return;
+    const t1=match.team1||[],t2=match.team2||[],in1=t1.includes(name),in2=t2.includes(name);
+    if (!in1 && !in2) return;
+    const myTeam=in1?t1:t2,oppTeam=in1?t2:t1,myScore=Number(in1?match.score1:match.score2),oppScore=Number(in1?match.score2:match.score1);
+    if (!Number.isFinite(myScore)||!Number.isFinite(oppScore)) return;
+    const result=myScore>oppScore?'w':myScore<oppScore?'l':'d';
+    const partner=myTeam.find(p=>p&&p!==name)||'';
+    const pos=(match.positions||{})[name];
+    if (positions[pos]) { positions[pos].games++; positions[pos][result==='w'?'wins':result==='l'?'losses':'draws']++; }
+    if (partner) {
+      if(!partners[partner])partners[partner]={name:partner,games:0,wins:0,draws:0,losses:0};
+      partners[partner].games++; partners[partner][result==='w'?'wins':result==='l'?'losses':'draws']++;
+    }
+    oppTeam.filter(Boolean).forEach(opp=>{
+      if(!opponents[opp])opponents[opp]={name:opp,games:0,wins:0,draws:0,losses:0};
+      opponents[opp].games++; opponents[opp][result==='w'?'wins':result==='l'?'losses':'draws']++;
+    });
+    matches.push({date:day.date||'',round:rIdx+1,court:match.court||'',partner,opponents:oppTeam.filter(Boolean),myScore,oppScore,result,pos,order:mIdx});
+  })));
+  matches.sort((a,b)=>a.date.localeCompare(b.date)||a.round-b.round||a.order-b.order);
+  Object.values(partners).forEach(p=>p.wr=p.games?Math.round(p.wins/p.games*100):0);
+  Object.values(opponents).forEach(p=>p.wr=p.games?Math.round(p.wins/p.games*100):0);
+  Object.values(positions).forEach(p=>p.wr=p.games?Math.round(p.wins/p.games*100):0);
+  const partnerList=Object.values(partners).sort((a,b)=>b.wr-a.wr||b.games-a.games||b.wins-a.wins);
+  const opponentList=Object.values(opponents).sort((a,b)=>a.wr-b.wr||b.games-a.games||b.losses-a.losses);
+  const qualifiedPartners=partnerList.filter(p=>p.games>=2);
+  const bestPartner=(qualifiedPartners.length?qualifiedPartners:partnerList)[0]||null;
+  const qualifiedOpponents=opponentList.filter(p=>p.games>=2);
+  const toughOpponent=(qualifiedOpponents.length?qualifiedOpponents:opponentList)[0]||null;
+  let currentStreak=0,longestStreak=0;
+  matches.forEach(m=>{ if(m.result==='w'){currentStreak++;longestStreak=Math.max(longestStreak,currentStreak);}else currentStreak=0; });
+  const representative=[...matches].filter(m=>m.result==='w').sort((a,b)=>(a.myScore-a.oppScore)-(b.myScore-b.oppScore)||b.date.localeCompare(a.date))[0]||matches[matches.length-1]||null;
+  return {...base,season,matches,positions,bestPartner,toughOpponent,longestStreak,representative};
+}
+
+function _personalSeasonBadges(data) {
+  const badges=[];
+  if(data.games>=2&&data.losses===0)badges.push({icon:'💯',label:'시즌 무패'});
+  if(data.rank===1)badges.push({icon:'🏆',label:'시즌 1위'});
+  if(data.longestStreak>=2)badges.push({icon:'🔥',label:`최장 ${data.longestStreak}연승`});
+  if(data.bestPartner)badges.push({icon:'🤝',label:`베스트 파트너 ${data.bestPartner.name}`});
+  const posBest=Object.entries(data.positions).filter(([,p])=>p.games>0).sort((a,b)=>b[1].wr-a[1].wr||b[1].games-a[1].games)[0];
+  if(posBest)badges.push({icon:'🎾',label:`${posBest[0]==='fore'?'포':'백'} 승률 ${posBest[1].wr}%`});
+  if(!badges.length&&data.attendance>0)badges.push({icon:'📅',label:`출석 ${data.attendance}회`});
+  return badges.slice(0,3);
+}
+
+function _personalSeasonSummary(data) {
+  if(!data.games)return `시즌 ${data.season}에는 완료된 경기 기록이 없습니다.`;
+  const parts=[`${data.name}${getJosa(data.name,'은는')} 시즌 ${data.season}에서 ${data.games}경기를 치러 ${data.wins}승 ${data.draws}무 ${data.losses}패를 기록했습니다.`];
+  if(data.longestStreak>=2)parts.push(`가장 좋은 흐름에서는 ${data.longestStreak}연승을 이어가며 집중력을 보여줬습니다.`);
+  if(data.bestPartner)parts.push(`${data.bestPartner.name}와 함께했을 때 ${data.bestPartner.games}경기 승률 ${data.bestPartner.wr}%로 가장 좋은 호흡을 보였습니다.`);
+  const f=data.positions.fore,b=data.positions.back;
+  if(f.games&&b.games)parts.push(`${f.wr>=b.wr?'포':'백'} 포지션에서 더 높은 승률을 기록한 시즌이었습니다.`);
+  return parts.slice(0,3).join(' ');
+}
+
+async function _drawPersonalSeasonCard(name,season,data,canvas) {
+  canvas=canvas||document.createElement('canvas');canvas.width=1080;canvas.height=1350;
+  const ctx=canvas.getContext('2d');
+  try {
+    const [court,logoSource]=await Promise.all([_loadHighlightImage('assets/tbs-highlight-night-court.png'),_loadHighlightImage('assets/tbs-highlight-logo-gold.png')]);
+    _drawHighlightCover(ctx,court,1080,1350);ctx.fillStyle='rgba(1,10,25,.42)';ctx.fillRect(0,0,1080,1350);
+    const logo=_makeGoldHighlightLogo(logoSource);ctx.save();ctx.globalCompositeOperation='screen';ctx.drawImage(logo,405,20,270,235);ctx.restore();
+  } catch(e) { const bg=ctx.createLinearGradient(0,0,1080,1350);bg.addColorStop(0,'#031326');bg.addColorStop(1,'#0B4358');ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1350); }
+  _cardRoundRect(ctx,70,285,940,995,30);ctx.fillStyle='rgba(2,17,36,.89)';ctx.fill();ctx.strokeStyle='rgba(232,197,106,.72)';ctx.lineWidth=2;ctx.stroke();
+  ctx.textAlign='center';ctx.fillStyle='#E8C56A';ctx.font='800 28px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('THE BEST SET · 인생 최고의 세트',540,350);
+  ctx.fillStyle='#fff';ctx.font='900 70px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(name+'의 시즌 '+season,540,445);
+  ctx.fillStyle='rgba(255,255,255,.76)';ctx.font='700 29px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('PERSONAL SEASON HIGHLIGHT',540,495);
+  _cardRoundRect(ctx,125,545,830,145,20);ctx.fillStyle='rgba(255,255,255,.08)';ctx.fill();ctx.strokeStyle='rgba(232,197,106,.42)';ctx.stroke();
+  const metrics=[[data.games,'경기'],[data.wins,'승'],[data.wr+'%','승률'],[data.attendance,'출석']];
+  metrics.forEach((m,i)=>{const x=228+i*208;ctx.fillStyle='#fff';ctx.font='900 48px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(String(m[0]),x,610);ctx.fillStyle='rgba(255,255,255,.68)';ctx.font='600 23px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(m[1],x,650);});
+  const badges=_personalSeasonBadges(data);const gap=14,w=(820-gap*Math.max(0,badges.length-1))/Math.max(1,badges.length);
+  badges.forEach((b,i)=>{const x=130+i*(w+gap);_cardRoundRect(ctx,x,725,w,126,18);ctx.fillStyle='rgba(1,14,30,.78)';ctx.fill();ctx.strokeStyle='#E8C56A';ctx.stroke();ctx.font='38px "Apple Color Emoji","Apple SD Gothic Neo",sans-serif';ctx.fillText(b.icon,x+w/2,775);const sz=_fitHighlightText(ctx,b.label,w-22,26,18,800);ctx.fillStyle='#fff';ctx.font=`800 ${sz}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(b.label,x+w/2,823);});
+  _cardRoundRect(ctx,120,895,840,220,20);ctx.fillStyle='rgba(248,250,252,.94)';ctx.fill();ctx.textAlign='left';ctx.fillStyle='#24364A';ctx.font='600 28px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';const lines=_cardWrap(ctx,_personalSeasonSummary(data),740).slice(0,5);lines.forEach((line,i)=>ctx.fillText(line,170,955+i*38));
+  ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='800 27px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('AFTER MATCH, START AGAIN',540,1190);ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='600 23px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('경기가 끝나도 우리의 즐거움은 시작',540,1232);
+  return canvas;
+}
+
+function _renderPersonalSeasonCanvas(root) {
+  (root||document).querySelectorAll('canvas[data-personal-season]').forEach(canvas=>{
+    const season=Number(canvas.dataset.personalSeason),name=canvas.dataset.personalName||'';
+    if(name&&season)_drawPersonalSeasonCard(name,season,_personalSeasonData(name,season),canvas);
+  });
+}
+
+window.sharePersonalSeasonCard = async function(name,season) {
+  const data=_personalSeasonData(name,Number(season));
+  if(!data.games){alert('공유할 완료 경기 기록이 없어요.');return;}
+  const canvas=await _drawPersonalSeasonCard(name,Number(season),data);
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));if(!blob){alert('카드 이미지를 만들지 못했어요.');return;}
+  const file=new File([blob],`TBS-${name}-season-${season}-highlight.png`,{type:'image/png'});
+  try {
+    if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({title:`${name}의 시즌 ${season}`,text:_personalSeasonSummary(data),files:[file]});
+    else{const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);alert('이미지가 저장됐어요. 카카오톡에서 사진을 선택해 공유하세요.');}
+  }catch(e){if(e&&e.name!=='AbortError')alert('공유하지 못했어요. 다시 시도해주세요.');}
+};
+
+window.changePersonalHighlightSeason = function() {
+  personalHighlightSeason=Number(document.getElementById('personalSeasonSelect')?.value)||Math.max(1,currentSeason-1);
+  renderGameSummaryTab();
+};
+window.changePersonalHighlightMember = function() {
+  personalHighlightPreviewName=document.getElementById('personalSeasonMemberSelect')?.value||'';
+  renderGameSummaryTab();
+};
+
 window.renderGameSummaryTab = function renderGameSummaryTab() {
-  const el = document.getElementById('tab-gamesummary');
-  if (!el) return;
-  el.innerHTML = `
-    <div style="text-align:center;padding:64px 24px">
-      <div style="font-size:64px;margin-bottom:18px">📊</div>
-      <div style="font-size:20px;font-weight:900;color:#1E293B;margin-bottom:10px">경기 요약</div>
-      <div style="font-size:14px;color:#64748B;line-height:1.8">시즌별 경기 통계와 분석을<br>준비 중입니다 🎾</div>
-      <div style="margin-top:20px;font-size:11px;color:rgba(74,138,181,0.6)">업데이트 예정</div>
-    </div>`;
+  const el=document.getElementById('tab-gamesummary');if(!el)return;
+  const signedMember=myClaim&&myClaim!=='pending'&&!myClaim.isGuest;
+  let name=signedMember?myClaim.name:'';
+  if(isAdmin){
+    if(!personalHighlightPreviewName)personalHighlightPreviewName=name||members[0]?.name||'';
+    name=personalHighlightPreviewName;
+  }
+  if(!name){el.innerHTML='<div style="text-align:center;padding:64px 24px"><div style="font-size:54px;margin-bottom:16px">✨</div><div style="font-size:19px;font-weight:900;color:#1E293B">나의 시즌</div><div style="font-size:13px;color:#64748B;line-height:1.7;margin-top:10px">정회원으로 로그인하면<br>개인 시즌 하이라이트를 볼 수 있어요.</div></div>';return;}
+  const current=_personalSeasonData(name,currentSeason);
+  const ended=[];for(let s=currentSeason-1;s>=1;s--)ended.push(s);
+  if(!personalHighlightSeason||personalHighlightSeason>=currentSeason)personalHighlightSeason=ended[0]||null;
+  const selected=personalHighlightSeason;
+  const data=selected?_personalSeasonData(name,selected):null;
+  const adminPicker=isAdmin?`<div style="margin-bottom:10px"><div style="font-size:11px;color:#64748B;margin-bottom:5px">관리자 미리보기 회원</div><select id="personalSeasonMemberSelect" class="row-sel" onchange="changePersonalHighlightMember()" style="width:100%;padding:10px">${members.map(m=>`<option value="${m.name}"${m.name===name?' selected':''}>${m.name}</option>`).join('')}</select></div>`:'';
+  const endedHtml=!selected?`<div style="text-align:center;padding:34px 18px;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:15px"><div style="font-size:36px">🏁</div><div style="font-size:15px;font-weight:900;color:#334155;margin-top:8px">아직 종료된 시즌이 없어요</div><div style="font-size:12px;color:#64748B;margin-top:6px">시즌 ${currentSeason} 종료 후 개인 하이라이트가 공개됩니다.</div></div>`:data.games?`
+    <div style="display:flex;align-items:end;justify-content:space-between;gap:10px;margin:18px 0 9px"><div><div style="font-size:11px;color:#64748B;margin-bottom:4px">종료된 시즌 하이라이트</div><select id="personalSeasonSelect" class="row-sel" onchange="changePersonalHighlightSeason()" style="font-size:13px;padding:8px 28px 8px 10px">${ended.map(s=>`<option value="${s}"${s===selected?' selected':''}>시즌 ${s}</option>`).join('')}</select></div><button onclick="sharePersonalSeasonCard('${name}',${selected})" style="border:none;background:#0F766E;color:#fff;border-radius:10px;padding:10px 13px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 카드 공유</button></div>
+    <canvas data-personal-season="${selected}" data-personal-name="${name}" width="1080" height="1350" style="display:block;width:100%;max-width:540px;height:auto;aspect-ratio:4/5;margin:0 auto;border-radius:16px;background:#061C2D;box-shadow:0 8px 24px rgba(6,48,71,.22)"></canvas>
+    <details style="margin-top:12px;background:#fff;border:1px solid #D7E7E5;border-radius:14px;padding:12px 14px"><summary style="cursor:pointer;font-size:13px;font-weight:900;color:#0F766E">상세 기록 보기</summary><div style="padding-top:12px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">${[[data.games,'경기'],[data.wins+'-'+data.draws+'-'+data.losses,'승-무-패'],[data.diff>=0?'+'+data.diff:data.diff,'득실'],[data.rank?data.rank+'위':'-','순위']].map(v=>`<div style="background:#F3F8F7;border-radius:10px;padding:10px 3px;text-align:center"><div style="font-size:15px;font-weight:900;color:#1E293B">${v[0]}</div><div style="font-size:10px;color:#64748B;margin-top:3px">${v[1]}</div></div>`).join('')}</div>
+      <div style="font-size:12px;color:#334155;line-height:1.7;background:#F8FAFC;border-radius:10px;padding:11px;margin-bottom:10px">${_personalSeasonSummary(data)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px">${[['포',data.positions.fore],['백',data.positions.back]].map(([label,p])=>`<div style="border:1px solid #D7E7E5;border-radius:10px;padding:10px"><div style="font-size:12px;font-weight:900">🎾 ${label} 포지션</div><div style="font-size:11px;color:#64748B;margin-top:4px">${p.games}경기 · ${p.wins}승 · 승률 ${p.wr}%</div></div>`).join('')}</div>
+      ${data.bestPartner?`<div style="font-size:12px;color:#334155;margin-top:9px">🤝 베스트 파트너 <b>${data.bestPartner.name}</b> · ${data.bestPartner.games}경기 승률 ${data.bestPartner.wr}%</div>`:''}
+      ${data.toughOpponent?`<div style="font-size:12px;color:#334155;margin-top:7px">⚔️ 어려웠던 상대 <b>${data.toughOpponent.name}</b> · ${data.toughOpponent.games}경기 승률 ${data.toughOpponent.wr}%</div>`:''}
+      ${data.representative?`<div style="font-size:12px;color:#334155;margin-top:7px">⭐ 대표 경기 ${data.representative.date} · ${name}${data.representative.partner?' / '+data.representative.partner:''} ${data.representative.myScore}:${data.representative.oppScore} ${data.representative.opponents.join(' / ')}</div>`:''}
+    </div></details>`:`<div style="margin-top:18px"><div style="font-size:11px;color:#64748B;margin-bottom:5px">종료된 시즌 하이라이트</div><select id="personalSeasonSelect" class="row-sel" onchange="changePersonalHighlightSeason()" style="font-size:13px;padding:9px">${ended.map(s=>`<option value="${s}"${s===selected?' selected':''}>시즌 ${s}</option>`).join('')}</select><div style="text-align:center;padding:30px 18px;margin-top:10px;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:14px;color:#64748B;font-size:13px">시즌 ${selected}의 완료 경기 기록이 없어요.</div></div>`;
+  el.innerHTML=`<div style="padding:16px 0 90px;max-width:640px;margin:0 auto">${adminPicker}<div style="background:linear-gradient(135deg,#063047,#0B6770);border-radius:16px;padding:17px;color:#fff;box-shadow:0 7px 22px rgba(6,48,71,.18)"><div style="font-size:11px;font-weight:800;color:#FDE68A">🎾 CURRENT SEASON</div><div style="font-size:20px;font-weight:900;margin-top:5px">시즌 ${currentSeason} 진행 중</div><div style="font-size:12px;color:rgba(255,255,255,.78);line-height:1.6;margin-top:7px">현재 시즌이 진행 중입니다.<br>시즌 종료 후 ${name}님의 개인 하이라이트가 공개됩니다.</div><div style="display:flex;gap:7px;margin-top:12px"><span style="background:rgba(255,255,255,.12);border-radius:20px;padding:5px 10px;font-size:11px;font-weight:800">${current.games}경기 참여</span><span style="background:rgba(255,255,255,.12);border-radius:20px;padding:5px 10px;font-size:11px;font-weight:800">${current.wins}승</span><span style="background:rgba(255,255,255,.12);border-radius:20px;padding:5px 10px;font-size:11px;font-weight:800">출석 ${current.attendance}회</span></div></div>${endedHtml}</div>`;
+  _renderPersonalSeasonCanvas(el);
 };
 
 
