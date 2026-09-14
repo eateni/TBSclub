@@ -137,14 +137,22 @@ body::after {
 }
 .home-mobile-calendar summary {
   list-style:none; cursor:pointer; padding:10px 12px; color:#E0F2FE;
-  font-size:12px; font-weight:800; display:flex; align-items:center;
+  font-size:14px; font-weight:900; display:flex; align-items:center;
   justify-content:space-between; -webkit-tap-highlight-color:transparent;
 }
 .home-mobile-calendar summary::-webkit-details-marker { display:none; }
-.home-mobile-calendar summary::after { content:'펼치기 ＋'; color:#A7F3D0; font-size:10px; }
+.home-mobile-calendar summary::after { content:'펼치기 ＋'; color:#A7F3D0; font-size:12px; font-weight:900; }
 .home-mobile-calendar[open] summary { border-bottom:1px solid rgba(255,255,255,0.14); }
 .home-mobile-calendar[open] summary::after { content:'접기 －'; }
-.home-mobile-calendar-body { padding:10px; background:#fff; }
+.home-mobile-calendar-body { padding:14px 12px 16px; background:#fff; }
+.home-club-calendar { color:#334155; }
+.home-club-calendar-month { text-align:center; color:#2563EB; font-size:16px; font-weight:900; margin-bottom:12px; }
+.home-club-calendar-dow { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; text-align:center; font-size:12px; font-weight:900; margin-bottom:6px; }
+.home-club-calendar-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px 3px; }
+.home-club-calendar-day { aspect-ratio:1; min-height:40px; display:flex; flex-direction:column; align-items:center; justify-content:center; border-radius:9px; font-size:14px; font-weight:800; }
+.home-club-calendar-dots { display:flex; gap:3px; margin-top:4px; min-height:6px; }
+.home-club-calendar-dots i { width:6px; height:6px; border-radius:50%; }
+.home-club-calendar-legend { display:flex; justify-content:center; flex-wrap:wrap; gap:7px 13px; margin-top:13px; padding-top:10px; border-top:1px solid #E2E8F0; font-size:11.5px; font-weight:700; color:#475569; }
 .home-banner-summary {
   margin-top:10px !important; padding:10px 11px !important; border-top:none !important;
   border-radius:11px; background:rgba(3,12,45,0.48);
@@ -536,7 +544,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.2.0</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.2.1</div>
     </div>
   </div>
 
@@ -545,7 +553,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.2.0</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.2.1</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1502,7 +1510,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.1';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -8472,7 +8480,7 @@ function renderHomeClubCalendar(year, month) {
   const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
   const items = getClubCalendarItems();
   const cells = [];
-  for (let i=0; i<firstDay; i++) cells.push('<div></div>');
+  for (let i=0; i<firstDay; i++) cells.push('<div class="home-club-calendar-day" aria-hidden="true"></div>');
   for (let d=1; d<=daysInMonth; d++) {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const dayItems = items.filter(function(item){ return item.date === dateStr; });
@@ -8480,16 +8488,16 @@ function renderHomeClubCalendar(year, month) {
     const hasRegular = dayItems.some(function(item){ return item.type === 'regular'; });
     const hasEvent = dayItems.some(function(item){ return item.type === 'event'; });
     const hasNotice = dayItems.some(function(item){ return item.type === 'notice'; });
-    cells.push('<div style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;background:'+(isToday?'rgba(37,99,235,0.12)':'transparent')+';border:1px solid '+(isToday?'rgba(37,99,235,0.35)':'transparent')+';color:'+(isToday?'#2563EB':'#334155')+';font-size:12px;font-weight:'+(isToday?'900':'700')+'">'
+    cells.push('<div class="home-club-calendar-day" style="background:'+(isToday?'rgba(37,99,235,0.12)':'transparent')+';border:1px solid '+(isToday?'rgba(37,99,235,0.35)':'transparent')+';color:'+(isToday?'#2563EB':'#334155')+';font-weight:'+(isToday?'900':'800')+'">'
       +'<span>'+d+'</span>'
-      +(dayItems.length?'<span style="display:flex;gap:2px;margin-top:3px"><i style="width:4px;height:4px;border-radius:50%;background:'+(hasRegular?'#2563EB':'transparent')+'"></i><i style="width:4px;height:4px;border-radius:50%;background:'+(hasEvent?'#7C3AED':'transparent')+'"></i><i style="width:4px;height:4px;border-radius:50%;background:'+(hasNotice?'#D97706':'transparent')+'"></i></span>':'')
+      +(dayItems.length?'<span class="home-club-calendar-dots"><i style="background:'+(hasRegular?'#2563EB':'transparent')+'"></i><i style="background:'+(hasEvent?'#7C3AED':'transparent')+'"></i><i style="background:'+(hasNotice?'#D97706':'transparent')+'"></i></span>':'')
       +'</div>');
   }
-  return '<div style="color:#334155">'
-    +'<div style="text-align:center;color:#2563EB;font-size:13px;font-weight:900;margin-bottom:8px">'+year+'년 '+(month+1)+'월</div>'
-    +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:10px;font-weight:800;margin-bottom:3px"><span style="color:#DC2626">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#2563EB">토</span></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">'+cells.join('')+'</div>'
-    +'<div style="display:flex;justify-content:center;gap:8px;margin-top:8px;font-size:9px;color:#64748B"><span><b style="color:#2563EB">●</b> 정규시즌</span><span><b style="color:#7C3AED">●</b> 이벤트전</span><span><b style="color:#D97706">●</b> 공지</span></div>'
+  return '<div class="home-club-calendar">'
+    +'<div class="home-club-calendar-month">'+year+'년 '+(month+1)+'월</div>'
+    +'<div class="home-club-calendar-dow"><span style="color:#DC2626">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#2563EB">토</span></div>'
+    +'<div class="home-club-calendar-grid">'+cells.join('')+'</div>'
+    +'<div class="home-club-calendar-legend"><span><b style="color:#2563EB">●</b> 정규시즌</span><span><b style="color:#7C3AED">●</b> 이벤트전</span><span><b style="color:#D97706">●</b> 공지</span></div>'
     +'</div>';
 }
 
