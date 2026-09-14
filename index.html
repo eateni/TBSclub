@@ -543,7 +543,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.3.0</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.4.0</div>
     </div>
   </div>
 
@@ -552,7 +552,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.3.0</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.4.0</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -601,7 +601,8 @@ tr:nth-child(even){background:#F5FCFB;}
           <li>경기 카드의 결과 입력에서 양 팀 점수를 기록합니다.</li>
           <li>각 선수의 <b>포·백 위치</b>를 선택해 개인 기록에 반영합니다.</li>
           <li>라이브 스코어는 포인트를 누르면 게임 점수가 자동 계산되며, 실수 취소와 경기 종료를 사용할 수 있습니다.</li>
-          <li>즉석매치 날짜를 열면 <b>배정 현황</b>에서 참가자별 총 경기 수, 남복·혼복·여복 횟수와 오늘의 페어 조합을 한눈에 볼 수 있습니다.</li>
+          <li>즉석매치 날짜를 열면 <b>배정 현황</b>에서 참가자별 총 경기 수, 남복·여복·잡복 횟수와 오늘의 페어 조합을 한눈에 볼 수 있습니다.</li>
+          <li>정회원은 관리자 승인 없이 <b>즉석 매치 추가</b>로 경기를 바로 생성할 수 있습니다. 경기 종류는 선수 성별에 따라 자동 표시됩니다.</li>
           <li>종료된 경기의 페어가 실제 경기와 다르면 관리자에게 수정을 요청합니다.</li>
         </ul>
       </div>
@@ -1343,9 +1344,9 @@ tr:nth-child(even){background:#F5FCFB;}
     <div class="modal-title">+ 경기 직접 추가</div>
     <div id="matchRoundLabel" style="font-size:12px;color:#64748B;margin-bottom:12px"></div>
     <div id="mTypeSection" style="display:none;margin-bottom:10px">
-      <div style="font-size:10px;color:#64748B;margin-bottom:3px">타입 <span style="color:#94A3B8">(팀1 선택 시 자동 판별)</span></div>
+      <div style="font-size:10px;color:#64748B;margin-bottom:3px">타입 <span style="color:#94A3B8">(선수 성별로 자동 판별)</span></div>
       <div id="mAutoType" style="font-size:12px;color:#94A3B8;padding:4px 0;min-height:22px"></div>
-      <select id="mManualType" class="row-inp" style="width:100%;font-size:12px;padding:6px;display:none"><option value="혼복">혼복</option><option value="남복">남복</option><option value="여복">여복</option></select>
+      <select id="mManualType" class="row-inp" style="width:100%;font-size:12px;padding:6px;display:none"><option value="남복">남복</option><option value="여복">여복</option><option value="잡복">잡복</option></select>
     </div>
     <div class="mg">
       <div class="mf"><label>팀1 선수1</label><select id="t1p1"></select></div>
@@ -1509,7 +1510,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -3781,17 +3782,17 @@ function buildInstantMatchBoard(day,rounds,playCounts,attendingAll) {
   }));
   const attendeeNames=(attendingAll||[]).map(player=>player.name).filter(Boolean);
   const allocation={};
-  attendeeNames.forEach(name=>{allocation[name]={total:0,done:0,혼복:0,남복:0,여복:0,기타:0};});
+  attendeeNames.forEach(name=>{allocation[name]={total:0,done:0,혼복:0,남복:0,여복:0,잡복:0,기타:0};});
   const pairCounts=new Map();
   const typeName=(match,round)=>{
     const raw=match.courtType||match.type||match.tag||round.courtType||round.type||'';
-    return ['혼복','남복','여복'].includes(raw)?raw:'기타';
+    return ['혼복','남복','여복','잡복'].includes(raw)?raw:'기타';
   };
   entries.forEach(({match,round})=>{
     const type=typeName(match,round);
     const players=[...(match.team1||[]),...(match.team2||[])].filter(Boolean);
     players.forEach(name=>{
-      if(!allocation[name])allocation[name]={total:0,done:0,혼복:0,남복:0,여복:0,기타:0};
+      if(!allocation[name])allocation[name]={total:0,done:0,혼복:0,남복:0,여복:0,잡복:0,기타:0};
       allocation[name].total++;
       allocation[name][type]++;
       if(match.done)allocation[name].done++;
@@ -3800,7 +3801,7 @@ function buildInstantMatchBoard(day,rounds,playCounts,attendingAll) {
       const pair=team.filter(Boolean);
       if(pair.length!==2)return;
       const key=[...pair].sort().join('|');
-      const saved=pairCounts.get(key)||{names:pair,count:0,types:{혼복:0,남복:0,여복:0,기타:0}};
+      const saved=pairCounts.get(key)||{names:pair,count:0,types:{혼복:0,남복:0,여복:0,잡복:0,기타:0}};
       saved.count++;saved.types[type]++;pairCounts.set(key,saved);
     });
   });
@@ -3809,12 +3810,12 @@ function buildInstantMatchBoard(day,rounds,playCounts,attendingAll) {
   const min=counts.length?Math.min(...counts):0,max=counts.length?Math.max(...counts):0;
   const nextNames=countRows.filter(([,stats])=>stats.total===min).map(([name])=>name).slice(0,8).join(' · ');
   const participantRows=countRows.map(([name,stats])=>{
-    const details=[['혼복',stats.혼복,'#7C3AED'],['남복',stats.남복,'#2563EB'],['여복',stats.여복,'#DB2777']].filter(([,count])=>count>0).map(([label,count,color])=>`<b style="color:${color}">${label} ${count}</b>`).join(' · ');
+    const details=[['혼복',stats.혼복,'#7C3AED'],['남복',stats.남복,'#2563EB'],['여복',stats.여복,'#DB2777'],['잡복',stats.잡복,'#D97706']].filter(([,count])=>count>0).map(([label,count,color])=>`<b style="color:${color}">${label} ${count}</b>`).join(' · ');
     const other=stats.기타?`${details?' · ':''}<b>기타 ${stats.기타}</b>`:'';
     return `<div class="instant-allocation-item"><span class="instant-allocation-name">${name}</span><span class="instant-allocation-total">${stats.total}경기</span><span class="instant-allocation-types">${details||'아직 배정 없음'}${other}${stats.done?`<br>완료 ${stats.done}`:''}</span></div>`;
   }).join('')||'<div style="padding:10px;text-align:center;font-size:11px;color:#64748B">참석자를 등록하면 배정 현황이 표시됩니다.</div>';
   const pairRows=[...pairCounts.values()].sort((a,b)=>b.count-a.count||a.names.join('').localeCompare(b.names.join(''))).map(pair=>{
-    const types=['혼복','남복','여복'].filter(type=>pair.types[type]).map(type=>`${type} ${pair.types[type]}`).join(' · ');
+    const types=['혼복','남복','여복','잡복'].filter(type=>pair.types[type]).map(type=>`${type} ${pair.types[type]}`).join(' · ');
     return `<span class="instant-pair-chip"><b>${pair.names.join(' / ')}</b> · ${pair.count}회${types?` (${types})`:''}</span>`;
   }).join('');
   const pairSection=pairRows?`<details class="instant-pair-details"><summary>👫 오늘의 페어 조합 ${pairCounts.size}개 · 펼쳐보기</summary><div class="instant-pair-list">${pairRows}</div></details>`:'';
@@ -3902,6 +3903,7 @@ function renderDays() {
         const editBtn=(isAdmin||isRegularMember)&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const pairEditBtn=isAdmin&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식'?`<button class="btn-del-sm" style="color:#059669" onclick="openPairEdit('${day.id}','${rIdx}','${m.id}')">✏ 페어</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
+        const genderNoticeHtml=m.genderNotice==='남여대결'?`<div style="margin-top:6px;text-align:center"><span style="display:inline-block;padding:4px 9px;border-radius:12px;background:#FFF7ED;border:1px solid #FDBA74;color:#C2410C;font-size:10px;font-weight:900">⚔️ 남여대결 · 남복 페어 vs 여복 페어</span></div>`:'';
         let evalHtml='';
         if (m.done) {
           if (m.evalText && m.highlightVersion === HIGHLIGHT_VERSION) {
@@ -3959,6 +3961,7 @@ function renderDays() {
             ${scoreEl}
             <div class="m-team ${w2?'win':''}">${(m.team2||[]).join(' / ')}</div>
           </div>
+          ${genderNoticeHtml}
           ${_winRateHtml}
           ${resultAuthorHtml}
           ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(13,148,136,0.05);border-radius:7px;border-left:2px solid rgba(13,148,136,0.2)">${evalHtml}</div>`:''}
@@ -4854,8 +4857,8 @@ window.openEventDetail=function(evId){
       });
     });
     const FM_TC={'혼복':'#a78bfa','남복':'#60a5fa','여복':'#f472b6'};
-    const FM_BG={'혼복':'rgba(167,139,250,0.18)','남복':'rgba(96,165,250,0.18)','여복':'rgba(244,114,182,0.18)'};
-    const FM_FC={'혼복':'#7C3AED','남복':'#2563EB','여복':'#DB2777'};
+    const FM_BG={'혼복':'rgba(167,139,250,0.18)','남복':'rgba(96,165,250,0.18)','여복':'rgba(244,114,182,0.18)','잡복':'rgba(245,158,11,0.16)'};
+    const FM_FC={'혼복':'#7C3AED','남복':'#2563EB','여복':'#DB2777','잡복':'#D97706'};
     const statRows=parts.filter(function(p){return memberNames.has(p);}).map(function(p){
       const s=fmStats[p]||{total:0,혼복:0,남복:0,여복:0};
       const detail=['혼복','남복','여복'].filter(function(t){return s[t]>0;}).map(function(t){return '<span style="color:'+FM_TC[t]+'">'+t+' '+s[t]+'</span>';}).join(' · ');
@@ -4876,7 +4879,7 @@ window.openEventDetail=function(evId){
       var bg=FM_BG[m.type]||'rgba(167,139,250,0.12)';
       var fc=FM_FC[m.type]||'#6D28D9';
       var delBtn=isMember?'<button onclick="deleteFreeMatch(\''+evId+'\',\''+m.id+'\')" style="background:none;border:none;color:rgba(248,113,113,0.5);font-size:18px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>':'';
-      var typeEditBtns=isMember?['혼복','남복','여복'].map(function(t){
+      var typeEditBtns=isMember?['혼복','남복','여복','잡복'].map(function(t){
         var sel=m.type===t;
         return '<button onclick="saveFreeMatchType(\''+evId+'\',\''+m.id+'\',\''+t+'\')" style="flex:1;padding:3px 0;border-radius:6px;border:1px solid '+(sel?FM_FC[t]:'rgba(100,116,139,0.25)')+';background:'+(sel?FM_BG[t]:'rgba(100,116,139,0.05)')+';color:'+(sel?FM_FC[t]:'#64748B')+';font-size:10px;font-weight:700;cursor:pointer">'+t+'</button>';
       }).join(''):null;
@@ -4950,7 +4953,7 @@ window.openEventDetail=function(evId){
       +'<div style="font-size:11px;font-weight:800;color:#6D28D9;margin-bottom:10px">매치 추가</div>'
       +'<div style="margin-bottom:7px"><div style="font-size:10px;color:#64748B;margin-bottom:3px">타입 <span style="color:#94A3B8">(팀1 선택 시 자동 판별)</span></div>'
       +'<div id="fmAutoType_'+evId+'" style="font-size:12px;color:#94A3B8;padding:4px 0;min-height:22px"> </div>'
-      +'<select id="fmManualType_'+evId+'" class="row-inp" style="width:100%;font-size:12px;padding:6px;display:none"><option value="혼복">혼복</option><option value="남복">남복</option><option value="여복">여복</option></select></div>'
+      +'<select id="fmManualType_'+evId+'" class="row-inp" style="width:100%;font-size:12px;padding:6px;display:none"><option value="남복">남복</option><option value="여복">여복</option><option value="잡복">잡복</option></select></div>'
       +'<div style="margin-bottom:7px"><div style="font-size:10px;color:#64748B;margin-bottom:3px">팀1 <span style="color:#ef4444;font-weight:900">*</span><span style="color:#94A3B8"> 필수</span></div>'
       +'<div style="display:-webkit-flex;display:flex;gap:4px">'
       +'<select id="fmT1P1_'+evId+'" class="row-inp" style="flex:1;font-size:12px;padding:6px" onchange="updateFmType(\''+evId+'\')"><option value="">선수1</option>'+partOpts+'</select>'
@@ -5925,7 +5928,23 @@ function calcFreeMatchType(p1,p2){
   if(!g1||!g2)return null;
   if(g1==='m'&&g2==='m')return '남복';
   if(g1==='f'&&g2==='f')return '여복';
-  return '혼복';
+  return '잡복';
+}
+function calcInstantMatchGenderInfo(p1,p2,p3,p4){
+  const all=[...members,...guests];
+  const gender=name=>((all.find(member=>member.name===name)||{}).gender||'').toLowerCase();
+  const team1=[p1,p2].filter(Boolean),team2=[p3,p4].filter(Boolean);
+  const selected=[...team1,...team2];
+  const genders=selected.map(gender);
+  if(selected.length<2||genders.some(g=>g!=='m'&&g!=='f'))return {type:null,notice:''};
+  const type=genders.every(g=>g==='m')?'남복':genders.every(g=>g==='f')?'여복':'잡복';
+  const t1g=team1.map(gender),t2g=team2.map(gender);
+  const team1Male=t1g.length===2&&t1g.every(g=>g==='m');
+  const team1Female=t1g.length===2&&t1g.every(g=>g==='f');
+  const team2Male=t2g.length===2&&t2g.every(g=>g==='m');
+  const team2Female=t2g.length===2&&t2g.every(g=>g==='f');
+  const notice=(team1Male&&team2Female)||(team1Female&&team2Male)?'남여대결':'';
+  return {type,notice};
 }
 window.updateFmType=function(evId){
   const p1=document.getElementById('fmT1P1_'+evId)?.value||'';
@@ -6013,7 +6032,7 @@ window.saveAddFreeMatch=async function(evId){
   if(team2.length&&p3===p4){alert('팀2의 두 선수가 달라야 해요');return;}
   const autoCalc=calcFreeMatchType(p1,p2);
   const manualTypeEl=document.getElementById('fmManualType_'+evId);
-  const type=autoCalc||(manualTypeEl?.value)||'혼복';
+  const type=autoCalc||(manualTypeEl?.value)||'잡복';
   const autoType=!!autoCalc;
   const newMatch={
     id:String(Date.now()),
@@ -6457,7 +6476,7 @@ function renderAdmin(){
       </div>` : `
       <div class="admin-sec" style="border-color:rgba(109,40,217,0.25);background:rgba(109,40,217,0.04)">
         <h3>🎾 즉석매치 승인 대기 (0)</h3>
-        <div style="font-size:12px;color:#64748B;line-height:1.6">현재 확인할 즉석매치 생성 요청이 없어요.<br>정회원으로 로그인해 즉석매치 날짜의 <b>+ 경기 추가</b>를 누르면 여기에 표시됩니다.</div>
+        <div style="font-size:12px;color:#64748B;line-height:1.6">현재 남아 있는 이전 방식의 승인 요청이 없어요.<br>이제 정회원이 만든 즉석매치는 관리자 승인 없이 경기표에 바로 표시됩니다.</div>
       </div>`;
   }
 
@@ -10771,7 +10790,7 @@ function _initMatchModalFreeMode(isFree){
   const manualEl=document.getElementById('mManualType');
   if(autoEl){autoEl.textContent='';autoEl.style.color='#94A3B8';}
   if(manualEl)manualEl.style.display='none';
-  ['t1p1','t1p2'].forEach(function(id){
+  ['t1p1','t1p2','t2p1','t2p2'].forEach(function(id){
     document.getElementById(id).onchange=isFree?window.updateMatchType:null;
   });
 }
@@ -10808,13 +10827,16 @@ window.openFreeAddMatch=function(dayId){
 window.updateMatchType=function(){
   const p1=document.getElementById('t1p1').value;
   const p2=document.getElementById('t1p2').value;
-  const auto=(p1&&p2)?calcFreeMatchType(p1,p2):null;
+  const p3=document.getElementById('t2p1').value;
+  const p4=document.getElementById('t2p2').value;
+  const info=calcInstantMatchGenderInfo(p1,p2,p3,p4);
+  const auto=info.type;
   const label=document.getElementById('mAutoType');
   const manual=document.getElementById('mManualType');
   if(!label)return;
   if(auto){
-    label.textContent='🤖 '+auto+' (자동)';
-    label.style.color='#059669';
+    label.textContent=info.notice==='남여대결'?'⚔️ 남여대결 · 잡복 (자동)':'🤖 '+auto+' (자동)';
+    label.style.color=info.notice==='남여대결'?'#C2410C':'#059669';
     label.style.display='block';
     if(manual)manual.style.display='none';
   } else {
@@ -10831,14 +10853,22 @@ window.submitMatch=async function(){
   const {dayId,rIdx}=pendingRoundKey;
   const day=days.find(d=>d.id===dayId);
   const isFree=!!(day&&(day.matchMode==='freeMatch'||pendingRoundKey.forceInstant));
+  const isRegularMember=!!(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
+  if(!isAdmin&&(!isFree||!isRegularMember)){
+    alert(isFree?'로그인한 정회원만 즉석매치를 생성할 수 있어요.':'공식 경기는 관리자만 추가할 수 있어요.');
+    return;
+  }
   const rounds=[...(day.rounds||[])];
   if(isFree){
     if(!t1p1||!t1p2){alert('팀1 선수 2명을 모두 선택해주세요');return;}
     if((t2p1&&!t2p2)||(!t2p1&&t2p2)){alert('팀2는 2명 모두 선택하거나 비워두세요');return;}
-    const autoCalc=calcFreeMatchType(t1p1,t1p2);
+    const selectedPlayers=[t1p1,t1p2,t2p1,t2p2].filter(Boolean);
+    if(new Set(selectedPlayers).size!==selectedPlayers.length){alert('한 선수를 양쪽 팀에 중복으로 선택할 수 없어요.');return;}
+    const genderInfo=calcInstantMatchGenderInfo(t1p1,t1p2,t2p1,t2p2);
+    const autoCalc=genderInfo.type;
     const manualEl=document.getElementById('mManualType');
     const tag=autoCalc||(manualEl&&manualEl.style.display!=='none'?manualEl.value:'')||'';
-    const nm={id:Date.now().toString(),team1:[t1p1,t1p2],team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court,tag,matchKind:'instant',createdByRole:isAdmin?'admin':'member',createdByName:isAdmin?'관리자':(myClaim?.name||'')};
+    const nm={id:Date.now().toString(),team1:[t1p1,t1p2],team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court,tag,genderNotice:genderInfo.notice,matchKind:'instant',createdByRole:isAdmin?'admin':'member',createdByName:isAdmin?'관리자':(myClaim?.name||'')};
     if(!rounds[rIdx]){
       const ts=Date.now();
       rounds[rIdx]={id:`${ts}_free`,name:`${rIdx+1}라운드`,type:'자유',matches:[nm]};
@@ -10849,30 +10879,6 @@ window.submitMatch=async function(){
     if(!t1p1||!t2p1){alert('각 팀 선수 1명 이상');return;}
     const nm={id:Date.now().toString(),team1:[t1p1,t1p2].filter(Boolean),team2:[t2p1,t2p2].filter(Boolean),score1:null,score2:null,done:false,court,matchKind:'official'};
     rounds[rIdx]={...rounds[rIdx],matches:[...(rounds[rIdx].matches||[]),nm]};
-  }
-  // 정회원의 즉석매치는 확정 데이터에 직접 쓰지 않고 관리자 승인 대기로 저장
-  if (!isAdmin) {
-    try {
-      if (!auth.currentUser) await signInAnonymously(auth);
-      const user = auth.currentUser;
-      if (!user) throw new Error('인증에 실패했습니다.');
-      const requestedRound = rounds[rIdx];
-      const requestedMatch = (requestedRound.matches||[])[requestedRound.matches.length-1];
-      await addDoc(collection(db,'matchRequests'), {
-        dayId, rIdx, match:requestedMatch,
-        createRound: !(day.rounds||[])[rIdx],
-        roundName:requestedRound.name||`${rIdx+1}라운드`,
-        roundType:requestedRound.type||'자유',
-        status:'pending', requesterUid:user.uid,
-        requesterName:myClaim?.name||'', requestedAt:serverTimestamp()
-      });
-      hide('matchModal');
-      alert('✅ 즉석매치 생성 요청을 보냈어요. 관리자 승인 후 경기표에 표시됩니다.');
-    } catch(e) {
-      console.error('즉석매치 요청 실패:', e);
-      alert('생성 요청을 보내지 못했어요. 잠시 후 다시 시도해주세요.');
-    }
-    return;
   }
   const newMatch=(rounds[rIdx]?.matches||[]).at(-1);
   try {
@@ -10886,6 +10892,7 @@ window.submitMatch=async function(){
       transaction.update(dayRef,{rounds:latestRounds});
     });
     hide('matchModal');
+    if(isFree&&!isAdmin)alert('✅ 즉석매치를 경기표에 바로 추가했어요.');
   } catch(e) {
     alert('경기를 추가하지 못했어요. 다시 시도해주세요.\n\n'+(e.message||e));
   }
