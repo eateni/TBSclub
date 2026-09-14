@@ -5077,15 +5077,8 @@ function _cardWrap(ctx,text,maxWidth) {
   }
   if(line) lines.push(line); return lines;
 }
-window.shareDayHighlightCard = async function(dayId) {
-  const day=days.find(d=>d.id===dayId); if(!day) return;
-  let badges=day.dayBadges||[]; let summary=day.daySummary||'';
-  if(!badges.length || !summary) {
-    const norm=_getAllMatchHistory(day.date).filter(h=>h.date===day.date);
-    badges=buildDayBadges(norm,day.date); summary=buildDaySummary(norm,badges,day.date);
-  }
-  if(!badges.length && !summary) { alert('완료된 경기 하이라이트가 아직 없어요.'); return; }
-  const canvas=document.createElement('canvas'); canvas.width=1080; canvas.height=1350;
+function _drawDayHighlightCard(day,badges,summary,canvas) {
+  canvas=canvas||document.createElement('canvas'); canvas.width=1080; canvas.height=1350;
   const ctx=canvas.getContext('2d');
   const bg=ctx.createLinearGradient(0,0,1080,1350); bg.addColorStop(0,'#061D35'); bg.addColorStop(.55,'#0D3E55'); bg.addColorStop(1,'#061C2D'); ctx.fillStyle=bg; ctx.fillRect(0,0,1080,1350);
   // 코트 라인처럼 은은한 배경 장식
@@ -5104,6 +5097,17 @@ window.shareDayHighlightCard = async function(dayId) {
   y+=20; _cardRoundRect(ctx,160,y,760,260,24); ctx.fillStyle='#E9F7F5'; ctx.fill();
   ctx.fillStyle='#334155'; ctx.font='500 31px Arial, sans-serif'; const lines=_cardWrap(ctx,summary,700).slice(0,5); lines.forEach((line,i)=>ctx.fillText(line,202,y+58+i*43));
   ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,.75)'; ctx.font='500 23px Arial, sans-serif'; ctx.fillText('AFTER MATCH, START AGAIN',540,1180);
+  return canvas;
+}
+window.shareDayHighlightCard = async function(dayId) {
+  const day=days.find(d=>d.id===dayId); if(!day) return;
+  let badges=day.dayBadges||[]; let summary=day.daySummary||'';
+  if(!badges.length || !summary) {
+    const norm=_getAllMatchHistory(day.date).filter(h=>h.date===day.date);
+    badges=buildDayBadges(norm,day.date); summary=buildDaySummary(norm,badges,day.date);
+  }
+  if(!badges.length && !summary) { alert('완료된 경기 하이라이트가 아직 없어요.'); return; }
+  const canvas=_drawDayHighlightCard(day,badges,summary);
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png')); if(!blob){alert('카드 이미지를 만들지 못했어요.');return;}
   const file=new File([blob],`TBS-${day.date||'highlight'}-highlight.png`,{type:'image/png'});
   try {
@@ -8891,6 +8895,19 @@ function makeDayHighlightItem(day) {
   };
 }
 
+function renderClubNewsHighlightCards(root) {
+  const scope=root||document;
+  requestAnimationFrame(function(){
+    scope.querySelectorAll('canvas[data-day-highlight-card]').forEach(function(canvas){
+      const day=days.find(d=>d.id===canvas.dataset.dayHighlightCard);
+      if(!day)return;
+      const item=makeDayHighlightItem(day);
+      if(!item)return;
+      _drawDayHighlightCard(day,item.badges||[],item.detail||'',canvas);
+    });
+  });
+}
+
 function getClubCalendarItems(){
   const regular = days.map(d => ({
     type:'regular', date:d.date, title:`정규시즌 · ${d.place||'경기'}`,
@@ -8991,6 +9008,15 @@ function renderSchedules() {
       const openType = item.type === 'highlight' ? `${item.targetType}-highlight` : item.type;
       const openAction = clickable ? `onclick="openClubNewsItem('${openType}','${sourceId}')"` : '';
       const noticeActions = item.type === 'notice' && sourceId ? `<div style="display:flex;gap:6px;margin-top:9px"><button onclick="shareAnnouncement('${sourceId}')" style="padding:6px 9px;background:#FEE500;border:none;border-radius:7px;color:#3c1e1e;font-size:10px;font-weight:800;cursor:pointer">💬 공유</button></div>` : '';
+      if(item.type==='highlight') {
+        return `<div style="background:#F7FBFA;border:1px solid rgba(13,148,136,.28);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 4px 14px rgba(15,118,110,.08)">
+          <canvas data-day-highlight-card="${sourceId}" onclick="openClubNewsItem('${openType}','${sourceId}')" width="1080" height="1350" style="display:block;width:100%;max-width:430px;height:auto;aspect-ratio:4/5;margin:0 auto;border-radius:12px;cursor:pointer;background:#08283b"></canvas>
+          <div style="display:flex;gap:7px;margin-top:9px">
+            <button onclick="openClubNewsItem('${openType}','${sourceId}')" style="flex:1;border:1px solid #B7DBD7;background:#fff;color:#0F766E;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">경기 상세보기</button>
+            <button onclick="shareDayHighlightCard('${sourceId}')" style="flex:1;border:none;background:#0F766E;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button>
+          </div>
+        </div>`;
+      }
       const highlightMeta = item.type === 'highlight'
         ? `<div style="font-size:10px;color:#64748B;margin-top:3px">정규시즌${item.place?' · '+item.place:''} · ${item.matchCount||0}경기 완료</div>` : '';
       const highlightBadges = item.type === 'highlight' ? buildDayBadgesHtml(item.badges||[]) : '';
@@ -9005,6 +9031,7 @@ function renderSchedules() {
 
   if (calSelectedDate) {
     el.innerHTML = `<div style="font-size:15px;font-weight:900;color:#1E293B;margin:4px 0 10px">📅 ${calSelectedDate} 소식</div>` + clubItems.map(cardHtml).join('');
+    renderClubNewsHighlightCards(el);
     return;
   }
 
@@ -9019,6 +9046,7 @@ function renderSchedules() {
     ? `<div style="font-size:15px;font-weight:900;color:#1E293B;margin:${highlightOnly?'4':'18'}px 0 10px">${highlightOnly?'✨ 오늘의 하이라이트':'🕘 최근 소식'}</div>${recent.map(cardHtml).join('')}`
     : '';
   el.innerHTML = upcomingHtml + recentHtml;
+  renderClubNewsHighlightCards(el);
   return;
   if (!schedules.length) {
     el.innerHTML = '<div style="text-align:center;padding:30px;color:#64748B;font-size:13px">아직 등록된 일정이 없어요 📭<br>위에서 첫 일정을 올려보세요!</div>';
