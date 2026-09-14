@@ -5077,26 +5077,82 @@ function _cardWrap(ctx,text,maxWidth) {
   }
   if(line) lines.push(line); return lines;
 }
-function _drawDayHighlightCard(day,badges,summary,canvas) {
+const _highlightAssetCache={};
+function _loadHighlightImage(src) {
+  if(_highlightAssetCache[src])return _highlightAssetCache[src];
+  _highlightAssetCache[src]=new Promise(function(resolve,reject){
+    const img=new Image();
+    img.onload=function(){resolve(img);};
+    img.onerror=reject;
+    img.src=src;
+  });
+  return _highlightAssetCache[src];
+}
+function _makeGoldHighlightLogo(source) {
+  if(_highlightAssetCache.goldLogo)return _highlightAssetCache.goldLogo;
+  const crop={x:260,y:0,w:1015,h:1015};
+  const logo=document.createElement('canvas'); logo.width=crop.w; logo.height=crop.h;
+  const lctx=logo.getContext('2d');
+  lctx.drawImage(source,crop.x,crop.y,crop.w,crop.h,0,0,crop.w,crop.h);
+  _highlightAssetCache.goldLogo=logo;
+  return logo;
+}
+function _drawHighlightCover(ctx,img,w,h) {
+  const scale=Math.max(w/img.width,h/img.height);
+  const sw=w/scale,sh=h/scale,sx=(img.width-sw)/2,sy=(img.height-sh)/2;
+  ctx.drawImage(img,sx,sy,sw,sh,0,0,w,h);
+}
+function _fitHighlightText(ctx,text,maxWidth,startSize,minSize,weight) {
+  let size=startSize;
+  while(size>minSize){ctx.font=`${weight} ${size}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;if(ctx.measureText(text).width<=maxWidth)break;size-=1;}
+  return size;
+}
+async function _drawDayHighlightCard(day,badges,summary,canvas) {
   canvas=canvas||document.createElement('canvas'); canvas.width=1080; canvas.height=1350;
   const ctx=canvas.getContext('2d');
-  const bg=ctx.createLinearGradient(0,0,1080,1350); bg.addColorStop(0,'#061D35'); bg.addColorStop(.55,'#0D3E55'); bg.addColorStop(1,'#061C2D'); ctx.fillStyle=bg; ctx.fillRect(0,0,1080,1350);
-  // 코트 라인처럼 은은한 배경 장식
-  ctx.strokeStyle='rgba(255,211,110,.22)'; ctx.lineWidth=4; ctx.strokeRect(78,95,924,1160); ctx.beginPath(); ctx.moveTo(78,675); ctx.lineTo(1002,675); ctx.moveTo(540,95); ctx.lineTo(540,1255); ctx.stroke();
-  ctx.fillStyle='#F7D47A'; ctx.font='700 42px Arial, sans-serif'; ctx.textAlign='center'; ctx.fillText('TBS HISTORY',540,170);
-  ctx.fillStyle='rgba(255,255,255,.84)'; ctx.font='500 25px Arial, sans-serif'; const dLabel=day.date?new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}):'정규시즌'; ctx.fillText('🎾 '+dLabel+' · 정규시즌',540,220);
-  ctx.textAlign='left'; _cardRoundRect(ctx,115,290,850,760,34); ctx.fillStyle='rgba(248,255,254,.96)'; ctx.fill();
-  ctx.fillStyle='#059669'; ctx.font='800 48px Arial, sans-serif'; ctx.fillText('✨ 오늘의 하이라이트',170,385);
-  let y=445;
-  badges.slice(0,4).forEach((b,i)=>{
-    const label=_highlightBadgeLabel(b); if(!label)return;
-    const colors=['#FFF4D8','#FFF0F2','#EAF9F4','#F3EEFF']; const strokes=['#F3B84A','#FB7185','#34D399','#A78BFA'];
-    ctx.font='700 29px Arial, sans-serif'; const width=Math.min(740,ctx.measureText(label).width+66);
-    _cardRoundRect(ctx,170,y,width,58,29); ctx.fillStyle=colors[i]; ctx.fill(); ctx.strokeStyle=strokes[i]; ctx.lineWidth=2; ctx.stroke(); ctx.fillStyle='#334155'; ctx.fillText(label,201,y+38); y+=78;
+  try {
+    const [court,logoSource]=await Promise.all([
+      _loadHighlightImage('assets/tbs-highlight-night-court.png'),
+      _loadHighlightImage('assets/tbs-highlight-logo-gold.png')
+    ]);
+    _drawHighlightCover(ctx,court,1080,1350);
+    ctx.fillStyle='rgba(1,12,28,.28)';ctx.fillRect(0,0,1080,1350);
+    const logo=_makeGoldHighlightLogo(logoSource);
+    ctx.save();ctx.globalCompositeOperation='screen';ctx.drawImage(logo,387,20,306,266);ctx.restore();
+  } catch(e) {
+    const bg=ctx.createLinearGradient(0,0,1080,1350);bg.addColorStop(0,'#04152B');bg.addColorStop(1,'#082C44');ctx.fillStyle=bg;ctx.fillRect(0,0,1080,1350);
+    ctx.textAlign='center';ctx.fillStyle='#E8C56A';ctx.font='900 42px "Apple SD Gothic Neo",Arial,sans-serif';ctx.fillText('TBS CLUB',540,145);ctx.font='700 24px "Apple SD Gothic Neo",Arial,sans-serif';ctx.fillText('THE BEST SET',540,182);
+  }
+
+  _cardRoundRect(ctx,70,326,940,988,30);ctx.fillStyle='rgba(2,17,36,.87)';ctx.fill();ctx.strokeStyle='rgba(172,211,239,.65)';ctx.lineWidth=2;ctx.stroke();
+  ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='900 36px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('TBS HISTORY',540,398);
+  ctx.font='600 28px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('인생 최고의 세트',540,442);
+  ctx.strokeStyle='#E8C56A';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(512,467);ctx.lineTo(568,467);ctx.stroke();
+  const dLabel=day.date?new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}):'정규시즌';
+  ctx.fillStyle='rgba(255,255,255,.94)';ctx.font='600 28px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(dLabel+' · 정규시즌',540,515);
+  ctx.fillStyle='#fff';ctx.font='900 68px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('오늘의 하이라이트',540,615);
+  ctx.strokeStyle='#E8C56A';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(220,647);ctx.lineTo(860,647);ctx.stroke();
+
+  const shown=(badges||[]).slice(0,4);
+  const cardGap=16,cardW=shown.length===4?211:280,cardH=232;
+  const totalW=shown.length*cardW+Math.max(0,shown.length-1)*cardGap;
+  const startX=(1080-totalW)/2;
+  shown.forEach(function(b,i){
+    const x=startX+i*(cardW+cardGap),y=675;
+    _cardRoundRect(ctx,x,y,cardW,cardH,18);ctx.fillStyle='rgba(1,17,36,.76)';ctx.fill();ctx.strokeStyle='#E8C56A';ctx.lineWidth=2;ctx.stroke();
+    const icon=b.type==='mvp'?'🏆':b.type==='streak'?'📈':b.type==='unbeaten'?'🛡️':'🥖';
+    const main=b.type==='mvp'?`MVP · ${b.name}`:b.type==='streak'?`연승왕 · ${b.name}`:b.type==='unbeaten'?`무패 · ${(b.names||[]).join(', ')}`:`제빵왕 · ${(b.names||[]).join(', ')}`;
+    const value=b.type==='mvp'?`(${b.wins}승)`:b.type==='streak'?`(${b.count}연승)`:'';
+    ctx.font='46px "Apple Color Emoji","Apple SD Gothic Neo",sans-serif';ctx.fillText(icon,x+cardW/2,y+70);
+    const mainSize=_fitHighlightText(ctx,main,cardW-24,29,20,800);ctx.fillStyle='#fff';ctx.font=`800 ${mainSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(main,x+cardW/2,y+137);
+    if(value){ctx.fillStyle='#E8C56A';ctx.font='900 35px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(value,x+cardW/2,y+187);}
   });
-  y+=20; _cardRoundRect(ctx,160,y,760,260,24); ctx.fillStyle='#E9F7F5'; ctx.fill();
-  ctx.fillStyle='#334155'; ctx.font='500 31px Arial, sans-serif'; const lines=_cardWrap(ctx,summary,700).slice(0,5); lines.forEach((line,i)=>ctx.fillText(line,202,y+58+i*43));
-  ctx.textAlign='center'; ctx.fillStyle='rgba(255,255,255,.75)'; ctx.font='500 23px Arial, sans-serif'; ctx.fillText('AFTER MATCH, START AGAIN',540,1180);
+
+  _cardRoundRect(ctx,102,932,876,226,20);ctx.fillStyle='rgba(1,14,30,.82)';ctx.fill();ctx.strokeStyle='#E8C56A';ctx.lineWidth=2;ctx.stroke();
+  ctx.textAlign='left';ctx.fillStyle='rgba(255,255,255,.94)';ctx.font='500 27px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';
+  const lines=_cardWrap(ctx,summary,790).slice(0,5);const lineH=39,startY=990+(5-lines.length)*8;lines.forEach((line,i)=>ctx.fillText(line,145,startY+i*lineH));
+  ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='800 27px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('AFTER MATCH, START AGAIN',540,1228);
+  ctx.fillStyle='rgba(255,255,255,.92)';ctx.font='600 24px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('경기가 끝나도 우리의 즐거움은 시작',540,1273);
   return canvas;
 }
 window.shareDayHighlightCard = async function(dayId) {
@@ -5107,7 +5163,7 @@ window.shareDayHighlightCard = async function(dayId) {
     badges=buildDayBadges(norm,day.date); summary=buildDaySummary(norm,badges,day.date);
   }
   if(!badges.length && !summary) { alert('완료된 경기 하이라이트가 아직 없어요.'); return; }
-  const canvas=_drawDayHighlightCard(day,badges,summary);
+  const canvas=await _drawDayHighlightCard(day,badges,summary);
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png')); if(!blob){alert('카드 이미지를 만들지 못했어요.');return;}
   const file=new File([blob],`TBS-${day.date||'highlight'}-highlight.png`,{type:'image/png'});
   try {
@@ -8154,30 +8210,6 @@ function renderHomeTab() {
     }
   }
 
-  // ── "다가오는 일정": schedules 컬렉션 (캘린더 일정) ─────────────────
-  const futureScheds = schedules
-    .filter(s=>s.date&&s.date>=todayStr)
-    .sort((a,b)=>a.date.localeCompare(b.date)||(a.time||'').localeCompare(b.time||''));
-  const memberScheds = futureScheds.slice(0,3);
-
-  // 일반 회원 일정 (isGameMeetup이 아닌 것)
-  const memberSchedsHtml = memberScheds.length
-    ? memberScheds.map((s,i)=>{
-        const d=new Date(s.date+'T00:00:00');
-        const dl=`${d.getMonth()+1}/${d.getDate()}(${weekdays[d.getDay()]})`;
-        const yes=Object.values(s.attend||{}).filter(v=>v==='참석').length;
-        return `<div onclick="homeGoTo('schedule')" style="cursor:pointer;padding:10px 0;border-bottom:1px solid rgba(50,110,200,0.1)">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
-            <span style="font-size:14px;font-weight:800;color:#D97706">${dl}${s.time?' '+s.time:''}</span>
-            <span style="font-size:12px;color:#059669">✅ ${yes}명</span>
-            ${s.place?`<span style="font-size:12px;color:#64748B">📍 ${s.place}</span>`:''}
-          </div>
-          <div style="font-size:13px;color:#78909C;line-height:1.4;margin-bottom:4px">${(s.content||'').slice(0,45)}</div>
-          <div><span id="wxBadgeSched_${i}" style="font-size:15px;color:#64748B;font-weight:700"></span></div>
-        </div>`;
-      }).join('')
-    : `<div style="font-size:14px;color:#64748B;padding:4px 0">예정된 일정이 없어요</div>`;
-
   // 바로가기 — 확장형 카테고리 카드
   var CATS = [
     { id:'record',    icon:'📊', label:'기록',     grad:'linear-gradient(135deg,rgba(120,85,10,0.28),rgba(245,158,11,0.1))',   border:'rgba(245,158,11,0.38)', cardCls:'sc-card-record',
@@ -8397,19 +8429,15 @@ function renderHomeTab() {
         (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds,highlightVersion:_hv});}catch(e){}})();
       }
     }
-    const hChips=buildDayBadgesHtml(hBadges||[]);
-    const hDateLabel=_hDay.date?new Date(_hDay.date).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}):'';
-    if(hChips||hSummary){
-      const hMatchCount=(_hDay.rounds||[]).reduce(function(n,r){return n+(r.matches||[]).filter(function(m){return m.done&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식';}).length;},0);
-      highlightHtml='<div onclick="goToGameDay(\''+_hDay.id+'\')" style="cursor:pointer;background:linear-gradient(135deg,#063047,#0B6770);border:1px solid rgba(94,234,212,.46);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 5px 16px rgba(6,48,71,.18);position:relative;overflow:hidden">'
-        +'<div style="position:absolute;right:-7px;bottom:-30px;font-size:110px;opacity:.08;pointer-events:none">🎾</div>'
-        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;position:relative"><div><div style="font-size:11px;color:#A7F3D0;font-weight:900;letter-spacing:.4px">📰 최신 하이라이트</div><div style="font-size:18px;color:#fff;font-weight:900;margin-top:4px">'+hDateLabel+'</div><div style="font-size:11px;color:rgba(226,255,250,.76);margin-top:3px">정규시즌 · '+hMatchCount+'경기 완료 · 상세 보기 ›</div></div><button onclick="event.stopPropagation();shareDayHighlightCard(\''+_hDay.id+'\')" style="border:1px solid rgba(255,255,255,.54);background:#F6FFFD;color:#047857;border-radius:9px;padding:7px 9px;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap">🖼️ 카드 공유</button></div>'
-        +'<div style="margin-top:12px;padding:11px 12px;border-radius:11px;background:rgba(255,255,255,.95);position:relative">'+hChips+(hSummary?'<div style="font-size:12px;color:#334155;line-height:1.65;margin-top:'+(hChips?'9':'0')+'px">'+hSummary+'</div>':'')+'</div>'
+    if((hBadges||[]).length||hSummary){
+      highlightHtml='<div style="background:#F7FBFA;border:1px solid rgba(13,148,136,.25);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 5px 16px rgba(6,48,71,.12)">'
+        +'<canvas data-day-highlight-card="'+_hDay.id+'" onclick="goToGameDay(\''+_hDay.id+'\')" width="1080" height="1350" style="display:block;width:100%;max-width:520px;height:auto;aspect-ratio:4/5;margin:0 auto;border-radius:12px;cursor:pointer;background:#061C2D"></canvas>'
+        +'<div style="display:flex;gap:7px;margin-top:9px"><button onclick="goToGameDay(\''+_hDay.id+'\')" style="flex:1;border:1px solid #B7DBD7;background:#fff;color:#0F766E;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">경기 상세보기</button><button onclick="shareDayHighlightCard(\''+_hDay.id+'\')" style="flex:1;border:none;background:#0F766E;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button></div>'
         +'</div>';
     }
   }
 
-  // 배치 순서: 공지배너 → 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 하이라이트 → 다가오는 일정 → 바로가기
+  // 배치 순서: 공지배너 → 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 하이라이트 → 바로가기
   el.innerHTML = `
     <div style="padding-top:12px">
       <!-- 공지사항 배너 -->
@@ -8492,13 +8520,6 @@ function renderHomeTab() {
       <!-- 최근 날짜 하이라이트 -->
       ${highlightHtml}
 
-      <!-- 다가오는 일정 (관리자만 표시) -->
-      ${isAdmin ? `<div style="background:#FAFAFA;border:1px solid rgba(50,110,200,0.18);border-radius:14px;padding:14px 16px;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:800;color:#64748B;margin-bottom:8px">📅 다가오는 일정</div>
-        ${memberSchedsHtml}
-        <button onclick="homeGoTo('schedule')" style="width:100%;margin-top:10px;padding:8px;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.22);border-radius:9px;color:#2563EB;font-size:13px;font-weight:700;cursor:pointer">일정 보기 / 참석체크 →</button>
-      </div>` : ''}
-
       <!-- 바로가기 — 확장형 카테고리 카드 -->
       ${shortcutsHtml}
 
@@ -8512,6 +8533,7 @@ function renderHomeTab() {
         <div style="color:#C13584;font-size:18px;font-weight:900">›</div>
       </a>` : ''}
     </div>`;
+  renderClubNewsHighlightCards(el);
   // 날씨 비동기 업데이트 (렌더 후 주입)
   updateHomeWeather(
     nextGameDay ? nextGameDay.date : null,
@@ -8522,7 +8544,7 @@ function renderHomeTab() {
     nextExchangeEv ? nextExchangeEv.place : null,
     nextExchangeEv ? (nextExchangeEv.lat||null) : null,
     nextExchangeEv ? (nextExchangeEv.lon||null) : null,
-    memberScheds.map(s => ({ date: s.date, place: s.place||null, lat: s.lat||null, lon: s.lon||null })),
+    [],
     [fridayGame, saturdayGame].filter(Boolean).map(function(d){ return { date: d.date, place: d.place||null, lat: d.lat||null, lon: d.lon||null }; })
   );
 }
