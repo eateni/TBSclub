@@ -528,6 +528,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.0.0</div>
     </div>
   </div>
 
@@ -536,7 +537,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.0.0</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1472,7 +1473,7 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   setPersistence, browserLocalPersistence, signInAnonymously,
   sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc }
+import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, runTransaction }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { getMessaging, getToken, onMessage, isSupported }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js";
@@ -1491,6 +1492,51 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
+const APP_VERSION = '1.0.0';
+
+function copyRoundsForUpdate(data) {
+  return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
+}
+
+function matchHistorySnapshot(match) {
+  return {
+    team1:[...(match.team1||[])], team2:[...(match.team2||[])],
+    score1:match.score1??null, score2:match.score2??null, done:!!match.done,
+    positions:{...(match.positions||{})}, tag:match.tag||'', court:match.court||'',
+    matchResult:match.matchResult||'', tiebreak:match.tiebreak||null,
+    liveLog:Array.isArray(match.liveLog)?match.liveLog:[]
+  };
+}
+
+function withMatchHistory(next, before, action, editor) {
+  const history=[...(before.changeHistory||[]),{
+    id:`${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+    action, editor:editor||'회원', at:new Date().toISOString(),
+    before:matchHistorySnapshot(before)
+  }].slice(-20);
+  return {...next,changeHistory:history,lastChangedAt:new Date().toISOString(),lastChangedBy:editor||'회원'};
+}
+
+async function updateDayMatchSafely(dayId, rIdx, matchId, updater, options={}) {
+  const ref=doc(db,'days',dayId);
+  return runTransaction(db,async transaction=>{
+    const snapshot=await transaction.get(ref);
+    if(!snapshot.exists())throw new Error('경기 날짜를 찾을 수 없어요.');
+    const data=snapshot.data();
+    const rounds=copyRoundsForUpdate(data);
+    const ri=parseInt(rIdx);
+    if(!rounds[ri])throw new Error('라운드를 찾을 수 없어요.');
+    const mi=(rounds[ri].matches||[]).findIndex(match=>match.id===matchId);
+    if(mi<0)throw new Error('경기를 찾을 수 없어요.');
+    const before=rounds[ri].matches[mi];
+    let next=updater({...before},data,rounds);
+    if(!next)throw new Error('경기 변경 내용을 만들지 못했어요.');
+    if(options.history!==false)next=withMatchHistory(next,before,options.action||'경기 수정',options.editor||getSeasonScoreEditorName());
+    rounds[ri]={...rounds[ri],matches:rounds[ri].matches.map((match,index)=>index===mi?next:match)};
+    transaction.update(ref,{rounds,...(options.dayUpdates||{})});
+    return next;
+  });
+}
 // Firebase Console에서 생성할 Web Push 인증서 공개키를 여기에 설정한다.
 const FCM_VAPID_KEY = 'BDX-Ii2n9p8XeOtjE21_HghKzvrUjdayZiFRIAoexbAs-RHsojTPeGpBNz2K8zFstD9IX-_BYXdkTcJS9D5qy9g';
 let messaging = null;
@@ -3504,8 +3550,8 @@ window.submitScoreEdit = async function() {
   const s1=parseInt(document.getElementById('se1').value), s2=parseInt(document.getElementById('se2').value);
   if(isNaN(s1)||isNaN(s2)){alert('스코어를 입력해주세요');return;}
   const day=days.find(d=>d.id===pendingScoreEdit.dayId);
-  const rounds=[...(day.rounds||[])];
-  const match=(rounds[pendingScoreEdit.rIdx].matches||[]).find(m=>m.id===pendingScoreEdit.mId);
+  const match=((day?.rounds||[])[pendingScoreEdit.rIdx]?.matches||[]).find(m=>m.id===pendingScoreEdit.mId);
+  if(!match){alert('수정할 경기를 찾을 수 없어요. 새로고침 후 다시 시도해주세요.');return;}
   const allP=[...(match.team1||[]),...(match.team2||[])].filter(Boolean);
   const positions={...(match.positions||{})};
   allP.forEach(p=>{
@@ -3516,14 +3562,16 @@ window.submitScoreEdit = async function() {
     else if(bb?.dataset?.selected==='1') positions[p]='back';
   });
   const editorName = getSeasonScoreEditorName();
-  const matches=(rounds[pendingScoreEdit.rIdx].matches||[]).map(m=>
-    m.id===pendingScoreEdit.mId?{...m,score1:s1,score2:s2,done:true,positions,
-      enteredBy:m.enteredBy||editorName, editedBy:editorName}:m
-  );
-  rounds[pendingScoreEdit.rIdx]={...rounds[pendingScoreEdit.rIdx],matches};
-  await updateDoc(doc(db,'days',pendingScoreEdit.dayId),{rounds});
-  hide('scoreEditModal');
-  recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
+  try {
+    await updateDayMatchSafely(pendingScoreEdit.dayId,pendingScoreEdit.rIdx,pendingScoreEdit.mId,current=>({
+      ...current,score1:s1,score2:s2,done:true,positions,
+      enteredBy:current.enteredBy||editorName,editedBy:editorName
+    }),{action:'점수 수정',editor:editorName,dayUpdates:{dayBadges:[],daySummary:'',highlightVersion:0}});
+    hide('scoreEditModal');
+    recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
+  } catch(e) {
+    alert('다른 기기의 변경 내용을 확인하는 중 저장하지 못했어요.\n다시 열어서 시도해주세요.\n\n'+(e.message||e));
+  }
 };
 
 
@@ -3803,6 +3851,11 @@ function renderDays() {
           }
         }
         const mComments = m.comments || [];
+        const changeHistoryHtml=isAdmin&&Array.isArray(m.changeHistory)&&m.changeHistory.length
+          ?`<details style="margin-bottom:8px;padding:7px 8px;border-radius:8px;background:#F8FAFC;border:1px solid #E2E8F0">
+              <summary style="cursor:pointer;font-size:10px;font-weight:800;color:#64748B">🕘 변경 이력 ${m.changeHistory.length}건</summary>
+              <div style="margin-top:6px">${m.changeHistory.slice(-5).reverse().map(h=>`<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-top:1px solid #E2E8F0;font-size:10px;color:#64748B"><span style="flex:1"><b>${h.action||'경기 수정'}</b> · ${h.editor||'회원'}<br>${h.at?new Date(h.at).toLocaleString('ko-KR'):''}</span><button onclick="restoreMatchHistory('${day.id}','${rIdx}','${m.id}','${h.id}')" style="border:1px solid #CBD5E1;background:#fff;color:#475569;border-radius:6px;padding:4px 7px;font-size:10px;cursor:pointer">복원</button></div>`).join('')}</div>
+            </details>`:'';
         const commentOpts = [...members, ...guests].map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
         // 댓글 목록
         const commentsListHtml = mComments.map((c,ci)=>`
@@ -3849,6 +3902,7 @@ function renderDays() {
             <button onclick="toggleMatchCard('${m.id}')" id="marr_${m.id}" style="margin-left:auto;background:none;border:1px solid rgba(50,110,200,0.22);border-radius:7px;color:#64748B;font-size:12px;cursor:pointer;padding:2px 9px;transition:transform 0.2s;flex-shrink:0">⌄</button>
           </div>
           <div id="mex_${m.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
+            ${changeHistoryHtml}
             ${commentsListHtml}
             <div style="display:flex;gap:4px;margin-top:4px">
               <select id="mcmt_who_${m.id}" class="row-sel" style="width:70px;font-size:10px;padding:5px"><option value="">이름</option>${commentOpts}</select>
@@ -10151,15 +10205,18 @@ window.approveMatchRequest = async function(requestId){
   if (!confirm(`다음 즉석매치를 경기표에 추가할까요?\n\n${label}`)) return;
   try {
     const rIdx = Number(request.rIdx);
-    const rounds = [...(day.rounds||[])];
-    if (!rounds[rIdx]) {
-      rounds[rIdx] = { id:`${Date.now()}_free`, name:request.roundName||`${rIdx+1}라운드`, type:request.roundType||'자유', matches:[m] };
-    } else {
-      rounds[rIdx] = { ...rounds[rIdx], matches:[...(rounds[rIdx].matches||[]),m] };
-    }
-    await updateDoc(doc(db,'days',day.id), { rounds });
-    await updateDoc(doc(db,'matchRequests',requestId), {
-      status:'approved', resolvedAt:serverTimestamp(), resolvedBy:auth.currentUser?.uid||''
+    const dayRef=doc(db,'days',day.id);
+    const requestRef=doc(db,'matchRequests',requestId);
+    await runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(dayRef);
+      if(!snapshot.exists())throw new Error('대상 날짜를 찾을 수 없어요.');
+      const rounds=copyRoundsForUpdate(snapshot.data());
+      if(!rounds[rIdx])rounds[rIdx]={id:`${Date.now()}_free`,name:request.roundName||`${rIdx+1}라운드`,type:request.roundType||'자유',matches:[m]};
+      else rounds[rIdx]={...rounds[rIdx],matches:[...(rounds[rIdx].matches||[]),m]};
+      transaction.update(dayRef,{rounds});
+      transaction.update(requestRef,{
+        status:'approved',resolvedAt:serverTimestamp(),resolvedBy:auth.currentUser?.uid||''
+      });
     });
     alert('✅ 경기표에 추가했어요.');
   } catch(e) {
@@ -10444,8 +10501,8 @@ window.submitScore=async function(){
     return;
   }
   const day=days.find(d=>d.id===pendingScore.dayId);
-  const rounds=[...(day.rounds||[])];
-  const match=(rounds[pendingScore.rIdx].matches||[]).find(m=>m.id===pendingScore.mId);
+  const match=((day?.rounds||[])[pendingScore.rIdx]?.matches||[]).find(m=>m.id===pendingScore.mId);
+  if(!match){alert('경기를 찾을 수 없어요. 새로고침 후 다시 시도해주세요.');return;}
   // 포지션 수집
   const allP=[...(match.team1||[]),...(match.team2||[])].filter(Boolean);
   const positions={...(match.positions||{})};
@@ -10457,12 +10514,16 @@ window.submitScore=async function(){
     else if(bb?.dataset?.selected==='1') positions[p]='back';
   });
   const editorName = getSeasonScoreEditorName();
-  const matches=(rounds[pendingScore.rIdx].matches||[]).map(m=>m.id===pendingScore.mId?{...m,score1:s1,score2:s2,done:true,positions,
-    enteredBy:m.enteredBy||editorName}:m);
-  rounds[pendingScore.rIdx]={...rounds[pendingScore.rIdx],matches};
-  await updateDoc(doc(db,'days',pendingScore.dayId),{rounds});
-  hide('scoreModal');
-  recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
+  try {
+    await updateDayMatchSafely(pendingScore.dayId,pendingScore.rIdx,pendingScore.mId,current=>({
+      ...current,score1:s1,score2:s2,done:true,positions:{...(current.positions||{}),...positions},
+      enteredBy:current.enteredBy||editorName
+    }),{action:'결과 입력',editor:editorName,dayUpdates:{dayBadges:[],daySummary:'',highlightVersion:0}});
+    hide('scoreModal');
+    recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
+  } catch(e) {
+    alert('동시에 다른 변경이 있어 결과를 안전하게 저장하지 못했어요.\n경기를 다시 열어 확인해주세요.\n\n'+(e.message||e));
+  }
 };
 
 // 경기 직접 추가
@@ -10576,8 +10637,21 @@ window.submitMatch=async function(){
     }
     return;
   }
-  await updateDoc(doc(db,'days',dayId),{rounds});
-  hide('matchModal');
+  const newMatch=(rounds[rIdx]?.matches||[]).at(-1);
+  try {
+    await runTransaction(db,async transaction=>{
+      const dayRef=doc(db,'days',dayId);
+      const snapshot=await transaction.get(dayRef);
+      if(!snapshot.exists())throw new Error('경기 날짜를 찾을 수 없어요.');
+      const latestRounds=copyRoundsForUpdate(snapshot.data());
+      if(!latestRounds[rIdx])latestRounds[rIdx]={id:`${Date.now()}_free`,name:`${rIdx+1}라운드`,type:isFree?'자유':'혼합',matches:[newMatch]};
+      else latestRounds[rIdx]={...latestRounds[rIdx],matches:[...(latestRounds[rIdx].matches||[]),newMatch]};
+      transaction.update(dayRef,{rounds:latestRounds});
+    });
+    hide('matchModal');
+  } catch(e) {
+    alert('경기를 추가하지 못했어요. 다시 시도해주세요.\n\n'+(e.message||e));
+  }
 };
 window.openPairEdit = function(dayId, rIdx, mId) {
   const day = days.find(d => d.id === dayId);
@@ -10723,8 +10797,32 @@ window.savePairEdit = async function(dayId, rIdx, mId) {
   });
   rounds[ri] = { ...rounds[ri], matches:updatedMatches };
   try {
-    await updateDoc(doc(db, 'days', dayId), { rounds, dayBadges:[], daySummary:'', highlightVersion:0 });
-    day.rounds=rounds;
+    const changedById=new Map(updatedMatches.filter((match,index)=>{
+      const before=(round?.matches||[])[index];
+      return match.id===mId||JSON.stringify(match.team1||[])!==JSON.stringify(before?.team1||[])||JSON.stringify(match.team2||[])!==JSON.stringify(before?.team2||[]);
+    }).map(match=>[match.id,match]));
+    const dayRef=doc(db,'days',dayId);
+    const savedRounds=await runTransaction(db,async transaction=>{
+      const snapshot=await transaction.get(dayRef);
+      if(!snapshot.exists())throw new Error('경기 날짜를 찾을 수 없어요.');
+      const latestRounds=copyRoundsForUpdate(snapshot.data());
+      if(!latestRounds[ri])throw new Error('라운드를 찾을 수 없어요.');
+      const latestTarget=(latestRounds[ri].matches||[]).find(match=>match.id===mId);
+      if(!latestTarget)throw new Error('수정할 경기를 찾을 수 없어요.');
+      const openedSignature=JSON.stringify(matchHistorySnapshot(originalMatch));
+      const latestSignature=JSON.stringify(matchHistorySnapshot(latestTarget));
+      if(openedSignature!==latestSignature)throw new Error('화면을 연 뒤 다른 기기에서 이 경기가 변경됐습니다.');
+      latestRounds[ri]={...latestRounds[ri],matches:(latestRounds[ri].matches||[]).map(current=>{
+        const planned=changedById.get(current.id);
+        if(!planned)return current;
+        const next={...current,team1:[...(planned.team1||[])],team2:[...(planned.team2||[])],tag:planned.tag,
+          positions:{...(planned.positions||{})},pairEditedBy:editorName,pairEditedAt:editedAt,evalText:'',highlightVersion:0};
+        return withMatchHistory(next,current,'페어 수정',editorName);
+      })};
+      transaction.update(dayRef,{rounds:latestRounds,dayBadges:[],daySummary:'',highlightVersion:0});
+      return latestRounds;
+    });
+    day.rounds=savedRounds;
     day.dayBadges=[];
     day.daySummary='';
     day.highlightVersion=0;
@@ -10735,13 +10833,46 @@ window.savePairEdit = async function(dayId, rIdx, mId) {
   }
 };
 
+window.restoreMatchHistory=async function(dayId,rIdx,mId,historyId){
+  if(!isAdmin)return;
+  if(!confirm('이 경기의 선수·점수·포백을 선택한 시점으로 복원할까요?\n현재 상태도 이력에 남아 다시 되돌릴 수 있어요.'))return;
+  try {
+    await runTransaction(db,async transaction=>{
+      const ref=doc(db,'days',dayId);
+      const snapshot=await transaction.get(ref);
+      if(!snapshot.exists())throw new Error('경기 날짜를 찾을 수 없어요.');
+      const rounds=copyRoundsForUpdate(snapshot.data());
+      const ri=parseInt(rIdx);
+      const mi=(rounds[ri]?.matches||[]).findIndex(match=>match.id===mId);
+      if(mi<0)throw new Error('복원할 경기를 찾을 수 없어요.');
+      const current=rounds[ri].matches[mi];
+      const history=(current.changeHistory||[]).find(item=>item.id===historyId);
+      if(!history?.before)throw new Error('복원할 이력이 없어요.');
+      const before=history.before;
+      const restored={...current,...before,team1:[...(before.team1||[])],team2:[...(before.team2||[])],positions:{...(before.positions||{})},liveLog:Array.isArray(before.liveLog)?before.liveLog:[]};
+      rounds[ri]={...rounds[ri],matches:rounds[ri].matches.map((match,index)=>index===mi?withMatchHistory(restored,current,'이력 복원',getSeasonScoreEditorName()):match)};
+      transaction.update(ref,{rounds,dayBadges:[],daySummary:'',highlightVersion:0});
+    });
+    recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
+    alert('✅ 선택한 경기 이력으로 복원했어요.');
+  } catch(e) { alert('복원하지 못했어요.\n\n'+(e.message||e)); }
+};
+
 window.delMatch=async function(dayId,rIdx,mId){
   if(!confirm('이 경기를 삭제할까요?'))return;
-  const day=days.find(d=>d.id===dayId);
-  const rounds=[...(day.rounds||[])];
-  rounds[parseInt(rIdx)]={...rounds[parseInt(rIdx)],matches:(rounds[parseInt(rIdx)].matches||[]).filter(m=>m.id!==mId)};
-  await updateDoc(doc(db,'days',dayId),{rounds});
-  recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
+  try {
+    await runTransaction(db,async transaction=>{
+      const ref=doc(db,'days',dayId);
+      const snapshot=await transaction.get(ref);
+      if(!snapshot.exists())throw new Error('경기 날짜를 찾을 수 없어요.');
+      const rounds=copyRoundsForUpdate(snapshot.data());
+      const ri=parseInt(rIdx);
+      if(!rounds[ri])throw new Error('라운드를 찾을 수 없어요.');
+      rounds[ri]={...rounds[ri],matches:(rounds[ri].matches||[]).filter(m=>m.id!==mId)};
+      transaction.update(ref,{rounds,dayBadges:[],daySummary:'',highlightVersion:0});
+    });
+    recalculateAllRatings().catch(e=>console.warn('rating recalc:',e));
+  } catch(e) { alert('경기를 삭제하지 못했어요.\n\n'+(e.message||e)); }
 };
 window.delRound=async function(dayId,rIdx){
   if(!confirm('이 라운드를 삭제할까요?'))return;
@@ -12157,6 +12288,57 @@ let lsSoundMuted = false;
 let lsAudioCtx = null;
 let lsCachedEnVoice = null;
 
+function lsDraftKey(dayId=liveScore.dayId,rIdx=liveScore.rIdx,mId=liveScore.mId) {
+  return `tbs-live-draft-v1:${dayId}:${rIdx}:${mId}`;
+}
+function lsPersistDraft(screen='match') {
+  if(!liveScore.dayId||liveScore.rIdx===null||!liveScore.mId)return;
+  try {
+    localStorage.setItem(lsDraftKey(),JSON.stringify({
+      savedAt:Date.now(),screen,
+      teamSignature:liveScore.players.map(p=>`${p.team}:${p.name}`).join('|'),
+      serveOrder:liveScore.serveOrder,positions:liveScore.positions,taps:liveScore.taps,
+      decidingSideChoice:liveScore.decidingSideChoice,matchPhase:liveScore.matchPhase,
+      tbTaps:liveScore.tbTaps,tbStartIdx:liveScore.tbStartIdx
+    }));
+  } catch(e) { console.warn('라이브 임시 저장 실패:',e); }
+}
+function lsClearDraft() {
+  try { localStorage.removeItem(lsDraftKey()); } catch(e) {}
+}
+function lsRestoreDraftIfAvailable() {
+  let saved=null;
+  try { saved=JSON.parse(localStorage.getItem(lsDraftKey())||'null'); } catch(e) {}
+  if(!saved)return false;
+  const signature=liveScore.players.map(p=>`${p.team}:${p.name}`).join('|');
+  if(saved.teamSignature!==signature||!saved.savedAt||Date.now()-saved.savedAt>24*60*60*1000){lsClearDraft();return false;}
+  if(!confirm('이 기기에 저장된 진행 중 라이브 스코어가 있어요.\n이어서 입력할까요?')){lsClearDraft();return false;}
+  liveScore.serveOrder=Array.isArray(saved.serveOrder)?saved.serveOrder:[];
+  liveScore.positions=saved.positions||{};
+  liveScore.taps=Array.isArray(saved.taps)?saved.taps:[];
+  liveScore.decidingSideChoice=saved.decidingSideChoice||null;
+  liveScore.matchPhase=saved.matchPhase||'normal';
+  liveScore.tbTaps=Array.isArray(saved.tbTaps)?saved.tbTaps:[];
+  liveScore.tbStartIdx=Number.isInteger(saved.tbStartIdx)?saved.tbStartIdx:0;
+  if(saved.screen==='match'&&liveScore.serveOrder.length===4&&lsPositionsValid()){
+    document.getElementById('ls-setupScreen').style.display='none';
+    const ms=document.getElementById('ls-matchScreen');ms.style.display='flex';ms.style.flexDirection='column';
+    const restoredPhase=liveScore.matchPhase;
+    liveScore.matchPhase=restoredPhase==='tiebreak'?'normal':restoredPhase;
+    lsRecomputeAndRender();
+    liveScore.matchPhase=restoredPhase;
+    if(restoredPhase==='tiebreak'){
+      liveScore.tb={a:0,b:0};liveScore.tbTaps.forEach(t=>{if(t?.who)liveScore.tb[t.who]++;});
+      lsRenderAllUI();
+    }
+  } else if(saved.screen==='setup2'&&liveScore.serveOrder.length===4){
+    document.getElementById('ls-stage1').style.display='none';
+    const s2=document.getElementById('ls-stage2');s2.style.display='flex';s2.style.flexDirection='column';
+    lsRenderPositionGrid();
+  } else lsRenderPickGrid();
+  return true;
+}
+
 window.openLiveScore = function(dayId, rIdx, mId) {
   const day = days.find(d=>d.id===dayId);
   const round = (day?.rounds||[])[rIdx];
@@ -12200,9 +12382,16 @@ window.openLiveScore = function(dayId, rIdx, mId) {
   document.getElementById('ls-endOverlay').classList.remove('show');
   lsRenderPickGrid();
   document.getElementById('liveScoreOverlay').style.display = 'flex';
+  lsRestoreDraftIfAvailable();
 };
 
 window.closeLiveScore = function() {
+  const hasProgress=liveScore.serveOrder.length||liveScore.taps.length||liveScore.tbTaps.length;
+  if(hasProgress){
+    const screen=document.getElementById('ls-matchScreen')?.style.display==='flex'?'match':document.getElementById('ls-stage2')?.style.display==='flex'?'setup2':'setup1';
+    lsPersistDraft(screen);
+    if(!confirm('현재 점수는 이 기기에 임시 저장됩니다.\n라이브 스코어를 닫을까요?'))return;
+  }
   document.getElementById('liveScoreOverlay').style.display = 'none';
 };
 
@@ -12304,18 +12493,21 @@ window.lsPickPlayer = function(name) {
   if (i >= 0) liveScore.serveOrder.splice(i,1);
   else if (liveScore.serveOrder.length < 4) liveScore.serveOrder.push(name);
   lsRenderPickGrid();
+  lsPersistDraft('setup1');
 };
-window.lsClearOrder = function() { liveScore.serveOrder = []; lsRenderPickGrid(); };
+window.lsClearOrder = function() { liveScore.serveOrder = []; lsRenderPickGrid(); lsPersistDraft('setup1'); };
 window.lsGoStage2 = function() {
   if (liveScore.serveOrder.length !== 4) return;
   document.getElementById('ls-stage1').style.display = 'none';
   const s2 = document.getElementById('ls-stage2');
   s2.style.display = 'flex'; s2.style.flexDirection = 'column';
   lsRenderPositionGrid();
+  lsPersistDraft('setup2');
 };
 window.lsGoStage1 = function() {
   document.getElementById('ls-stage2').style.display = 'none';
   document.getElementById('ls-stage1').style.display = 'flex';
+  lsPersistDraft('setup1');
 };
 
 function lsRenderPositionGrid() {
@@ -12341,6 +12533,7 @@ window.lsPickPosition = function(name, pos) {
   const partner = liveScore.players.find(p=>p.team===player.team && p.name!==name);
   if (partner) liveScore.positions[partner.name] = pos==='포'?'백':'포';
   lsRenderPositionGrid();
+  lsPersistDraft('setup2');
 };
 function lsPositionsValid() {
   if (liveScore.players.some(p=>!liveScore.positions[p.name])) return false;
@@ -12354,6 +12547,7 @@ window.lsStartMatch = function() {
   const ms = document.getElementById('ls-matchScreen');
   ms.style.display = 'flex'; ms.style.flexDirection = 'column';
   lsRecomputeAndRender();
+  lsPersistDraft('match');
 };
 
 function lsNameTeam(name) { return liveScore.players.find(p=>p.name===name).team; }
@@ -12478,6 +12672,7 @@ window.lsPickDecidingSide = function(side) {
   liveScore.decidingSideChoice = side;
   lsRenderDecidingChooser();
   lsRenderServerBar();
+  lsPersistDraft('match');
 };
 function lsRenderMatchChooser() {
   const el = document.getElementById('ls-matchChooser');
@@ -12502,6 +12697,7 @@ window.lsChooseTiebreak = function() {
   liveScore.tbTaps = []; liveScore.tb = {a:0,b:0};
   liveScore.tbStartIdx = liveScore.curGameIdx % 4;
   lsRenderAllUI();
+  lsPersistDraft('match');
 };
 window.lsChooseDraw = function() {
   if (liveScore.matchPhase!=='choosing') return;
@@ -12512,22 +12708,24 @@ window.lsChooseDraw = function() {
 async function lsAutoSave() {
   const {dayId,rIdx,mId,games,matchPhase,tb,tbTaps,lsEvents,positions} = liveScore;
   const day = days.find(d=>d.id===dayId); if (!day) return;
-  const rounds = [...(day.rounds||[])];
   const finalPos = {};
   Object.entries(positions).forEach(([n,s])=>{ finalPos[n]=s==='포'?'fore':'back'; });
   const matchResult = matchPhase==='draw' ? 'draw' : 'decided';
   const tiebreakData = tbTaps.length ? {a:tb.a,b:tb.b} : null;
-  const matches = (rounds[rIdx].matches||[]).map(m=>m.id===mId ? {
-    ...m, score1:games.a, score2:games.b, done:true,
-    positions:{...(m.positions||{}),...finalPos},
-    liveLog:lsEvents,
-    tiebreak:tiebreakData,
-    matchResult
-  } : m);
-  rounds[rIdx] = {...rounds[rIdx], matches};
-  await updateDoc(doc(db,'days',dayId),{rounds});
-  document.getElementById('liveScoreOverlay').style.display = 'none';
-  renderAll();
+  const editorName=getSeasonScoreEditorName();
+  try {
+    await updateDayMatchSafely(dayId,rIdx,mId,current=>({
+      ...current,score1:games.a,score2:games.b,done:true,
+      positions:{...(current.positions||{}),...finalPos},liveLog:lsEvents,
+      tiebreak:tiebreakData,matchResult,enteredBy:current.enteredBy||editorName
+    }),{action:'라이브 결과 저장',editor:editorName,dayUpdates:{dayBadges:[],daySummary:'',highlightVersion:0}});
+    lsClearDraft();
+    document.getElementById('liveScoreOverlay').style.display = 'none';
+    renderAll();
+  } catch(e) {
+    lsPersistDraft('match');
+    alert('라이브 점수는 이 기기에 안전하게 임시 저장했어요.\n서버 연결을 확인한 뒤 다시 저장해주세요.\n\n'+(e.message||e));
+  }
 }
 
 function lsNowStr() {
@@ -12537,14 +12735,16 @@ function lsNowStr() {
 window.lsPoint = function(who) {
   if (liveScore.matchPhase==='tiebreak') {
     liveScore.tbTaps.push({who});
+    lsPersistDraft('match');
     lsRecomputeTiebreak();
     return;
   }
   if (liveScore.matchPhase!=='normal') return;
   const dec = liveScore.points.a===3 && liveScore.points.b===3;
   const gamesBefore = liveScore.games.a+liveScore.games.b;
-  liveScore.taps.push({who, time:lsNowStr(), chosenSide:dec?liveScore.decidingSideChoice:undefined});
+  liveScore.taps.push({who,time:lsNowStr(),...(dec?{chosenSide:liveScore.decidingSideChoice}:{})});
   liveScore.decidingSideChoice = null;
+  lsPersistDraft('match');
   lsRecomputeAndRender();
   const gamesAfter = liveScore.games.a+liveScore.games.b;
   if (gamesAfter>gamesBefore) {
@@ -12568,6 +12768,7 @@ window.lsUndo = function() {
     if (!liveScore.tbTaps.length) return;
     liveScore.tbTaps.pop();
     liveScore.matchPhase = 'tiebreak';
+    lsPersistDraft('match');
     lsRecomputeTiebreak();
     return;
   }
@@ -12577,6 +12778,7 @@ window.lsUndo = function() {
   liveScore.decidingSideChoice = null;
   liveScore.matchPhase = 'normal';
   lsRecomputeAndRender();
+  lsPersistDraft('match');
 };
 window.lsForceEnd = function() {
   const t1 = liveScore.players.filter(p=>p.team==='a').map(p=>p.name).join('·');
