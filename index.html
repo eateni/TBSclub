@@ -635,7 +635,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
           <div>
             <div style="font-size:20px;font-weight:900">📰 클럽소식</div>
-            <div style="font-size:11px;color:rgba(255,255,255,.78);margin-top:5px;line-height:1.5">공지와 일정, 라운드별 경기 하이라이트를 한곳에서 확인하세요.</div>
+            <div style="font-size:11px;color:rgba(255,255,255,.78);margin-top:5px;line-height:1.5">공지와 일정, 그날의 경기 하이라이트를 한곳에서 확인하세요.</div>
           </div>
           <a id="clubInstagramLink" href="#" target="_blank" rel="noopener noreferrer" style="display:none;flex-shrink:0;text-decoration:none;background:rgba(255,255,255,.96);color:#C13584;border-radius:10px;padding:8px 10px;font-size:11px;font-weight:900">📷 Instagram</a>
         </div>
@@ -8864,36 +8864,30 @@ function matchesClubNewsFilter(item) {
   return item.type === clubNewsFilter;
 }
 
-function isScoredValue(value) {
-  return value !== null && value !== undefined && value !== '' && !isNaN(Number(value));
-}
+function makeDayHighlightItem(day) {
+  const playable = (day.rounds||[]).flatMap(r => (r.matches||[]))
+    .filter(m => !m.isRally && m.tag !== '랠리' && m.tag !== '휴식');
+  const complete = playable.length > 0 && playable.every(m =>
+    m.done && m.score1 !== null && m.score1 !== undefined && m.score1 !== ''
+      && m.score2 !== null && m.score2 !== undefined && m.score2 !== '');
+  if (!complete) return null;
 
-function buildRoundNewsSummary(matches) {
-  if (!matches.length) return '';
-  const closeCount = matches.filter(m => Math.abs(Number(m.score1)-Number(m.score2)) === 1).length;
-  const drawCount = matches.filter(m => Number(m.score1) === Number(m.score2)).length;
-  const shutoutCount = matches.filter(m => Number(m.score1) !== Number(m.score2) && Math.min(Number(m.score1),Number(m.score2)) === 0).length;
-  const lines = [`${matches.length}경기가 모두 종료되었습니다.`];
-  if (closeCount) lines.push(`${closeCount}경기가 1점 차로 갈린 접전이었습니다.`);
-  else if (shutoutCount) lines.push(`${shutoutCount}경기에서 무실점 승리가 나왔습니다.`);
-  else if (drawCount) lines.push(`${drawCount}경기는 승부를 가리지 못했습니다.`);
-  else lines.push('각 코트에서 새로운 결과가 기록되었습니다.');
-  return lines.join(' ');
-}
+  const normalized = playable.map(m => ({
+    team1:m.team1||[], team2:m.team2||[], score1:Number(m.score1), score2:Number(m.score2),
+    matchType:m.tag||'', date:day.date, isExchange:false
+  }));
+  let badges = Array.isArray(day.dayBadges) ? day.dayBadges : [];
+  let summary = day.daySummary || '';
+  if (!badges.length || !summary || day.highlightVersion !== HIGHLIGHT_VERSION) {
+    badges = buildDayBadges(normalized, day.date);
+    summary = buildDaySummary(normalized, badges, day.date);
+  }
+  if (!badges.length && !summary) return null;
 
-function makeRoundHighlightItem({ date, source, sourceKind, roundNumber, roundName, matches, place, eventName }) {
   return {
-    type:'highlight',
-    targetType:sourceKind,
-    date,
-    title:`${roundName || roundNumber+'라운드'} 하이라이트`,
-    detail:buildRoundNewsSummary(matches),
-    results:matches.map(m => `${(m.team1||[]).join(' / ')||'팀1'} ${Number(m.score1)} : ${Number(m.score2)} ${(m.team2||[]).join(' / ')||'팀2'}`),
-    source,
-    roundNumber,
-    place:place||'',
-    eventName:eventName||'',
-    sortOrder:1000 + Number(roundNumber||0)
+    type:'highlight', targetType:'regular', date:day.date,
+    title:'오늘의 하이라이트', detail:summary, badges,
+    matchCount:playable.length, place:day.place||'', source:day, sortOrder:1000
   };
 }
 
@@ -8902,39 +8896,11 @@ function getClubCalendarItems(){
     type:'regular', date:d.date, title:`정규시즌 · ${d.place||'경기'}`,
     detail:`${(d.rounds||[]).length}라운드 · ${(d.rounds||[]).reduce((n,r)=>n+(r.matches||[]).length,0)}경기`, source:d, sortOrder:0
   }));
-  const regularHighlights = days.flatMap(d => (d.rounds||[]).map((r,ri) => {
-    const playable = (r.matches||[]).filter(m => !m.isRally && m.tag !== '랠리' && m.tag !== '휴식');
-    const complete = playable.length > 0 && playable.every(m => m.done && isScoredValue(m.score1) && isScoredValue(m.score2));
-    if (!complete) return null;
-    return makeRoundHighlightItem({
-      date:d.date, source:d, sourceKind:'regular', roundNumber:ri+1,
-      roundName:r.name || `${ri+1}라운드`, place:d.place,
-      matches:playable.map(m => ({team1:m.team1||[], team2:m.team2||[], score1:m.score1, score2:m.score2}))
-    });
-  }).filter(Boolean));
+  const dailyHighlights = days.map(makeDayHighlightItem).filter(Boolean);
   const eventItems = events.map(e => ({
     type:'event', date:e.date, title:`이벤트전 · ${e.name||e.title||'이벤트'}`,
     detail:e.oppClub ? `상대: ${e.oppClub}` : (e.type||'이벤트전'), source:e, sortOrder:0
   }));
-  const eventHighlights = events.flatMap(e => {
-    const grouped = {};
-    (e.matches||[]).forEach(m => {
-      const roundNumber = Number(m.round||1);
-      if (!grouped[roundNumber]) grouped[roundNumber] = [];
-      grouped[roundNumber].push(m);
-    });
-    return Object.keys(grouped).map(key => {
-      const roundNumber = Number(key);
-      const matches = grouped[key];
-      const complete = matches.length > 0 && matches.every(m => isScoredValue(m.ourScore) && isScoredValue(m.oppScore));
-      if (!complete) return null;
-      return makeRoundHighlightItem({
-        date:e.date, source:e, sourceKind:'event', roundNumber,
-        roundName:`${roundNumber}라운드`, place:e.place, eventName:e.name||e.title||'이벤트전',
-        matches:matches.map(m => ({team1:m.ourPair||[], team2:m.oppPair||[], score1:m.ourScore, score2:m.oppScore}))
-      });
-    }).filter(Boolean);
-  });
   const notices = announcements.map(a => {
     const stamp = a.createdAt || a.updatedAt;
     let published = null;
@@ -8948,7 +8914,7 @@ function getClubCalendarItems(){
       detail:a.content||'', source:a
     };
   });
-  return [...regular,...eventItems,...regularHighlights,...eventHighlights,...notices].filter(x=>x.date);
+  return [...regular,...eventItems,...dailyHighlights,...notices].filter(x=>x.date);
 }
 
 function renderCalendar(){
@@ -8958,12 +8924,13 @@ function renderCalendar(){
   const startDow = first.getDay();
   const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
   const todayStr = new Date().toISOString().slice(0,10);
+  const calendarItems = getClubCalendarItems().filter(matchesClubNewsFilter);
 
   const cells = [];
   for (let i=0;i<startDow;i++) cells.push('<div></div>');
   for (let d=1; d<=daysInMonth; d++){
     const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const items = getClubCalendarItems().filter(s=>s.date===dateStr && matchesClubNewsFilter(s));
+    const items = calendarItems.filter(s=>s.date===dateStr);
     const hasRegular = items.some(s=>s.type==='regular' || (s.type==='highlight'&&s.targetType==='regular'));
     const hasEvent = items.some(s=>s.type==='event' || (s.type==='highlight'&&s.targetType==='event'));
     const hasNotice = items.some(s=>s.type==='notice');
@@ -9008,7 +8975,7 @@ function renderSchedules() {
     regular:{icon:'🏆', label:'정규시즌', color:'#2563EB', bg:'rgba(37,99,235,0.07)'},
     event:{icon:'🎉', label:'이벤트전', color:'#7c3aed', bg:'rgba(124,58,237,0.07)'},
     notice:{icon:'📢', label:'클럽 공지', color:'#D97706', bg:'rgba(245,158,11,0.08)'},
-    highlight:{icon:'✨', label:'라운드 하이라이트', color:'#0F766E', bg:'linear-gradient(135deg,rgba(13,148,136,0.10),rgba(37,99,235,0.06))'}
+    highlight:{icon:'✨', label:'오늘의 하이라이트', color:'#0F766E', bg:'linear-gradient(135deg,rgba(13,148,136,0.10),rgba(37,99,235,0.06))'}
   };
   if (!clubItems.length) {
     el.innerHTML = '<div class="empty">해당하는 클럽소식이 없어요.</div>';
@@ -9025,12 +8992,14 @@ function renderSchedules() {
       const openAction = clickable ? `onclick="openClubNewsItem('${openType}','${sourceId}')"` : '';
       const noticeActions = item.type === 'notice' && sourceId ? `<div style="display:flex;gap:6px;margin-top:9px"><button onclick="shareAnnouncement('${sourceId}')" style="padding:6px 9px;background:#FEE500;border:none;border-radius:7px;color:#3c1e1e;font-size:10px;font-weight:800;cursor:pointer">💬 공유</button></div>` : '';
       const highlightMeta = item.type === 'highlight'
-        ? `<div style="font-size:10px;color:#64748B;margin-top:3px">${item.targetType==='event'?(item.eventName||'이벤트전'):'정규시즌'}${item.place?' · '+item.place:''}</div>` : '';
-      const resultsHtml = item.type === 'highlight' && item.results?.length
-        ? `<div style="display:flex;flex-direction:column;gap:5px;margin-top:9px">${item.results.map(result=>`<div style="background:rgba(255,255,255,.78);border:1px solid rgba(13,148,136,.15);border-radius:8px;padding:6px 8px;font-size:10px;font-weight:700;color:#334155;line-height:1.35">🎾 ${result}</div>`).join('')}</div>` : '';
+        ? `<div style="font-size:10px;color:#64748B;margin-top:3px">정규시즌${item.place?' · '+item.place:''} · ${item.matchCount||0}경기 완료</div>` : '';
+      const highlightBadges = item.type === 'highlight' ? buildDayBadgesHtml(item.badges||[]) : '';
+      const detailHtml = item.type === 'highlight'
+        ? `<div style="font-size:11px;color:#475569;margin-top:9px;line-height:1.65;padding:9px 10px;background:rgba(255,255,255,.72);border-radius:9px">${item.detail}${clickable?' · 상세보기 ›':''}</div>`
+        : `<div style="font-size:11px;color:#64748B;margin-top:5px;line-height:1.55;${item.type==='notice'?'white-space:pre-wrap':''}">${item.detail}${clickable?' · 상세보기 ›':''}</div>`;
       return `<div ${openAction} style="display:flex;gap:11px;align-items:${item.type==='highlight'?'flex-start':'center'};background:${s.bg};border:1px solid ${s.color}33;border-radius:12px;padding:12px;margin-bottom:8px;${clickable?'cursor:pointer':''}">
         <div style="font-size:22px">${s.icon}</div>
-        <div style="min-width:0;flex:1"><div style="font-size:10px;font-weight:800;color:${s.color};margin-bottom:3px">${s.label} · ${dateLabel}</div><div style="font-size:13px;font-weight:800;color:#1E293B;${item.type==='notice'?'line-height:1.45':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis'}">${item.title}</div>${highlightMeta}<div style="font-size:11px;color:#64748B;margin-top:5px;line-height:1.55;${item.type==='notice'?'white-space:pre-wrap':''}">${item.detail}${clickable?' · 상세보기 ›':''}</div>${resultsHtml}${noticeActions}</div>
+        <div style="min-width:0;flex:1"><div style="font-size:10px;font-weight:800;color:${s.color};margin-bottom:3px">${s.label} · ${dateLabel}</div><div style="font-size:13px;font-weight:800;color:#1E293B;${item.type==='notice'?'line-height:1.45':'white-space:nowrap;overflow:hidden;text-overflow:ellipsis'}">${item.title}</div>${highlightMeta}${highlightBadges?`<div style="margin-top:10px">${highlightBadges}</div>`:''}${detailHtml}${noticeActions}</div>
       </div>`;
   };
 
@@ -9047,7 +9016,7 @@ function renderSchedules() {
     ? `<div style="font-size:15px;font-weight:900;color:#1E293B;margin:4px 0 10px">📌 다가오는 소식</div>${upcoming.map(cardHtml).join('')}`
     : `<div style="font-size:12px;color:#64748B;background:#F8FBFB;border:1px solid #DCEAE9;border-radius:12px;padding:14px;margin-bottom:14px">예정된 소식이 없어요.</div>`;
   const recentHtml = recent.length
-    ? `<div style="font-size:15px;font-weight:900;color:#1E293B;margin:${highlightOnly?'4':'18'}px 0 10px">${highlightOnly?'✨ 라운드 하이라이트':'🕘 최근 소식'}</div>${recent.map(cardHtml).join('')}`
+    ? `<div style="font-size:15px;font-weight:900;color:#1E293B;margin:${highlightOnly?'4':'18'}px 0 10px">${highlightOnly?'✨ 오늘의 하이라이트':'🕘 최근 소식'}</div>${recent.map(cardHtml).join('')}`
     : '';
   el.innerHTML = upcomingHtml + recentHtml;
   return;
