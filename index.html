@@ -543,7 +543,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.6.1</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.6.2</div>
     </div>
   </div>
 
@@ -552,7 +552,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.6.1</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.6.2</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1514,7 +1514,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.6.1';
+const APP_VERSION = '1.6.2';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4807,19 +4807,20 @@ window.openEventDetail=function(evId){
     if(!isNaN(rNum)) savedRoundOpen[rNum]=el.style.display!=='none';
   });
 
-  const parts=ev.participants||[], results=ev.results||[];
+  const memberNameSet=new Set(members.map(member=>member.name));
+  const parts=(ev.participants||[]).filter(name=>memberNameSet.has(name)), results=ev.results||[];
   const eventRoster=['exchange','friendly'].includes(ev.type)?getEventMatchRoster(ev):[];
-  const eventOppAttendees=eventRoster.filter(player=>player.club!=='TBS');
+  const eventOppAttendees=['exchange','friendly'].includes(ev.type)?getEventOpponentRoster(ev):[];
   const matchParts=ev.type==='friendly'?eventRoster.map(player=>player.name):parts;
   const evMatches=ev.matches||[];
   const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
 
-  // 참가자 섹션: 체크리스트로 전환 (정회원 + 게스트 전체 표시)
+  // 참가자 섹션: 정회원 전체 체크리스트
   const checklistHtml=isAdmin?`<div style="margin-top:10px">
     <input id="evPartSearch_${evId}" type="text" class="row-inp" placeholder="🔍 이름 검색..."
       style="width:100%;padding:7px;font-size:12px;margin-bottom:6px;box-sizing:border-box"
       oninput="renderEvPartCheckList('${evId}')">
-    <div id="evPartCheckList_${evId}" style="max-height:210px;overflow-y:auto;border:1px solid #D1E7E5;border-radius:8px;padding:2px 8px">
+    <div id="evPartCheckList_${evId}" style="border:1px solid #D1E7E5;border-radius:8px;padding:2px 8px">
       ${buildEvPartCheckRows(evId,'',parts)}
     </div>
   </div>`:'';
@@ -5776,9 +5777,7 @@ function buildEvPartCheckRows(evId, filter, currentParts) {
   const lf = filter.toLowerCase();
   const memberList = members.map(m => ({ name: m.name, gender: m.gender }))
     .filter(p => !lf || p.name.toLowerCase().includes(lf));
-  const guestList = guests.map(g => ({ name: g.name, gender: g.gender }))
-    .filter(p => !lf || p.name.toLowerCase().includes(lf));
-  if (!memberList.length && !guestList.length)
+  if (!memberList.length)
     return '<div style="color:#64748B;font-size:12px;padding:8px 0">검색 결과 없음</div>';
   const renderRow = p => {
     const inParts = currentParts.includes(p.name);
@@ -5795,16 +5794,8 @@ function buildEvPartCheckRows(evId, filter, currentParts) {
       </button>
     </div>`;
   };
-  let html = '';
-  if (memberList.length) {
-    html += `<div style="font-size:10px;color:#6D28D9;font-weight:700;padding:6px 0 2px;letter-spacing:0.5px">🏅 정회원</div>`;
-    html += memberList.map(renderRow).join('');
-  }
-  if (guestList.length) {
-    html += `<div style="font-size:10px;color:#059669;font-weight:700;padding:6px 0 2px${memberList.length?';margin-top:4px;border-top:1px solid #E8F4F3':''}">👤 게스트</div>`;
-    html += guestList.map(renderRow).join('');
-  }
-  return html;
+  return `<div style="font-size:10px;color:#6D28D9;font-weight:700;padding:6px 0 2px;letter-spacing:0.5px">🏅 정회원 전체</div>`
+    + memberList.map(renderRow).join('');
 }
 
 window.renderEvPartCheckList = function(evId) {
@@ -5816,21 +5807,31 @@ window.renderEvPartCheckList = function(evId) {
 
 window.toggleEvPart = async function(evId, name) {
   const ev = events.find(e => e.id === evId); if (!ev) return;
+  const modalBody=document.querySelector('#eventDetailModal .modal-bottom');
+  const savedScroll=modalBody?.scrollTop||0;
   const parts = [...(ev.participants || [])];
   const idx = parts.indexOf(name);
   if (idx >= 0) parts.splice(idx, 1); else parts.push(name);
-  await updateDoc(doc(db, 'events', evId), { participants: parts });
   ev.participants = parts;
+  const memberNameSet=new Set(members.map(member=>member.name));
+  const visibleParts=parts.filter(part=>memberNameSet.has(part));
   const chipsEl = document.getElementById(`evPartChips_${evId}`);
   if (chipsEl) {
-    chipsEl.innerHTML = parts.map(p => {
+    chipsEl.innerHTML = visibleParts.map(p => {
       const s = p.replace(/'/g, "\\'");
       return `<span class="part-chip">${p}<button onclick="removeEvPart('${evId}','${s}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:2px">×</button></span>`;
     }).join('') || '<span style="color:#64748B;font-size:12px">없음</span>';
   }
   const countEl = document.getElementById(`evPartCount_${evId}`);
-  if (countEl) countEl.textContent = `👥 참가자 (${parts.length}명)`;
+  if (countEl) countEl.textContent = `👥 참가자 (${visibleParts.length}명)`;
   renderEvPartCheckList(evId);
+  if(modalBody)modalBody.scrollTop=savedScroll;
+  try{
+    await updateDoc(doc(db, 'events', evId), { participants: parts });
+    requestAnimationFrame(()=>{const body=document.querySelector('#eventDetailModal .modal-bottom');if(body)body.scrollTop=savedScroll;});
+  }catch(e){
+    alert('참석 변경 실패: '+(e.message||e.code||e));
+  }
 };
 
 window.addEvPart=async function(evId){
@@ -5853,18 +5854,21 @@ window.openAddEvMatch=function(evId,roundNum){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   pendingAddEvMatch={evId,roundNum:parseInt(roundNum)};
   document.getElementById('addEvMatchInfo').textContent=`${roundNum}라운드에 즉석 매치 추가`;
-  const roster=getEventMatchRoster(ev);
   const isClubMatch=ev.type==='exchange';
-  const team1Players=isClubMatch?roster.filter(player=>player.club==='TBS'):roster;
-  const team2Players=isClubMatch?roster.filter(player=>player.club!=='TBS'):roster;
+  const roster=getEventMatchRoster(ev);
+  const team1Players=isClubMatch?getEventTbsRoster(ev):roster;
+  const team2Players=isClubMatch?getEventOpponentRoster(ev):roster;
   const options=players=>players.map(player=>`<option value="${player.name.replace(/"/g,'&quot;')}">${player.gender==='f'?'♀ ':player.gender==='m'?'♂ ':''}${player.name}</option>`).join('');
   const team1Opts=options(team1Players),team2Opts=options(team2Players);
   document.getElementById('addEvM1').innerHTML=`<option value="">${isClubMatch?'우리팀':'팀1'} 선수1</option>${team1Opts}`;
   document.getElementById('addEvM2').innerHTML=`<option value="">${isClubMatch?'우리팀':'팀1'} 선수2</option>${team1Opts}`;
-  document.getElementById('addEvO1').innerHTML=`<option value="">${isClubMatch?'상대팀':'팀2'} 선수1</option>${team2Opts}`;
-  document.getElementById('addEvO2').innerHTML=`<option value="">${isClubMatch?'상대팀':'팀2'} 선수2</option>${team2Opts}`;
+  const noOpponent=isClubMatch&&!team2Players.length;
+  document.getElementById('addEvO1').innerHTML=`<option value="">${noOpponent?'상대팀 명단을 먼저 저장하세요':isClubMatch?'상대팀 선수1':'팀2 선수1'}</option>${team2Opts}`;
+  document.getElementById('addEvO2').innerHTML=`<option value="">${noOpponent?'상대팀 명단을 먼저 저장하세요':isClubMatch?'상대팀 선수2':'팀2 선수2'}</option>${team2Opts}`;
+  document.getElementById('addEvO1').disabled=noOpponent;
+  document.getElementById('addEvO2').disabled=noOpponent;
   document.getElementById('addEvTeam1Label').textContent=isClubMatch?'우리팀 (TBS 참석자 2명 선택)':'팀1 (전체 참석자에서 2명 선택)';
-  document.getElementById('addEvTeam2Label').textContent=isClubMatch?`${ev.oppClub||'상대팀'} (참석자 2명 선택)`:'팀2 (전체 참석자에서 2명 선택)';
+  document.getElementById('addEvTeam2Label').textContent=noOpponent?'상대팀 명단이 없습니다 — 관리자 화면에서 명단 저장 후 선택':isClubMatch?`${ev.oppClub||'상대팀'} (등록 명단에서 2명 선택)`:'팀2 (우리팀·상대팀 전체 참석자에서 2명 선택)';
   const clubEl=document.getElementById('addEvOClub');
   clubEl.value=ev.oppClub||'';
   clubEl.style.display=isClubMatch?'block':'none';
@@ -5974,19 +5978,25 @@ function calcInstantMatchGenderInfo(p1,p2,p3,p4){
   const notice=(team1Male&&team2Female)||(team1Female&&team2Male)?'남여대결':'';
   return {type,notice};
 }
-function getEventMatchRoster(ev){
+function getEventTbsRoster(ev){
   const playerMap=new Map(allPlayers().map(player=>[player.name,player]));
-  const roster=(ev.participants||[]).map(name=>{
+  const memberNames=new Set(members.map(member=>member.name));
+  return (ev.participants||[]).filter(name=>memberNames.has(name)).map(name=>{
     const player=playerMap.get(name)||{};
     return {name,gender:player.gender||'m',months:getTennisMonths(player),club:'TBS'};
   });
-  (ev.oppRoster||[]).forEach(item=>{
+}
+function getEventOpponentRoster(ev){
+  const playerMap=new Map(allPlayers().map(player=>[player.name,player]));
+  return (ev.oppRoster||[]).map(item=>{
     const row=typeof item==='string'?{name:item,gender:'',months:null}:item||{};
     const name=(row.name||'').trim();
     const known=playerMap.get(name)||{};
-    if(name&&!roster.some(player=>player.name===name))roster.push({name,gender:row.gender||known.gender||'',months:row.months!=null?Number(row.months):getTennisMonths(known),club:ev.oppClub||'상대팀'});
-  });
-  return roster;
+    return name?{name,gender:row.gender||known.gender||'',months:row.months!=null?Number(row.months):getTennisMonths(known),club:ev.oppClub||'상대팀'}:null;
+  }).filter(Boolean);
+}
+function getEventMatchRoster(ev){
+  return [...getEventTbsRoster(ev),...getEventOpponentRoster(ev)];
 }
 function getTennisMonths(player){
   if(!player)return null;
@@ -6095,11 +6105,11 @@ function buildOppRosterRowHtml(name, gender, months) {
   }
   var safe=(name||'').replace(/"/g,'&quot;');
   var safeMonths=months!=null&&!isNaN(Number(months))?Math.max(0,Math.floor(Number(months))):'';
-  return '<div class="opp-roster-row" data-gender="'+(gender||'')+'" style="display:flex;gap:4px;align-items:center;margin-bottom:4px;flex-wrap:wrap">'
-    +'<input type="text" class="opp-roster-name row-inp" placeholder="이름" value="'+safe+'" style="flex:1;padding:4px 8px;font-size:12px">'
-    +'<input type="number" min="0" max="600" class="opp-roster-months row-inp" placeholder="구력(개월)" value="'+safeMonths+'" style="width:82px;padding:4px 6px;font-size:11px">'
-    +mkGBtn('m','남',mSel)+mkGBtn('f','여',fSel)
-    +'<button onclick="this.closest(\'.opp-roster-row\').remove()" style="padding:3px 6px;border:none;background:none;color:rgba(248,113,113,0.6);font-size:14px;cursor:pointer;flex-shrink:0">×</button>'
+  return '<div class="opp-roster-row" data-gender="'+(gender||'')+'" style="padding:6px;margin-bottom:6px;border:1px solid rgba(100,150,200,0.24);border-radius:8px;background:rgba(255,255,255,0.04)">'
+    +'<div style="display:flex;gap:5px;align-items:center;margin-bottom:5px"><input type="text" class="opp-roster-name row-inp" placeholder="상대팀 선수 이름" value="'+safe+'" style="min-width:0;flex:1;padding:5px 8px;font-size:12px">'
+    +'<button type="button" onclick="this.closest(\'.opp-roster-row\').remove()" style="padding:3px 6px;border:none;background:none;color:rgba(248,113,113,0.75);font-size:15px;cursor:pointer;flex-shrink:0">×</button></div>'
+    +'<div style="display:flex;gap:5px;align-items:center"><label style="font-size:10px;color:#64748B;white-space:nowrap">구력(개월)</label><input type="number" min="0" max="600" class="opp-roster-months row-inp" placeholder="예: 24" value="'+safeMonths+'" style="min-width:68px;flex:1;padding:5px 7px;font-size:11px">'
+    +mkGBtn('m','남',mSel)+mkGBtn('f','여',fSel)+'</div>'
     +'</div>';
 }
 function readOppRosterFromContainer(containerId) {
@@ -6131,12 +6141,12 @@ window.addOppRosterRow=function(containerId){
   var div=document.createElement('div');
   div.className='opp-roster-row';
   div.dataset.gender='';
-  div.style.cssText='display:flex;gap:4px;align-items:center;margin-bottom:4px;flex-wrap:wrap';
-  div.innerHTML='<input type="text" class="opp-roster-name row-inp" placeholder="이름" style="flex:1;padding:4px 8px;font-size:12px">'
-    +'<input type="number" min="0" max="600" class="opp-roster-months row-inp" placeholder="구력(개월)" style="width:82px;padding:4px 6px;font-size:11px">'
-    +'<button data-val="m" onclick="toggleOppGender(this,\'m\')" style="padding:3px 7px;border:1px solid rgba(100,116,139,0.25);border-radius:6px;background:none;color:#64748B;font-size:11px;cursor:pointer;flex-shrink:0">남</button>'
-    +'<button data-val="f" onclick="toggleOppGender(this,\'f\')" style="padding:3px 7px;border:1px solid rgba(100,116,139,0.25);border-radius:6px;background:none;color:#64748B;font-size:11px;cursor:pointer;flex-shrink:0">여</button>'
-    +'<button onclick="this.closest(\'.opp-roster-row\').remove()" style="padding:3px 6px;border:none;background:none;color:rgba(248,113,113,0.6);font-size:14px;cursor:pointer;flex-shrink:0">×</button>';
+  div.style.cssText='padding:6px;margin-bottom:6px;border:1px solid rgba(100,150,200,0.24);border-radius:8px;background:rgba(255,255,255,0.04)';
+  div.innerHTML='<div style="display:flex;gap:5px;align-items:center;margin-bottom:5px"><input type="text" class="opp-roster-name row-inp" placeholder="상대팀 선수 이름" style="min-width:0;flex:1;padding:5px 8px;font-size:12px">'
+    +'<button type="button" onclick="this.closest(\'.opp-roster-row\').remove()" style="padding:3px 6px;border:none;background:none;color:rgba(248,113,113,0.75);font-size:15px;cursor:pointer;flex-shrink:0">×</button></div>'
+    +'<div style="display:flex;gap:5px;align-items:center"><label style="font-size:10px;color:#64748B;white-space:nowrap">구력(개월)</label><input type="number" min="0" max="600" class="opp-roster-months row-inp" placeholder="예: 24" style="min-width:68px;flex:1;padding:5px 7px;font-size:11px">'
+    +'<button data-val="m" type="button" onclick="toggleOppGender(this,\'m\')" style="padding:3px 7px;border:1px solid rgba(100,116,139,0.25);border-radius:6px;background:none;color:#64748B;font-size:11px;cursor:pointer;flex-shrink:0">남</button>'
+    +'<button data-val="f" type="button" onclick="toggleOppGender(this,\'f\')" style="padding:3px 7px;border:1px solid rgba(100,116,139,0.25);border-radius:6px;background:none;color:#64748B;font-size:11px;cursor:pointer;flex-shrink:0">여</button></div>';
   container.appendChild(div);
 };
 window.saveOppRoster=function(evId){
