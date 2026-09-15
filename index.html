@@ -567,7 +567,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.7.1</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.7.2</div>
     </div>
   </div>
 
@@ -576,7 +576,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.7.1</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.7.2</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1124,6 +1124,13 @@ tr:nth-child(even){background:#F5FCFB;}
       </div>
 
       <div id="adminGroup-events" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
+          <div>
+            <div style="font-size:16px;font-weight:900;color:#1E293B">🤝 교류·이벤트전 관리</div>
+            <div style="font-size:11px;color:#64748B;margin-top:3px">이벤트 생성·삭제와 참가자, 상대팀, 대진을 관리합니다.</div>
+          </div>
+          <button onclick="openEventModal()" style="flex:none;padding:9px 14px;background:#7C3AED;border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:900;cursor:pointer">＋ 이벤트 추가</button>
+        </div>
         <div id="adminEvList"></div>
       </div>
 
@@ -1548,7 +1555,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.7.1';
+const APP_VERSION = '1.7.2';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -1630,6 +1637,7 @@ async function syncMemberRoleDocs() {
 let lastAuthUser = null;
 let currentOpenEvId = null;
 let currentEvView = 'detail';
+let currentEventAdminContext = false;
 
 let isAdmin = false;
 let members = [];
@@ -4803,7 +4811,6 @@ function renderEvents() {
   el.innerHTML=filtered.map(ev=>{
     const parts=ev.participants||[];
     const partHtml=parts.length?`<div class="ev-parts"><div style="font-size:11px;color:#64748B">참가자 (${parts.length}명)</div><div class="part-chips">${parts.map(p=>`<span class="part-chip">${p}</span>`).join('')}</div></div>`:'';
-    const delBtn=isAdmin?`<button onclick="delEvent('${ev.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer">삭제</button>`:'';
     return `<div class="event-card">
       <div class="event-banner">
         <span class="ev-type-badge ${EV_TYPE_BADGE[ev.type]||''}">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${EV_TYPE_LABEL[ev.type]||ev.type}</span>
@@ -4813,7 +4820,7 @@ function renderEvents() {
       </div>${partHtml}
       <div class="ev-footer">
         <span class="ev-status ${EV_STATUS_CLASS[ev.status]||''}">● ${EV_STATUS_LABEL[ev.status]||''}</span>
-        <div style="display:flex;gap:8px;align-items:center">${delBtn}<button class="btn-ev-detail" onclick="openEventDetail('${ev.id}')">상세보기</button></div>
+        <div style="display:flex;gap:8px;align-items:center"><button class="btn-ev-detail" onclick="openEventDetail('${ev.id}',false)">상세보기</button></div>
       </div>
     </div>`;
   }).join('');
@@ -4829,10 +4836,12 @@ function getFriendlyEventAttendees(ev) {
   return getEventMatchRoster(ev);
 }
 
-window.openEventDetail=function(evId){
+window.openEventDetail=function(evId, adminContext){
+  if(typeof adminContext==='boolean') currentEventAdminContext=adminContext&&isAdmin;
   currentOpenEvId = evId;
   currentEvView = 'detail';
   const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const canAdministerEvent=isAdmin&&currentEventAdminContext;
 
   // 재렌더 전 라운드 펼침 상태 스냅샷 (삭제/수정 후 상태 유지용)
   const savedRoundOpen={};
@@ -4850,7 +4859,7 @@ window.openEventDetail=function(evId){
   const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
 
   // 참가자 섹션: 정회원 전체 체크리스트
-  const checklistHtml=isAdmin?`<div style="margin-top:10px">
+  const checklistHtml=canAdministerEvent?`<div style="margin-top:10px">
     <input id="evPartSearch_${evId}" type="text" class="row-inp" placeholder="🔍 이름 검색..."
       style="width:100%;padding:7px;font-size:12px;margin-bottom:6px;box-sizing:border-box"
       oninput="renderEvPartCheckList('${evId}')">
@@ -4865,7 +4874,7 @@ window.openEventDetail=function(evId){
   const partSec=`<div style="margin-bottom:16px">
     <div id="evPartCount_${evId}" style="font-size:13px;font-weight:700;margin-bottom:8px">👥 ${['exchange','friendly'].includes(ev.type)?'TBS 참가자':'참가자'} (${parts.length}명)${['exchange','friendly'].includes(ev.type)?` <span style="font-size:10px;color:#6D28D9;font-weight:700">· 전체 ${eventRoster.length}명</span>`:''}</div>
     <div id="evPartChips_${evId}" class="part-chips">${parts.map(p=>{
-      const rmBtn=isAdmin?`<button onclick="removeEvPart('${evId}','${p.replace(/'/g,"\\'")}')"`+` style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:2px">×</button>`:'';
+      const rmBtn=canAdministerEvent?`<button onclick="removeEvPart('${evId}','${p.replace(/'/g,"\\'")}')"`+` style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:2px">×</button>`:'';
       return `<span class="part-chip">${p}${rmBtn}</span>`;
     }).join('')||'<span style="color:#64748B;font-size:12px">없음</span>'}
     </div>${checklistHtml}${eventOppSec}
@@ -5015,7 +5024,7 @@ window.openEventDetail=function(evId){
   if(['exchange','friendly','monthly','special'].includes(ev.type)){
     const pairPoolCount=ev.type==='friendly'?matchParts.length:parts.length;
     const latestRound=evMatches.length?Math.max(...evMatches.map(match=>Number(match.round)||1)):1;
-    const pairBtn=isAdmin&&pairPoolCount>=4
+    const pairBtn=canAdministerEvent&&pairPoolCount>=4
       ?`<button onclick="${ev.type==='friendly'?'showEvFriendlyPairConfig':'showEvExchangePairConfig'}('${evId}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:12px">🎲 ${ev.type==='friendly'?'친선 대진 자동 구성':'페어 짜기'}</button>`
       :'';
     const topInstantBtn=isMember
@@ -5029,7 +5038,7 @@ window.openEventDetail=function(evId){
       const hasRoundInfo=evMatches.some(m=>m.round!==undefined);
       if(!hasRoundInfo||ev.type==='exchange'){
         // 교류전은 항상 flat 표시 (라운드 헤더 없음)
-        matchCards=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.oppClub||'',matchParts,isMember)).join('')+quickAddBtn;
+        matchCards=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,canAdministerEvent,ev.oppClub||'',matchParts,isMember)).join('')+quickAddBtn;
       } else {
         // round/court 그룹 표시
         const roundMap={};
@@ -5047,7 +5056,7 @@ window.openEventDetail=function(evId){
           const courtsHtml=courtNums.map(cNum=>{
             const {type,entries}=courtMap[cNum];
             const typeLabel=type?` · ${type}`:'';
-            const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,isAdmin,ev.type==='friendly'?'':ev.oppClub||'',matchParts,isMember)).join('');
+            const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,canAdministerEvent,ev.type==='friendly'?'':ev.oppClub||'',matchParts,isMember)).join('');
             return `<div style="margin-bottom:4px">
               <div style="font-size:10px;color:#6D28D9;font-weight:700;padding:4px 0 2px">${cNum}코트${typeLabel}</div>
               ${cardsHtml}
@@ -5084,9 +5093,9 @@ window.openEventDetail=function(evId){
 
   // 비교류전 결과 섹션
   const resSec=!['exchange','friendly'].includes(ev.type)&&results.length?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 결과</div>${results.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #EEF7F6"><span>${['🥇','🥈','🥉'][i]||i+1+'위'}</span><span style="font-weight:700">${r.name}</span>${r.note?`<span style="font-size:11px;color:#64748B">${r.note}</span>`:''}</div>`).join('')}</div>`:'';
-  const addRes=!['exchange','friendly'].includes(ev.type)&&isAdmin?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏅 결과 추가</div><div class="row-form"><select class="row-inp" id="evResName"><option value="">선수</option>${parts.map(p=>`<option>${p}</option>`).join('')}</select><input class="row-inp" id="evResNote" placeholder="메모"><button class="btn-add" onclick="addEvResult('${evId}')">추가</button></div></div>`:'';
+  const addRes=!['exchange','friendly'].includes(ev.type)&&canAdministerEvent?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏅 결과 추가</div><div class="row-form"><select class="row-inp" id="evResName"><option value="">선수</option>${parts.map(p=>`<option>${p}</option>`).join('')}</select><input class="row-inp" id="evResNote" placeholder="메모"><button class="btn-add" onclick="addEvResult('${evId}')">추가</button></div></div>`:'';
 
-  const adminMetaEdit=isAdmin?`<div style="margin-top:6px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px">
+  const adminMetaEdit=canAdministerEvent?`<div style="margin-top:6px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px">
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
       <select onchange="saveEvMeta('${evId}','status',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;cursor:pointer">
         <option value="upcoming"${ev.status==='upcoming'?' selected':''}>예정</option>
@@ -5603,10 +5612,12 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
 }
 
 // 화면 B: 라운드별 대진표 (홈 카드 클릭 or 화면 A "대진표 보기" 버튼)
-window.openEvScoreboard=function(evId){
+window.openEvScoreboard=function(evId, adminContext){
+  if(typeof adminContext==='boolean') currentEventAdminContext=adminContext&&isAdmin;
   currentOpenEvId = evId;
   currentEvView = 'scoreboard';
   const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const canAdministerEvent=isAdmin&&currentEventAdminContext;
   const evMatches=ev.matches||[];
   const parts=ev.type==='friendly'?getFriendlyEventAttendees(ev).map(player=>player.name):(ev.participants||[]);
   const allocationParts=['exchange','friendly'].includes(ev.type)?getEventMatchRoster(ev).map(player=>player.name):parts;
@@ -5627,7 +5638,7 @@ window.openEvScoreboard=function(evId){
       const quickAddBtn=isMember
         ?`<button onclick="openAddEvMatch('${evId}',1)" style="width:100%;padding:7px;margin-top:6px;background:rgba(167,139,250,0.15);border:1px dashed rgba(167,139,250,0.5);border-radius:8px;color:#6D28D9;font-size:11px;font-weight:700;cursor:pointer">➕ 즉석 매치 추가</button>`
         :'';
-      matchesHtml=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,isAdmin,defaultOppClub,parts,isMember)).join('')+quickAddBtn;
+      matchesHtml=evMatches.map((m,mi)=>buildEvExMatchCard(m,mi,evId,canAdministerEvent,defaultOppClub,parts,isMember)).join('')+quickAddBtn;
     } else {
       const roundMap={};
       evMatches.forEach((m,mi)=>{
@@ -5639,7 +5650,7 @@ window.openEvScoreboard=function(evId){
       const maxRoundSb=roundNums.length?Math.max(...roundNums):0;
       matchesHtml=roundNums.map(rNum=>{
         const entries=roundMap[rNum];
-        const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,isAdmin,defaultOppClub,parts,isMember)).join('');
+        const cardsHtml=entries.map(({m,mi})=>buildEvExMatchCard(m,mi,evId,canAdministerEvent,defaultOppClub,parts,isMember)).join('');
         const waiting=parts.filter(p=>!entries.some(({m})=>(m.ourPair||[]).includes(p)||(m.oppPair||[]).includes(p)));
         const waitHtml=waiting.length
           ?`<div style="padding:8px 12px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.2);border-radius:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px">
@@ -5760,7 +5771,7 @@ window.openEvScoreboard=function(evId){
     </div>`;
   }
 
-  const adminMetaEditSb=isAdmin?`<div style="margin-top:6px;margin-bottom:12px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+  const adminMetaEditSb=canAdministerEvent?`<div style="margin-top:6px;margin-bottom:12px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
     <select onchange="saveEvMeta('${evId}','status',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;cursor:pointer">
       <option value="upcoming"${ev.status==='upcoming'?' selected':''}>예정</option>
       <option value="ongoing"${ev.status==='ongoing'?' selected':''}>진행중</option>
@@ -5786,7 +5797,7 @@ window.openEvScoreboard=function(evId){
     ${statSec}
     ${oppStatSec}
     <div class="mft">
-      ${isAdmin?`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">⚙️ 참가자/페어 관리</button>`:`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">← 상세보기</button>`}
+      ${canAdministerEvent?`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">⚙️ 참가자/페어 관리</button>`:`<button onclick="openEventDetail('${evId}')" style="flex:1;padding:9px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:9px;color:#1D6FB8;font-size:12px;font-weight:700;cursor:pointer">← 상세보기</button>`}
       <button class="btn-cancel" style="flex:1" onclick="hide('eventDetailModal')">닫기</button>
     </div>`;
   document.getElementById('eventDetailModal').style.display='flex';
@@ -7073,8 +7084,9 @@ function renderAdminEvents(){
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
-          <button onclick="openEventDetail('${ev.id}')" style="padding:5px 11px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:8px;color:#1D6FB8;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">⚙️ 관리</button>
-          <button onclick="openEvScoreboard('${ev.id}')" style="padding:5px 11px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.35);border-radius:8px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🏸 대진표</button>
+          <button onclick="openEventDetail('${ev.id}',true)" style="padding:5px 11px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:8px;color:#1D6FB8;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">⚙️ 관리</button>
+          <button onclick="openEvScoreboard('${ev.id}',true)" style="padding:5px 11px;background:rgba(52,211,153,0.12);border:1px solid rgba(52,211,153,0.35);border-radius:8px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🏸 대진표</button>
+          <button onclick="delEvent('${ev.id}')" style="padding:4px 10px;background:none;border:1px solid rgba(248,113,113,.35);border-radius:8px;color:#F87171;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">삭제</button>
         </div>
       </div>
     </div>`;
@@ -7371,6 +7383,7 @@ window.switchAdminSub = function(key, btn){
 
 window.switchTab=function(tab,btn){
   document.body.classList.toggle('admin-view',tab==='admin');
+  if(tab==='event') currentEventAdminContext=false;
   ['home','league','terra','schedule','fortune','event','board','photo','gamesummary','admin'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
     if(el) el.style.display=t===tab?'block':'none';
@@ -9575,7 +9588,7 @@ window.homeGoTo = function(target) {
 };
 
 window.openEvDetailFromHome=function(evId){
-  openEventDetail(evId);
+  openEventDetail(evId,false);
 };
 
 // 홈 바로가기 카테고리 카드 토글 (아코디언 + 하위 항목 stagger 애니)
@@ -9843,7 +9856,7 @@ window.openClubNewsItem = function(type, id) {
   }
   if (type === 'event' || type === 'event-highlight') {
     navTo('event');
-    openEventDetail(id);
+    openEventDetail(id,false);
   }
 };
 
@@ -11967,7 +11980,8 @@ function setAdminMode(on){
   if (moreAdminBtn) moreAdminBtn.style.display = on?'block':'none';
   const moreAdminTitle = document.getElementById('moreAdminTitle');
   if (moreAdminTitle) moreAdminTitle.style.display = on?'block':'none';
-  document.getElementById('btnAddEvent').style.display=on?'block':'none';
+  const addEventBtn = document.getElementById('btnAddEvent');
+  if (addEventBtn) addEventBtn.style.display='none';
   if(!on && document.getElementById('tab-admin').style.display!=='none'){
     document.body.classList.remove('admin-view');
     document.getElementById('tab-admin').style.display='none';
