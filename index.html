@@ -567,7 +567,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.8.0</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.9.0</div>
     </div>
   </div>
 
@@ -576,7 +576,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.8.0</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.9.0</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -643,7 +643,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-card">
         <h3>☰ 더 많은 기능</h3>
         <ul>
-          <li><b>이벤트전:</b> 교류전·친선전과 함께 월례대회를 개인 리그전 또는 클럽 내 흑백대전으로 운영하고 대진과 결과를 확인합니다.</li>
+          <li><b>이벤트전:</b> 교류전·월례대회·특별전의 세 분류에서 목적에 맞는 진행 방식을 선택해 운영합니다.</li>
           <li>교류전·친선전에서는 양쪽 참석 명단과 <b>실시간 배정 현황</b>을 확인할 수 있고, 정회원도 기존 대진에 즉석매치를 바로 추가할 수 있습니다. 상대팀 명단에는 성별과 구력도 함께 등록할 수 있습니다.</li>
           <li><b>나의 시즌:</b> 종료된 시즌의 개인 기록과 하이라이트를 봅니다.</li>
           <li><b>게시판·사진/동영상:</b> 클럽 이야기를 확인하고 공유합니다.</li>
@@ -840,7 +840,6 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="subtabs" style="margin-bottom:16px">
         <button class="stab active" onclick="filterEvent('all',this)">전체</button>
         <button class="stab" onclick="filterEvent('exchange',this)">교류전</button>
-        <button class="stab" onclick="filterEvent('friendly',this)">친선전</button>
         <button class="stab" onclick="filterEvent('monthly',this)">월례대회</button>
         <button class="stab" onclick="filterEvent('special',this)">특별전</button>
       </div>
@@ -997,7 +996,7 @@ tr:nth-child(even){background:#F5FCFB;}
           <div class="admin-ops-desc">날짜와 참석자를 정한 뒤 공식 대진을 만들고, 현장에서 필요한 즉석 매치를 추가합니다.</div>
           <div class="admin-ops-tabs">
             <button id="adminOpsRegularBtn" class="admin-ops-tab active" onclick="switchMatchOpsMode('regular',this)">🏆 정규시즌</button>
-            <button id="adminOpsEventBtn" class="admin-ops-tab" onclick="switchMatchOpsMode('event',this)">🤝 교류·이벤트전</button>
+            <button id="adminOpsEventBtn" class="admin-ops-tab" onclick="switchMatchOpsMode('event',this)">🎉 이벤트전</button>
           </div>
         </div>
         <div class="admin-ops-guide">
@@ -1126,7 +1125,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div id="adminGroup-events" style="display:none">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
           <div>
-            <div style="font-size:16px;font-weight:900;color:#1E293B">🤝 교류·이벤트전 관리</div>
+            <div style="font-size:16px;font-weight:900;color:#1E293B">🎉 이벤트전 관리</div>
             <div style="font-size:11px;color:#64748B;margin-top:3px">이벤트 생성·삭제와 참가자, 상대팀, 대진을 관리합니다.</div>
           </div>
           <button onclick="openEventModal()" style="flex:none;padding:9px 14px;background:#7C3AED;border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:900;cursor:pointer">＋ 이벤트 추가</button>
@@ -1439,20 +1438,40 @@ tr:nth-child(even){background:#F5FCFB;}
 <div class="overlay-bottom" id="eventModal" style="display:none" onclick="if(event.target.id==='eventModal')hide('eventModal')">
   <div class="modal-bottom">
     <div class="modal-title">🎉 이벤트 추가</div>
-    <div class="mf-full"><label>종류</label>
-      <select id="evType" onchange="toggleEvOppClubField(this.value)"><option value="exchange">클럽 대항 교류전</option><option value="friendly">클럽 친선 교류전</option><option value="monthly">월례대회</option><option value="special">특별전</option></select>
+    <div class="mf-full"><label>이벤트 대분류</label>
+      <select id="evType" onchange="toggleEvOppClubField(this.value)"><option value="exchange">교류전</option><option value="monthly">월례대회</option><option value="special">특별전</option></select>
+    </div>
+    <div class="mf-full" id="evExchangeFormatRow">
+      <label>교류전 진행 방식</label>
+      <select id="evExchangeFormat" onchange="toggleEvOppClubField('exchange')">
+        <option value="clubMatch">🤝 클럽 대항전 · 클럽 대 클럽 팀 승부</option>
+        <option value="friendly">🎾 클럽 친선전 · 양 클럽 참가자를 섞어 진행</option>
+      </select>
     </div>
     <div class="mf-full" id="evMonthlyFormatRow" style="display:none">
       <label>월례대회 진행 방식</label>
       <select id="evMonthlyFormat">
         <option value="individualLeague">🏅 개인 리그전 · 파트너를 바꾸며 개인 승점 순위</option>
-        <option value="teamBattle">⚫⚪ 흑백대전 · 클럽원을 두 팀으로 나눈 팀 대항전</option>
+        <option value="teamBattle">⚫⚪ 팀 흑백대전 · 클럽원을 두 팀으로 나눈 대항전</option>
+        <option value="ybobBattle">🟡🔵🟠⚫ 팀 YBOB 대전 · 네 가지 컬러 팀 대항전</option>
       </select>
-      <div style="font-size:10px;color:#64748B;margin-top:5px;line-height:1.55">개인 리그전은 승 3점·무 1점으로 순위를 계산하고, 흑백대전은 팀별 승패를 집계합니다.</div>
+      <div style="font-size:10px;color:#64748B;margin-top:5px;line-height:1.55">개인 리그전과 흑백대전은 바로 운영할 수 있으며, YBOB 대전은 이번 단계에서 방식 선택·표시까지만 제공합니다.</div>
+    </div>
+    <div class="mf-full" id="evSpecialFormatRow" style="display:none">
+      <label>특별전 진행 방식</label>
+      <select id="evSpecialFormat">
+        <option value="kingOfCourt">👑 킹 오브 코트 · 승리 팀 잔류, 도전 팀 교체</option>
+        <option value="genderBattle">🚻 성별 대항전 · 남성팀 대 여성팀</option>
+        <option value="handicap">⚖️ 핸디캡전 · 실력 차이에 따라 시작 점수 부여</option>
+        <option value="luckyDraw">🎲 복불복전 · 경기 방식과 페어를 추첨</option>
+        <option value="foreBack">🎾 포·백 조합전 · 포핸드·백핸드 성향으로 페어 구성</option>
+        <option value="couplesLeague">💑 부부대전 · 부부 페어 지정 후 리그전</option>
+      </select>
+      <div style="font-size:10px;color:#64748B;margin-top:5px;line-height:1.55">특별전은 이번 단계에서 진행 방식 선택·저장·표시까지만 제공합니다.</div>
     </div>
     <div class="mf-full"><label>이벤트 이름</label><input id="evName" placeholder="예: 4월 월례대회"></div>
     <div class="mf-full" id="evOppClubRow">
-      <label>상대 클럽명 <span style="font-size:10px;color:#64748B">(교류전·친선전)</span></label>
+      <label>상대 클럽명 <span style="font-size:10px;color:#64748B">(교류전)</span></label>
       <input id="evOppClub" placeholder="예: 능곡 신생팀">
       <label style="margin-top:8px;display:block;font-size:12px;color:#64748B">상대팀 명단 <span style="font-size:10px;color:#94A3B8">(이름·테니스 시작년월·성별)</span></label>
       <div id="evOppRosterRows" style="margin-bottom:4px"></div>
@@ -1563,7 +1582,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.8.0';
+const APP_VERSION = '1.9.0';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4792,14 +4811,26 @@ window.renderAnalysisDetail = function() {
 };
 
 // 이벤트
-const EV_TYPE_LABEL={exchange:'클럽 대항 교류전',friendly:'클럽 친선 교류전',monthly:'월례대회',special:'특별전'};
+const EV_TYPE_LABEL={exchange:'교류전',friendly:'교류전',monthly:'월례대회',special:'특별전'};
 const EV_TYPE_BADGE={exchange:'badge-exchange',friendly:'badge-friendly',monthly:'badge-monthly',special:'badge-special'};
-const EV_TYPE_EMOJI={exchange:'🤝',friendly:'🎾',monthly:'🏅',special:'⭐'};
+const EV_TYPE_EMOJI={exchange:'🤝',friendly:'🤝',monthly:'🏅',special:'⭐'};
 const EV_STATUS_LABEL={upcoming:'예정',ongoing:'진행중',done:'완료'};
 const EV_STATUS_CLASS={upcoming:'st-upcoming',ongoing:'st-ongoing',done:'st-done'};
+const MONTHLY_FORMAT_LABEL={individualLeague:'🏅 개인 리그전',teamBattle:'⚫⚪ 팀 흑백대전',ybobBattle:'🟡🔵🟠⚫ 팀 YBOB 대전'};
+const SPECIAL_FORMAT_LABEL={kingOfCourt:'👑 킹 오브 코트',genderBattle:'🚻 성별 대항전',handicap:'⚖️ 핸디캡전',luckyDraw:'🎲 복불복전',foreBack:'🎾 포·백 조합전',couplesLeague:'💑 부부대전'};
+function getEventCategory(ev){
+  if(ev?.eventCategory)return ev.eventCategory;
+  return ev?.type==='friendly'?'exchange':(ev?.type||'special');
+}
+function getExchangeFormat(ev){
+  return ev?.exchangeFormat||(ev?.type==='friendly'?'friendly':'clubMatch');
+}
 function getEventFormatLabel(ev){
-  if(ev?.type!=='monthly')return '';
-  return ev.monthlyFormat==='teamBattle'?'⚫⚪ 흑백대전':'🏅 개인 리그전';
+  const category=getEventCategory(ev);
+  if(category==='exchange')return getExchangeFormat(ev)==='friendly'?'🎾 클럽 친선전':'🤝 클럽 대항전';
+  if(category==='monthly')return MONTHLY_FORMAT_LABEL[ev.monthlyFormat||'individualLeague']||MONTHLY_FORMAT_LABEL.individualLeague;
+  if(category==='special')return SPECIAL_FORMAT_LABEL[ev.specialFormat]||'';
+  return '';
 }
 
 window.saveEvMeta = async function(evId, field, value) {
@@ -4819,16 +4850,17 @@ window.saveEvMeta = async function(evId, field, value) {
 
 function renderEvents() {
   const el=document.getElementById('eventList');
-  let filtered=currentEventFilter==='all'?events:events.filter(e=>e.type===currentEventFilter);
+  let filtered=currentEventFilter==='all'?events:events.filter(e=>getEventCategory(e)===currentEventFilter);
   filtered=[...filtered].sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
   if(!filtered.length){el.innerHTML='<div class="empty">아직 이벤트가 없어요</div>';return;}
   el.innerHTML=filtered.map(ev=>{
     const parts=ev.participants||[];
+    const category=getEventCategory(ev);
     const formatLabel=getEventFormatLabel(ev);
     const partHtml=parts.length?`<div class="ev-parts"><div style="font-size:11px;color:#64748B">참가자 (${parts.length}명)</div><div class="part-chips">${parts.map(p=>`<span class="part-chip">${p}</span>`).join('')}</div></div>`:'';
     return `<div class="event-card">
       <div class="event-banner">
-        <span class="ev-type-badge ${EV_TYPE_BADGE[ev.type]||''}">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${EV_TYPE_LABEL[ev.type]||ev.type}</span>
+        <span class="ev-type-badge ${EV_TYPE_BADGE[category]||''}">${EV_TYPE_EMOJI[category]||'🎾'} ${EV_TYPE_LABEL[category]||category}</span>
         ${formatLabel?`<span style="display:inline-block;margin-left:6px;font-size:10px;font-weight:800;color:#475569">${formatLabel}</span>`:''}
         <div class="ev-name">${ev.name}</div>
         <div class="ev-date">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
@@ -5043,7 +5075,7 @@ window.openEventDetail=function(evId, adminContext){
     const pairPoolCount=ev.type==='friendly'?matchParts.length:parts.length;
     const latestRound=evMatches.length?Math.max(...evMatches.map(match=>Number(match.round)||1)):1;
     const pairAction=ev.type==='friendly'?'showEvFriendlyPairConfig':ev.type==='monthly'?'showEvMonthlyPairConfig':'showEvExchangePairConfig';
-    const pairLabel=ev.type==='friendly'?'친선 대진 자동 구성':ev.type==='monthly'?(ev.monthlyFormat==='teamBattle'?'흑백대전 자동 구성':'개인 리그 대진 구성'):'페어 짜기';
+    const pairLabel=ev.type==='friendly'?'친선 대진 자동 구성':ev.type==='monthly'?(ev.monthlyFormat==='teamBattle'?'흑백대전 자동 구성':ev.monthlyFormat==='ybobBattle'?'YBOB 대전 구성 준비 중':'개인 리그 대진 구성'):'페어 짜기';
     const pairBtn=canAdministerEvent&&pairPoolCount>=4
       ?`<button onclick="${pairAction}('${evId}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:12px">🎲 ${pairLabel}</button>`
       :'';
@@ -5136,12 +5168,13 @@ window.openEventDetail=function(evId, adminContext){
   </div>`:'';
 
   const _ec2=document.getElementById('eventDetailContent');
+  const eventCategory=getEventCategory(ev);
   _ec2.style.background='';
   _ec2.innerHTML=`
-    <div class="modal-title">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${ev.name}</div>
+    <div class="modal-title">${EV_TYPE_EMOJI[eventCategory]||'🎾'} ${ev.name}</div>
     ${ev.oppClub?`<div style="font-size:12px;color:#2563EB;margin-top:-6px;margin-bottom:4px">${ev.oppClub}</div>`:''}
     <div style="margin-bottom:16px">
-      <span class="ev-type-badge ${EV_TYPE_BADGE[ev.type]||''}">${EV_TYPE_LABEL[ev.type]||ev.type}</span>
+      <span class="ev-type-badge ${EV_TYPE_BADGE[eventCategory]||''}">${EV_TYPE_LABEL[eventCategory]||eventCategory}</span>
       ${getEventFormatLabel(ev)?`<span style="margin-left:6px;font-size:11px;font-weight:800;color:#475569">${getEventFormatLabel(ev)}</span>`:''}
       <span class="ev-status ${EV_STATUS_CLASS[ev.status]||''}" style="margin-left:8px;font-size:12px">● ${EV_STATUS_LABEL[ev.status]||''}</span>
       <div style="font-size:12px;color:#64748B;margin-top:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
@@ -5826,9 +5859,10 @@ window.openEvScoreboard=function(evId, adminContext){
   </div>`:'';
 
   const _ec=document.getElementById('eventDetailContent');
+  const eventCategory=getEventCategory(ev);
   _ec.style.background='';
   _ec.innerHTML=`
-    <div class="modal-title">${EV_TYPE_EMOJI[ev.type]||'🎾'} ${ev.name}</div>
+    <div class="modal-title">${EV_TYPE_EMOJI[eventCategory]||'🎾'} ${ev.name}</div>
     ${ev.oppClub?`<div style="font-size:12px;color:#2563EB;margin-top:-6px;margin-bottom:4px">${ev.oppClub}</div>`:''}
     <div style="font-size:12px;color:#64748B;margin-bottom:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
     ${adminMetaEditSb}
@@ -5942,6 +5976,10 @@ window.openAddEvMatch=function(evId,roundNum){
   const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
   if(!isMember){alert('로그인한 정회원만 즉석 매치를 추가할 수 있어요');return;}
   const ev=events.find(e=>e.id===evId); if(!ev)return;
+  if(ev.type==='monthly'&&ev.monthlyFormat==='ybobBattle'){
+    alert('YBOB 대전은 현재 진행 방식 선택·표시까지만 제공됩니다. 팀 편성과 대진 기능은 다음 단계에서 추가할게요.');
+    return;
+  }
   pendingAddEvMatch={evId,roundNum:parseInt(roundNum)};
   document.getElementById('addEvMatchInfo').textContent=`${roundNum}라운드에 즉석 매치 추가`;
   const isClubMatch=ev.type==='exchange';
@@ -6444,6 +6482,10 @@ function getMonthlyTeamDefaultTypes(attendees){
 
 window.showEvMonthlyPairConfig=function(evId){
   const ev=events.find(event=>event.id===evId);if(!ev)return;
+  if(ev.monthlyFormat==='ybobBattle'){
+    alert('YBOB 대전은 현재 진행 방식 선택·표시까지만 제공됩니다. 팀 편성과 대진 기능은 다음 단계에서 추가할게요.');
+    return;
+  }
   const attendees=getEventTbsRoster(ev);
   if(attendees.length<4){alert('월례대회 참가자가 4명 이상이어야 대진을 만들 수 있어요.');return;}
   evExchangeCurrentEvId=evId;
@@ -7174,8 +7216,9 @@ function renderAdminEvents(){
   el.innerHTML=sorted.map(ev=>{
     const statusLabel=EV_STATUS_LABEL[ev.status]||'';
     const statusClass=EV_STATUS_CLASS[ev.status]||'';
-    const typeLabel=EV_TYPE_LABEL[ev.type]||ev.type;
-    const typeEmoji=EV_TYPE_EMOJI[ev.type]||'🎾';
+    const category=getEventCategory(ev);
+    const typeLabel=EV_TYPE_LABEL[category]||category;
+    const typeEmoji=EV_TYPE_EMOJI[category]||'🎾';
     const formatLabel=getEventFormatLabel(ev);
     const oppLine=ev.oppClub?`<span style="font-size:11px;color:#2563EB;margin-left:4px">vs ${ev.oppClub}</span>`:'';
     const dateStr=ev.date||'날짜 미정';
@@ -7185,7 +7228,7 @@ function renderAdminEvents(){
           <div style="font-size:13px;font-weight:700;margin-bottom:4px">${typeEmoji} ${ev.name}${oppLine}</div>
           <div style="font-size:11px;color:#64748B">📅 ${dateStr}${ev.place?' · 📍'+ev.place:''}</div>
           <div style="margin-top:5px;display:flex;gap:5px;align-items:center">
-            <span class="ev-type-badge ${EV_TYPE_BADGE[ev.type]||''}" style="font-size:10px">${typeLabel}</span>
+            <span class="ev-type-badge ${EV_TYPE_BADGE[category]||''}" style="font-size:10px">${typeLabel}</span>
             ${formatLabel?`<span style="font-size:10px;font-weight:800;color:#475569">${formatLabel}</span>`:''}
             <span class="ev-status ${statusClass}" style="font-size:10px">● ${statusLabel}</span>
             <span style="font-size:10px;color:#94A3B8">${(ev.participants||[]).length}명 참가</span>
@@ -9163,10 +9206,11 @@ function renderHomeTab() {
     .sort((a,b)=>a.date.localeCompare(b.date))[0]||null;
   const nextEvCardHtml=nextExchangeEv?(()=>{
     const e=nextExchangeEv;
+    const category=getEventCategory(e);
     const dd=new Date(e.date+'T00:00:00');
     const dl=`${dd.getMonth()+1}/${dd.getDate()}(${weekdays[dd.getDay()]})`;
     const partCount=(e.participants||[]).length;
-    const evLabel=EV_TYPE_EMOJI[e.type]?(EV_TYPE_EMOJI[e.type]+' '+(EV_TYPE_LABEL[e.type]||e.type)):'🎉 이벤트전';
+    const evLabel=`${EV_TYPE_EMOJI[category]||'🎉'} ${EV_TYPE_LABEL[category]||'이벤트전'} · ${getEventFormatLabel(e)||'일반'}`;
     return `<div onclick="openEvDetailFromHome('${e.id}')" style="cursor:pointer;background:#F0FDF4;border:1.5px solid #059669;border-radius:14px;padding:10px 10px;height:100%;box-sizing:border-box">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <span style="font-size:11px;font-weight:800;color:#059669;background:#D1FAE5;padding:2px 8px;border-radius:10px">🎉 이벤트전</span>
@@ -11667,18 +11711,26 @@ window.openEventModal=function(){
 };
 window.toggleEvOppClubField=function(type){
   const row=document.getElementById('evOppClubRow');
-  if(row)row.style.display=['exchange','friendly'].includes(type)?'block':'none';
+  if(row)row.style.display=type==='exchange'?'block':'none';
+  const exchangeRow=document.getElementById('evExchangeFormatRow');
+  if(exchangeRow)exchangeRow.style.display=type==='exchange'?'block':'none';
   const monthlyRow=document.getElementById('evMonthlyFormatRow');
   if(monthlyRow)monthlyRow.style.display=type==='monthly'?'block':'none';
+  const specialRow=document.getElementById('evSpecialFormatRow');
+  if(specialRow)specialRow.style.display=type==='special'?'block':'none';
 };
 window.submitEvent=async function(){
   const name=document.getElementById('evName').value.trim();
   if(!name){alert('이름을 입력해주세요');return;}
-  const evType=document.getElementById('evType').value;
-  const isClubEvent=['exchange','friendly'].includes(evType);
+  const eventCategory=document.getElementById('evType').value;
+  const exchangeFormat=document.getElementById('evExchangeFormat')?.value||'clubMatch';
+  const evType=eventCategory==='exchange'&&exchangeFormat==='friendly'?'friendly':eventCategory;
+  const isClubEvent=eventCategory==='exchange';
   await addDoc(collection(db,'events'),{
-    type:evType, name,
-    monthlyFormat:evType==='monthly'?(document.getElementById('evMonthlyFormat')?.value||'individualLeague'):'',
+    type:evType,eventCategory,name,
+    exchangeFormat:isClubEvent?exchangeFormat:'',
+    monthlyFormat:eventCategory==='monthly'?(document.getElementById('evMonthlyFormat')?.value||'individualLeague'):'',
+    specialFormat:eventCategory==='special'?(document.getElementById('evSpecialFormat')?.value||'kingOfCourt'):'',
     date:document.getElementById('evDate').value,
     place:document.getElementById('evPlace').value,
     desc:document.getElementById('evDesc').value,
