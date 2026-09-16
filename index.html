@@ -358,6 +358,10 @@ tr:nth-child(even){background:#F5FCFB;}
 .btn-cancel{flex:1;padding:13px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:12px;color:#64748B;font-size:14px;font-weight:600;cursor:pointer;}
 .btn-ok{flex:2;padding:13px;background:#60a5fa;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
 .btn-ok-green{flex:2;padding:13px;background:#34d399;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
+.ev-part-check-list{display:grid;grid-template-columns:1fr;gap:0 18px;}
+.ev-part-check-row{display:grid;grid-template-columns:minmax(76px,140px) auto;justify-content:start;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid rgba(35,90,180,0.1);}
+.fixed-pair-form{display:grid;grid-template-columns:1fr auto 1fr;gap:7px;align-items:center;}
+.fixed-pair-form button{grid-column:1/-1;}
 @media(min-width:800px){
   #terraModal,#scoreEditModal,#scoreModal,#scoreProposalModal,#matchModal,#addEvMatchModal,#eventModal,#eventDetailModal{align-items:center;padding:24px;box-sizing:border-box;}
   #terraModal .modal-bottom,#matchModal .modal-bottom,#addEvMatchModal .modal-bottom,#eventModal .modal-bottom{max-width:820px;border-radius:20px;padding:28px 32px 30px;max-height:88vh;box-sizing:border-box;}
@@ -370,6 +374,9 @@ tr:nth-child(even){background:#F5FCFB;}
   #terraModal .mf-full input,#terraModal .mf-full select,#terraModal .mf input,#terraModal .mf select,#matchModal .mf-full input,#matchModal .mf-full select,#matchModal .mf input,#matchModal .mf select,#addEvMatchModal .mf-full input,#addEvMatchModal .mf-full select,#addEvMatchModal .mf input,#addEvMatchModal .mf select,#eventModal .mf-full input,#eventModal .mf-full select,#eventModal .mf-full textarea,#eventModal .mf input,#eventModal .mf select{font-size:14px;padding:12px;}
   #eventModal .event-create-modal .mf-full textarea{height:90px;}
   #terraModal .mft,#matchModal .mft,#addEvMatchModal .mft,#eventModal .mft{max-width:440px;margin:22px 0 0 auto;}
+  .ev-part-check-list{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));}
+  .fixed-pair-form{grid-template-columns:minmax(150px,1fr) auto minmax(150px,1fr) auto;}
+  .fixed-pair-form button{grid-column:auto;}
 }
 
 .loading{text-align:center;padding:50px 20px;color:#64748B;font-size:14px;}
@@ -580,7 +587,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.9.2</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.10.0</div>
     </div>
   </div>
 
@@ -589,7 +596,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.9.2</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.10.0</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1595,7 +1602,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.9.2';
+const APP_VERSION = '1.10.0';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4845,6 +4852,12 @@ function getEventFormatLabel(ev){
   if(category==='special')return SPECIAL_FORMAT_LABEL[ev.specialFormat]||'';
   return '';
 }
+function getEventFixedPairs(ev){
+  return (ev?.fixedPairs||[]).map((pair,index)=>{
+    const players=Array.isArray(pair)?pair:(pair.players||[pair.player1,pair.player2]);
+    return {id:pair.id||`fixed-${index}`,players:players.filter(Boolean).slice(0,2)};
+  }).filter(pair=>pair.players.length===2&&pair.players[0]!==pair.players[1]);
+}
 
 window.saveEvMeta = async function(evId, field, value) {
   const ev = events.find(e=>e.id===evId); if(!ev) return;
@@ -4924,7 +4937,7 @@ window.openEventDetail=function(evId, adminContext){
     <input id="evPartSearch_${evId}" type="text" class="row-inp" placeholder="🔍 이름 검색..."
       style="width:100%;padding:7px;font-size:12px;margin-bottom:6px;box-sizing:border-box"
       oninput="renderEvPartCheckList('${evId}')">
-    <div id="evPartCheckList_${evId}" style="border:1px solid #D1E7E5;border-radius:8px;padding:2px 8px">
+    <div id="evPartCheckList_${evId}" class="ev-part-check-list" style="border:1px solid #D1E7E5;border-radius:8px;padding:2px 8px">
       ${buildEvPartCheckRows(evId,'',parts)}
     </div>
   </div>`:'';
@@ -4933,6 +4946,15 @@ window.openEventDetail=function(evId, adminContext){
     <div class="part-chips">${eventOppAttendees.map(player=>`<span class="part-chip" style="border-color:#DDD6FE;background:#fff">${player.gender==='f'?'♀️':player.gender==='m'?'♂️':''} ${player.name}${player.tennisStartDate?` · 시작 ${player.tennisStartDate.replace('-','.')}`:''}${player.months!=null?` · 구력 ${formatTennisMonths(player.months)}`:''}</span>`).join('')||'<span style="color:#64748B;font-size:11px">상대팀 명단이 아직 등록되지 않았어요.</span>'}</div>
   </div>`:'';
   const monthlyTeamsSec=ev.type==='monthly'&&ev.monthlyFormat==='teamBattle'&&ev.monthlyTeams?`<div class="friendly-roster-summary" style="margin-top:12px"><div class="friendly-roster-team" style="border-color:#475569"><b style="color:#1E293B">⚫ 흑팀 · ${(ev.monthlyTeams.black||[]).length}명</b><div class="friendly-roster-names">${(ev.monthlyTeams.black||[]).join(' · ')||'대진 생성 시 자동 편성'}</div></div><div class="friendly-roster-team"><b>⚪ 백팀 · ${(ev.monthlyTeams.white||[]).length}명</b><div class="friendly-roster-names">${(ev.monthlyTeams.white||[]).join(' · ')||'대진 생성 시 자동 편성'}</div></div></div>`:'';
+  const isCouplesLeague=ev.type==='special'&&ev.specialFormat==='couplesLeague';
+  const fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(name=>parts.includes(name)));
+  const pairedNames=new Set(fixedPairs.flatMap(pair=>pair.players));
+  const fixedPairOptions=parts.filter(name=>!pairedNames.has(name)).map(name=>`<option value="${name.replace(/"/g,'&quot;')}">${name}</option>`).join('');
+  const couplesPairSec=isCouplesLeague?`<div style="margin-bottom:16px;padding:13px 14px;background:#FFF7ED;border:1px solid #FDBA74;border-radius:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px"><b style="font-size:13px;color:#9A3412">💑 고정 페어 설정</b><span style="font-size:10px;color:#64748B">${fixedPairs.length}페어 · 미배정 ${Math.max(0,parts.length-pairedNames.size)}명</span></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:7px;margin-bottom:${canAdministerEvent?'10px':'0'}">${fixedPairs.map((pair,index)=>`<div style="display:flex;align-items:center;gap:7px;padding:8px 10px;background:#fff;border:1px solid #FED7AA;border-radius:9px"><span style="font-size:10px;font-weight:900;color:#C2410C">${index+1}페어</span><b style="flex:1;font-size:12px;color:#1E293B">${pair.players.join(' · ')}</b>${canAdministerEvent?`<button onclick="removeEventFixedPair('${evId}','${pair.id}')" style="border:0;background:none;color:#F87171;font-size:15px;cursor:pointer">×</button>`:''}</div>`).join('')||'<div style="font-size:11px;color:#64748B">참가자를 선택한 뒤 고정 페어를 등록해주세요.</div>'}</div>
+    ${canAdministerEvent?`<div class="fixed-pair-form"><select id="fixedPairP1_${evId}" class="row-inp"><option value="">선수1</option>${fixedPairOptions}</select><span style="color:#C2410C;font-weight:900">＋</span><select id="fixedPairP2_${evId}" class="row-inp"><option value="">선수2</option>${fixedPairOptions}</select><button onclick="addEventFixedPair('${evId}')" style="padding:8px 13px;border:0;border-radius:9px;background:#EA580C;color:#fff;font-size:11px;font-weight:900;white-space:nowrap;cursor:pointer">페어 등록</button></div>`:''}
+  </div>`:'';
   const partSec=`<div style="margin-bottom:16px">
     <div id="evPartCount_${evId}" style="font-size:13px;font-weight:700;margin-bottom:8px">👥 ${['exchange','friendly'].includes(ev.type)?'TBS 참가자':'참가자'} (${parts.length}명)${['exchange','friendly'].includes(ev.type)?` <span style="font-size:10px;color:#6D28D9;font-weight:700">· 전체 ${eventRoster.length}명</span>`:''}</div>
     <div id="evPartChips_${evId}" class="part-chips">${parts.map(p=>{
@@ -5079,17 +5101,17 @@ window.openEventDetail=function(evId, adminContext){
   }
 
   const allocationRoster=ev.type==='monthly'?getEventTbsRoster(ev):getEventMatchRoster(ev);
-  const eventAllocationSec=['exchange','friendly','monthly'].includes(ev.type)
+  const eventAllocationSec=(['exchange','friendly','monthly'].includes(ev.type)||isCouplesLeague)
     ?`<div style="margin-bottom:14px">${buildAllocationPreviewHtml(allocationRoster,evMatches,[],false)}</div>`:'';
 
   // ── 교류전 전용 섹션 ──
   let exchangeSec='';
   if(['exchange','friendly','monthly','special'].includes(ev.type)){
-    const pairPoolCount=ev.type==='friendly'?matchParts.length:parts.length;
+    const pairPoolCount=isCouplesLeague?fixedPairs.length:(ev.type==='friendly'?matchParts.length:parts.length);
     const latestRound=evMatches.length?Math.max(...evMatches.map(match=>Number(match.round)||1)):1;
-    const pairAction=ev.type==='friendly'?'showEvFriendlyPairConfig':ev.type==='monthly'?'showEvMonthlyPairConfig':'showEvExchangePairConfig';
-    const pairLabel=ev.type==='friendly'?'친선 대진 자동 구성':ev.type==='monthly'?(ev.monthlyFormat==='teamBattle'?'흑백대전 자동 구성':ev.monthlyFormat==='ybobBattle'?'YBOB 대전 구성 준비 중':'개인 리그 대진 구성'):'페어 짜기';
-    const pairBtn=canAdministerEvent&&pairPoolCount>=4
+    const pairAction=isCouplesLeague?'generateCouplesLeagueMatches':ev.type==='friendly'?'showEvFriendlyPairConfig':ev.type==='monthly'?'showEvMonthlyPairConfig':'showEvExchangePairConfig';
+    const pairLabel=isCouplesLeague?'고정 페어 리그 대진 생성':ev.type==='friendly'?'친선 대진 자동 구성':ev.type==='monthly'?(ev.monthlyFormat==='teamBattle'?'흑백대전 자동 구성':ev.monthlyFormat==='ybobBattle'?'YBOB 대전 구성 준비 중':'개인 리그 대진 구성'):'페어 짜기';
+    const pairBtn=canAdministerEvent&&pairPoolCount>=(isCouplesLeague?2:4)
       ?`<button onclick="${pairAction}('${evId}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:12px">🎲 ${pairLabel}</button>`
       :'';
     const topInstantBtn=isMember
@@ -5160,32 +5182,16 @@ window.openEventDetail=function(evId, adminContext){
   const resSec=!['exchange','friendly'].includes(ev.type)&&results.length?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏆 결과</div>${results.map((r,i)=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #EEF7F6"><span>${['🥇','🥈','🥉'][i]||i+1+'위'}</span><span style="font-weight:700">${r.name}</span>${r.note?`<span style="font-size:11px;color:#64748B">${r.note}</span>`:''}</div>`).join('')}</div>`:'';
   const addRes=!['exchange','friendly'].includes(ev.type)&&canAdministerEvent?`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;margin-bottom:8px">🏅 결과 추가</div><div class="row-form"><select class="row-inp" id="evResName"><option value="">선수</option>${parts.map(p=>`<option>${p}</option>`).join('')}</select><input class="row-inp" id="evResNote" placeholder="메모"><button class="btn-add" onclick="addEvResult('${evId}')">추가</button></div></div>`:'';
 
-  const adminMetaEdit=canAdministerEvent?`<div style="margin-top:6px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px">
-    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-      <select onchange="saveEvMeta('${evId}','status',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;cursor:pointer">
-        <option value="upcoming"${ev.status==='upcoming'?' selected':''}>예정</option>
-        <option value="ongoing"${ev.status==='ongoing'?' selected':''}>진행중</option>
-        <option value="done"${ev.status==='done'?' selected':''}>종료</option>
-      </select>
-      <input id="evMetaOppClub_${evId}" style="flex:1;min-width:80px;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="상대팀명" value="${(ev.oppClub||'').replace(/"/g,'&quot;')}">
-      <button onclick="saveEvMeta('${evId}','oppClub',document.getElementById('evMetaOppClub_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">팀명 저장</button>
-    </div>
-    <div style="margin-top:6px">
-      <div style="font-size:10px;color:#94A3B8;margin-bottom:4px">상대팀 명단</div>
-      <div id="evMetaOppRosterRows_${evId}" style="margin-bottom:4px">${(ev.oppRoster||[]).map(function(e){var r=typeof e==='string'?{name:e,gender:'',tennisStartDate:'',months:null}:{name:e.name||'',gender:e.gender||'',tennisStartDate:e.tennisStartDate||'',months:e.months};return buildOppRosterRowHtml(r.name,r.gender,r.tennisStartDate||tennisStartDateFromMonths(r.months));}).join('')}</div>
-      <div style="display:flex;gap:6px;align-items:center">
-        <button onclick="addOppRosterRow('evMetaOppRosterRows_${evId}')" style="flex:1;padding:4px 8px;border:1px dashed rgba(100,150,200,0.4);border-radius:6px;background:none;color:#94A3B8;font-size:11px;cursor:pointer">+ 인원 추가</button>
-        <button onclick="saveOppRoster('${evId}')" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">명단 저장</button>
-      </div>
-    </div>
-  </div>`:'';
+  const opponentAdminFields=['exchange','friendly'].includes(ev.type)?`<div style="display:flex;gap:6px;align-items:center;flex:1;min-width:260px"><input id="evMetaOppClub_${evId}" style="flex:1;min-width:80px;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="상대팀명" value="${(ev.oppClub||'').replace(/"/g,'&quot;')}"><button onclick="saveEvMeta('${evId}','oppClub',document.getElementById('evMetaOppClub_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">팀명 저장</button></div>`:'';
+  const opponentRosterAdmin=['exchange','friendly'].includes(ev.type)?`<div style="margin-top:6px"><div style="font-size:10px;color:#94A3B8;margin-bottom:4px">상대팀 명단</div><div id="evMetaOppRosterRows_${evId}" style="margin-bottom:4px">${(ev.oppRoster||[]).map(function(e){var r=typeof e==='string'?{name:e,gender:'',tennisStartDate:'',months:null}:{name:e.name||'',gender:e.gender||'',tennisStartDate:e.tennisStartDate||'',months:e.months};return buildOppRosterRowHtml(r.name,r.gender,r.tennisStartDate||tennisStartDateFromMonths(r.months));}).join('')}</div><div style="display:flex;gap:6px;align-items:center"><button onclick="addOppRosterRow('evMetaOppRosterRows_${evId}')" style="flex:1;padding:4px 8px;border:1px dashed rgba(100,150,200,0.4);border-radius:6px;background:none;color:#94A3B8;font-size:11px;cursor:pointer">+ 인원 추가</button><button onclick="saveOppRoster('${evId}')" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">명단 저장</button></div></div>`:'';
+  const adminMetaEdit=canAdministerEvent?`<div style="margin-top:6px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select onchange="saveEvMeta('${evId}','status',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;cursor:pointer"><option value="upcoming"${ev.status==='upcoming'?' selected':''}>예정</option><option value="ongoing"${ev.status==='ongoing'?' selected':''}>진행중</option><option value="done"${ev.status==='done'?' selected':''}>종료</option></select>${opponentAdminFields}</div>${opponentRosterAdmin}</div>`:'';
 
   const _ec2=document.getElementById('eventDetailContent');
   const eventCategory=getEventCategory(ev);
   _ec2.style.background='';
   _ec2.innerHTML=`
     <div class="modal-title">${EV_TYPE_EMOJI[eventCategory]||'🎾'} ${ev.name}</div>
-    ${ev.oppClub?`<div style="font-size:12px;color:#2563EB;margin-top:-6px;margin-bottom:4px">${ev.oppClub}</div>`:''}
+    ${['exchange','friendly'].includes(ev.type)&&ev.oppClub?`<div style="font-size:12px;color:#2563EB;margin-top:-6px;margin-bottom:4px">${ev.oppClub}</div>`:''}
     <div style="margin-bottom:16px">
       <span class="ev-type-badge ${EV_TYPE_BADGE[eventCategory]||''}">${EV_TYPE_LABEL[eventCategory]||eventCategory}</span>
       ${getEventFormatLabel(ev)?`<span style="margin-left:6px;font-size:11px;font-weight:800;color:#475569">${getEventFormatLabel(ev)}</span>`:''}
@@ -5193,7 +5199,7 @@ window.openEventDetail=function(evId, adminContext){
       <div style="font-size:12px;color:#64748B;margin-top:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
       ${ev.desc?`<div style="font-size:13px;color:#78909C;margin-top:8px;line-height:1.6">${ev.desc}</div>`:''}
       ${adminMetaEdit}
-    </div>${partSec}${eventAllocationSec}${freeMatchesSec}${exchangeSec}${resSec}${addRes}
+    </div>${partSec}${couplesPairSec}${eventAllocationSec}${freeMatchesSec}${exchangeSec}${resSec}${addRes}
     <div class="mft"><button class="btn-cancel" style="flex:1" onclick="hide('eventDetailModal')">닫기</button></div>`;
   document.getElementById('eventDetailModal').style.display='flex';
 };
@@ -5595,7 +5601,8 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
   const isFriendly=_ev?.type==='friendly';
   const isMonthly=_ev?.type==='monthly';
   const isMonthlyTeamBattle=isMonthly&&_ev?.monthlyFormat==='teamBattle';
-  const isInternalEvent=isFriendly||isMonthly;
+  const isCouplesLeague=_ev?.type==='special'&&_ev?.specialFormat==='couplesLeague';
+  const isInternalEvent=isFriendly||isMonthly||isCouplesLeague;
   const evDefault=isInternalEvent?'':(defaultOppClub||_ev?.oppClub||'');
   const evDate=_ev?.date||'';
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
@@ -5689,6 +5696,7 @@ window.openEvScoreboard=function(evId, adminContext){
   currentEvView = 'scoreboard';
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const canAdministerEvent=isAdmin&&currentEventAdminContext;
+  const isCouplesScoreEvent=ev.type==='special'&&ev.specialFormat==='couplesLeague';
   const evMatches=ev.matches||[];
   const parts=ev.type==='friendly'?getFriendlyEventAttendees(ev).map(player=>player.name):(ev.participants||[]);
   const allocationParts=['exchange','friendly'].includes(ev.type)?getEventMatchRoster(ev).map(player=>player.name):parts;
@@ -5768,7 +5776,7 @@ window.openEvScoreboard=function(evId, adminContext){
     evMatches.forEach(m=>{
       const s1=m.ourScore, s2=m.oppScore;
       const scored=s1!==null&&s1!==undefined&&s1!==''&&s2!==null&&s2!==undefined&&s2!=='';
-      const onTeam1=(m.ourPair||[]).includes(p),onTeam2=ev.type==='friendly'&&(m.oppPair||[]).includes(p);
+      const onTeam1=(m.ourPair||[]).includes(p),onTeam2=(ev.type==='friendly'||ev.type==='monthly'||isCouplesScoreEvent)&&(m.oppPair||[]).includes(p);
       if((onTeam1||onTeam2)&&scored){
         if(s1===s2)d++;
         else if((onTeam1&&s1>s2)||(onTeam2&&s2>s1))w++;
@@ -5803,7 +5811,7 @@ window.openEvScoreboard=function(evId, adminContext){
   const ourTeamName=isMonthlyTeamBattle?'⚫ 흑팀':'TBS';
   const oppTeamName=isMonthlyTeamBattle?'⚪ 백팀':(ev.oppClub||'상대팀');
   let teamResultSec='';
-  if(evMatches.length>0&&!isMonthlyIndividual){
+  if(evMatches.length>0&&!isMonthlyIndividual&&!isCouplesScoreEvent){
     const mkScore=(w,d,l)=>`<span style="font-size:15px;font-weight:900;color:#059669">${w}승</span>${d?`<span style="font-size:15px;font-weight:900;color:#D97706;margin-left:4px">${d}무</span>`:''}<span style="font-size:15px;font-weight:900;color:#f87171;margin-left:4px">${l}패</span>`;
     const scoreBody=teamTotal>0
       ?`<div style="display:flex;align-items:center;justify-content:center;gap:12px">
@@ -5849,7 +5857,7 @@ window.openEvScoreboard=function(evId, adminContext){
   });
   const oppNames=Object.keys(oppStatMap).sort();
   let oppStatSec='';
-  if(oppNames.length){
+  if(oppNames.length&&!isCouplesScoreEvent){
     const oppStatRows=oppNames.map(p=>{
       const{w,l,d}=oppStatMap[p]; const played=w+l+d;
       if(!played)return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="flex:1;font-size:13px;font-weight:700;color:#2563EB">${p}</span><span style="font-size:11px;color:#64748B">미경기</span></div>`;
@@ -5861,14 +5869,14 @@ window.openEvScoreboard=function(evId, adminContext){
     </div>`;
   }
 
+  const scoreboardOpponentFields=['exchange','friendly'].includes(ev.type)?`<input id="evSbMetaOppClub_${evId}" style="flex:1;min-width:80px;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="상대팀명" value="${(ev.oppClub||'').replace(/"/g,'&quot;')}"><button onclick="saveEvMeta('${evId}','oppClub',document.getElementById('evSbMetaOppClub_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">팀명 저장</button>`:'';
   const adminMetaEditSb=canAdministerEvent?`<div style="margin-top:6px;margin-bottom:12px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
     <select onchange="saveEvMeta('${evId}','status',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;cursor:pointer">
       <option value="upcoming"${ev.status==='upcoming'?' selected':''}>예정</option>
       <option value="ongoing"${ev.status==='ongoing'?' selected':''}>진행중</option>
       <option value="done"${ev.status==='done'?' selected':''}>종료</option>
     </select>
-    <input id="evSbMetaOppClub_${evId}" style="flex:1;min-width:80px;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="상대팀명" value="${(ev.oppClub||'').replace(/"/g,'&quot;')}">
-    <button onclick="saveEvMeta('${evId}','oppClub',document.getElementById('evSbMetaOppClub_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">팀명 저장</button>
+    ${scoreboardOpponentFields}
   </div>`:'';
 
   const _ec=document.getElementById('eventDetailContent');
@@ -5876,7 +5884,7 @@ window.openEvScoreboard=function(evId, adminContext){
   _ec.style.background='';
   _ec.innerHTML=`
     <div class="modal-title">${EV_TYPE_EMOJI[eventCategory]||'🎾'} ${ev.name}</div>
-    ${ev.oppClub?`<div style="font-size:12px;color:#2563EB;margin-top:-6px;margin-bottom:4px">${ev.oppClub}</div>`:''}
+    ${['exchange','friendly'].includes(ev.type)&&ev.oppClub?`<div style="font-size:12px;color:#2563EB;margin-top:-6px;margin-bottom:4px">${ev.oppClub}</div>`:''}
     <div style="font-size:12px;color:#64748B;margin-bottom:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
     ${adminMetaEditSb}
     <div style="margin-bottom:16px">
@@ -5920,7 +5928,7 @@ function buildEvPartCheckRows(evId, filter, currentParts) {
     const inParts = currentParts.includes(p.name);
     const safe = p.name.replace(/'/g, "\\'");
     const gColor = p.gender === 'f' ? 'color:#f9a8d4' : 'color:#1D6FB8';
-    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(35,90,180,0.1)">
+    return `<div class="ev-part-check-row">
       <span style="font-size:13px;font-weight:600;color:#1E293B">
         <span style="${gColor}">${p.gender==='f'?'♀':'♂'}</span> ${p.name}
       </span>
@@ -5931,7 +5939,7 @@ function buildEvPartCheckRows(evId, filter, currentParts) {
       </button>
     </div>`;
   };
-  return `<div style="font-size:10px;color:#6D28D9;font-weight:700;padding:6px 0 2px;letter-spacing:0.5px">🏅 정회원 전체</div>`
+  return `<div style="grid-column:1/-1;font-size:10px;color:#6D28D9;font-weight:700;padding:6px 0 2px;letter-spacing:0.5px">🏅 정회원 전체</div>`
     + memberList.map(renderRow).join('');
 }
 
@@ -5964,7 +5972,12 @@ window.toggleEvPart = async function(evId, name) {
   renderEvPartCheckList(evId);
   if(modalBody)modalBody.scrollTop=savedScroll;
   try{
-    await updateDoc(doc(db, 'events', evId), { participants: parts });
+    const update={participants:parts};
+    if(ev.type==='special'&&ev.specialFormat==='couplesLeague'){
+      update.fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(player=>parts.includes(player)));
+      ev.fixedPairs=update.fixedPairs;
+    }
+    await updateDoc(doc(db, 'events', evId), update);
     requestAnimationFrame(()=>{const body=document.querySelector('#eventDetailModal .modal-bottom');if(body)body.scrollTop=savedScroll;});
   }catch(e){
     alert('참석 변경 실패: '+(e.message||e.code||e));
@@ -5985,6 +5998,61 @@ window.addEvResult=async function(evId){
   openEventDetail(evId);
 };
 
+window.addEventFixedPair=async function(evId){
+  const ev=events.find(event=>event.id===evId);if(!ev)return;
+  const player1=document.getElementById(`fixedPairP1_${evId}`)?.value||'';
+  const player2=document.getElementById(`fixedPairP2_${evId}`)?.value||'';
+  if(!player1||!player2){alert('고정 페어 선수 2명을 선택해주세요.');return;}
+  if(player1===player2){alert('서로 다른 선수 2명을 선택해주세요.');return;}
+  const pairs=getEventFixedPairs(ev);
+  const used=new Set(pairs.flatMap(pair=>pair.players));
+  if(used.has(player1)||used.has(player2)){alert('이미 다른 고정 페어에 등록된 선수가 있어요.');return;}
+  const fixedPairs=[...pairs,{id:`couple-${Date.now().toString(36)}`,players:[player1,player2]}];
+  try{
+    ev.fixedPairs=fixedPairs;
+    await updateDoc(doc(db,'events',evId),{fixedPairs});
+    openEventDetail(evId);
+  }catch(error){alert('고정 페어 저장 실패: '+(error.message||error.code||error));}
+};
+
+window.removeEventFixedPair=async function(evId,pairId){
+  const ev=events.find(event=>event.id===evId);if(!ev)return;
+  const fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.id!==pairId);
+  try{
+    ev.fixedPairs=fixedPairs;
+    await updateDoc(doc(db,'events',evId),{fixedPairs});
+    openEventDetail(evId);
+  }catch(error){alert('고정 페어 삭제 실패: '+(error.message||error.code||error));}
+};
+
+window.generateCouplesLeagueMatches=async function(evId){
+  const ev=events.find(event=>event.id===evId);if(!ev)return;
+  const participantSet=new Set(ev.participants||[]);
+  const fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(name=>participantSet.has(name)));
+  if(fixedPairs.length<2){alert('리그 대진을 만들려면 고정 페어가 2팀 이상 필요해요.');return;}
+  if((ev.matches||[]).length&&!confirm('기존 대진과 점수를 고정 페어 리그 대진으로 교체할까요?'))return;
+  const rotation=fixedPairs.map(pair=>({...pair}));
+  if(rotation.length%2)rotation.push(null);
+  const matches=[];
+  const roundCount=rotation.length-1;
+  for(let round=1;round<=roundCount;round++){
+    let court=1;
+    for(let index=0;index<rotation.length/2;index++){
+      const team1=rotation[index],team2=rotation[rotation.length-1-index];
+      if(!team1||!team2)continue;
+      const genderInfo=calcEventMatchGenderInfo(ev,...team1.players,...team2.players);
+      matches.push({id:`couples-${Date.now().toString(36)}-${round}-${court}`,ourPair:[...team1.players],oppPair:[...team2.players],oppClub:'',ourScore:null,oppScore:null,round,court,courtType:genderInfo.type||'잡복',genderNotice:genderInfo.notice,matchKind:'official',specialFormat:'couplesLeague',fixedPairMatch:true});
+      court++;
+    }
+    rotation.splice(1,0,rotation.pop());
+  }
+  try{
+    ev.matches=matches;
+    await updateDoc(doc(db,'events',evId),{matches,couplesGeneratedAt:new Date().toISOString()});
+    openEventDetail(evId);
+  }catch(error){alert('고정 페어 리그 대진 생성 실패: '+(error.message||error.code||error));}
+};
+
 window.openAddEvMatch=function(evId,roundNum){
   const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
   if(!isMember){alert('로그인한 정회원만 즉석 매치를 추가할 수 있어요');return;}
@@ -5997,6 +6065,8 @@ window.openAddEvMatch=function(evId,roundNum){
   document.getElementById('addEvMatchInfo').textContent=`${roundNum}라운드에 즉석 매치 추가`;
   const isClubMatch=ev.type==='exchange';
   const isMonthlyTeamBattle=ev.type==='monthly'&&ev.monthlyFormat==='teamBattle';
+  const isCouplesLeague=ev.type==='special'&&ev.specialFormat==='couplesLeague';
+  if(isCouplesLeague&&getEventFixedPairs(ev).length<2){alert('먼저 고정 페어를 2팀 이상 등록해주세요.');return;}
   if(isMonthlyTeamBattle&&(!(ev.monthlyTeams?.black||[]).length||!(ev.monthlyTeams?.white||[]).length)){
     alert('먼저 관리자 센터에서 흑백대전 자동 구성을 실행해 팀을 편성해주세요.');
     return;
@@ -6013,8 +6083,8 @@ window.openAddEvMatch=function(evId,roundNum){
   document.getElementById('addEvO2').innerHTML=`<option value="">${noOpponent?'상대팀 명단을 먼저 저장하세요':isClubMatch?'상대팀 선수2':'팀2 선수2'}</option>${team2Opts}`;
   document.getElementById('addEvO1').disabled=noOpponent;
   document.getElementById('addEvO2').disabled=noOpponent;
-  document.getElementById('addEvTeam1Label').textContent=isClubMatch?'우리팀 (TBS 참석자 2명 선택)':'팀1 (전체 참석자에서 2명 선택)';
-  document.getElementById('addEvTeam2Label').textContent=noOpponent?'상대팀 명단이 없습니다 — 관리자 화면에서 명단 저장 후 선택':isClubMatch?`${ev.oppClub||'상대팀'} (등록 명단에서 2명 선택)`:'팀2 (우리팀·상대팀 전체 참석자에서 2명 선택)';
+  document.getElementById('addEvTeam1Label').textContent=isClubMatch?'우리팀 (TBS 참석자 2명 선택)':isCouplesLeague?'팀1 고정 페어 선택':'팀1 (전체 참석자에서 2명 선택)';
+  document.getElementById('addEvTeam2Label').textContent=noOpponent?'상대팀 명단이 없습니다 — 관리자 화면에서 명단 저장 후 선택':isClubMatch?`${ev.oppClub||'상대팀'} (등록 명단에서 2명 선택)`:isCouplesLeague?'팀2 고정 페어 선택':'팀2 (우리팀·상대팀 전체 참석자에서 2명 선택)';
   const clubEl=document.getElementById('addEvOClub');
   clubEl.value=ev.oppClub||'';
   clubEl.style.display=isClubMatch?'block':'none';
@@ -6034,6 +6104,10 @@ window.saveAddEvMatch=async function(){
   if(!p1||!p2||!opp1||!opp2){alert('양쪽 팀 선수 2명씩 모두 선택하세요');return;}
   const selected=[p1,p2,opp1,opp2];
   if(new Set(selected).size!==selected.length){alert('한 선수를 양쪽 팀에 중복으로 선택할 수 없어요');return;}
+  if(ev.type==='special'&&ev.specialFormat==='couplesLeague'){
+    const pairKeys=new Set(getEventFixedPairs(ev).map(pair=>[...pair.players].sort().join('|')));
+    if(!pairKeys.has([p1,p2].sort().join('|'))||!pairKeys.has([opp1,opp2].sort().join('|'))){alert('부부&커플대전에서는 등록된 고정 페어 조합만 선택할 수 있어요.');return;}
+  }
   const oppClub=document.getElementById('addEvOClub').value.trim();
   const genderInfo=calcEventMatchGenderInfo(ev,p1,p2,opp1,opp2);
   const newMatch={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ourPair:[p1,p2],oppPair:[opp1,opp2],oppClub:ev.type==='exchange'?oppClub:'',ourScore:null,oppScore:null,round:roundNum,courtType:genderInfo.type||'잡복',genderNotice:genderInfo.notice,matchKind:'instant',createdByName:isAdmin?'관리자':(myClaim?.name||'정회원')};
@@ -6424,7 +6498,10 @@ window.saveFreeMatchScore=async function(evId,matchId,s1raw,s2raw){
 
 window.removeEvPart=async function(evId,name){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
-  await updateDoc(doc(db,'events',evId),{participants:(ev.participants||[]).filter(p=>p!==name)});
+  const participants=(ev.participants||[]).filter(p=>p!==name);
+  const update={participants};
+  if(ev.type==='special'&&ev.specialFormat==='couplesLeague')update.fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(player=>participants.includes(player)));
+  await updateDoc(doc(db,'events',evId),update);
   openEventDetail(evId);
 };
 
