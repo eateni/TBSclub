@@ -11200,8 +11200,11 @@ window.openEvScore=function(evId, mi){
   const clubLabel=m.oppClub||(ev.oppClub||'');
   document.getElementById('scoreInfo').innerHTML=
     `<strong style="color:#1E293B">${ourStr}</strong> <span style="color:#64748B">vs</span> <strong style="color:#2563EB">${oppStr}${clubLabel?` <span style="font-size:10px;color:#64748B">(${clubLabel})</span>`:''}</strong>`;
-  document.getElementById('s1Label').textContent='우리팀 스코어';
-  document.getElementById('s2Label').textContent='상대팀 스코어';
+  const isCouplesMatch=m.fixedPairMatch||(!!(ev.type==='special'&&ev.specialFormat==='couplesLeague'));
+  const ourLabel=isCouplesMatch?((m.ourPair||[]).filter(Boolean).join(' · ')||'우리팀')+' 스코어':'우리팀 스코어';
+  const oppLabel=isCouplesMatch?((m.oppPair||[]).filter(Boolean).join(' · ')||'상대팀')+' 스코어':'상대팀 스코어';
+  document.getElementById('s1Label').textContent=ourLabel;
+  document.getElementById('s2Label').textContent=oppLabel;
   setScoreMatchKind(m.matchKind==='instant'?'instant':'official','교류·이벤트전 · 스코어와 포·백을 입력하세요');
   const done=m.ourScore!==null&&m.ourScore!==undefined;
   document.getElementById('s1').value=done?m.ourScore:'';
@@ -11306,7 +11309,7 @@ window.submitScore=async function(){
     });
     const editorName = getSeasonScoreEditorName();
     matches[mi]={...m,ourScore:s1,oppScore:s2,positions:evPos,
-      enteredBy:m.enteredBy||editorName, editedBy:m.enteredBy?editorName:undefined};
+      enteredBy:m.enteredBy||editorName, editedBy:m.enteredBy?editorName:null};
     if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon auth:',e.code);}}
     try{
       await updateDoc(doc(db,'events',evId),{matches});
