@@ -5848,6 +5848,34 @@ window.openEvScoreboard=function(evId, adminContext){
     monthlyRankSec=`<div style="margin-bottom:16px;padding:12px 14px;background:#F0FDF4;border:1px solid #A7F3D0;border-radius:12px"><div style="font-size:13px;font-weight:900;color:#047857;margin-bottom:8px">🏅 개인 리그 실시간 순위 <span style="font-size:9px;color:#64748B;font-weight:500">승 3점 · 무 1점 · 동점 시 득실차</span></div>${ranking.map((row,index)=>`<div style="display:grid;grid-template-columns:28px 1fr auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(16,185,129,.14);font-size:12px"><b style="color:${index===0?'#D97706':'#64748B'}">${index+1}위</b><b>${row.name}</b><span style="color:#047857;font-weight:900">${row.points}점</span><span style="color:#64748B">${row.w}승 ${row.d}무 ${row.l}패 · ${row.scored-row.conceded>=0?'+':''}${row.scored-row.conceded}</span></div>`).join('')}</div>`;
   }
 
+  let couplesRankSec='';
+  if(isCouplesScoreEvent){
+    const cFixedPairs=getEventFixedPairs(ev);
+    const pairStatsMap={};
+    cFixedPairs.forEach(pair=>{
+      const key=[...pair.players].sort().join('|');
+      pairStatsMap[key]={players:pair.players,w:0,d:0,l:0,scored:0,conceded:0,games:0};
+    });
+    evMatches.forEach(m=>{
+      const s1=m.ourScore,s2=m.oppScore;
+      const hasScore=s1!==null&&s1!==undefined&&s1!==''&&s2!==null&&s2!==undefined&&s2!=='';
+      if(!hasScore)return;
+      const n1=Number(s1),n2=Number(s2);
+      const ourKey=[...(m.ourPair||[])].sort().join('|');
+      const oppKey=[...(m.oppPair||[])].sort().join('|');
+      if(pairStatsMap[ourKey]){const p=pairStatsMap[ourKey];p.games++;p.scored+=n1;p.conceded+=n2;if(n1>n2)p.w++;else if(n1===n2)p.d++;else p.l++;}
+      if(pairStatsMap[oppKey]){const p=pairStatsMap[oppKey];p.games++;p.scored+=n2;p.conceded+=n1;if(n2>n1)p.w++;else if(n2===n1)p.d++;else p.l++;}
+    });
+    const pairRanking=Object.values(pairStatsMap).sort((a,b)=>b.w-a.w||((b.scored-b.conceded)-(a.scored-a.conceded))||a.players.join('').localeCompare(b.players.join('')));
+    const pairRows=pairRanking.length?pairRanking.map((row,index)=>{
+      const diff=row.scored-row.conceded;
+      const rankColor=index===0&&row.games>0?'#D97706':'#64748B';
+      const diffColor=diff>0?'#059669':diff<0?'#f87171':'#94A3B8';
+      return `<div style="display:grid;grid-template-columns:28px 1fr auto auto;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid rgba(251,146,60,.2);font-size:12px"><b style="color:${rankColor}">${index+1}위</b><b style="color:#1E293B">${row.players.join(' · ')}</b><span style="color:#64748B">${row.w}승 ${row.d}무 ${row.l}패</span><span style="color:${diffColor}">${diff>=0?'+':''}${diff}</span></div>`;
+    }).join(''):'<div style="font-size:11px;color:#64748B;padding:8px 0">아직 경기 결과가 없어요</div>';
+    couplesRankSec=`<div style="margin-bottom:16px;padding:12px 14px;background:#FFF7ED;border:1px solid #FDBA74;border-radius:12px"><div style="font-size:13px;font-weight:900;color:#9A3412;margin-bottom:8px">🏆 페어 순위 <span style="font-size:9px;color:#64748B;font-weight:500">승수 우선 · 동점 시 득실차</span></div>${pairRows}</div>`;
+  }
+
   // [2] 상대팀 선수별 기록 (oppPair 기준 역산)
   const oppStatMap={};
   evMatches.forEach(m=>{
@@ -5898,6 +5926,7 @@ window.openEvScoreboard=function(evId, adminContext){
     </div>
     ${teamResultSec}
     ${monthlyRankSec}
+    ${couplesRankSec}
     ${gameCntSec}
     ${statSec}
     ${oppStatSec}
