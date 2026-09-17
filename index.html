@@ -1489,7 +1489,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <option value="handicap">⚖️ 핸디캡전 · 실력 차이에 따라 시작 점수 부여</option>
         <option value="luckyDraw">🎲 복불복전 · 경기 방식과 페어를 추첨</option>
         <option value="foreBack">🎾 포·백 조합전 · 포핸드·백핸드 성향으로 페어 구성</option>
-        <option value="couplesLeague">💑 부부&커플대전 · 부부·커플 페어 지정 후 리그전</option>
+        <option value="couplesLeague">🤝 파트너십 리그 · 지정페어 후 리그전</option>
       </select>
       <div style="font-size:10px;color:#64748B;margin-top:5px;line-height:1.55">특별전은 이번 단계에서 진행 방식 선택·저장·표시까지만 제공합니다.</div>
     </div>
@@ -4841,7 +4841,7 @@ const EV_TYPE_EMOJI={exchange:'🤝',friendly:'🤝',monthly:'🏅',special:'⭐
 const EV_STATUS_LABEL={upcoming:'예정',ongoing:'진행중',done:'완료'};
 const EV_STATUS_CLASS={upcoming:'st-upcoming',ongoing:'st-ongoing',done:'st-done'};
 const MONTHLY_FORMAT_LABEL={individualLeague:'🏅 개인 리그전',teamBattle:'⚫⚪ 팀 흑백대전',ybobBattle:'🟡🔵🟠⚫ 팀 YBOB 대전'};
-const SPECIAL_FORMAT_LABEL={kingOfCourt:'👑 킹 오브 코트',genderBattle:'🚻 성별 대항전',handicap:'⚖️ 핸디캡전',luckyDraw:'🎲 복불복전',foreBack:'🎾 포·백 조합전',couplesLeague:'💑 부부&커플대전'};
+const SPECIAL_FORMAT_LABEL={kingOfCourt:'👑 킹 오브 코트',genderBattle:'🚻 성별 대항전',handicap:'⚖️ 핸디캡전',luckyDraw:'🎲 복불복전',foreBack:'🎾 포·백 조합전',couplesLeague:'🤝 파트너십 리그'};
 function getEventCategory(ev){
   if(ev?.eventCategory)return ev.eventCategory;
   return ev?.type==='friendly'?'exchange':(ev?.type||'special');
@@ -4869,6 +4869,7 @@ window.saveEvMeta = async function(evId, field, value) {
   if(field==='oppClub'){ update.oppClub=value.trim(); ev.oppClub=update.oppClub; }
   else if(field==='oppRoster'){ update.oppRoster=value; ev.oppRoster=value; }
   else if(field==='status'){ update.status=value; ev.status=value; }
+  else if(field==='name'){ const trimmed=value.trim(); if(!trimmed)return; update.name=trimmed; ev.name=trimmed; }
   await updateDoc(doc(db,'events',evId), update);
   renderEvents();
   renderAdminEvents();
@@ -5188,7 +5189,7 @@ window.openEventDetail=function(evId, adminContext){
 
   const opponentAdminFields=['exchange','friendly'].includes(ev.type)?`<div style="display:flex;gap:6px;align-items:center;flex:1;min-width:260px"><input id="evMetaOppClub_${evId}" style="flex:1;min-width:80px;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="상대팀명" value="${(ev.oppClub||'').replace(/"/g,'&quot;')}"><button onclick="saveEvMeta('${evId}','oppClub',document.getElementById('evMetaOppClub_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">팀명 저장</button></div>`:'';
   const opponentRosterAdmin=['exchange','friendly'].includes(ev.type)?`<div style="margin-top:6px"><div style="font-size:10px;color:#94A3B8;margin-bottom:4px">상대팀 명단</div><div id="evMetaOppRosterRows_${evId}" style="margin-bottom:4px">${(ev.oppRoster||[]).map(function(e){var r=typeof e==='string'?{name:e,gender:'',tennisStartDate:'',months:null}:{name:e.name||'',gender:e.gender||'',tennisStartDate:e.tennisStartDate||'',months:e.months};return buildOppRosterRowHtml(r.name,r.gender,r.tennisStartDate||tennisStartDateFromMonths(r.months));}).join('')}</div><div style="display:flex;gap:6px;align-items:center"><button onclick="addOppRosterRow('evMetaOppRosterRows_${evId}')" style="flex:1;padding:4px 8px;border:1px dashed rgba(100,150,200,0.4);border-radius:6px;background:none;color:#94A3B8;font-size:11px;cursor:pointer">+ 인원 추가</button><button onclick="saveOppRoster('${evId}')" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">명단 저장</button></div></div>`:'';
-  const adminMetaEdit=canAdministerEvent?`<div style="margin-top:6px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select onchange="saveEvMeta('${evId}','status',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;cursor:pointer"><option value="upcoming"${ev.status==='upcoming'?' selected':''}>예정</option><option value="ongoing"${ev.status==='ongoing'?' selected':''}>진행중</option><option value="done"${ev.status==='done'?' selected':''}>종료</option></select>${opponentAdminFields}</div>${opponentRosterAdmin}</div>`:'';
+  const adminMetaEdit=canAdministerEvent?`<div style="margin-top:6px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select onchange="saveEvMeta('${evId}','status',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;cursor:pointer"><option value="upcoming"${ev.status==='upcoming'?' selected':''}>예정</option><option value="ongoing"${ev.status==='ongoing'?' selected':''}>진행중</option><option value="done"${ev.status==='done'?' selected':''}>종료</option></select>${opponentAdminFields}</div><div style="display:flex;gap:6px;align-items:center;margin-top:6px"><input id="evMetaName_${evId}" style="flex:1;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="이벤트 이름" value="${(ev.name||'').replace(/"/g,'&quot;')}"><button onclick="saveEvMeta('${evId}','name',document.getElementById('evMetaName_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">이름 저장</button></div>${opponentRosterAdmin}</div>`:'';
 
   const _ec2=document.getElementById('eventDetailContent');
   const eventCategory=getEventCategory(ev);
@@ -6109,7 +6110,7 @@ window.saveAddEvMatch=async function(){
   if(new Set(selected).size!==selected.length){alert('한 선수를 양쪽 팀에 중복으로 선택할 수 없어요');return;}
   if(ev.type==='special'&&ev.specialFormat==='couplesLeague'){
     const pairKeys=new Set(getEventFixedPairs(ev).map(pair=>[...pair.players].sort().join('|')));
-    if(!pairKeys.has([p1,p2].sort().join('|'))||!pairKeys.has([opp1,opp2].sort().join('|'))){alert('부부&커플대전에서는 등록된 고정 페어 조합만 선택할 수 있어요.');return;}
+    if(!pairKeys.has([p1,p2].sort().join('|'))||!pairKeys.has([opp1,opp2].sort().join('|'))){alert('파트너십 리그에서는 등록된 고정 페어 조합만 선택할 수 있어요.');return;}
   }
   const oppClub=document.getElementById('addEvOClub').value.trim();
   const genderInfo=calcEventMatchGenderInfo(ev,p1,p2,opp1,opp2);
