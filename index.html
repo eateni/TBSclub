@@ -591,7 +591,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.11.0</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.11.1</div>
     </div>
   </div>
 
@@ -600,7 +600,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.11.0</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.11.1</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1606,7 +1606,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.11.0';
+const APP_VERSION = '1.11.1';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4091,7 +4091,7 @@ function renderDays() {
       const matchesHtml = (r.matches||[]).map(m => {
         // 랠리 카드는 별도로 표시
         if (m.isRally || m.tag === '랠리') {
-          const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
+          const delBtn=isAdmin?`<button class="btn-del-sm" style="padding:5px 8px;border:1px solid #FCA5A5;border-radius:7px;background:#FFF1F2;color:#DC2626;font-weight:800" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">🗑 경기 삭제</button>`:'';
           return `<div class="match-card" style="border-color:rgba(52,211,153,0.3);background:rgba(20,80,30,0.2)">
             <div class="match-ct"><span style="color:#059669">${m.court||''} <span style="font-size:10px;color:#059669">[⏳ 대기]</span></span></div>
             <div style="text-align:center;padding:8px 4px">
@@ -4119,7 +4119,7 @@ function renderDays() {
         const liveBtn = !m.done && (isAdmin || isRegularMember)
           ? `<button onclick="openLiveScore('${day.id}','${rIdx}','${m.id}')" title="실시간 스코어" style="background:none;border:1px solid rgba(52,211,153,0.4);border-radius:7px;color:#059669;font-size:12px;cursor:pointer;padding:2px 9px;flex-shrink:0">🔴 라이브</button>`
           : '';
-        const delBtn=isAdmin?`<button class="btn-del-sm" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">✕ 삭제</button>`:'';
+        const delBtn=isAdmin?`<button class="btn-del-sm" style="padding:5px 8px;border:1px solid #FCA5A5;border-radius:7px;background:#FFF1F2;color:#DC2626;font-weight:800" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">🗑 경기 삭제</button>`:'';
         const editBtn=(isAdmin||isRegularMember)&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
         const pairEditBtn=isAdmin&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식'?`<button class="btn-del-sm" style="color:#059669" onclick="openPairEdit('${day.id}','${rIdx}','${m.id}')">✏ 페어</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
@@ -5238,7 +5238,7 @@ window.openEventDetail=function(evId, adminContext){
     const pairAction=isCouplesLeague?'generateCouplesLeagueMatches':ev.type==='friendly'?'showEvFriendlyPairConfig':ev.type==='monthly'?'showEvMonthlyPairConfig':'showEvExchangePairConfig';
     const pairLabel=isCouplesLeague?'고정 페어 리그 대진 생성':ev.type==='friendly'?'친선 대진 자동 구성':ev.type==='monthly'?(ev.monthlyFormat==='teamBattle'?'흑백대전 자동 구성':ev.monthlyFormat==='ybobBattle'?'YBOB 대전 구성 준비 중':'개인 리그 대진 구성'):'페어 짜기';
     const pairBtn=canAdministerEvent&&pairPoolCount>=(isCouplesLeague?2:4)
-      ?`<button onclick="${pairAction}('${evId}')" style="width:100%;padding:9px;background:rgba(167,139,250,0.85);border:none;border-radius:9px;color:#1a0f2e;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:12px">🎲 ${pairLabel}</button>`
+      ?`<button onclick="${pairAction}('${evId}')" style="width:100%;padding:10px;background:${evMatches.length?'#FFF7ED':'rgba(167,139,250,0.85)'};border:${evMatches.length?'1px solid #FDBA74':'none'};border-radius:9px;color:${evMatches.length?'#9A3412':'#1a0f2e'};font-size:12px;font-weight:900;cursor:pointer;margin-bottom:12px">${evMatches.length?'🔄 대진표 다시 작성':'🎲 '+pairLabel}</button>${evMatches.length?'<div style="font-size:10px;color:#9A3412;margin:-7px 2px 10px;line-height:1.45">새 대진을 저장하면 기존 대진과 입력된 점수는 모두 교체됩니다.</div>':''}`
       :'';
     const topInstantBtn=isMember
       ?`<button onclick="openAddEvMatch('${evId}',${latestRound})" style="width:100%;padding:9px;margin-bottom:10px;background:#7C3AED;border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:900;cursor:pointer">⚡ 즉석매치 추가</button>`
@@ -5791,7 +5791,7 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
     </div>
     <button onclick="saveEvPairEdit('${evId}',${mi})" style="width:100%;padding:6px;background:rgba(192,132,252,0.15);border:1px solid rgba(192,132,252,0.4);border-radius:7px;color:#c084fc;font-size:12px;font-weight:700;cursor:pointer">저장</button>
   </div>`:'';
-  const delBtn=isAdmin?`<button onclick="deleteEvMatch('${evId}',${mi})" title="매치 삭제" style="position:absolute;top:5px;right:6px;background:none;border:none;color:rgba(248,113,113,0.4);font-size:15px;line-height:1;cursor:pointer;padding:2px 4px">×</button>`:'';
+  const delBtn=isAdmin?`<button onclick="deleteEvMatch('${evId}',${mi})" title="이 경기와 입력된 점수 삭제" style="position:absolute;top:7px;right:8px;background:#FFF1F2;border:1px solid #FCA5A5;border-radius:7px;color:#DC2626;font-size:10px;line-height:1;cursor:pointer;padding:5px 7px;font-weight:900">🗑 경기 삭제</button>`:'';
   const courtLabel=m.court?`${m.court}게임${m.courtType?' · '+m.courtType:''}`:'';
   const isInstant=m.matchKind==='instant';
   const kindBadge=isInstant?`<span class="match-kind-badge match-kind-instant">⚡ 즉석 매치</span>`:isMonthly?`<span class="badge-monthly" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:999px">${isMonthlyTeamBattle?'⚫⚪ 흑백대전':'🏅 개인 리그'}</span>`:isFriendly?`<span class="badge-friendly" style="font-size:9px;font-weight:800;padding:2px 7px;border-radius:999px">🎾 친선 매치</span>`:`<span class="match-kind-badge match-kind-official">🛡️ 공식 대진</span>`;
@@ -6317,16 +6317,22 @@ window.saveAddEvMatchFromFm=async function(evId){
 };
 
 window.deleteEvMatch=async function(evId,mi){
-  if(!confirm('이 매치를 삭제할까요?'))return;
+  if(!isAdmin){alert('경기 삭제는 관리자만 할 수 있어요.');return;}
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const matches=[...(ev.matches||[])];
+  const match=matches[mi];
+  if(!match)return;
+  const hasScore=match.ourScore!==null&&match.ourScore!==undefined&&match.ourScore!==''&&match.oppScore!==null&&match.oppScore!==undefined&&match.oppScore!=='';
+  const summary=`${(match.ourPair||[]).join(' / ')||'팀1'} vs ${(match.oppPair||[]).join(' / ')||'팀2'}`;
+  if(!confirm(`${summary} 경기를 삭제할까요?${hasScore?'\n\n입력된 점수와 해당 경기의 전적도 함께 사라집니다.':''}`))return;
   matches.splice(mi,1);
   try{
     await updateDoc(doc(db,'events',evId),{matches});
     ev.matches=matches;
-    openEventDetail(evId);
+    if(currentEvView==='scoreboard')openEvScoreboard(evId,true);
+    else openEventDetail(evId,true);
   }catch(e){
-    alert('삭제 실패: '+e.code);
+    alert('경기 삭제에 실패했어요.\n\n'+(e.message||e.code||e));
   }
 };
 
