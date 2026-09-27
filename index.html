@@ -591,7 +591,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.1</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.2</div>
     </div>
   </div>
 
@@ -600,7 +600,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.1</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.2</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1606,7 +1606,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.13.1';
+const APP_VERSION = '1.13.2';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4977,6 +4977,9 @@ function getEventFormatLabel(ev){
   if(category==='special')return SPECIAL_FORMAT_LABEL[ev.specialFormat]||'';
   return '';
 }
+function isPartnershipLeagueEvent(ev){
+  return !!ev && ev.specialFormat==='couplesLeague' && getEventCategory(ev)==='special';
+}
 function getEventFixedPairs(ev){
   return (ev?.fixedPairs||[]).map((pair,index)=>{
     const players=Array.isArray(pair)?pair:(pair.players||[pair.player1,pair.player2]);
@@ -5072,7 +5075,7 @@ window.openEventDetail=function(evId, adminContext){
     <div class="part-chips">${eventOppAttendees.map(player=>`<span class="part-chip" style="border-color:#DDD6FE;background:#fff">${player.gender==='f'?'♀️':player.gender==='m'?'♂️':''} ${player.name}${player.tennisStartDate?` · 시작 ${player.tennisStartDate.replace('-','.')}`:''}${player.months!=null?` · 구력 ${formatTennisMonths(player.months)}`:''}</span>`).join('')||'<span style="color:#64748B;font-size:11px">상대팀 명단이 아직 등록되지 않았어요.</span>'}</div>
   </div>`:'';
   const monthlyTeamsSec=ev.type==='monthly'&&ev.monthlyFormat==='teamBattle'&&ev.monthlyTeams?`<div class="friendly-roster-summary" style="margin-top:12px"><div class="friendly-roster-team" style="border-color:#475569"><b style="color:#1E293B">⚫ 흑팀 · ${(ev.monthlyTeams.black||[]).length}명</b><div class="friendly-roster-names">${(ev.monthlyTeams.black||[]).join(' · ')||'대진 생성 시 자동 편성'}</div></div><div class="friendly-roster-team"><b>⚪ 백팀 · ${(ev.monthlyTeams.white||[]).length}명</b><div class="friendly-roster-names">${(ev.monthlyTeams.white||[]).join(' · ')||'대진 생성 시 자동 편성'}</div></div></div>`:'';
-  const isCouplesLeague=ev.type==='special'&&ev.specialFormat==='couplesLeague';
+  const isCouplesLeague=isPartnershipLeagueEvent(ev);
   const fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(name=>parts.includes(name)));
   const pairedNames=new Set(fixedPairs.flatMap(pair=>pair.players));
   const fixedPairOptions=parts.filter(name=>!pairedNames.has(name)).map(name=>`<option value="${name.replace(/"/g,'&quot;')}">${name}</option>`).join('');
@@ -5719,7 +5722,7 @@ window.shareDayHighlightCard = async function(dayId) {
 
 // 파트너십 리그는 고정 페어 단위로 결과를 집계해 별도 우승 카드로 만든다.
 function getPartnershipEventHighlightData(ev) {
-  if (!ev || ev.type !== 'special' || ev.specialFormat !== 'couplesLeague') return null;
+  if (!isPartnershipLeagueEvent(ev)) return null;
   const pairs = {};
   const addPair = players => {
     const names = (players || []).filter(Boolean).slice(0,2);
@@ -5731,9 +5734,10 @@ function getPartnershipEventHighlightData(ev) {
   getEventFixedPairs(ev).forEach(pair => addPair(pair.players));
   let completed = 0;
   (ev.matches || []).forEach(match => {
-    const score1 = Number(match.ourScore), score2 = Number(match.oppScore);
-    if (match.ourScore === null || match.ourScore === undefined || match.ourScore === '' ||
-        match.oppScore === null || match.oppScore === undefined || match.oppScore === '' ||
+    const rawScore1=match.ourScore ?? match.score1, rawScore2=match.oppScore ?? match.score2;
+    const score1 = Number(rawScore1), score2 = Number(rawScore2);
+    if (rawScore1 === null || rawScore1 === undefined || rawScore1 === '' ||
+        rawScore2 === null || rawScore2 === undefined || rawScore2 === '' ||
         !Number.isFinite(score1) || !Number.isFinite(score2)) return;
     const apply = (players, mine, theirs) => {
       const row = addPair(players); if (!row) return;
@@ -5742,8 +5746,8 @@ function getPartnershipEventHighlightData(ev) {
       else if (mine === theirs) { row.draws++; row.points++; }
       else row.losses++;
     };
-    apply(match.ourPair, score1, score2);
-    apply(match.oppPair, score2, score1);
+    apply(match.ourPair||match.team1, score1, score2);
+    apply(match.oppPair||match.team2, score2, score1);
     completed++;
   });
   if (!completed) return null;
@@ -5756,11 +5760,13 @@ function getPartnershipEventHighlightData(ev) {
 
 function getPartnershipEventHighlightSummary(ev, data) {
   if (!ev || !data) return '';
-  const completedMatches=(ev.matches||[]).filter(match =>
-    match.ourScore !== null && match.ourScore !== undefined && match.ourScore !== '' &&
-    match.oppScore !== null && match.oppScore !== undefined && match.oppScore !== '' &&
-    Number.isFinite(Number(match.ourScore)) && Number.isFinite(Number(match.oppScore)));
-  const closeGames=completedMatches.filter(match => Math.abs(Number(match.ourScore)-Number(match.oppScore))===1).length;
+  const completedMatches=(ev.matches||[]).filter(match => {
+    const score1=match.ourScore ?? match.score1, score2=match.oppScore ?? match.score2;
+    return score1 !== null && score1 !== undefined && score1 !== '' &&
+      score2 !== null && score2 !== undefined && score2 !== '' &&
+      Number.isFinite(Number(score1)) && Number.isFinite(Number(score2));
+  });
+  const closeGames=completedMatches.filter(match => Math.abs(Number(match.ourScore ?? match.score1)-Number(match.oppScore ?? match.score2))===1).length;
   const unbeaten=data.ranking.filter(pair=>pair.losses===0).length;
   const champion=`${data.winner.players.join('·')} 페어가 ${data.winner.wins}승 ${data.winner.draws}무 ${data.winner.losses}패로 정상에 올랐습니다.`;
   const race=data.runnerUp
@@ -5872,7 +5878,7 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
   const isFriendly=_ev?.type==='friendly';
   const isMonthly=_ev?.type==='monthly';
   const isMonthlyTeamBattle=isMonthly&&_ev?.monthlyFormat==='teamBattle';
-  const isCouplesLeague=_ev?.type==='special'&&_ev?.specialFormat==='couplesLeague';
+  const isCouplesLeague=isPartnershipLeagueEvent(_ev);
   const isInternalEvent=isFriendly||isMonthly||isCouplesLeague;
   const evDefault=isInternalEvent?'':(defaultOppClub||_ev?.oppClub||'');
   const evDate=_ev?.date||'';
@@ -5967,7 +5973,7 @@ window.openEvScoreboard=function(evId, adminContext){
   currentEvView = 'scoreboard';
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const canAdministerEvent=isAdmin&&currentEventAdminContext;
-  const isCouplesScoreEvent=ev.type==='special'&&ev.specialFormat==='couplesLeague';
+  const isCouplesScoreEvent=isPartnershipLeagueEvent(ev);
   const evMatches=ev.matches||[];
   const parts=ev.type==='friendly'?getFriendlyEventAttendees(ev).map(player=>player.name):(ev.participants||[]);
   const allocationParts=['exchange','friendly'].includes(ev.type)?getEventMatchRoster(ev).map(player=>player.name):parts;
@@ -6283,7 +6289,7 @@ window.toggleEvPart = async function(evId, name) {
   if(modalBody)modalBody.scrollTop=savedScroll;
   try{
     const update={participants:parts};
-    if(ev.type==='special'&&ev.specialFormat==='couplesLeague'){
+    if(isPartnershipLeagueEvent(ev)){
       update.fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(player=>parts.includes(player)));
       ev.fixedPairs=update.fixedPairs;
     }
@@ -6375,7 +6381,7 @@ window.openAddEvMatch=function(evId,roundNum){
   document.getElementById('addEvMatchInfo').textContent=`${roundNum}라운드에 즉석 매치 추가`;
   const isClubMatch=ev.type==='exchange';
   const isMonthlyTeamBattle=ev.type==='monthly'&&ev.monthlyFormat==='teamBattle';
-  const isCouplesLeague=ev.type==='special'&&ev.specialFormat==='couplesLeague';
+  const isCouplesLeague=isPartnershipLeagueEvent(ev);
   if(isCouplesLeague&&getEventFixedPairs(ev).length<2){alert('먼저 고정 페어를 2팀 이상 등록해주세요.');return;}
   if(isMonthlyTeamBattle&&(!(ev.monthlyTeams?.black||[]).length||!(ev.monthlyTeams?.white||[]).length)){
     alert('먼저 관리자 센터에서 흑백대전 자동 구성을 실행해 팀을 편성해주세요.');
@@ -6414,7 +6420,7 @@ window.saveAddEvMatch=async function(){
   if(!p1||!p2||!opp1||!opp2){alert('양쪽 팀 선수 2명씩 모두 선택하세요');return;}
   const selected=[p1,p2,opp1,opp2];
   if(new Set(selected).size!==selected.length){alert('한 선수를 양쪽 팀에 중복으로 선택할 수 없어요');return;}
-  if(ev.type==='special'&&ev.specialFormat==='couplesLeague'){
+  if(isPartnershipLeagueEvent(ev)){
     const pairKeys=new Set(getEventFixedPairs(ev).map(pair=>[...pair.players].sort().join('|')));
     if(!pairKeys.has([p1,p2].sort().join('|'))||!pairKeys.has([opp1,opp2].sort().join('|'))){alert('파트너십 리그에서는 등록된 고정 페어 조합만 선택할 수 있어요.');return;}
   }
@@ -6816,7 +6822,7 @@ window.removeEvPart=async function(evId,name){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const participants=(ev.participants||[]).filter(p=>p!==name);
   const update={participants};
-  if(ev.type==='special'&&ev.specialFormat==='couplesLeague')update.fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(player=>participants.includes(player)));
+  if(isPartnershipLeagueEvent(ev))update.fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(player=>participants.includes(player)));
   await updateDoc(doc(db,'events',evId),update);
   openEventDetail(evId);
 };
@@ -11508,7 +11514,7 @@ window.openEvScore=function(evId, mi){
   const clubLabel=m.oppClub||(ev.oppClub||'');
   document.getElementById('scoreInfo').innerHTML=
     `<strong style="color:#1E293B">${ourStr}</strong> <span style="color:#64748B">vs</span> <strong style="color:#2563EB">${oppStr}${clubLabel?` <span style="font-size:10px;color:#64748B">(${clubLabel})</span>`:''}</strong>`;
-  const isCouplesMatch=m.fixedPairMatch||(!!(ev.type==='special'&&ev.specialFormat==='couplesLeague'));
+  const isCouplesMatch=m.fixedPairMatch||isPartnershipLeagueEvent(ev);
   const ourLabel=isCouplesMatch?((m.ourPair||[]).filter(Boolean).join(' · ')||'우리팀')+' 스코어':'우리팀 스코어';
   const oppLabel=isCouplesMatch?((m.oppPair||[]).filter(Boolean).join(' · ')||'상대팀')+' 스코어':'상대팀 스코어';
   document.getElementById('s1Label').textContent=ourLabel;
