@@ -591,7 +591,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.4</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.5</div>
     </div>
   </div>
 
@@ -600,7 +600,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.4</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.5</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1606,7 +1606,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.13.4';
+const APP_VERSION = '1.13.5';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -5803,11 +5803,14 @@ async function drawPartnershipEventHighlightCard(ev, data, canvas) {
   const dateText=(ev.date?new Date(ev.date+'T00:00:00').toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}):'날짜 미정')+(ev.place?' · '+ev.place:'');
   ctx.fillStyle='#526C7A';ctx.font='600 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(dateText,540,286);
   _cardRoundRect(ctx,156,330,768,252,24);ctx.fillStyle='rgba(255,251,235,.93)';ctx.fill();ctx.strokeStyle='#D6A72C';ctx.lineWidth=3;ctx.stroke();
-  ctx.fillStyle='#B77914';ctx.font='800 25px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('🏆 CHAMPION PAIR',540,390);
-  const pairName=data.winner.players.join(' · ');const pairSize=_fitHighlightText(ctx,pairName,650,56,30,900);ctx.fillStyle='#17324D';ctx.font=`900 ${pairSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(pairName,540,510);
+  // 기본 alphabetic 기준선 대신 각 줄의 중심을 같은 축으로 맞춘다.
+  ctx.textBaseline='middle';
+  ctx.fillStyle='#B77914';ctx.font='800 25px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('🏆 CHAMPION PAIR',540,375);
+  const pairName=data.winner.players.join(' · ');const pairSize=_fitHighlightText(ctx,pairName,650,56,30,900);ctx.fillStyle='#17324D';ctx.font=`900 ${pairSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(pairName,540,455);
   const diff=data.winner.scored-data.winner.conceded;
-  ctx.fillStyle='#B77914';ctx.font='900 31px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${data.winner.points}점`,540,548);
-  ctx.fillStyle='#40586A';ctx.font='700 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${data.winner.wins}승 ${data.winner.draws}무 ${data.winner.losses}패 · 득실 ${diff>=0?'+':''}${diff}`,540,575);
+  ctx.fillStyle='#B77914';ctx.font='900 31px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${data.winner.points}점`,540,505);
+  ctx.fillStyle='#40586A';ctx.font='700 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${data.winner.wins}승 ${data.winner.draws}무 ${data.winner.losses}패 · 득실 ${diff>=0?'+':''}${diff}`,540,540);
+  ctx.textBaseline='alphabetic';
   _cardRoundRect(ctx,122,615,836,rankingHeight,20);ctx.fillStyle='rgba(242,253,250,.91)';ctx.fill();ctx.strokeStyle='rgba(13,148,136,.55)';ctx.lineWidth=2;ctx.stroke();
   ctx.textAlign='left';ctx.fillStyle='#0F766E';ctx.font='800 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('📊 전체 페어 순위',160,660);
   ranking.forEach((pair,index)=>{
