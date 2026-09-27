@@ -591,7 +591,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.3</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.4</div>
     </div>
   </div>
 
@@ -600,7 +600,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.3</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.4</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1606,7 +1606,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.13.3';
+const APP_VERSION = '1.13.4';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -5789,41 +5789,41 @@ async function drawPartnershipEventHighlightCard(ev, data, canvas) {
   canvas.width = 1080; canvas.height = cardHeight;
   const ctx = canvas.getContext('2d');
   try {
-    const bg = await _loadHighlightImage('assets/tbs-partnership-highlight-night-court.png');
+    const bg = await _loadHighlightImage('assets/tbs-partnership-highlight-day-court.png');
     _drawHighlightCover(ctx,bg,1080,cardHeight);
   } catch(e) {
-    const bg = ctx.createLinearGradient(0,0,1080,cardHeight); bg.addColorStop(0,'#071C32');bg.addColorStop(.55,'#0B4860');bg.addColorStop(1,'#061827');ctx.fillStyle=bg;ctx.fillRect(0,0,1080,cardHeight);
+    const bg = ctx.createLinearGradient(0,0,1080,cardHeight); bg.addColorStop(0,'#EAFBF8');bg.addColorStop(.55,'#BCEAE2');bg.addColorStop(1,'#FFF4D6');ctx.fillStyle=bg;ctx.fillRect(0,0,1080,cardHeight);
   }
-  ctx.fillStyle='rgba(1,14,30,.32)';ctx.fillRect(0,0,1080,cardHeight);
-  _cardRoundRect(ctx,70,60,940,cardHeight-140,30);ctx.fillStyle='rgba(2,14,31,.76)';ctx.fill();ctx.strokeStyle='rgba(232,197,106,.82)';ctx.lineWidth=2;ctx.stroke();
-  ctx.textAlign='center';ctx.fillStyle='#E8C56A';ctx.font='800 36px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('TBS HISTORY',540,135);
-  ctx.fillStyle='rgba(255,255,255,.84)';ctx.font='700 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('PARTNERSHIP LEAGUE',540,175);
+  ctx.fillStyle='rgba(15,118,110,.14)';ctx.fillRect(0,0,1080,cardHeight);
+  _cardRoundRect(ctx,70,60,940,cardHeight-140,30);ctx.fillStyle='rgba(255,255,255,.86)';ctx.fill();ctx.strokeStyle='rgba(15,118,110,.82)';ctx.lineWidth=2;ctx.stroke();
+  ctx.textAlign='center';ctx.fillStyle='#0F766E';ctx.font='800 36px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('TBS HISTORY',540,135);
+  ctx.fillStyle='#2D6F70';ctx.font='700 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('PARTNERSHIP LEAGUE',540,175);
   const title = ev.name || '파트너십 리그';
-  const titleSize = _fitHighlightText(ctx,title,820,46,28,900);ctx.fillStyle='#fff';ctx.font=`900 ${titleSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(title,540,245);
+  const titleSize = _fitHighlightText(ctx,title,820,46,28,900);ctx.fillStyle='#12324A';ctx.font=`900 ${titleSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(title,540,245);
   const dateText=(ev.date?new Date(ev.date+'T00:00:00').toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}):'날짜 미정')+(ev.place?' · '+ev.place:'');
-  ctx.fillStyle='rgba(255,255,255,.76)';ctx.font='600 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(dateText,540,286);
-  _cardRoundRect(ctx,156,330,768,252,24);ctx.fillStyle='rgba(2,15,34,.86)';ctx.fill();ctx.strokeStyle='#E8C56A';ctx.lineWidth=3;ctx.stroke();
-  ctx.fillStyle='#E8C56A';ctx.font='800 25px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('🏆 CHAMPION PAIR',540,390);
-  const pairName=data.winner.players.join(' · ');const pairSize=_fitHighlightText(ctx,pairName,650,56,30,900);ctx.fillStyle='#fff';ctx.font=`900 ${pairSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(pairName,540,510);
+  ctx.fillStyle='#526C7A';ctx.font='600 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(dateText,540,286);
+  _cardRoundRect(ctx,156,330,768,252,24);ctx.fillStyle='rgba(255,251,235,.93)';ctx.fill();ctx.strokeStyle='#D6A72C';ctx.lineWidth=3;ctx.stroke();
+  ctx.fillStyle='#B77914';ctx.font='800 25px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('🏆 CHAMPION PAIR',540,390);
+  const pairName=data.winner.players.join(' · ');const pairSize=_fitHighlightText(ctx,pairName,650,56,30,900);ctx.fillStyle='#17324D';ctx.font=`900 ${pairSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(pairName,540,510);
   const diff=data.winner.scored-data.winner.conceded;
-  ctx.fillStyle='#E8C56A';ctx.font='900 31px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${data.winner.points}점`,540,548);
-  ctx.fillStyle='rgba(255,255,255,.82)';ctx.font='700 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${data.winner.wins}승 ${data.winner.draws}무 ${data.winner.losses}패 · 득실 ${diff>=0?'+':''}${diff}`,540,575);
-  _cardRoundRect(ctx,122,615,836,rankingHeight,20);ctx.fillStyle='rgba(2,15,34,.82)';ctx.fill();ctx.strokeStyle='rgba(110,231,183,.6)';ctx.lineWidth=2;ctx.stroke();
-  ctx.textAlign='left';ctx.fillStyle='#A7F3D0';ctx.font='800 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('📊 전체 페어 순위',160,660);
+  ctx.fillStyle='#B77914';ctx.font='900 31px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${data.winner.points}점`,540,548);
+  ctx.fillStyle='#40586A';ctx.font='700 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${data.winner.wins}승 ${data.winner.draws}무 ${data.winner.losses}패 · 득실 ${diff>=0?'+':''}${diff}`,540,575);
+  _cardRoundRect(ctx,122,615,836,rankingHeight,20);ctx.fillStyle='rgba(242,253,250,.91)';ctx.fill();ctx.strokeStyle='rgba(13,148,136,.55)';ctx.lineWidth=2;ctx.stroke();
+  ctx.textAlign='left';ctx.fillStyle='#0F766E';ctx.font='800 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('📊 전체 페어 순위',160,660);
   ranking.forEach((pair,index)=>{
     const y=685+index*58;
-    if(index>0){ctx.strokeStyle='rgba(255,255,255,.12)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(160,y-18);ctx.lineTo(920,y-18);ctx.stroke();}
-    ctx.fillStyle=index===0?'#E8C56A':'rgba(255,255,255,.72)';ctx.font='900 21px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${index+1}위`,160,y+17);
-    const nameSize=_fitHighlightText(ctx,pair.players.join(' · '),410,24,16,800);ctx.fillStyle='#fff';ctx.font=`800 ${nameSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(pair.players.join(' · '),245,y+17);
+    if(index>0){ctx.strokeStyle='rgba(15,118,110,.15)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(160,y-18);ctx.lineTo(920,y-18);ctx.stroke();}
+    ctx.fillStyle=index===0?'#B77914':'#52717A';ctx.font='900 21px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${index+1}위`,160,y+17);
+    const nameSize=_fitHighlightText(ctx,pair.players.join(' · '),410,24,16,800);ctx.fillStyle='#17324D';ctx.font=`800 ${nameSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(pair.players.join(' · '),245,y+17);
     const pairDiff=pair.scored-pair.conceded;
-    ctx.textAlign='right';ctx.fillStyle='rgba(255,255,255,.9)';ctx.font='700 19px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${pair.wins}승 ${pair.draws}무 ${pair.losses}패 · ${pair.points}점 · ${pairDiff>=0?'+':''}${pairDiff}`,920,y+17);ctx.textAlign='left';
+    ctx.textAlign='right';ctx.fillStyle='#40586A';ctx.font='700 19px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(`${pair.wins}승 ${pair.draws}무 ${pair.losses}패 · ${pair.points}점 · ${pairDiff>=0?'+':''}${pairDiff}`,920,y+17);ctx.textAlign='left';
   });
-  _cardRoundRect(ctx,122,summaryY,836,175,20);ctx.fillStyle='rgba(2,15,34,.82)';ctx.fill();ctx.strokeStyle='rgba(110,231,183,.6)';ctx.lineWidth=2;ctx.stroke();
+  _cardRoundRect(ctx,122,summaryY,836,175,20);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fill();ctx.strokeStyle='rgba(13,148,136,.55)';ctx.lineWidth=2;ctx.stroke();
   const summary=getPartnershipEventHighlightSummary(ev,data);
-  ctx.fillStyle='#A7F3D0';ctx.font='800 21px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('✨ 경기 총평',160,summaryY+43);
-  ctx.fillStyle='rgba(255,255,255,.94)';ctx.font='500 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';_cardWrap(ctx,summary,730).slice(0,4).forEach((line,index)=>ctx.fillText(line,160,summaryY+83+index*28));
-  ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='800 25px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('TOGETHER, WE PLAY BETTER',540,cardHeight-92);
-  ctx.fillStyle='rgba(255,255,255,.78)';ctx.font='600 21px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('좋은 파트너와 함께 만든 최고의 세트',540,cardHeight-51);
+  ctx.fillStyle='#0F766E';ctx.font='800 21px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('✨ 경기 총평',160,summaryY+43);
+  ctx.fillStyle='#40586A';ctx.font='500 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';_cardWrap(ctx,summary,730).slice(0,4).forEach((line,index)=>ctx.fillText(line,160,summaryY+83+index*28));
+  ctx.textAlign='center';ctx.fillStyle='#185B5A';ctx.font='800 25px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('TOGETHER, WE PLAY BETTER',540,cardHeight-92);
+  ctx.fillStyle='#52717A';ctx.font='600 21px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('좋은 파트너와 함께 만든 최고의 세트',540,cardHeight-51);
   return canvas;
 }
 
@@ -6191,7 +6191,7 @@ window.openEvScoreboard=function(evId, adminContext){
   const partnershipHighlightData=isCouplesScoreEvent?getPartnershipEventHighlightData(ev):null;
   const partnershipHighlightSec=partnershipHighlightData?`<div style="margin:16px 0;padding:13px;background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border:1px solid #F59E0B;border-radius:13px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px"><div><div style="font-size:14px;font-weight:900;color:#9A3412">🏆 파트너십 리그 하이라이트</div><div style="font-size:10px;color:#78716C;margin-top:3px">페어 순위와 경기 총평을 카드로 확인하세요.</div></div><span style="padding:4px 7px;border-radius:999px;background:${ev.homeHighlightPublished?'#CCFBF1':'#FEF3C7'};color:${ev.homeHighlightPublished?'#0F766E':'#92400E'};font-size:10px;font-weight:900;white-space:nowrap">${ev.homeHighlightPublished?'🏠 홈 게시 중':'홈 미게시'}</span></div>
-    <canvas data-scoreboard-event-highlight-card="${evId}" width="1080" height="1350" style="display:block;width:100%;max-width:430px;height:auto;margin:0 auto 10px;border-radius:10px;background:#08283b"></canvas>
+    <canvas data-scoreboard-event-highlight-card="${evId}" width="1080" height="1350" style="display:block;width:100%;max-width:430px;height:auto;margin:0 auto 10px;border-radius:10px;background:#EAFBF8"></canvas>
     <div style="display:flex;gap:7px">${canAdministerEvent?`<button onclick="toggleEventHighlightPublication('${evId}')" style="flex:1;padding:9px;background:${ev.homeHighlightPublished?'#fff':'#0F766E'};border:1px solid #0F766E;border-radius:9px;color:${ev.homeHighlightPublished?'#0F766E':'#fff'};font-size:11px;font-weight:900;cursor:pointer">${ev.homeHighlightPublished?'홈 게시 해제':'🏠 홈에 게시'}</button>`:''}<button onclick="shareEventHighlightCard('${evId}')" style="flex:1;padding:9px;background:#B45309;border:1px solid #B45309;border-radius:9px;color:#fff;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button></div>
   </div>`:'';
 
@@ -9904,7 +9904,7 @@ function renderHomeTab() {
   if(_homeFeaturedEvent){
     highlightHtml='<div style="background:#FFFDF7;border:1px solid rgba(180,120,20,.38);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 5px 16px rgba(120,80,10,.14)">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 3px 9px"><div style="font-size:13px;font-weight:900;color:#9A3412">🏆 홈 대표 이벤트 하이라이트</div><span style="font-size:10px;font-weight:800;color:#0F766E;background:#CCFBF1;border-radius:999px;padding:3px 7px">파트너십 리그</span></div>'
-      +'<canvas data-event-highlight-card="'+_homeFeaturedEvent.id+'" onclick="openEventDetail(\''+_homeFeaturedEvent.id+'\',false)" width="1080" height="1350" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto;border-radius:12px;cursor:pointer;background:#08283b"></canvas>'
+      +'<canvas data-event-highlight-card="'+_homeFeaturedEvent.id+'" onclick="openEventDetail(\''+_homeFeaturedEvent.id+'\',false)" width="1080" height="1350" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto;border-radius:12px;cursor:pointer;background:#EAFBF8"></canvas>'
       +'<div style="display:flex;gap:7px;margin-top:9px"><button onclick="openEventDetail(\''+_homeFeaturedEvent.id+'\',false)" style="flex:1;border:1px solid #D6B76A;background:#fff;color:#9A3412;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">이벤트 상세보기</button><button onclick="shareEventHighlightCard(\''+_homeFeaturedEvent.id+'\')" style="flex:1;border:none;background:#B45309;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button></div>'
       +'</div>';
   } else if(_hDay){
@@ -10714,7 +10714,7 @@ function renderSchedules() {
         const shareAction=isEventHighlight?`shareEventHighlightCard('${sourceId}')`:`shareDayHighlightCard('${sourceId}')`;
         const detailLabel=isEventHighlight?'이벤트 상세보기':'경기 상세보기';
         return `<div style="background:#F7FBFA;border:1px solid rgba(13,148,136,.28);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 4px 14px rgba(15,118,110,.08)">
-          <canvas ${canvasAttr}="${sourceId}" onclick="openClubNewsItem('${openType}','${sourceId}')" width="1080" height="1350" style="display:block;width:100%;max-width:430px;height:auto;margin:0 auto;border-radius:12px;cursor:pointer;background:#08283b"></canvas>
+          <canvas ${canvasAttr}="${sourceId}" onclick="openClubNewsItem('${openType}','${sourceId}')" width="1080" height="1350" style="display:block;width:100%;max-width:430px;height:auto;margin:0 auto;border-radius:12px;cursor:pointer;background:#EAFBF8"></canvas>
           <div style="display:flex;gap:7px;margin-top:9px">
             <button onclick="openClubNewsItem('${openType}','${sourceId}')" style="flex:1;border:1px solid #B7DBD7;background:#fff;color:#0F766E;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">${detailLabel}</button>
             <button onclick="${shareAction}" style="flex:1;border:none;background:#0F766E;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button>
