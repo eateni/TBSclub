@@ -591,7 +591,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.5</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.6</div>
     </div>
   </div>
 
@@ -600,7 +600,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.5</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.6</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1606,7 +1606,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.13.5';
+const APP_VERSION = '1.13.6';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -5768,14 +5768,27 @@ function getPartnershipEventHighlightSummary(ev, data) {
   });
   const closeGames=completedMatches.filter(match => Math.abs(Number(match.ourScore ?? match.score1)-Number(match.oppScore ?? match.score2))===1).length;
   const unbeaten=data.ranking.filter(pair=>pair.losses===0).length;
-  const champion=`${data.winner.players.join('·')} 페어가 ${data.winner.wins}승 ${data.winner.draws}무 ${data.winner.losses}패로 정상에 올랐습니다.`;
-  const race=data.runnerUp
-    ? `준우승 ${data.runnerUp.players.join('·')} 페어와 ${data.winner.points-data.runnerUp.points}점 차이로 순위가 갈렸습니다.`
-    : '완료된 결과를 바탕으로 첫 번째 파트너십 순위가 확정됐습니다.';
-  const matchTone=closeGames
-    ? `총 ${data.completed}경기 중 ${closeGames}경기가 1점 차 접전이었습니다.`
-    : `총 ${data.completed}경기의 결과를 반영했습니다.`;
-  const unbeatenTone=unbeaten>1 ? `무패 페어 ${unbeaten}팀이 끝까지 팽팽하게 경쟁했습니다.` : '';
+  const winnerName=data.winner.players.join('·');
+  const winnerRecord=`${data.winner.wins}승 ${data.winner.draws}무 ${data.winner.losses}패`;
+  const champion=data.winner.losses===0
+    ? `${winnerName} 페어는 서로의 빈자리를 채우며 ${winnerRecord}, 이 날의 가장 높은 자리에 섰습니다.`
+    : `${winnerName} 페어는 한 포인트씩 호흡을 맞추며 ${winnerRecord}, 가장 높은 자리에 섰습니다.`;
+  let race='완료된 결과마다 쌓인 호흡이 첫 번째 파트너십 순위를 만들었습니다.';
+  if(data.runnerUp){
+    const runnerName=data.runnerUp.players.join('·');
+    const pointGap=data.winner.points-data.runnerUp.points;
+    race=pointGap===0
+      ? `${runnerName} 페어와는 끝까지 같은 승점에서 맞섰고, 득실차가 마지막 순서를 가렸습니다.`
+      : pointGap===1
+        ? `${runnerName} 페어의 거센 추격 끝에 단 1점 차로 순위가 갈렸습니다.`
+        : `${runnerName} 페어와의 경쟁에서도 ${pointGap}점 차를 지켜내며 우승을 완성했습니다.`;
+  }
+  const matchTone=closeGames>=2
+    ? `특히 ${data.completed}경기 중 ${closeGames}경기는 1점 차까지 이어져, 코트마다 마지막 포인트의 긴장감이 남았습니다.`
+    : closeGames===1
+      ? `한 경기에서 1점 차 승부가 펼쳐져, 마지막까지 결과를 알 수 없는 하루였습니다.`
+      : `총 ${data.completed}경기 동안 각 페어의 호흡과 집중력이 차곡차곡 기록됐습니다.`;
+  const unbeatenTone=!data.runnerUp&&unbeaten>1 ? `무패 페어 ${unbeaten}팀이 나란히 버티며 끝까지 팽팽한 리그를 만들었습니다.` : '';
   return [champion,race,matchTone,unbeatenTone].filter(Boolean).join(' ');
 }
 
