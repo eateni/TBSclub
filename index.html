@@ -304,10 +304,22 @@ body::after {
 .admin-sec h3{font-size:14px;font-weight:700;color:#1E293B;margin-bottom:12px;}
 .chips-wrap{display:flex;flex-wrap:wrap;gap:8px;}
 .chip{padding:6px 14px;background:rgba(15,35,90,0.85);border-radius:20px;font-size:13px;color:#B8CCd8;border:1px solid rgba(100,160,220,0.55);display:flex;align-items:center;gap:6px;}
-#memberChips,#guestChips{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
+#memberChips{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;}
+#guestChips{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;}
 #memberChips .chip,#guestChips .chip{padding:5px 8px;min-width:0;overflow:hidden;box-sizing:border-box;}
 .chip-guest{border-color:rgba(52,211,153,0.5);}
 .g-guest{color:#059669;font-size:10px;font-weight:700;}
+.guest-chip-head{display:flex;align-items:flex-start;gap:4px;min-width:0;}
+.guest-chip-name{flex:1;min-width:0;color:#E2E8F0;font-weight:700;line-height:1.35;white-space:normal;overflow-wrap:anywhere;}
+.guest-chip-actions{display:flex;align-items:center;justify-content:flex-end;gap:3px;flex-wrap:wrap;}
+.guest-add-form{flex-wrap:wrap;align-items:flex-end;}
+.guest-add-form #newGuest{min-width:190px;}
+.guest-start-wrap{display:flex;flex:0 0 150px;flex-direction:column;gap:3px;color:#059669;font-size:10px;font-weight:700;}
+.guest-start-field{width:100%;flex:none;}
+@media(max-width:560px){
+  .guest-add-form #newGuest{flex:1 0 100%;}
+  .guest-start-wrap{flex:1 1 150px;}
+}
 .chip-x{background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;padding:0;line-height:1;}
 .row-form{display:flex;gap:8px;margin-top:10px;}
 .row-inp{flex:1;padding:10px 12px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:10px;color:#1E293B;font-size:13px;outline:none;}
@@ -591,7 +603,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.7</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.9</div>
     </div>
   </div>
 
@@ -600,7 +612,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.7</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.9</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -949,9 +961,11 @@ tr:nth-child(even){background:#F5FCFB;}
           <div id="guestStatsDetail"></div>
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(52,211,153,0.2)">
             <div style="font-size:11px;color:#059669;margin-bottom:8px">게스트 추가</div>
-            <div class="row-form">
+            <div class="row-form guest-add-form">
               <input class="row-inp" id="newGuest" placeholder="이름 (예: 홍길동 게스트)" onkeydown="if(event.key==='Enter')addGuest()">
-              <input class="row-inp" id="newGuestYears" type="number" min="0" max="480" placeholder="구력(개월)" style="width:80px;flex-shrink:0">
+              <label class="guest-start-wrap">테니스 시작 년/월
+                <input class="row-inp guest-start-field" id="newGuestStartMonth" type="month" aria-label="테니스 시작 년월" title="테니스 시작 년·월">
+              </label>
               <div class="gender-toggle">
                 <button class="g-btn m active" id="ggBtnM" onclick="selectGuestGender('m')">♂ 남</button>
                 <button class="g-btn f" id="ggBtnF" onclick="selectGuestGender('f')">♀ 여</button>
@@ -1606,7 +1620,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.13.7';
+const APP_VERSION = '1.13.9';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -2003,8 +2017,8 @@ async function recalculateAllRatings() {
   const R = {};
   members.forEach(p => { R[p.name] = 1500; });
   guests.forEach(p => {
-    // months 우선, 구 필드 years가 있으면 ×12 환산
-    const mo = p.months!=null ? parseInt(p.months) : (p.years!=null ? parseInt(p.years)*12 : null);
+    // 시작 년월을 우선 사용하고, 기존 months/years 데이터도 계속 지원
+    const mo = getTennisMonths(p);
     R[p.name] = (mo!=null&&!isNaN(mo)) ? Math.min(1800, 1350 + mo*2) : 1500;
   });
   const sortedDays = [...days].sort((a,b) => (a.date||'') < (b.date||'') ? -1 : (a.date||'') > (b.date||'') ? 1 : 0);
@@ -2053,39 +2067,74 @@ function getPastOpponents() {
 }
 function getTodayOpponents(dayId, excludeRoundIdx) {
   const opp = new Set();
+  const collect = matches => {
+    (matches||[]).forEach(m => {
+      if (m.isRally || m.tag==='랠리' || m.tag==='휴식') return;
+      (m.team1||[]).forEach(a => (m.team2||[]).forEach(b => {
+        if (a && b) opp.add([a,b].sort().join('|'));
+      }));
+    });
+  };
   const day = days.find(d=>d.id===dayId);
   if (day) {
     (day.rounds||[]).forEach((r,idx) => {
       if (idx === excludeRoundIdx) return;
-      (r.matches||[]).forEach(m => {
-        (m.team1||[]).forEach(a => (m.team2||[]).forEach(b => {
-          if (a && b) opp.add([a,b].sort().join('|'));
-        }));
-      });
+      collect(r.matches);
     });
   }
+  // 아직 저장하지 않은 미리보기 라운드도 포함해야 전체 섞기에서
+  // 바로 앞 라운드와 같은 상대가 반복되지 않는다.
+  generatedAllRounds.forEach((r,idx) => {
+    if (!r || idx === excludeRoundIdx) return;
+    collect(r.matches);
+  });
   return opp;
 }
-function matchUpUnits(units, pastOpp, todayOpp) {
-  const remaining = [...units];
-  const matches = [];
-  while (remaining.length >= 2) {
-    const u1 = remaining.shift();
-    let bestIdx = 0, bestScore = Infinity;
-    for (let i=0; i<remaining.length; i++) {
-      const u2 = remaining[i];
-      let score = 0;
-      u1.forEach(a => u2.forEach(b => {
-        const key = [a,b].sort().join('|');
-        if (todayOpp.has(key)) score += 100;
-        else if (pastOpp.has(key)) score += 1;
+function teamMatchKey(team1, team2) {
+  const key1=(team1||[]).filter(Boolean).slice().sort().join('|');
+  const key2=(team2||[]).filter(Boolean).slice().sort().join('|');
+  return [key1,key2].sort().join('::');
+}
+function getTodayTeamMatchCounts(dayId, excludeRoundIdx) {
+  const counts = new Map();
+  const collect = matches => {
+    (matches||[]).forEach(m => {
+      if (m.isRally || m.tag==='랠리' || m.tag==='휴식') return;
+      if (!(m.team1||[]).filter(Boolean).length || !(m.team2||[]).filter(Boolean).length) return;
+      const key=teamMatchKey(m.team1,m.team2);
+      counts.set(key,(counts.get(key)||0)+1);
+    });
+  };
+  const day=days.find(d=>d.id===dayId);
+  if(day)(day.rounds||[]).forEach((r,idx)=>{if(idx!==excludeRoundIdx)collect(r.matches);});
+  generatedAllRounds.forEach((r,idx)=>{if(r&&idx!==excludeRoundIdx)collect(r.matches);});
+  return counts;
+}
+function matchUpUnits(units, pastOpp, todayOpp, teamMatchCounts) {
+  if (units.length < 2) return [];
+  const counts=teamMatchCounts||new Map();
+  let bestMatches=[];
+  let bestScore=Infinity;
+  // 첫 팀부터 차례로 고르는 방식은 고정 페어 순서가 같을 때 같은 대결을
+  // 만들기 쉬워서, 가능한 전체 조합을 비교해 가장 덜 만난 대진을 선택한다.
+  for(let attempt=0;attempt<200;attempt++){
+    const ordered=shuffle(units.map(unit=>[...unit]));
+    const candidate=[];
+    let score=0;
+    for(let i=0;i+1<ordered.length;i+=2){
+      const team1=ordered[i],team2=ordered[i+1];
+      score+=(counts.get(teamMatchKey(team1,team2))||0)*10000;
+      team1.forEach(a=>team2.forEach(b=>{
+        const key=[a,b].sort().join('|');
+        if(todayOpp.has(key))score+=100;
+        else if(pastOpp.has(key))score+=1;
       }));
-      if (score < bestScore) { bestScore = score; bestIdx = i; }
+      candidate.push({team1,team2});
     }
-    const u2 = remaining.splice(bestIdx, 1)[0];
-    matches.push({ team1: u1, team2: u2 });
+    if(score<bestScore){bestScore=score;bestMatches=candidate;}
+    if(score===0)break;
   }
-  return matches;
+  return bestMatches;
 }
 
 // ── 당일 페어 기록 (저장된 + 미리보기) ─────────────────────────────
@@ -2203,7 +2252,7 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
 }
 
 // ── 일반복식(남복/여복/잡복) 페어 생성 (금지 회피 + 지정 강제 + 당일/시즌 중복 회피) ──
-function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtNames, tag, banSet, forcedTeams, pastOpp, todayOpp) {
+function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtNames, tag, banSet, forcedTeams, pastOpp, todayOpp, teamMatchCounts) {
   banSet = banSet || new Set();
   forcedTeams = forcedTeams || [];
   const isBan = (a,b)=> banSet.has(dayPairKey(a,b));
@@ -2247,7 +2296,7 @@ function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtName
       teams.push([a,partner]); used.add(a); used.add(partner);
     }
     // 팀들을 상대전적 최소화하며 매치업으로 짝짓기
-    const matches = (pastOpp && todayOpp) ? matchUpUnits(teams, pastOpp, todayOpp)
+    const matches = (pastOpp && todayOpp) ? matchUpUnits(teams, pastOpp, todayOpp, teamMatchCounts)
       : teams.reduce((acc,t,i,arr)=>{ if(i%2===0 && arr[i+1]) acc.push({team1:t,team2:arr[i+1]}); return acc; }, []);
 
     const freeTeams = teams.slice(seedTeams.length);
@@ -3019,17 +3068,18 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   const mixedPairs = makeMixedPairs(mForMix, fForMix, todayPairs, allPastPairs, rIdx, banSet, forcedMix);
   const pastOpp = getPastOpponents();
   const todayOpp = getTodayOpponents(dayId, rIdx);
-  const mixedMatchups = matchUpUnits(mixedPairs, pastOpp, todayOpp);
+  const teamMatchCounts = getTodayTeamMatchCounts(dayId, rIdx);
+  const mixedMatchups = matchUpUnits(mixedPairs, pastOpp, todayOpp, teamMatchCounts);
 
   // 2) 남복
   if (_thBs) { const mF2=new Set(forcedMale.flat().filter(n=>mPool.includes(n))); mPool=_thBs(mPool,mF2,'남복'); }
   const malePool = mPool.splice(0, maleCourts*4);
-  const maleMatches = makeDoublesMatches(malePool, todayPairs, allPastPairs, maleCourts, [], '남복', banSet, forcedMale, pastOpp, todayOpp);
+  const maleMatches = makeDoublesMatches(malePool, todayPairs, allPastPairs, maleCourts, [], '남복', banSet, forcedMale, pastOpp, todayOpp, teamMatchCounts);
 
   // 3) 여복
   if (_thBs) { const fF2=new Set(forcedFemale.flat().filter(n=>fPool.includes(n))); fPool=_thBs(fPool,fF2,'여복'); }
   const femalePool = fPool.splice(0, femaleCourts*4);
-  const femaleMatches = makeDoublesMatches(femalePool, todayPairs, allPastPairs, femaleCourts, [], '여복', banSet, forcedFemale, pastOpp, todayOpp);
+  const femaleMatches = makeDoublesMatches(femalePool, todayPairs, allPastPairs, femaleCourts, [], '여복', banSet, forcedFemale, pastOpp, todayOpp, teamMatchCounts);
   if (typeHistory) {
     [...mForMix,...fForMix].forEach(n=>{if(typeHistory[n])typeHistory[n].혼복++;});
     malePool.forEach(n=>{if(typeHistory[n])typeHistory[n].남복++;});
@@ -7330,11 +7380,13 @@ function renderAdmin(){
   // ── 게스트 칩 ──
   document.getElementById('guestChips').innerHTML = guests.length
     ? guests.map(g=>`
-        <span class="chip chip-guest" style="display:inline-flex;flex-direction:column;align-items:stretch;gap:2px">
-          <span style="display:flex;align-items:center;gap:4px">
+        <span class="chip chip-guest" style="display:inline-flex;flex-direction:column;align-items:stretch;gap:4px">
+          <span class="guest-chip-head">
             <span class="g-guest">👤</span>
             <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span>
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${g.name}</span>
+            <span class="guest-chip-name" title="${g.name}">${g.name}</span>
+          </span>
+          <span class="guest-chip-actions">
             ${g.uid
               ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)" title="Firebase 가입 완료">🔑</span>`
               : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(245,158,11,0.12);color:#B45309;border:1px solid rgba(245,158,11,0.4)" title="앱 미가입 (관리자 등록)">미가입</span>`}
@@ -12252,13 +12304,12 @@ window.delMember=async function(name){
 window.addGuest=async function(){
   const name=document.getElementById('newGuest').value.trim();if(!name)return;
   if(allPlayers().find(m=>m.name===name)){alert('이미 있는 이름이에요');return;}
-  const _yRaw=document.getElementById('newGuestYears')?.value;
-  const _months=_yRaw!==''&&_yRaw!=null&&!isNaN(parseInt(_yRaw))?parseInt(_yRaw):null;
+  const _startMonth=document.getElementById('newGuestStartMonth')?.value||'';
   const _gObj={name,gender:selectedGuestGender,isGuest:true};
-  if(_months!=null)_gObj.months=_months;
+  if(_startMonth)_gObj.tennisStartDate=_startMonth;
   await setDoc(doc(db,'club','guests'),{list:[...guests,_gObj]});
   document.getElementById('newGuest').value='';
-  if(document.getElementById('newGuestYears'))document.getElementById('newGuestYears').value='';
+  if(document.getElementById('newGuestStartMonth'))document.getElementById('newGuestStartMonth').value='';
 };
 window.delGuest=async function(name){
   if(!confirm(`${name}을(를) 삭제할까요?\n\n* 게스트 통계와 개인별 분석에서 자동으로 제외돼요\n* 과거 경기 기록은 보존돼요`))return;
