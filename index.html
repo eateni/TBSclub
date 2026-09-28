@@ -603,7 +603,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.9</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.10</div>
     </div>
   </div>
 
@@ -612,7 +612,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.9</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.10</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -1620,7 +1620,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.13.9';
+const APP_VERSION = '1.13.10';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -5128,11 +5128,13 @@ window.openEventDetail=function(evId, adminContext){
   const isCouplesLeague=isPartnershipLeagueEvent(ev);
   const fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(name=>parts.includes(name)));
   const pairedNames=new Set(fixedPairs.flatMap(pair=>pair.players));
+  const autoPairCount=Math.floor(Math.max(0,parts.length-pairedNames.size)/2);
   const fixedPairOptions=parts.filter(name=>!pairedNames.has(name)).map(name=>`<option value="${name.replace(/"/g,'&quot;')}">${name}</option>`).join('');
   const couplesPairSec=isCouplesLeague?`<div style="margin-bottom:16px;padding:13px 14px;background:#FFF7ED;border:1px solid #FDBA74;border-radius:12px">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px"><b style="font-size:13px;color:#9A3412">💑 고정 페어 설정</b><span style="font-size:10px;color:#64748B">${fixedPairs.length}페어 · 미배정 ${Math.max(0,parts.length-pairedNames.size)}명</span></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:7px;margin-bottom:${canAdministerEvent?'10px':'0'}">${fixedPairs.map((pair,index)=>`<div style="display:flex;align-items:center;gap:7px;padding:8px 10px;background:#fff;border:1px solid #FED7AA;border-radius:9px"><span style="font-size:10px;font-weight:900;color:#C2410C">${index+1}페어</span><b style="flex:1;font-size:12px;color:#1E293B">${pair.players.join(' · ')}</b>${canAdministerEvent?`<button onclick="removeEventFixedPair('${evId}','${pair.id}')" style="border:0;background:none;color:#F87171;font-size:15px;cursor:pointer">×</button>`:''}</div>`).join('')||'<div style="font-size:11px;color:#64748B">참가자를 선택한 뒤 고정 페어를 등록해주세요.</div>'}</div>
     ${canAdministerEvent?`<div class="fixed-pair-form"><select id="fixedPairP1_${evId}" class="row-inp"><option value="">선수1</option>${fixedPairOptions}</select><span style="color:#C2410C;font-weight:900">＋</span><select id="fixedPairP2_${evId}" class="row-inp"><option value="">선수2</option>${fixedPairOptions}</select><button onclick="addEventFixedPair('${evId}')" style="padding:8px 13px;border:0;border-radius:9px;background:#EA580C;color:#fff;font-size:11px;font-weight:900;white-space:nowrap;cursor:pointer">페어 등록</button></div>`:''}
+    <div style="margin-top:9px;font-size:10px;color:#9A3412;line-height:1.45">고정으로 지정한 페어만 유지됩니다. 미배정 참가자 ${autoPairCount?`${autoPairCount}페어`:'0페어'}는 대진을 다시 만들 때마다 자동으로 새로 섞입니다.</div>
   </div>`:'';
   const partSec=`<div style="margin-bottom:16px">
     <div id="evPartCount_${evId}" style="font-size:13px;font-weight:700;margin-bottom:8px">👥 ${['exchange','friendly'].includes(ev.type)?'TBS 참가자':'참가자'} (${parts.length}명)${['exchange','friendly'].includes(ev.type)?` <span style="font-size:10px;color:#6D28D9;font-weight:700">· 전체 ${eventRoster.length}명</span>`:''}</div>
@@ -5286,10 +5288,10 @@ window.openEventDetail=function(evId, adminContext){
   // ── 교류전 전용 섹션 ──
   let exchangeSec='';
   if(['exchange','friendly','monthly','special'].includes(ev.type)){
-    const pairPoolCount=isCouplesLeague?fixedPairs.length:(ev.type==='friendly'?matchParts.length:parts.length);
+    const pairPoolCount=isCouplesLeague?fixedPairs.length+autoPairCount:(ev.type==='friendly'?matchParts.length:parts.length);
     const latestRound=evMatches.length?Math.max(...evMatches.map(match=>Number(match.round)||1)):1;
     const pairAction=isCouplesLeague?'generateCouplesLeagueMatches':ev.type==='friendly'?'showEvFriendlyPairConfig':ev.type==='monthly'?'showEvMonthlyPairConfig':'showEvExchangePairConfig';
-    const pairLabel=isCouplesLeague?'고정 페어 리그 대진 생성':ev.type==='friendly'?'친선 대진 자동 구성':ev.type==='monthly'?(ev.monthlyFormat==='teamBattle'?'흑백대전 자동 구성':ev.monthlyFormat==='ybobBattle'?'YBOB 대전 구성 준비 중':'개인 리그 대진 구성'):'페어 짜기';
+    const pairLabel=isCouplesLeague?'고정·자동 페어 리그 대진 생성':ev.type==='friendly'?'친선 대진 자동 구성':ev.type==='monthly'?(ev.monthlyFormat==='teamBattle'?'흑백대전 자동 구성':ev.monthlyFormat==='ybobBattle'?'YBOB 대전 구성 준비 중':'개인 리그 대진 구성'):'페어 짜기';
     const pairBtn=canAdministerEvent&&pairPoolCount>=(isCouplesLeague?2:4)
       ?`<button onclick="${pairAction}('${evId}')" style="width:100%;padding:10px;background:${evMatches.length?'#FFF7ED':'rgba(167,139,250,0.85)'};border:${evMatches.length?'1px solid #FDBA74':'none'};border-radius:9px;color:${evMatches.length?'#9A3412':'#1a0f2e'};font-size:12px;font-weight:900;cursor:pointer;margin-bottom:12px">${evMatches.length?'🔄 대진표 다시 작성':'🎲 '+pairLabel}</button>${evMatches.length?'<div style="font-size:10px;color:#9A3412;margin:-7px 2px 10px;line-height:1.45">새 대진을 저장하면 기존 대진과 입력된 점수는 모두 교체됩니다.</div>':''}`
       :'';
@@ -6417,9 +6419,32 @@ window.generateCouplesLeagueMatches=async function(evId){
   const ev=events.find(event=>event.id===evId);if(!ev)return;
   const participantSet=new Set(ev.participants||[]);
   const fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(name=>participantSet.has(name)));
-  if(fixedPairs.length<2){alert('리그 대진을 만들려면 고정 페어가 2팀 이상 필요해요.');return;}
+  const fixedPairKeys=new Set(fixedPairs.map(pair=>[...pair.players].sort().join('|')));
+  const fixedNames=new Set(fixedPairs.flatMap(pair=>pair.players));
+  const unassigned=(ev.participants||[]).filter(name=>!fixedNames.has(name));
+  const previousAutoPairCounts=new Map();
+  (ev.matches||[]).forEach(match=>{
+    [match.ourPair||match.team1,match.oppPair||match.team2].forEach(pair=>{
+      const names=(pair||[]).filter(Boolean).slice(0,2);
+      if(names.length!==2)return;
+      const key=[...names].sort().join('|');
+      if(!fixedPairKeys.has(key))previousAutoPairCounts.set(key,(previousAutoPairCounts.get(key)||0)+1);
+    });
+  });
+  let autoPairs=[];
+  let bestRepeat=Infinity;
+  for(let attempt=0;attempt<100;attempt++){
+    const shuffled=shuffle(unassigned);
+    const candidate=[];
+    for(let index=0;index+1<shuffled.length;index+=2)candidate.push({id:`auto-${attempt}-${index}`,players:[shuffled[index],shuffled[index+1]],auto:true});
+    const repeat=candidate.reduce((sum,pair)=>sum+(previousAutoPairCounts.get([...pair.players].sort().join('|'))||0),0);
+    if(repeat<bestRepeat){autoPairs=candidate;bestRepeat=repeat;}
+    if(repeat===0)break;
+  }
+  const leaguePairs=[...fixedPairs.map(pair=>({...pair,fixed:true})),...autoPairs];
+  if(leaguePairs.length<2){alert('리그 대진을 만들려면 고정 또는 자동 페어가 2팀 이상 필요해요.');return;}
   if((ev.matches||[]).length&&!confirm('기존 대진과 점수를 고정 페어 리그 대진으로 교체할까요?'))return;
-  const rotation=fixedPairs.map(pair=>({...pair}));
+  const rotation=leaguePairs.map(pair=>({...pair}));
   if(rotation.length%2)rotation.push(null);
   const matches=[];
   const roundCount=rotation.length-1;
@@ -6429,7 +6454,7 @@ window.generateCouplesLeagueMatches=async function(evId){
       const team1=rotation[index],team2=rotation[rotation.length-1-index];
       if(!team1||!team2)continue;
       const genderInfo=calcEventMatchGenderInfo(ev,...team1.players,...team2.players);
-      matches.push({id:`couples-${Date.now().toString(36)}-${round}-${court}`,ourPair:[...team1.players],oppPair:[...team2.players],oppClub:'',ourScore:null,oppScore:null,round,court,courtType:genderInfo.type||'잡복',genderNotice:genderInfo.notice,matchKind:'official',specialFormat:'couplesLeague',fixedPairMatch:true});
+      matches.push({id:`couples-${Date.now().toString(36)}-${round}-${court}`,ourPair:[...team1.players],oppPair:[...team2.players],oppClub:'',ourScore:null,oppScore:null,round,court,courtType:genderInfo.type||'잡복',genderNotice:genderInfo.notice,matchKind:'official',specialFormat:'couplesLeague',fixedPairMatch:!!(team1.fixed&&team2.fixed),autoPairMatch:!!(team1.auto||team2.auto)});
       court++;
     }
     rotation.splice(1,0,rotation.pop());
@@ -6437,6 +6462,7 @@ window.generateCouplesLeagueMatches=async function(evId){
   try{
     ev.matches=matches;
     await updateDoc(doc(db,'events',evId),{matches,couplesGeneratedAt:new Date().toISOString()});
+    if(unassigned.length%2)alert('자동 페어를 만들 수 없는 미배정 참가자 1명은 이번 대진에서 제외됐어요.');
     openEventDetail(evId);
   }catch(error){alert('고정 페어 리그 대진 생성 실패: '+(error.message||error.code||error));}
 };
@@ -6494,7 +6520,13 @@ window.saveAddEvMatch=async function(){
   if(new Set(selected).size!==selected.length){alert('한 선수를 양쪽 팀에 중복으로 선택할 수 없어요');return;}
   if(isPartnershipLeagueEvent(ev)){
     const pairKeys=new Set(getEventFixedPairs(ev).map(pair=>[...pair.players].sort().join('|')));
-    if(!pairKeys.has([p1,p2].sort().join('|'))||!pairKeys.has([opp1,opp2].sort().join('|'))){alert('파트너십 리그에서는 등록된 고정 페어 조합만 선택할 수 있어요.');return;}
+    (ev.matches||[]).forEach(match=>{
+      [match.ourPair||match.team1,match.oppPair||match.team2].forEach(pair=>{
+        const names=(pair||[]).filter(Boolean).slice(0,2);
+        if(names.length===2)pairKeys.add([...names].sort().join('|'));
+      });
+    });
+    if(!pairKeys.has([p1,p2].sort().join('|'))||!pairKeys.has([opp1,opp2].sort().join('|'))){alert('파트너십 리그에서는 고정 페어 또는 현재 자동 대진에 포함된 조합만 선택할 수 있어요.');return;}
   }
   const oppClub=document.getElementById('addEvOClub').value.trim();
   const genderInfo=calcEventMatchGenderInfo(ev,p1,p2,opp1,opp2);
