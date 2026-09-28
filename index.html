@@ -603,7 +603,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.13.10</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.14.0</div>
     </div>
   </div>
 
@@ -612,7 +612,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.13.10</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.14.0</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -767,6 +767,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <button class="stab active" onclick="switchTerraSub('myrecords',this)">내 기록</button>
         <button class="stab" onclick="switchTerraSub('all',this)">전체 기록</button>
         <button class="stab" onclick="switchTerraSub('stats',this)">통계</button>
+        <button class="stab" onclick="switchTerraSub('personal',this)">📅 개인 경기</button>
       </div>
 
       <!-- 내 기록 -->
@@ -798,6 +799,9 @@ tr:nth-child(even){background:#F5FCFB;}
         <div style="font-size:15px;font-weight:800;color:#1E293B;margin-bottom:12px">📊 게임 기록 통계</div>
         <div id="terraStatsList"><div class="loading">불러오는 중...</div></div>
       </div>
+
+      <!-- 정회원 개인 일정 패널은 스크립트가 클럽소식에서 이 위치로 옮긴다. -->
+      <div id="terra-personal" style="display:none"></div>
     </div>
 
     <!-- 📰 클럽소식 -->
@@ -825,6 +829,46 @@ tr:nth-child(even){background:#F5FCFB;}
         <button id="clubNewsFilter-event" onclick="setClubNewsFilter('event')" class="stab" style="white-space:nowrap">🎉 이벤트전</button>
         <button id="clubNewsFilter-highlight" onclick="setClubNewsFilter('highlight')" class="stab" style="white-space:nowrap">✨ 하이라이트</button>
       </div>
+
+      <!-- 정회원 개인 일정: 정규시즌/이벤트전과 분리된 개인 모임 및 기록 -->
+      <section id="memberSchedulePanel" style="margin:18px 0;background:#F8FCFC;border:1px solid #B7DBD7;border-radius:16px;padding:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px">
+          <div>
+            <div style="font-size:16px;font-weight:900;color:#0F766E">📅 개인 경기 일정</div>
+            <div style="font-size:11px;color:#64748B;margin-top:3px;line-height:1.45">정회원이 만든 개인 모임입니다. 결과는 모두 볼 수 있고, 정규시즌 공식 랭킹에는 반영되지 않아요.</div>
+          </div>
+          <button id="openScheduleComposerBtn" onclick="toggleScheduleComposer()" style="display:none;flex-shrink:0;padding:8px 10px;background:#0F766E;border:none;border-radius:9px;color:#fff;font-size:11px;font-weight:900;cursor:pointer">＋ 일정 만들기</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <button id="scheduleViewAllBtn" onclick="setScheduleView('all')" style="flex:1;padding:8px;border:1px solid #B7DBD7;border-radius:8px;background:#0F766E;color:#fff;font-size:11px;font-weight:800;cursor:pointer">전체 일정</button>
+          <button id="scheduleViewMineBtn" onclick="setScheduleView('mine')" style="flex:1;padding:8px;border:1px solid #B7DBD7;border-radius:8px;background:#fff;color:#0F766E;font-size:11px;font-weight:800;cursor:pointer">내 일정</button>
+        </div>
+        <div id="scheduleComposer" style="display:none;background:#fff;border:1px solid #C8E0DE;border-radius:12px;padding:12px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:900;color:#1E293B;margin-bottom:9px">새 개인 일정</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px">
+            <label style="font-size:10px;color:#64748B">날짜<input id="schDate" type="date" class="row-inp" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:8px"></label>
+            <label style="font-size:10px;color:#64748B">시간<input id="schTime" type="time" class="row-inp" style="display:block;width:100%;box-sizing:border-box;margin-top:4px;padding:8px"></label>
+          </div>
+          <input id="schPlace" class="row-inp" placeholder="장소" style="width:100%;box-sizing:border-box;padding:9px;margin-bottom:7px">
+          <input id="schContent" class="row-inp" placeholder="일정 제목 또는 내용" style="width:100%;box-sizing:border-box;padding:9px;margin-bottom:7px">
+          <label style="display:flex;align-items:center;gap:7px;font-size:11px;color:#334155;margin:8px 0"><input id="schIsGameMeetup" type="checkbox"> 🎾 게임모임으로 만들기 (페어·결과 기록 가능)</label>
+          <div style="font-size:11px;font-weight:800;color:#0F766E;margin:10px 0 6px">참가자 선택</div>
+          <input id="scheduleParticipantSearch" class="row-inp" placeholder="정회원 또는 기존 게스트 검색" oninput="renderScheduleParticipantPicker()" style="width:100%;box-sizing:border-box;padding:8px;margin-bottom:6px">
+          <div id="scheduleParticipantPicker" style="max-height:154px;overflow:auto;border:1px solid #E0ECEB;border-radius:9px;padding:4px"></div>
+          <div id="scheduleParticipantSummary" style="font-size:10px;color:#475569;line-height:1.5;margin-top:7px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:5px;margin-top:9px;align-items:end">
+            <label style="font-size:10px;color:#64748B">외부 게스트 이름<input id="scheduleGuestName" class="row-inp" placeholder="이름" style="display:block;width:100%;box-sizing:border-box;padding:7px;margin-top:3px"></label>
+            <label style="font-size:10px;color:#64748B">시작 년월<input id="scheduleGuestStart" type="month" class="row-inp" style="display:block;width:100%;box-sizing:border-box;padding:7px;margin-top:3px"></label>
+            <button onclick="addScheduleGuest()" style="padding:8px 9px;border:1px solid #B7DBD7;background:#fff;border-radius:8px;color:#0F766E;font-size:11px;font-weight:800;cursor:pointer">추가</button>
+          </div>
+          <div style="font-size:10px;color:#64748B;margin-top:5px">등록되지 않은 게스트는 생성자가 시작 년월을 입력합니다.</div>
+          <div style="display:flex;gap:7px;margin-top:12px">
+            <button onclick="toggleScheduleComposer(false)" style="flex:1;padding:10px;border:1px solid #C8E0DE;background:#fff;border-radius:9px;color:#64748B;font-size:12px;font-weight:800;cursor:pointer">취소</button>
+            <button onclick="addSchedule()" style="flex:2;padding:10px;border:none;background:#0F766E;border-radius:9px;color:#fff;font-size:12px;font-weight:900;cursor:pointer">개인 일정 등록</button>
+          </div>
+        </div>
+        <div id="personalScheduleList"></div>
+      </section>
 
       <!-- 월 캘린더 -->
       <div id="scheduleCalendar" style="display:none;background:#FFFFFF;border:1px solid #C8E0DE;border-radius:14px;padding:14px;margin-bottom:16px"></div>
@@ -1620,7 +1664,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.13.10';
+const APP_VERSION = '1.14.0';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -1744,6 +1788,8 @@ const CLUB_INSTAGRAM_URL = 'https://www.instagram.com/tbsclub_tennis';
 let schedulePage = 0;
 let openCategory = null; // 홈 바로가기 펼쳐진 카테고리 ID (null=모두 접힘)
 const SCHEDULE_PER_PAGE = 5;
+let scheduleView = 'all';
+let scheduleDraftParticipants = [];
 window.gotoSchedulePage = function(p){ schedulePage = p; renderSchedules(); const el = document.getElementById('scheduleList'); if(el) el.scrollIntoView({behavior:'smooth', block:'start'}); };
 let currentSeason = 1;      // 현재 진행 시즌
 let personalHighlightSeason = null; // 나의 시즌에서 선택한 종료 시즌
@@ -3580,7 +3626,7 @@ window.saveAllRounds = async function(btn) {
 let terraRecords = []; // Firestore에서 로드
 
 window.switchTerraSub = function(sub, btn) {
-  ['myrecords','all','stats'].forEach(s => {
+  ['myrecords','all','stats','personal'].forEach(s => {
     document.getElementById('terra-'+s).style.display = s===sub?'block':'none';
   });
   document.querySelectorAll('#tab-terra .stab').forEach(b=>b.classList.remove('active'));
@@ -3588,7 +3634,14 @@ window.switchTerraSub = function(sub, btn) {
   if(sub==='all') renderTerraAll();
   if(sub==='stats') renderTerraStats();
   if(sub==='myrecords') renderTerraMyRecords();
+  if(sub==='personal') { moveMemberSchedulePanel(); renderPersonalSchedules(); }
 };
+
+function moveMemberSchedulePanel() {
+  const panel = document.getElementById('memberSchedulePanel');
+  const destination = document.getElementById('terra-personal');
+  if (panel && destination && panel.parentElement !== destination) destination.appendChild(panel);
+}
 
 // 회원 선택 드롭다운 업데이트
 function updateTerraSelects() {
@@ -8164,9 +8217,9 @@ function initSchedule() {
   // 오늘 날짜 기본값
   const dEl = document.getElementById('schDate');
   if (dEl && !dEl.value) dEl.value = new Date().toISOString().slice(0,10);
-  // "새 일정 올리기" 섹션: 관리자만 표시
-  const newSection = document.getElementById('scheduleNewSection');
-  if (newSection) newSection.style.display = isAdmin ? '' : 'none';
+  const canCreate = isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest);
+  const addBtn = document.getElementById('openScheduleComposerBtn');
+  if (addBtn) addBtn.style.display = canCreate ? 'block' : 'none';
   const instagramLink = document.getElementById('clubInstagramLink');
   if (instagramLink) {
     instagramLink.href = CLUB_INSTAGRAM_URL || '#';
@@ -8174,10 +8227,126 @@ function initSchedule() {
   }
   applyClubNewsView();
   renderSchedules();
+  renderPersonalSchedules();
   // 마지막 확인 시각 저장 (NEW 배지 제거)
   try { localStorage.setItem('schLastSeen', Date.now()); } catch(e){}
   updateScheduleBadge();
 }
+
+function canManageSchedule(schedule) {
+  return !!(isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest && schedule && schedule.ownerUid === myClaim.uid));
+}
+
+function scheduleDirectory() {
+  return [
+    ...members.map(member => ({...member, role:'member', source:'profile'})),
+    ...guests.map(guest => ({...guest, role:'guest', source:'profile'}))
+  ];
+}
+
+function scheduleParticipantKey(player) {
+  return player.uid ? `uid:${player.uid}` : `guest:${player.name}`;
+}
+
+function makeScheduleParticipant(player, source='profile') {
+  return {
+    key: scheduleParticipantKey(player),
+    uid: player.uid || null,
+    name: (player.name || '').trim(),
+    gender: player.gender || '',
+    role: player.role === 'member' ? 'member' : 'guest',
+    tennisStartDate: player.tennisStartDate || '',
+    careerSource: source
+  };
+}
+
+function scheduleStartLabel(startDate) {
+  return startDate ? `${startDate.replace('-', '.')} 시작` : '시작 년월 미입력';
+}
+
+function ensureScheduleOwnerSelected() {
+  if (!myClaim || myClaim === 'pending' || myClaim.isGuest || !myClaim.name) return;
+  const owner = makeScheduleParticipant({...myClaim, role:'member'}, 'profile');
+  if (!scheduleDraftParticipants.some(item => item.uid && item.uid === owner.uid)) {
+    scheduleDraftParticipants.unshift(owner);
+  }
+}
+
+function renderScheduleParticipantPicker() {
+  const el = document.getElementById('scheduleParticipantPicker');
+  if (!el) return;
+  const keyword = (document.getElementById('scheduleParticipantSearch')?.value || '').trim().toLowerCase();
+  const entries = scheduleDirectory().filter(player => !keyword || (player.name || '').toLowerCase().includes(keyword));
+  el.innerHTML = entries.map(player => {
+    const key = scheduleParticipantKey(player);
+    const checked = scheduleDraftParticipants.some(item => item.key === key);
+    const roleLabel = player.role === 'member' ? '정회원' : '게스트';
+    const roleColor = player.role === 'member' ? '#0F766E' : '#7C3AED';
+    return `<label style="display:flex;align-items:center;gap:7px;padding:7px 6px;border-bottom:1px solid #EEF5F4;cursor:pointer">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleScheduleParticipant('${key.replace(/'/g, "\\'")}')">
+      <span style="font-size:12px;font-weight:800;color:#1E293B;flex:1">${player.name}</span>
+      <span style="font-size:9px;font-weight:800;color:${roleColor}">${roleLabel}</span>
+      <span style="font-size:9px;color:#64748B">${scheduleStartLabel(player.tennisStartDate)}</span>
+    </label>`;
+  }).join('') || '<div style="font-size:11px;color:#64748B;padding:9px">검색 결과가 없어요.</div>';
+  const summary = document.getElementById('scheduleParticipantSummary');
+  if (summary) summary.textContent = scheduleDraftParticipants.length
+    ? `선택 ${scheduleDraftParticipants.length}명 · ${scheduleDraftParticipants.map(item => `${item.name}${item.tennisStartDate ? ` (${scheduleStartLabel(item.tennisStartDate)})` : ''}`).join(', ')}`
+    : '참가자를 선택하세요. 일정 생성자는 자동으로 포함됩니다.';
+}
+
+window.toggleScheduleParticipant = function(key) {
+  const player = scheduleDirectory().find(item => scheduleParticipantKey(item) === key);
+  if (!player) return;
+  const existingIndex = scheduleDraftParticipants.findIndex(item => item.key === key);
+  const isOwner = myClaim && myClaim !== 'pending' && !myClaim.isGuest && player.uid && player.uid === myClaim.uid;
+  if (existingIndex >= 0) {
+    if (isOwner) { alert('일정 생성자는 참가자에서 제외할 수 없어요.'); return; }
+    scheduleDraftParticipants.splice(existingIndex, 1);
+  } else {
+    scheduleDraftParticipants.push(makeScheduleParticipant(player));
+  }
+  renderScheduleParticipantPicker();
+};
+
+window.addScheduleGuest = function() {
+  const nameEl = document.getElementById('scheduleGuestName');
+  const startEl = document.getElementById('scheduleGuestStart');
+  const name = nameEl?.value.trim();
+  const tennisStartDate = startEl?.value || '';
+  if (!name) { alert('외부 게스트 이름을 입력해주세요.'); return; }
+  if (!tennisStartDate) { alert('외부 게스트의 테니스 시작 년월을 입력해주세요.'); return; }
+  const key = `guest:${name}`;
+  if (scheduleDraftParticipants.some(item => item.key === key)) { alert('이미 참가자에 포함되어 있어요.'); return; }
+  scheduleDraftParticipants.push({key, uid:null, name, gender:'', role:'guest', tennisStartDate, careerSource:'creator'});
+  nameEl.value = '';
+  startEl.value = '';
+  renderScheduleParticipantPicker();
+};
+
+window.setScheduleView = function(view) {
+  scheduleView = view === 'mine' ? 'mine' : 'all';
+  const allBtn = document.getElementById('scheduleViewAllBtn');
+  const mineBtn = document.getElementById('scheduleViewMineBtn');
+  if (allBtn) { allBtn.style.background = scheduleView === 'all' ? '#0F766E' : '#fff'; allBtn.style.color = scheduleView === 'all' ? '#fff' : '#0F766E'; }
+  if (mineBtn) { mineBtn.style.background = scheduleView === 'mine' ? '#0F766E' : '#fff'; mineBtn.style.color = scheduleView === 'mine' ? '#fff' : '#0F766E'; }
+  renderPersonalSchedules();
+};
+
+window.toggleScheduleComposer = function(forceOpen) {
+  const canCreate = isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest);
+  if (!canCreate) { alert('정회원만 개인 일정을 만들 수 있어요.'); return; }
+  const el = document.getElementById('scheduleComposer');
+  if (!el) return;
+  const open = typeof forceOpen === 'boolean' ? forceOpen : el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  if (open) {
+    const dateEl = document.getElementById('schDate');
+    if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
+    ensureScheduleOwnerSelected();
+    renderScheduleParticipantPicker();
+  }
+};
 
 function updateScheduleBadge() {
   const badge = document.getElementById('scheduleBadge');
@@ -8231,30 +8400,45 @@ window.setClubNewsFilter = function(filter) {
 };
 
 window.addSchedule = async function() {
-  const writer = document.getElementById('schWriter').value;
+  const canCreate = isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest);
+  if (!canCreate) { alert('정회원만 개인 일정을 만들 수 있어요.'); return; }
   const date = document.getElementById('schDate').value;
   const time = document.getElementById('schTime').value;
   const place = document.getElementById('schPlace').value.trim();
   const content = document.getElementById('schContent').value.trim();
-  if (!writer) { alert('작성자를 선택해주세요'); return; }
   if (!date) { alert('날짜를 선택해주세요'); return; }
   if (!content) { alert('내용을 입력해주세요'); return; }
-
-  const writerUid = (myClaim && myClaim !== 'pending' && myClaim.name === writer) ? myClaim.uid : null;
+  ensureScheduleOwnerSelected();
+  const participantSnapshots = scheduleDraftParticipants.filter(item => item.name);
+  if (!participantSnapshots.length) { alert('참가자를 한 명 이상 선택해주세요.'); return; }
+  const ownerUid = isAdmin ? (auth.currentUser?.uid || null) : myClaim.uid;
+  const writer = isAdmin ? '관리자' : myClaim.name;
+  const participantUids = [...new Set(participantSnapshots.filter(item => item.role === 'member' && item.uid).map(item => item.uid))];
+  if (!isAdmin && !participantUids.includes(ownerUid)) participantUids.unshift(ownerUid);
+  const attendanceByUid = {};
+  const attend = {};
+  participantSnapshots.forEach(item => {
+    const status = item.uid && item.uid === ownerUid ? '참석' : '미정';
+    if (item.uid) attendanceByUid[item.uid] = status;
+    attend[item.name] = status;
+  });
 
   await addDoc(collection(db,'schedules'), {
-    writer, writerUid, date, time, place, content,
-    attend: { [writer]: '참석' },
-    comments: [],
+    title: content.slice(0, 80), writer, writerUid: ownerUid, ownerUid,
+    date, time, place, content,
+    participantSnapshots, participantUids,
+    attendanceByUid, attend,
+    comments: [], recordScope: 'personal',
     isGameMeetup: document.getElementById('schIsGameMeetup').checked,
-    ts: Date.now(),
-    createdAt: serverTimestamp()
+    ts: Date.now(), createdAt: serverTimestamp()
   });
   document.getElementById('schPlace').value='';
   document.getElementById('schContent').value='';
   document.getElementById('schTime').value='';
   document.getElementById('schIsGameMeetup').checked = false;
-  alert('✅ 일정이 등록됐어요!');
+  scheduleDraftParticipants = [];
+  toggleScheduleComposer(false);
+  alert('✅ 개인 일정이 등록됐어요! 선택된 정회원에게만 알림을 보냅니다.');
 };
 
 window.delSchedule = async function(id) {
@@ -8341,7 +8525,8 @@ window.openMeetupPairModal = function(scheduleId) {
   meetupCurrentScheduleId = scheduleId;
   const sch = schedules.find(s => s.id === scheduleId);
   if (!sch) return;
-  const attend = sch.attend || {};
+  if (!canManageSchedule(sch)) { alert('일정 생성자 또는 관리자만 대진표와 결과를 관리할 수 있어요.'); return; }
+  const attend = Object.fromEntries(getScheduleAttendanceRows(sch).map(row => [row.name, row.status]));
   const attendees = Object.entries(attend).filter(([_, v]) => v === '참석').map(([n]) => n);
   if (attendees.length < 4) {
     document.getElementById('meetupPairBody').innerHTML = '<div class="empty" style="padding:16px;text-align:center;color:#78909C;font-size:13px">참석자가 4명 이상이어야 페어를 짤 수 있어요</div>';
@@ -8561,7 +8746,7 @@ window.meetupGenerate = function() {
     attendeesWithGender = evExchangeAttendees;
   } else {
     const sch = schedules.find(s => s.id === meetupCurrentScheduleId);
-    const attend = sch ? sch.attend || {} : {};
+    const attend = sch ? Object.fromEntries(getScheduleAttendanceRows(sch).map(row => [row.name, row.status])) : {};
     const attendeeNames = Object.entries(attend).filter(([_, v]) => v === '참석').map(([n]) => n);
     const allP = allPlayers();
     attendeesWithGender = attendeeNames.map(n => {
@@ -9031,6 +9216,8 @@ window.startEvExchangeEdit = function(ri, mci, ti, idx) {
 };
 
 window.saveMeetupPairs = async function() {
+  const editableSchedule = schedules.find(s => s.id === meetupCurrentScheduleId);
+  if (!canManageSchedule(editableSchedule)) { alert('일정 생성자 또는 관리자만 저장할 수 있어요.'); return; }
   meetupCurrentRounds.forEach(rd => {
     rd.matches.forEach((m, mi) => {
       m.score1 = parseInt(document.getElementById(`meetupS1_${rd.round}_${mi}`)?.value) || 0;
@@ -9046,10 +9233,10 @@ window.saveMeetupPairs = async function() {
   meetupCurrentRounds.forEach(rd => {
     rd.matches.forEach(m => {
       const [a, b] = m.team1, [c, d] = m.team2;
-      writes.push(addDoc(collection(db, 'terra'), { player: a, date, partner: b, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
-      writes.push(addDoc(collection(db, 'terra'), { player: b, date, partner: a, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
-      writes.push(addDoc(collection(db, 'terra'), { player: c, date, partner: d, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
-      writes.push(addDoc(collection(db, 'terra'), { player: d, date, partner: c, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', createdAt: serverTimestamp() }));
+      writes.push(addDoc(collection(db, 'terra'), { player: a, date, partner: b, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', recordScope:'personal', sourceScheduleId:meetupCurrentScheduleId, createdAt: serverTimestamp() }));
+      writes.push(addDoc(collection(db, 'terra'), { player: b, date, partner: a, opp: `${c}/${d}`, pos: '', s1: m.score1, s2: m.score2, memo: '게임모임 자동기록', recordScope:'personal', sourceScheduleId:meetupCurrentScheduleId, createdAt: serverTimestamp() }));
+      writes.push(addDoc(collection(db, 'terra'), { player: c, date, partner: d, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', recordScope:'personal', sourceScheduleId:meetupCurrentScheduleId, createdAt: serverTimestamp() }));
+      writes.push(addDoc(collection(db, 'terra'), { player: d, date, partner: c, opp: `${a}/${b}`, pos: '', s1: m.score2, s2: m.score1, memo: '게임모임 자동기록', recordScope:'personal', sourceScheduleId:meetupCurrentScheduleId, createdAt: serverTimestamp() }));
     });
   });
   await Promise.all(writes);
@@ -10782,6 +10969,86 @@ function renderCalendar(){
     ${filterChip}`;
 }
 
+function getScheduleAttendanceRows(schedule) {
+  const snapshots = schedule.participantSnapshots || [];
+  if (snapshots.length) {
+    return snapshots.map(item => ({
+      name: item.name,
+      uid: item.uid || null,
+      status: item.uid ? (schedule.attendanceByUid || {})[item.uid] || '미정' : (schedule.attend || {})[item.name] || '미정',
+      tennisStartDate: item.tennisStartDate || ''
+    }));
+  }
+  return Object.entries(schedule.attend || {}).map(([name, status]) => ({name, uid:null, status, tennisStartDate:''}));
+}
+
+window.setPersonalScheduleAttendance = async function(scheduleId, status) {
+  const schedule = schedules.find(item => item.id === scheduleId);
+  if (!schedule || !myClaim || myClaim === 'pending' || myClaim.isGuest || !myClaim.uid) return;
+  if (!(schedule.participantUids || []).includes(myClaim.uid)) { alert('이 일정의 참가자만 참석 여부를 바꿀 수 있어요.'); return; }
+  const before = (schedule.attendanceByUid || {})[myClaim.uid] || '미정';
+  schedule.attendanceByUid = {...(schedule.attendanceByUid || {}), [myClaim.uid]:status};
+  renderPersonalSchedules();
+  try {
+    await updateDoc(doc(db, 'schedules', scheduleId), {[`attendanceByUid.${myClaim.uid}`]: status, updatedAt: serverTimestamp()});
+  } catch (error) {
+    schedule.attendanceByUid = {...(schedule.attendanceByUid || {}), [myClaim.uid]:before};
+    renderPersonalSchedules();
+    alert('참석 여부를 저장하지 못했어요. 다시 로그인한 뒤 시도해주세요.');
+  }
+};
+
+function renderPersonalSchedules() {
+  const el = document.getElementById('personalScheduleList');
+  if (!el) return;
+  const signedMember = !!(myClaim && myClaim !== 'pending' && !myClaim.isGuest);
+  let list = schedules.filter(schedule => schedule.recordScope === 'personal');
+  if (scheduleView === 'mine') {
+    if (!signedMember) {
+      el.innerHTML = '<div style="font-size:11px;color:#64748B;padding:10px 2px">내 일정은 정회원 로그인 후 확인할 수 있어요.</div>';
+      return;
+    }
+    list = list.filter(schedule => schedule.ownerUid === myClaim.uid || (schedule.participantUids || []).includes(myClaim.uid));
+  }
+  list.sort((a,b) => (a.date || '').localeCompare(b.date || '') || Number(b.ts || 0) - Number(a.ts || 0));
+  if (!list.length) {
+    el.innerHTML = `<div style="padding:12px;background:#fff;border:1px dashed #C8E0DE;border-radius:10px;font-size:11px;color:#64748B">${scheduleView === 'mine' ? '내가 포함된 개인 일정이 없어요.' : '등록된 회원 일정이 없어요.'}</div>`;
+    return;
+  }
+  el.innerHTML = list.map(schedule => {
+    const rows = getScheduleAttendanceRows(schedule);
+    const dateLabel = schedule.date ? new Date(`${schedule.date}T00:00:00`).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
+    const canManage = canManageSchedule(schedule);
+    const canAttend = signedMember && (schedule.participantUids || []).includes(myClaim.uid);
+    const myStatus = canAttend ? ((schedule.attendanceByUid || {})[myClaim.uid] || '미정') : '';
+    const statusColor = {참석:'#059669', 불참:'#DC2626', 미정:'#B45309'};
+    const resultHtml = (schedule.gamePairs || []).map(round => {
+      const games = (round.matches || []).map(match => {
+        const done = match.score1 !== null && match.score1 !== undefined && match.score2 !== null && match.score2 !== undefined;
+        return `<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:7px;align-items:center;padding:7px 0;border-top:1px solid #E7F0EF;font-size:11px">
+          <span style="font-weight:800;color:#1E293B">${(match.team1 || []).join(' / ')}</span>
+          <span style="font-weight:900;color:${done?'#0F766E':'#94A3B8'}">${done ? `${match.score1} : ${match.score2}` : '예정'}</span>
+          <span style="font-weight:800;color:#1E293B;text-align:right">${(match.team2 || []).join(' / ')}</span>
+        </div>`;
+      }).join('');
+      return games ? `<div style="margin-top:7px"><div style="font-size:10px;font-weight:900;color:#6D28D9">${round.round || '경기'}라운드</div>${games}</div>` : '';
+    }).join('');
+    return `<article style="background:#fff;border:1px solid #D6E9E7;border-radius:12px;padding:12px;margin-top:9px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <div><div style="font-size:13px;font-weight:900;color:#1E293B">${schedule.title || schedule.content || '회원 일정'}</div>
+          <div style="font-size:10px;color:#64748B;margin-top:4px">📅 ${dateLabel}${schedule.time?` · ${schedule.time}`:''}${schedule.place?` · 📍 ${schedule.place}`:''}</div></div>
+        <span style="font-size:9px;font-weight:900;color:#0F766E;background:#E5F7F3;border-radius:99px;padding:5px 7px;white-space:nowrap">개인 기록</span>
+      </div>
+      ${schedule.content && schedule.content !== schedule.title ? `<div style="font-size:11px;color:#475569;line-height:1.55;margin-top:8px">${schedule.content}</div>` : ''}
+      <div style="margin-top:9px;padding-top:8px;border-top:1px solid #E7F0EF"><div style="font-size:10px;font-weight:900;color:#0F766E;margin-bottom:5px">참가자 ${rows.length}명 · 참가 당시 시작 년월</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name} · <b style="color:${statusColor[row.status] || '#64748B'}">${row.status}</b>${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
+      </div>
+      ${canAttend ? `<div style="display:flex;align-items:center;gap:6px;margin-top:10px"><span style="font-size:10px;color:#64748B;white-space:nowrap">내 참석: <b style="color:${statusColor[myStatus] || '#64748B'}">${myStatus}</b></span><button onclick="setPersonalScheduleAttendance('${schedule.id}','참석')" style="flex:1;padding:7px;border:1px solid #8FE3C4;background:${myStatus==='참석'?'#DDF9ED':'#fff'};border-radius:7px;color:#059669;font-size:10px;font-weight:800;cursor:pointer">참석</button><button onclick="setPersonalScheduleAttendance('${schedule.id}','불참')" style="flex:1;padding:7px;border:1px solid #FBC0C0;background:${myStatus==='불참'?'#FFF0F0':'#fff'};border-radius:7px;color:#DC2626;font-size:10px;font-weight:800;cursor:pointer">불참</button><button onclick="setPersonalScheduleAttendance('${schedule.id}','미정')" style="flex:1;padding:7px;border:1px solid #F6D58B;background:${myStatus==='미정'?'#FFF8E3':'#fff'};border-radius:7px;color:#B45309;font-size:10px;font-weight:800;cursor:pointer">미정</button></div>` : ''}
+      ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">대진·결과 관리</button>` : ''}</div>${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 대진표가 없어요.</div>'}</div>` : ''}
+    </article>`;
+  }).join('');
+}
+
 function renderSchedules() {
   const el = document.getElementById('scheduleList');
   if (!el) return;
@@ -11571,6 +11838,7 @@ window.openScore=function(dayId, rIdx, mId){
 window.openMeetupScore=function(schId, rdIdx, mIdx){
   const sch=(schedules||[]).find(s=>s.id===schId);
   if(!sch||!sch.gamePairs)return;
+  if(!canManageSchedule(sch)){alert('일정 생성자 또는 관리자만 결과를 입력할 수 있어요.');return;}
   const rd=sch.gamePairs[rdIdx]; if(!rd)return;
   const m=(rd.matches||[])[mIdx]; if(!m)return;
   pendingScore={type:'gamePairs', schId, rdIdx:parseInt(rdIdx), mIdx:parseInt(mIdx)};
@@ -11712,6 +11980,7 @@ window.submitScore=async function(){
   if(pendingScore.type==='gamePairs'){
     const sch=(schedules||[]).find(s=>s.id===pendingScore.schId);
     if(!sch)return;
+    if(!canManageSchedule(sch)){alert('일정 생성자 또는 관리자만 결과를 저장할 수 있어요.');return;}
     const pairs=JSON.parse(JSON.stringify(sch.gamePairs||[]));
     const m=(pairs[pendingScore.rdIdx].matches||[])[pendingScore.mIdx];
     if(!m)return;
@@ -13517,6 +13786,7 @@ onSnapshot(collection(db,'schedules'), snap => {
   schedules = snap.docs.map(d=>({id:d.id,...d.data()}));
   renderCalendar();
   renderSchedules();
+  renderPersonalSchedules();
   renderTodayBanner();
   updateScheduleBadge();
   renderHomeTab();

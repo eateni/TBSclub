@@ -46,12 +46,14 @@ function validText(value, fallback, maxLength) {
   return (text || fallback).slice(0, maxLength);
 }
 
-async function sendPush({title, body, url = APP_URL, target = "all"}) {
+async function sendPush({title, body, url = APP_URL, target = "all", targetUids = []}) {
+  const targetUidSet = new Set((targetUids || []).filter((uid) => typeof uid === "string" && uid));
   const tokenSnapshot = await db.collection("pushTokens").get();
   const recipients = tokenSnapshot.docs
     .map((doc) => ({ref: doc.ref, ...doc.data()}))
     .filter((item) => item.enabled === true && typeof item.token === "string" && item.token.length > 20)
-    .filter((item) => target !== "admin" || item.role === "admin");
+    .filter((item) => target !== "admin" || item.role === "admin")
+    .filter((item) => !targetUidSet.size || targetUidSet.has(item.uid));
 
   if (!recipients.length) return {successCount: 0, failureCount: 0, recipientCount: 0};
 
@@ -98,12 +100,12 @@ async function completeAutomatic(ref, payload, result, error) {
   }, {merge: true});
 }
 
-async function sendAutomatic({eventId, type, settingKey, title, body, url}) {
+async function sendAutomatic({eventId, type, settingKey, title, body, url, targetUids = []}) {
   const settings = await getSettings();
   if (settings.enabled !== true || settings[settingKey] !== true) return null;
   const eventRef = await claimAutomaticNotification(eventId, type);
   if (!eventRef) return null;
-  const payload = {title, body, url};
+  const payload = {title, body, url, targetUids};
   try {
     const result = await sendPush(payload);
     await completeAutomatic(eventRef, payload, result, null);
@@ -125,6 +127,9 @@ exports.notifyScheduleCreated = onDocumentCreated("schedules/{scheduleId}", asyn
   if (!schedule) return;
   const date = validText(schedule.date, "새 일정", 30);
   const place = validText(schedule.place, "장소 미정", 80);
+  const participantUids = Array.isArray(schedule.participantUids) ? schedule.participantUids : [];
+  // 기존 관리자 일정은 전체 공지 대상이었지만, 새 회원 일정은 지정된 정회원에게만 보낸다.
+  if (schedule.recordScope === "personal" && !participantUids.length) return;
   await sendAutomatic({
     eventId: `schedule-${event.params.scheduleId}`,
     type: "scheduleCreated",
@@ -132,6 +137,7 @@ exports.notifyScheduleCreated = onDocumentCreated("schedules/{scheduleId}", asyn
     title: "📅 새로운 일정이 등록됐어요",
     body: `${date} · ${place}`,
     url: `${APP_URL}#schedule`,
+    targetUids: schedule.recordScope === "personal" ? participantUids : [],
   });
 });
 

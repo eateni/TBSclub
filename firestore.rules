@@ -75,10 +75,25 @@ service cloud.firestore {
       allow write: if canRecordResults();
     }
 
-    // 일정은 공개 조회, 관리는 관리자만
+    // 회원 일정: 결과는 공개, 생성·대진·기록 관리는 정회원 일정 생성자만
+    // 참석 응답은 지정된 정회원이 본인의 상태 필드만 바꿀 수 있다.
     match /schedules/{document=**} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow create: if isAdmin() || (
+        isMember()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.writerUid == request.auth.uid
+        && request.resource.data.recordScope == 'personal'
+        && request.auth.uid in request.resource.data.participantUids
+      );
+      allow update, delete: if isAdmin() || (
+        isMember()
+        && resource.data.ownerUid == request.auth.uid
+      );
+      allow update: if isMember()
+        && resource.data.participantUids.hasAny([request.auth.uid])
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendanceByUid', 'updatedAt'])
+        && request.resource.data.attendanceByUid.diff(resource.data.attendanceByUid).affectedKeys().hasOnly([request.auth.uid]);
     }
 
     // 회원가입 신청 - 본인 신청만 생성 가능, 승인/거절은 관리자만
