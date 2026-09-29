@@ -96,6 +96,24 @@ service cloud.firestore {
         && request.resource.data.attendanceByUid.diff(resource.data.attendanceByUid).affectedKeys().hasOnly([request.auth.uid]);
     }
 
+    // 참석 투표: 관리자가 만들고 마감·참가자 반영을 관리한다.
+    // 로그인 회원은 본인 UID의 응답만 수정하며, 게스트 허용 투표는 로그인한 게스트도 응답할 수 있다.
+    match /attendancePolls/{pollId} {
+      allow read: if true;
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        request.auth != null
+        && resource.data.status == 'open'
+        && (isMember() || resource.data.allowGuests == true)
+        && request.resource.data.status == 'open'
+        && (resource.data.deadlineAt == null || request.time <= resource.data.deadlineAt)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['responses', 'updatedAt'])
+        && request.resource.data.responses.diff(resource.data.responses).affectedKeys().hasOnly([request.auth.uid])
+        && request.resource.data.responses[request.auth.uid].uid == request.auth.uid
+        && request.resource.data.responses[request.auth.uid].answer in ['yes', 'no', 'maybe']
+      );
+    }
+
     // 회원가입 신청 - 본인 신청만 생성 가능, 승인/거절은 관리자만
     match /signupRequests/{reqId} {
       allow create: if request.auth != null && request.resource.data.uid == request.auth.uid;

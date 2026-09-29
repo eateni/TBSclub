@@ -563,6 +563,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="tab-btn active" onclick="switchTab('league',this)">🏆 정규리그</button>
       <button class="tab-btn" onclick="switchTab('terra',this)">⚡ 개인별 게임 기록</button>
       <button class="tab-btn" onclick="switchTab('personal',this)">📅 개인 경기</button>
+      <button class="tab-btn" onclick="switchTab('polls',this)">📮 참석 투표</button>
       <button class="tab-btn" onclick="switchTab('schedule',this)" style="position:relative">📰 클럽소식<span id="scheduleBadge" style="display:none;position:absolute;top:2px;right:4px;background:#ef4444;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px">NEW</span></button>
       <button class="tab-btn" onclick="switchTab('fortune',this)">🔮 오늘의 운세</button>
       <button class="tab-btn" onclick="switchTab('event',this)">🎉 이벤트전</button>
@@ -596,6 +597,7 @@ tr:nth-child(even){background:#F5FCFB;}
       </div>
       <div class="more-menu-title">기록 · 이벤트</div>
       <button class="more-menu-item" onclick="navTo('personal')">📅 개인 경기</button>
+      <button class="more-menu-item" onclick="navTo('polls')">📮 참석 투표</button>
       <button class="more-menu-item" onclick="navTo('event')">🎉 이벤트전</button>
       <button class="more-menu-item" id="moreGameSummaryBtn" style="display:none" onclick="navTo('gamesummary')">✨ 나의 시즌</button>
       <div class="more-menu-title" style="margin-top:16px">클럽</div>
@@ -606,7 +608,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.14.1</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.15.0</div>
     </div>
   </div>
 
@@ -615,7 +617,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.14.1</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.15.0</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -653,6 +655,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <ul>
           <li>하단 메뉴는 <b>홈 · 정규시즌 · 클럽소식 · 메뉴</b>로 구성됩니다.</li>
           <li><b>메뉴 → 개인 경기</b>에서 개인 일정, 참석 여부와 개인 게임 결과를 관리합니다.</li>
+          <li><b>메뉴 → 참석 투표</b>에서 정규시즌, 이벤트전, 회식·별도 모임의 참석·미정·불참을 응답합니다.</li>
           <li>메뉴에서 이벤트전, 나의 시즌, 게시판, 사진/동영상, 오늘의 운세와 내 정보를 이용할 수 있습니다.</li>
         </ul>
       </div>
@@ -675,6 +678,15 @@ tr:nth-child(even){background:#F5FCFB;}
           <li>초대된 정회원은 본인의 참석·불참·미정만 직접 바꿀 수 있습니다.</li>
           <li>게임모임은 생성자 또는 관리자가 페어와 결과를 관리하며, 결과는 누구나 볼 수 있습니다.</li>
           <li>개인 경기 결과는 개인 기록으로 남고 정규시즌 공식 랭킹에는 포함되지 않습니다.</li>
+        </ul>
+      </div>
+
+      <div class="app-guide-card">
+        <h3>📮 참석 투표</h3>
+        <ul>
+          <li>정규시즌, 이벤트전과 별도 모임의 참석 여부를 <b>참석 · 미정 · 불참</b>으로 답할 수 있습니다.</li>
+          <li>응답 마감 전에는 언제든 내 응답을 변경할 수 있습니다.</li>
+          <li>홈에 응답이 필요한 투표가 표시되며, 메뉴에서 모든 진행 중인 투표를 확인합니다.</li>
         </ul>
       </div>
 
@@ -824,6 +836,11 @@ tr:nth-child(even){background:#F5FCFB;}
     <div id="tab-personal" style="display:none">
       <div style="margin-top:16px"></div>
       <div id="personalMatchContent"></div>
+    </div>
+
+    <!-- 참석 투표: 정규시즌·이벤트전·별도 모임 공통 응답 화면 -->
+    <div id="tab-polls" style="display:none">
+      <div id="attendancePollContent" style="padding:16px 0 90px"></div>
     </div>
 
     <!-- 📰 클럽소식 -->
@@ -989,6 +1006,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <button class="stab active" onclick="switchAdminSub('members',this)">👥 회원·승인</button>
         <button class="stab" onclick="switchAdminSub('match',this)">🎾 시즌·페어 설정</button>
         <button class="stab" onclick="switchAdminSub('operations',this)">📅 경기 운영</button>
+        <button class="stab" onclick="switchAdminSub('polls',this)">📮 참석 투표</button>
         <button class="stab" onclick="switchAdminSub('status',this)">📊 운영 현황</button>
         <button class="stab" onclick="switchAdminSub('announce',this)">📢 공지 관리</button>
         <button class="stab" onclick="switchAdminSub('notifications',this)">🔔 알림 관리</button>
@@ -1108,6 +1126,29 @@ tr:nth-child(even){background:#F5FCFB;}
           <div class="admin-ops-step"><b>2. 공식 대진</b>관리자 자동·수동 생성</div>
           <div class="admin-ops-step"><b>3. 즉석 매치</b>현장 추가 경기 관리</div>
         </div>
+      </div>
+
+      <div id="adminGroup-polls" style="display:none">
+        <div class="admin-sec">
+          <h3>📮 참석 투표 만들기</h3>
+          <div style="font-size:11px;color:#64748B;line-height:1.55;margin-bottom:10px">정규시즌·이벤트전·회식 등 별도 모임의 참석을 한곳에서 받습니다. 정규시즌과 이벤트전은 응답을 확인한 뒤 아래 현황에서 참가자 명단에 반영할 수 있어요.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <label style="font-size:11px;color:#475569;font-weight:800">구분<select id="pollCategory" class="row-sel" onchange="syncAttendancePollTargetForm()" style="width:100%;margin-top:4px"><option value="regular">정규시즌</option><option value="event">이벤트전</option><option value="social">회식·별도 모임</option></select></label>
+            <label style="font-size:11px;color:#475569;font-weight:800">연결 일정<select id="pollTarget" class="row-sel" onchange="syncAttendancePollTargetForm()" style="width:100%;margin-top:4px"></select></label>
+          </div>
+          <label style="display:block;font-size:11px;color:#475569;font-weight:800;margin-top:9px">투표 제목<input id="pollTitle" class="row-sel" placeholder="예: 10월 3일 정규시즌 참석 조사" style="width:100%;margin-top:4px"></label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px">
+            <label style="font-size:11px;color:#475569;font-weight:800">날짜<input id="pollDate" type="date" class="row-sel" style="width:100%;margin-top:4px"></label>
+            <label style="font-size:11px;color:#475569;font-weight:800">장소<input id="pollPlace" class="row-sel" placeholder="장소 (선택)" style="width:100%;margin-top:4px"></label>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px">
+            <label style="font-size:11px;color:#475569;font-weight:800">응답 마감<input id="pollDeadline" type="date" class="row-sel" style="width:100%;margin-top:4px"></label>
+            <label style="font-size:11px;color:#475569;font-weight:800">정원<input id="pollCapacity" type="number" min="0" class="row-sel" placeholder="제한 없음" style="width:100%;margin-top:4px"></label>
+          </div>
+          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#475569;margin-top:10px"><input id="pollAllowGuests" type="checkbox"> 게스트도 응답 가능</label>
+          <button onclick="createAttendancePoll()" class="btn-add" style="width:100%;margin-top:12px">📮 참석 투표 생성</button>
+        </div>
+        <div id="adminAttendancePollList"></div>
       </div>
 
       <div id="adminGroup-schedule" style="display:none">
@@ -1667,7 +1708,7 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged,
   setPersistence, browserLocalPersistence, signInAnonymously,
   sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, query, where, getDocs, getDoc, runTransaction }
+import { getFirestore, doc, setDoc, collection, addDoc, updateDoc, deleteDoc, onSnapshot, serverTimestamp, Timestamp, query, where, getDocs, getDoc, runTransaction }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-firestore.js";
 import { getMessaging, getToken, onMessage, isSupported }
   from "https://www.gstatic.com/firebasejs/11.6.0/firebase-messaging.js";
@@ -1686,7 +1727,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.14.1';
+const APP_VERSION = '1.15.0';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -1777,6 +1818,7 @@ let guestsLoaded = false;
 let days = [];
 let openAttBodies = new Set();
 let events = [];
+let attendancePolls = [];
 let schedules = [];
 let announcements = [];
 let boardPosts = [];
@@ -8101,7 +8143,7 @@ window.switchMatchOpsMode = function(mode, btn){
 };
 
 window.switchAdminSub = function(key, btn){
-  ['members','match','operations','schedule','events','status','announce','notifications'].forEach(k => {
+  ['members','match','operations','schedule','events','polls','status','announce','notifications'].forEach(k => {
     const el = document.getElementById(`adminGroup-${k}`);
     if (el) {
       const active=k === key && !['schedule','events'].includes(k);
@@ -8123,12 +8165,13 @@ window.switchAdminSub = function(key, btn){
   if (activeTopBtn) activeTopBtn.classList.add('active');
   if (key === 'announce') renderAdminAnnouncements();
   if (key === 'notifications') renderAdminNotifications();
+  if (key === 'polls') { syncAttendancePollTargetForm(); renderAdminAttendancePolls(); }
 };
 
 window.switchTab=function(tab,btn){
   document.body.classList.toggle('admin-view',tab==='admin');
   if(tab==='event') currentEventAdminContext=false;
-  ['home','league','terra','personal','schedule','fortune','event','board','photo','gamesummary','admin'].forEach(t=>{
+  ['home','league','terra','personal','polls','schedule','fortune','event','board','photo','gamesummary','admin'].forEach(t=>{
     const el=document.getElementById('tab-'+t);
     if(el) el.style.display=t===tab?'block':'none';
   });
@@ -8138,6 +8181,7 @@ window.switchTab=function(tab,btn){
   if(btn) btn.classList.add('active');
   if(tab==='terra') { updateTerraSelects(); renderTerraMyRecords(); }
   if(tab==='personal') initPersonalMatch();
+  if(tab==='polls') renderAttendancePolls();
   if(tab==='fortune') initFortune();
   if(tab==='schedule') initSchedule();
   if(tab==='board') populateBoardAuthorSelect();
@@ -8156,13 +8200,13 @@ window.navTo = function(tab){
     const origBtn = document.querySelector(`.tab-btn[onclick*="switchTab('${tab}'"]`);
     if (origBtn) {
     switchTab(tab, origBtn);
-    } else if (['home','photo','gamesummary'].includes(tab)) {
+    } else if (['home','photo','gamesummary','polls'].includes(tab)) {
     switchTab(tab, null);
     }
   }
 
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
-  const bucketMap = { home:'home', league:'league', analysis:'league', terra:'more', personal:'more', schedule:'schedule', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
+  const bucketMap = { home:'home', league:'league', analysis:'league', terra:'more', personal:'more', polls:'more', schedule:'schedule', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
   const bucket = bucketMap[tab] || 'more';
   const bnBtn = document.querySelector(`.bn-btn[data-bucket="${bucket}"]`);
   if (bnBtn) bnBtn.classList.add('active');
@@ -8263,6 +8307,136 @@ function initPersonalMatch() {
   const dateEl = document.getElementById('schDate');
   if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().slice(0,10);
   renderPersonalSchedules();
+}
+
+// ── 참석 투표 ───────────────────────────────────────────────────────
+function pollEscape(value) {
+  return String(value ?? '').replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+}
+function pollDateLabel(value) {
+  if (!value) return '날짜 미정';
+  return new Date(`${value}T00:00:00`).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+}
+function pollCurrentUser() {
+  if (isAdmin) return {uid:auth.currentUser?.uid || '', name:'관리자', role:'admin'};
+  if (!myClaim || myClaim === 'pending' || !myClaim.uid) return null;
+  return {uid:myClaim.uid, name:myClaim.name || '회원', role:myClaim.isGuest ? 'guest' : 'member'};
+}
+function isPollOpen(poll) {
+  return poll.status !== 'closed' && (!poll.deadline || poll.deadline >= new Date().toISOString().slice(0,10));
+}
+function pollTypeMeta(category) {
+  return ({regular:['🏆 정규시즌','#2563EB','#EFF6FF'],event:['🎉 이벤트전','#7C3AED','#F5F3FF'],social:['🍽️ 별도 모임','#D97706','#FFFBEB']})[category] || ['📮 참석 투표','#0F766E','#F0FDFA'];
+}
+function getPollResponse(poll, uid) {
+  return uid ? (poll.responses || {})[uid] : null;
+}
+window.syncAttendancePollTargetForm = function() {
+  const category = document.getElementById('pollCategory')?.value || 'regular';
+  const target = document.getElementById('pollTarget');
+  if (!target) return;
+  const items = category === 'regular'
+    ? [...days].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(day => ({id:day.id,title:`${day.date || '날짜 미정'}${day.place ? ` · ${day.place}` : ''}`,date:day.date||'',place:day.place||''}))
+    : category === 'event'
+      ? [...events].sort((a,b)=>(a.date||'').localeCompare(b.date||'')).map(event => ({id:event.id,title:`${event.name || '이벤트전'}${event.date ? ` · ${event.date}` : ''}`,date:event.date||'',place:event.place||''}))
+      : [];
+  const current = target.value;
+  target.innerHTML = `<option value="">${category === 'social' ? '연결하지 않음' : '일정 직접 입력'}</option>` + items.map(item => `<option value="${item.id}">${pollEscape(item.title)}</option>`).join('');
+  if (items.some(item => item.id === current)) target.value = current;
+  const selected = items.find(item => item.id === target.value);
+  if (selected) {
+    const title = document.getElementById('pollTitle'), date = document.getElementById('pollDate'), place = document.getElementById('pollPlace');
+    if (title && !title.value) title.value = category === 'regular' ? `${selected.date} 정규시즌 참석 조사` : `${selected.title} 참석 조사`;
+    if (date) date.value = selected.date;
+    if (place) place.value = selected.place;
+  }
+};
+window.createAttendancePoll = async function() {
+  if (!isAdmin) return;
+  const category = document.getElementById('pollCategory')?.value || 'regular';
+  const targetId = document.getElementById('pollTarget')?.value || '';
+  const title = document.getElementById('pollTitle')?.value.trim() || '';
+  const date = document.getElementById('pollDate')?.value || '';
+  const place = document.getElementById('pollPlace')?.value.trim() || '';
+  const deadline = document.getElementById('pollDeadline')?.value || '';
+  const capacityRaw = document.getElementById('pollCapacity')?.value || '';
+  if (!title) { alert('투표 제목을 입력해주세요.'); return; }
+  const targetType = targetId ? (category === 'regular' ? 'day' : 'event') : 'none';
+  try {
+    await addDoc(collection(db,'attendancePolls'), {
+      category, targetType, targetId, title, date, place, deadline,
+      deadlineAt: deadline ? Timestamp.fromDate(new Date(`${deadline}T23:59:59`)) : null,
+      capacity: capacityRaw === '' ? null : Number(capacityRaw),
+      allowGuests: !!document.getElementById('pollAllowGuests')?.checked,
+      status:'open', responses:{}, createdBy:auth.currentUser?.email || '관리자', createdAt:serverTimestamp(), updatedAt:serverTimestamp()
+    });
+    ['pollTitle','pollDate','pollPlace','pollDeadline','pollCapacity'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+    const guests = document.getElementById('pollAllowGuests'); if (guests) guests.checked=false;
+    alert('참석 투표를 만들었습니다.');
+  } catch (error) { alert(`참석 투표 생성에 실패했어요: ${error.message}`); }
+};
+window.respondAttendancePoll = async function(pollId, answer) {
+  const poll = attendancePolls.find(item => item.id === pollId);
+  const user = pollCurrentUser();
+  if (!poll || !user) { alert('로그인 후 응답할 수 있어요.'); return; }
+  if (user.role === 'guest' && !poll.allowGuests) { alert('이 투표는 정회원만 응답할 수 있어요.'); return; }
+  if (!isPollOpen(poll)) { alert('응답이 마감된 투표예요.'); return; }
+  try {
+    await updateDoc(doc(db,'attendancePolls',pollId), {[`responses.${user.uid}`]: {uid:user.uid,name:user.name,role:user.role,answer,respondedAt:Date.now()},updatedAt:serverTimestamp()});
+  } catch (error) { alert(`응답 저장에 실패했어요: ${error.message}`); }
+};
+window.toggleAttendancePollStatus = async function(pollId) {
+  if (!isAdmin) return;
+  const poll = attendancePolls.find(item => item.id === pollId); if (!poll) return;
+  await updateDoc(doc(db,'attendancePolls',pollId),{status:poll.status==='closed'?'open':'closed',updatedAt:serverTimestamp()});
+};
+function pollCounts(poll) {
+  const responses = Object.values(poll.responses || {});
+  const count = answer => responses.filter(item => item.answer === answer).length;
+  const eligible = members.length + (poll.allowGuests ? guests.length : 0);
+  return {yes:count('yes'),no:count('no'),maybe:count('maybe'),waiting:Math.max(0,eligible - new Set(responses.map(item=>item.uid)).size),responses};
+}
+window.applyAttendancePoll = async function(pollId) {
+  if (!isAdmin) return;
+  const poll=attendancePolls.find(item=>item.id===pollId); if(!poll || !poll.targetId) return;
+  const yesNames=pollCounts(poll).responses.filter(item=>item.answer==='yes' && item.role!=='guest').map(item=>item.name);
+  try {
+    if (poll.targetType === 'day') {
+      const day=days.find(item=>item.id===poll.targetId); if(!day) throw new Error('연결된 정규시즌 일정을 찾지 못했습니다.');
+      const attendance={...(day.attendance||{})};
+      members.forEach(member => { const response=getPollResponse(poll,member.uid); attendance[member.name] = response?.answer === 'yes'; });
+      await updateDoc(doc(db,'days',poll.targetId),{attendance,attendancePolicy:'v2',updatedAt:serverTimestamp()});
+      alert(`정규시즌 참석자 ${yesNames.length}명을 반영했습니다.`);
+    } else if (poll.targetType === 'event') {
+      const event=events.find(item=>item.id===poll.targetId); if(!event) throw new Error('연결된 이벤트전을 찾지 못했습니다.');
+      const memberNames=new Set(members.map(member=>member.name));
+      const existingGuests=(event.participants||[]).filter(name=>!memberNames.has(name));
+      await updateDoc(doc(db,'events',poll.targetId),{participants:[...new Set([...existingGuests,...yesNames])],updatedAt:serverTimestamp()});
+      alert(`이벤트전 참가자 ${yesNames.length}명을 반영했습니다.`);
+    }
+  } catch(error) { alert(`참가자 반영에 실패했어요: ${error.message}`); }
+};
+function renderAttendancePolls() {
+  const el=document.getElementById('attendancePollContent'); if(!el) return;
+  const user=pollCurrentUser();
+  const polls=[...attendancePolls].filter(poll=>poll.status!=='closed' || isAdmin).filter(poll=>user?.role!=='guest' || poll.allowGuests).sort((a,b)=>(a.status==='closed')-(b.status==='closed') || (a.date||'9999').localeCompare(b.date||'9999'));
+  if(!user) { el.innerHTML='<div style="max-width:640px;margin:0 auto;text-align:center;padding:60px 24px"><div style="font-size:45px">📮</div><div style="font-size:18px;font-weight:900;color:#1E293B;margin-top:10px">참석 투표</div><div style="font-size:13px;color:#64748B;line-height:1.6;margin-top:7px">로그인하면 정규시즌·이벤트전·모임의 참석 여부를 응답할 수 있어요.</div></div>'; return; }
+  const cards=polls.map(poll=>{
+    const [label,color,bg]=pollTypeMeta(poll.category), response=getPollResponse(poll,user.uid), open=isPollOpen(poll), counts=pollCounts(poll);
+    const button=(answer,text,border,fill)=>`<button onclick="respondAttendancePoll('${poll.id}','${answer}')" ${open?'':'disabled'} style="flex:1;padding:9px 4px;border:1px solid ${border};border-radius:9px;background:${response?.answer===answer?fill:'#fff'};color:${border};font-size:11px;font-weight:900;cursor:${open?'pointer':'default'};opacity:${open?1:.55}">${text}</button>`;
+    return `<article style="background:#fff;border:1px solid #D7E7E5;border-radius:15px;padding:14px;margin-bottom:10px"><div style="display:flex;justify-content:space-between;gap:8px"><div><span style="font-size:10px;font-weight:900;color:${color};background:${bg};border-radius:99px;padding:4px 7px">${label}</span><div style="font-size:15px;font-weight:900;color:#1E293B;margin-top:9px">${pollEscape(poll.title)}</div><div style="font-size:11px;color:#64748B;margin-top:5px">📅 ${pollDateLabel(poll.date)}${poll.place?` · 📍 ${pollEscape(poll.place)}`:''}${poll.deadline?` · 마감 ${poll.deadline}`:''}</div></div><span style="height:max-content;font-size:10px;font-weight:900;color:${open?'#059669':'#64748B'};background:${open?'#ECFDF5':'#F1F5F9'};border-radius:99px;padding:5px 7px">${open?'응답 가능':'마감'}</span></div><div style="display:flex;gap:6px;margin-top:12px">${button('yes','✅ 참석','#059669','#DDF9ED')}${button('maybe','🤔 미정','#B45309','#FFF8E3')}${button('no','❌ 불참','#DC2626','#FFF0F0')}</div><div style="font-size:10px;color:#64748B;margin-top:9px">응답 현황 · 참석 ${counts.yes}명 · 미정 ${counts.maybe}명 · 불참 ${counts.no}명${poll.capacity ? ` · 정원 ${poll.capacity}명` : ''}</div></article>`;
+  }).join('');
+  el.innerHTML=`<div style="max-width:640px;margin:0 auto"><div style="background:linear-gradient(135deg,#0F766E,#1D4ED8);color:#fff;border-radius:17px;padding:18px 16px;margin-bottom:13px"><div style="font-size:20px;font-weight:900">📮 참석 투표</div><div style="font-size:12px;line-height:1.55;color:rgba(255,255,255,.8);margin-top:5px">정규시즌, 이벤트전, 회식·별도 모임의 참석 여부를 알려주세요.</div></div>${cards || '<div class="empty">현재 응답할 참석 투표가 없어요.</div>'}</div>`;
+}
+function renderAdminAttendancePolls() {
+  const el=document.getElementById('adminAttendancePollList'); if(!el) return;
+  const polls=[...attendancePolls].sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  el.innerHTML=polls.length?polls.map(poll=>{
+    const [label,color,bg]=pollTypeMeta(poll.category), counts=pollCounts(poll), open=isPollOpen(poll);
+    const responseRows=counts.responses.sort((a,b)=>(a.name||'').localeCompare(b.name||'')).map(item=>`<span style="font-size:10px;border-radius:99px;padding:4px 7px;background:${item.answer==='yes'?'#DDF9ED':item.answer==='no'?'#FFF0F0':'#FFF8E3'};color:${item.answer==='yes'?'#059669':item.answer==='no'?'#DC2626':'#B45309'}">${pollEscape(item.name)} · ${{yes:'참석',no:'불참',maybe:'미정'}[item.answer]}</span>`).join('');
+    const applyLabel=poll.targetType==='day'?'🏆 정규시즌 참석 반영':poll.targetType==='event'?'🎉 이벤트 참가자 반영':'';
+    return `<div class="admin-sec" style="margin-top:10px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start"><div><span style="font-size:10px;font-weight:900;color:${color};background:${bg};border-radius:99px;padding:4px 7px">${label}</span><div style="font-size:14px;font-weight:900;color:#1E293B;margin-top:8px">${pollEscape(poll.title)}</div><div style="font-size:10px;color:#64748B;margin-top:4px">${pollDateLabel(poll.date)}${poll.place?` · ${pollEscape(poll.place)}`:''}${poll.deadline?` · 마감 ${poll.deadline}`:''}</div></div><button onclick="toggleAttendancePollStatus('${poll.id}')" style="border:1px solid ${open?'#F6D58B':'#8FE3C4'};background:${open?'#FFF8E3':'#ECFDF5'};color:${open?'#B45309':'#059669'};border-radius:8px;padding:6px 8px;font-size:10px;font-weight:900;cursor:pointer">${open?'마감하기':'다시 열기'}</button></div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:11px">${[['참석',counts.yes,'#059669'],['미정',counts.maybe,'#B45309'],['불참',counts.no,'#DC2626'],['무응답',counts.waiting,'#64748B']].map(item=>`<div style="background:#F8FAFC;border-radius:8px;padding:7px 3px;text-align:center"><b style="display:block;font-size:14px;color:${item[2]}">${item[1]}</b><span style="font-size:9px;color:#64748B">${item[0]}</span></div>`).join('')}</div>${poll.capacity?`<div style="font-size:10px;color:#64748B;margin-top:8px">정원 ${poll.capacity}명 · 참석 응답 ${counts.yes}명</div>`:''}<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:9px">${responseRows || '<span style="font-size:10px;color:#94A3B8">아직 응답이 없어요.</span>'}</div>${applyLabel?`<button onclick="applyAttendancePoll('${poll.id}')" style="width:100%;margin-top:11px;padding:9px;border:1px solid #8FE3C4;background:#F0FDFA;color:#0F766E;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">${applyLabel}</button>`:''}</div>`;
+  }).join(''):'<div class="admin-sec" style="margin-top:10px;text-align:center;color:#64748B;font-size:12px">등록된 참석 투표가 없어요.</div>';
 }
 
 function canManageSchedule(schedule) {
@@ -10269,6 +10443,10 @@ function renderHomeTab() {
       ${myRow ? `<div style="font-size:10px;color:#0F766E;margin-top:7px;font-weight:800">내 참석 상태 · ${myRow.status}</div>` : ''}
     </div>`;
   })() : `<div onclick="navTo('personal')" style="cursor:pointer;background:#F8FCFC;border:1px solid #C8E0DE;border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px"><div><div style="font-size:13px;font-weight:900;color:#0F766E">📅 개인 경기</div><div style="font-size:11px;color:#64748B;margin-top:3px">일정, 참석 여부와 개인 경기 결과를 확인하세요.</div></div><span style="font-size:18px;color:#0F766E">›</span></div>`;
+  const _pollUser = pollCurrentUser();
+  const _openPolls = attendancePolls.filter(poll => isPollOpen(poll) && (_pollUser?.role !== 'guest' || poll.allowGuests));
+  const _myPendingPolls = _pollUser ? _openPolls.filter(poll => !getPollResponse(poll,_pollUser.uid)) : [];
+  const attendancePollHomeHtml = _openPolls.length ? `<div onclick="navTo('polls')" style="cursor:pointer;background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border:1px solid #F5D48B;border-radius:14px;padding:13px 14px;margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-size:13px;font-weight:900;color:#B45309">📮 참석 투표${_myPendingPolls.length?` <span style="font-size:10px;background:#DC2626;color:#fff;border-radius:99px;padding:3px 6px">응답 ${_myPendingPolls.length}</span>`:''}</div><span style="font-size:11px;font-weight:900;color:#B45309">전체 보기 ›</span></div><div style="font-size:12px;font-weight:800;color:#334155;margin-top:8px">${pollEscape((_myPendingPolls[0] || _openPolls[0]).title)}</div><div style="font-size:10px;color:#64748B;margin-top:4px">${_myPendingPolls.length ? '아직 응답하지 않은 투표가 있어요.' : '참석 응답을 확인하거나 변경할 수 있어요.'}</div></div>` : '';
 
   // 배치 순서: 공지배너 → 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 하이라이트 → 바로가기
   el.innerHTML = `
@@ -10355,6 +10533,9 @@ function renderHomeTab() {
 
       <!-- 개인 경기 바로가기 -->
       ${personalMatchHomeHtml}
+
+      <!-- 참석 투표 바로가기 -->
+      ${attendancePollHomeHtml}
 
       <!-- 바로가기 — 확장형 카테고리 카드 -->
       ${shortcutsHtml}
@@ -13846,6 +14027,12 @@ onSnapshot(collection(db,'schedules'), snap => {
   renderPersonalSchedules();
   renderTodayBanner();
   updateScheduleBadge();
+  renderHomeTab();
+});
+onSnapshot(collection(db,'attendancePolls'), snap => {
+  attendancePolls = snap.docs.map(d=>({id:d.id,...d.data()}));
+  renderAttendancePolls();
+  renderAdminAttendancePolls();
   renderHomeTab();
 });
 onSnapshot(collection(db,'boardPosts'), snap => {
