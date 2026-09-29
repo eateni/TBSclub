@@ -608,7 +608,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="more-menu-item" onclick="openAppGuide()">📖 앱 사용 안내</button>
       <div class="more-menu-title" id="moreAdminTitle" style="display:none;margin-top:16px">관리자 전용</div>
       <button class="more-menu-item" id="moreAdminBtn" style="display:none" onclick="navTo('admin')">⚙️ 관리자 센터</button>
-      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.15.0</div>
+      <div style="padding:18px 14px 4px;text-align:center;font-size:10px;color:#94A3B8">TBS HISTORY · v1.16.0</div>
     </div>
   </div>
 
@@ -617,7 +617,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-top">
         <div>
           <div style="font-size:18px;font-weight:900;color:#1E293B">📖 TBS HISTORY 사용 안내</div>
-          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.15.0</div>
+          <div style="font-size:11px;color:#64748B;margin-top:3px">회원용 주요 기능 설명서 · v1.16.0</div>
         </div>
         <button onclick="closeAppGuide()" aria-label="닫기" style="border:0;background:#E2E8F0;color:#475569;width:34px;height:34px;border-radius:50%;font-size:18px;cursor:pointer">×</button>
       </div>
@@ -705,7 +705,8 @@ tr:nth-child(even){background:#F5FCFB;}
         <ul>
           <li><b>이벤트전:</b> 교류전, 월례대회, 특별전 중 목적에 맞는 방식을 선택합니다.</li>
           <li>교류전은 클럽대항전·클럽 친선전, 월례대회는 개인리그전·팀 흑백대전·팀 YBOB 대전으로 진행할 수 있습니다.</li>
-          <li>특별전은 킹 오브 코트, 성별 대항전, 핸디캡전, 복불복전, 포·백 조합전, 부부&커플대전 등을 선택할 수 있습니다.</li>
+          <li>특별전은 킹 오브 코트, 성별 대항전, 핸디캡전, 복불복전, 포·백 조합전, 부부&커플대전, <b>대회 준비 매치데이</b>를 선택할 수 있습니다.</li>
+          <li>대회 준비 매치데이는 출전·비출전 회원을 함께 섞어 혼복을 포함한 실전 대진을 만들며, 페어 순위 대신 개인 경기 기록을 남깁니다.</li>
           <li><b>클럽소식</b>에서는 공지, 정규시즌·이벤트전 소식, 하이라이트를 보고 카드 이미지를 공유할 수 있습니다.</li>
         </ul>
       </div>
@@ -1611,8 +1612,9 @@ tr:nth-child(even){background:#F5FCFB;}
         <option value="luckyDraw">🎲 복불복전 · 경기 방식과 페어를 추첨</option>
         <option value="foreBack">🎾 포·백 조합전 · 포핸드·백핸드 성향으로 페어 구성</option>
         <option value="couplesLeague">🤝 파트너십 리그 · 지정페어 후 리그전</option>
+        <option value="tournamentPrep">🎯 대회 준비 매치데이 · 출전·비출전 회원 혼합 실전 연습</option>
       </select>
-      <div style="font-size:10px;color:#64748B;margin-top:5px;line-height:1.55">특별전은 이번 단계에서 진행 방식 선택·저장·표시까지만 제공합니다.</div>
+      <div style="font-size:10px;color:#64748B;margin-top:5px;line-height:1.55">대회 준비 매치데이는 3라운드 기준으로 대진을 만들며, 혼복을 포함한 경기 유형과 코트 수는 생성 전 조정할 수 있습니다.</div>
     </div>
     <div class="mf-full"><label>이벤트 이름</label><input id="evName" placeholder="예: 4월 월례대회"></div>
     <div class="mf-full" id="evOppClubRow">
@@ -1727,7 +1729,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.15.0';
+const APP_VERSION = '1.16.0';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -5129,7 +5131,7 @@ const EV_TYPE_EMOJI={exchange:'🤝',friendly:'🤝',monthly:'🏅',special:'⭐
 const EV_STATUS_LABEL={upcoming:'예정',ongoing:'진행중',done:'완료'};
 const EV_STATUS_CLASS={upcoming:'st-upcoming',ongoing:'st-ongoing',done:'st-done'};
 const MONTHLY_FORMAT_LABEL={individualLeague:'🏅 개인 리그전',teamBattle:'⚫⚪ 팀 흑백대전',ybobBattle:'🟡🔵🟠⚫ 팀 YBOB 대전'};
-const SPECIAL_FORMAT_LABEL={kingOfCourt:'👑 킹 오브 코트',genderBattle:'🚻 성별 대항전',handicap:'⚖️ 핸디캡전',luckyDraw:'🎲 복불복전',foreBack:'🎾 포·백 조합전',couplesLeague:'🤝 파트너십 리그'};
+const SPECIAL_FORMAT_LABEL={kingOfCourt:'👑 킹 오브 코트',genderBattle:'🚻 성별 대항전',handicap:'⚖️ 핸디캡전',luckyDraw:'🎲 복불복전',foreBack:'🎾 포·백 조합전',couplesLeague:'🤝 파트너십 리그',tournamentPrep:'🎯 대회 준비 매치데이'};
 function getEventCategory(ev){
   if(ev?.eventCategory)return ev.eventCategory;
   return ev?.type==='friendly'?'exchange':(ev?.type||'special');
@@ -5146,6 +5148,9 @@ function getEventFormatLabel(ev){
 }
 function isPartnershipLeagueEvent(ev){
   return !!ev && ev.specialFormat==='couplesLeague' && getEventCategory(ev)==='special';
+}
+function isTournamentPrepEvent(ev){
+  return !!ev && ev.specialFormat==='tournamentPrep' && getEventCategory(ev)==='special';
 }
 function getEventFixedPairs(ev){
   return (ev?.fixedPairs||[]).map((pair,index)=>{
@@ -5243,6 +5248,7 @@ window.openEventDetail=function(evId, adminContext){
   </div>`:'';
   const monthlyTeamsSec=ev.type==='monthly'&&ev.monthlyFormat==='teamBattle'&&ev.monthlyTeams?`<div class="friendly-roster-summary" style="margin-top:12px"><div class="friendly-roster-team" style="border-color:#475569"><b style="color:#1E293B">⚫ 흑팀 · ${(ev.monthlyTeams.black||[]).length}명</b><div class="friendly-roster-names">${(ev.monthlyTeams.black||[]).join(' · ')||'대진 생성 시 자동 편성'}</div></div><div class="friendly-roster-team"><b>⚪ 백팀 · ${(ev.monthlyTeams.white||[]).length}명</b><div class="friendly-roster-names">${(ev.monthlyTeams.white||[]).join(' · ')||'대진 생성 시 자동 편성'}</div></div></div>`:'';
   const isCouplesLeague=isPartnershipLeagueEvent(ev);
+  const isTournamentPrep=isTournamentPrepEvent(ev);
   const fixedPairs=getEventFixedPairs(ev).filter(pair=>pair.players.every(name=>parts.includes(name)));
   const pairedNames=new Set(fixedPairs.flatMap(pair=>pair.players));
   const autoPairCount=Math.floor(Math.max(0,parts.length-pairedNames.size)/2);
@@ -5252,6 +5258,11 @@ window.openEventDetail=function(evId, adminContext){
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:7px;margin-bottom:${canAdministerEvent?'10px':'0'}">${fixedPairs.map((pair,index)=>`<div style="display:flex;align-items:center;gap:7px;padding:8px 10px;background:#fff;border:1px solid #FED7AA;border-radius:9px"><span style="font-size:10px;font-weight:900;color:#C2410C">${index+1}페어</span><b style="flex:1;font-size:12px;color:#1E293B">${pair.players.join(' · ')}</b>${canAdministerEvent?`<button onclick="removeEventFixedPair('${evId}','${pair.id}')" style="border:0;background:none;color:#F87171;font-size:15px;cursor:pointer">×</button>`:''}</div>`).join('')||'<div style="font-size:11px;color:#64748B">참가자를 선택한 뒤 고정 페어를 등록해주세요.</div>'}</div>
     ${canAdministerEvent?`<div class="fixed-pair-form"><select id="fixedPairP1_${evId}" class="row-inp"><option value="">선수1</option>${fixedPairOptions}</select><span style="color:#C2410C;font-weight:900">＋</span><select id="fixedPairP2_${evId}" class="row-inp"><option value="">선수2</option>${fixedPairOptions}</select><button onclick="addEventFixedPair('${evId}')" style="padding:8px 13px;border:0;border-radius:9px;background:#EA580C;color:#fff;font-size:11px;font-weight:900;white-space:nowrap;cursor:pointer">페어 등록</button></div>`:''}
     <div style="margin-top:9px;font-size:10px;color:#9A3412;line-height:1.45">고정으로 지정한 페어만 유지됩니다. 미배정 참가자 ${autoPairCount?`${autoPairCount}페어`:'0페어'}는 대진을 다시 만들 때마다 자동으로 새로 섞입니다.</div>
+  </div>`:'';
+  const tournamentPrepSec=isTournamentPrep?`<div style="margin-bottom:16px;padding:13px 14px;background:#ECFDF5;border:1px solid #86EFAC;border-radius:12px">
+    <div style="font-size:13px;font-weight:900;color:#047857">🎯 대회 준비 매치데이</div>
+    <div style="font-size:11px;color:#166534;line-height:1.6;margin-top:6px">출전 회원은 실전 감각을 점검하고, 비출전 회원은 연습 상대와 교체 파트너로 함께 참여합니다. 페어 순위는 집계하지 않으며 개인별 경기 기록만 남습니다.</div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:9px"><span style="font-size:10px;font-weight:800;background:#fff;border:1px solid #A7F3D0;border-radius:99px;padding:4px 7px;color:#047857">1R 실전 점검</span><span style="font-size:10px;font-weight:800;background:#fff;border:1px solid #A7F3D0;border-radius:99px;padding:4px 7px;color:#047857">2R 혼복 밸런스</span><span style="font-size:10px;font-weight:800;background:#fff;border:1px solid #A7F3D0;border-radius:99px;padding:4px 7px;color:#047857">3R 재편성 매치</span></div>
   </div>`:'';
   const partSec=`<div style="margin-bottom:16px">
     <div id="evPartCount_${evId}" style="font-size:13px;font-weight:700;margin-bottom:8px">👥 ${['exchange','friendly'].includes(ev.type)?'TBS 참가자':'참가자'} (${parts.length}명)${['exchange','friendly'].includes(ev.type)?` <span style="font-size:10px;color:#6D28D9;font-weight:700">· 전체 ${eventRoster.length}명</span>`:''}</div>
@@ -5398,8 +5409,8 @@ window.openEventDetail=function(evId, adminContext){
     freeMatchesSec='';
   }
 
-  const allocationRoster=ev.type==='monthly'?getEventTbsRoster(ev):getEventMatchRoster(ev);
-  const eventAllocationSec=(['exchange','friendly','monthly'].includes(ev.type)||isCouplesLeague)
+  const allocationRoster=(ev.type==='monthly'||isTournamentPrep)?getEventTbsRoster(ev):getEventMatchRoster(ev);
+  const eventAllocationSec=(['exchange','friendly','monthly'].includes(ev.type)||isCouplesLeague||isTournamentPrep)
     ?`<div style="margin-bottom:14px">${buildAllocationPreviewHtml(allocationRoster,evMatches,[],false)}</div>`:'';
 
   // ── 교류전 전용 섹션 ──
@@ -5407,8 +5418,8 @@ window.openEventDetail=function(evId, adminContext){
   if(['exchange','friendly','monthly','special'].includes(ev.type)){
     const pairPoolCount=isCouplesLeague?fixedPairs.length+autoPairCount:(ev.type==='friendly'?matchParts.length:parts.length);
     const latestRound=evMatches.length?Math.max(...evMatches.map(match=>Number(match.round)||1)):1;
-    const pairAction=isCouplesLeague?'generateCouplesLeagueMatches':ev.type==='friendly'?'showEvFriendlyPairConfig':ev.type==='monthly'?'showEvMonthlyPairConfig':'showEvExchangePairConfig';
-    const pairLabel=isCouplesLeague?'고정·자동 페어 리그 대진 생성':ev.type==='friendly'?'친선 대진 자동 구성':ev.type==='monthly'?(ev.monthlyFormat==='teamBattle'?'흑백대전 자동 구성':ev.monthlyFormat==='ybobBattle'?'YBOB 대전 구성 준비 중':'개인 리그 대진 구성'):'페어 짜기';
+    const pairAction=isCouplesLeague?'generateCouplesLeagueMatches':isTournamentPrep?'showEvTournamentPrepConfig':ev.type==='friendly'?'showEvFriendlyPairConfig':ev.type==='monthly'?'showEvMonthlyPairConfig':'showEvExchangePairConfig';
+    const pairLabel=isCouplesLeague?'고정·자동 페어 리그 대진 생성':isTournamentPrep?'대회 준비 대진표 만들기':ev.type==='friendly'?'친선 대진 자동 구성':ev.type==='monthly'?(ev.monthlyFormat==='teamBattle'?'흑백대전 자동 구성':ev.monthlyFormat==='ybobBattle'?'YBOB 대전 구성 준비 중':'개인 리그 대진 구성'):'페어 짜기';
     const pairBtn=canAdministerEvent&&pairPoolCount>=(isCouplesLeague?2:4)
       ?`<button onclick="${pairAction}('${evId}')" style="width:100%;padding:10px;background:${evMatches.length?'#FFF7ED':'rgba(167,139,250,0.85)'};border:${evMatches.length?'1px solid #FDBA74':'none'};border-radius:9px;color:${evMatches.length?'#9A3412':'#1a0f2e'};font-size:12px;font-weight:900;cursor:pointer;margin-bottom:12px">${evMatches.length?'🔄 대진표 다시 작성':'🎲 '+pairLabel}</button>${evMatches.length?'<div style="font-size:10px;color:#9A3412;margin:-7px 2px 10px;line-height:1.45">새 대진을 저장하면 기존 대진과 입력된 점수는 모두 교체됩니다.</div>':''}`
       :'';
@@ -5504,7 +5515,7 @@ window.openEventDetail=function(evId, adminContext){
       <div style="font-size:12px;color:#64748B;margin-top:6px">📅 ${ev.date||'날짜 미정'}${ev.place?' · 📍'+ev.place:''}</div>
       ${ev.desc?`<div style="font-size:13px;color:#78909C;margin-top:8px;line-height:1.6">${ev.desc}</div>`:''}
       ${adminMetaEdit}
-    </div>${partSec}${couplesPairSec}${eventAllocationSec}${freeMatchesSec}${exchangeSec}${resSec}${addRes}
+    </div>${partSec}${couplesPairSec}${tournamentPrepSec}${eventAllocationSec}${freeMatchesSec}${exchangeSec}${resSec}${addRes}
     <div class="mft"><button class="btn-cancel" style="flex:1" onclick="hide('eventDetailModal')">닫기</button></div>`;
   document.getElementById('eventDetailModal').style.display='flex';
 };
@@ -6070,7 +6081,8 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
   const isMonthly=_ev?.type==='monthly';
   const isMonthlyTeamBattle=isMonthly&&_ev?.monthlyFormat==='teamBattle';
   const isCouplesLeague=isPartnershipLeagueEvent(_ev);
-  const isInternalEvent=isFriendly||isMonthly||isCouplesLeague;
+  const isTournamentPrep=isTournamentPrepEvent(_ev);
+  const isInternalEvent=isFriendly||isMonthly||isCouplesLeague||isTournamentPrep;
   const evDefault=isInternalEvent?'':(defaultOppClub||_ev?.oppClub||'');
   const evDate=_ev?.date||'';
   const done=m.ourScore!==null&&m.ourScore!==undefined&&m.ourScore!==''&&m.oppScore!==null&&m.oppScore!==undefined&&m.oppScore!=='';
@@ -7112,6 +7124,21 @@ function getMonthlyTeamDefaultTypes(attendees){
   }
   return best?.types||['잡복'];
 }
+function getTournamentPrepDefaultTypes(attendees){
+  const male=attendees.filter(player=>player.gender==='m').length;
+  const female=attendees.filter(player=>player.gender==='f').length;
+  const maxCourts=Math.max(1,Math.min(4,Math.floor(attendees.length/4)));
+  let best=null;
+  for(let total=maxCourts;total>=1&&!best;total--){
+    for(let mix=0;mix<=total;mix++)for(let men=0;men<=total-mix;men++){
+      const women=total-mix-men;
+      if(mix*2+men*4>male || mix*2+women*4>female)continue;
+      const score=mix*5+(men+women)*2;
+      if(!best||score>best.score)best={score,types:[...Array(mix).fill('혼복'),...Array(men).fill('남복'),...Array(women).fill('여복')]};
+    }
+  }
+  return best?.types||[];
+}
 
 window.showEvMonthlyPairConfig=function(evId){
   const ev=events.find(event=>event.id===evId);if(!ev)return;
@@ -7139,6 +7166,33 @@ window.showEvMonthlyPairConfig=function(evId){
   meetupConfig={courts:maxCourts,rounds:3,types:initialTypes};
   document.getElementById('meetupPairModalBox')?.classList.add('friendly-pair-modal');
   document.getElementById('meetupPairModalTitle').textContent=evMonthlyMode==='teamBattle'?'⚫⚪ 월례 흑백대전 구성':'🏅 월례 개인 리그 대진 구성';
+  renderMeetupConfigStep();
+  document.getElementById('meetupPairModal').style.display='flex';
+};
+
+window.showEvTournamentPrepConfig=function(evId){
+  const ev=events.find(event=>event.id===evId);if(!ev)return;
+  const attendees=getEventTbsRoster(ev);
+  if(attendees.length<4){alert('대회 준비 매치데이는 참가자가 4명 이상이어야 대진을 만들 수 있어요.');return;}
+  evExchangeCurrentEvId=evId;
+  evExchangeMode=false;
+  evFriendlyMode=false;
+  evMonthlyMode='tournamentPrep';
+  evMonthlyTeams={black:[],white:[]};
+  evExchangeAttendees=attendees.map(player=>({...player,club:'대회 준비'}));
+  const defaultTypes=getTournamentPrepDefaultTypes(attendees);
+  if(!defaultTypes.length){alert('성별 인원으로 복식 대진을 만들 수 없어요. 혼복은 남·여 각각 2명, 남복·여복은 같은 성별 4명 이상이 필요합니다.');return;}
+  const courts=defaultTypes.length;
+  const types={};
+  for(let court=1;court<=courts;court++){
+    const type=defaultTypes[court-1];
+    types[`r1_c${court}`]=type;
+    types[`r2_c${court}`]=type;
+    types[`r3_c${court}`]=type;
+  }
+  meetupConfig={courts,rounds:3,types};
+  document.getElementById('meetupPairModalBox')?.classList.add('friendly-pair-modal');
+  document.getElementById('meetupPairModalTitle').textContent='🎯 대회 준비 매치데이 대진 구성';
   renderMeetupConfigStep();
   document.getElementById('meetupPairModal').style.display='flex';
 };
@@ -8798,7 +8852,7 @@ window.meetupGoToTypeStep = function() {
 
 function renderMeetupTypeStep() {
   const body = document.getElementById('meetupPairBody');
-  const allowedTypes=(evFriendlyMode||evMonthlyMode==='individualLeague')?['혼복','남복','여복']:['혼복','남복','여복','잡복'];
+  const allowedTypes=(evFriendlyMode||evMonthlyMode==='individualLeague'||evMonthlyMode==='tournamentPrep')?['혼복','남복','여복']:['혼복','남복','여복','잡복'];
   let rows = '';
   for (let r = 1; r <= meetupConfig.rounds; r++) {
     rows += `<div style="font-size:12px;color:#6D28D9;font-weight:700;margin:8px 0 4px">${r}라운드</div>`;
@@ -9226,7 +9280,7 @@ function renderMeetupResultStep() {
       const cards=(round.matches||[]).map(match=>{
         if(match.type==='대기')return `<div class="friendly-wait-preview"><b>⏳ 대기</b> · ${(match.team1||[]).join(' · ')}</div>`;
         [...(match.team1||[]),...(match.team2||[])].forEach(name=>{gameCount[name]++;typeCount[name][match.type]++;});
-        const modeBadge=evMonthlyMode==='teamBattle'?'흑백대전':evMonthlyMode==='individualLeague'?'개인 리그':'친선';
+        const modeBadge=evMonthlyMode==='teamBattle'?'흑백대전':evMonthlyMode==='individualLeague'?'개인 리그':evMonthlyMode==='tournamentPrep'?'대회 준비':'친선';
         return `<div class="friendly-match-preview"><div class="match-ct" style="margin-bottom:7px"><span style="font-size:11px;color:#6D28D9;font-weight:800">${match.court}코트 · ${match.type}</span><span class="badge-friendly" style="font-size:9px;padding:2px 7px;border-radius:8px">${modeBadge}</span></div><div class="match-row"><div class="m-team">${match.team1.join(' / ')}</div><div class="m-score pend">VS</div><div class="m-team">${match.team2.join(' / ')}</div></div></div>`;
       }).join('');
       return `<div class="friendly-round-block"><div style="font-size:14px;color:#6D28D9;font-weight:900;margin-bottom:8px">🎾 ${round.round}라운드</div><div class="friendly-round-grid">${cards}</div></div>`;
@@ -9236,7 +9290,7 @@ function renderMeetupResultStep() {
       return `<span style="display:inline-block;white-space:nowrap;margin:2px 5px 2px 0"><b style="color:#1E293B">${name}</b> <span style="color:#6D28D9">${gameCount[name]}경기</span>${types?` <small style="color:#64748B">(${types})</small>`:''}</span>`;
     }).join('');
     const values=Object.values(gameCount),gap=values.length?Math.max(...values)-Math.min(...values):0;
-    const summaryText=evMonthlyMode==='teamBattle'?'<b>흑팀과 백팀이 맞붙도록 대진을 구성했습니다.</b>':evMonthlyMode==='individualLeague'?'<b>개인 승점 리그용으로 전체 참가자를 섞었습니다.</b>':'<b>클럽 구분 없이 전체 참가자를 섞었습니다.</b>';
+    const summaryText=evMonthlyMode==='teamBattle'?'<b>흑팀과 백팀이 맞붙도록 대진을 구성했습니다.</b>':evMonthlyMode==='individualLeague'?'<b>개인 승점 리그용으로 전체 참가자를 섞었습니다.</b>':evMonthlyMode==='tournamentPrep'?'<b>출전·비출전 회원을 함께 섞은 대회 준비 대진입니다. 페어 순위는 집계하지 않고 개인 경기 기록만 남습니다.</b>':'<b>클럽 구분 없이 전체 참가자를 섞었습니다.</b>';
     const saveAction=evMonthlyMode?'saveEvMonthlyMeetup()':'saveEvFriendlyMeetup()';
     body.innerHTML=`<div style="padding:10px 12px;border-radius:10px;background:#ECFDF5;border:1px solid #A7F3D0;color:#047857;font-size:12px;line-height:1.65">${summaryText}<br>경기 수 차이 ${gap}경기 · 같은 페어와 상대 조합은 가급적 줄였습니다.</div>${roundsHtml}<div style="margin-top:10px;padding:12px 14px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:11px;font-size:12px;line-height:2"><b style="color:#6D28D9">⚖️ 참가자별 배정</b><br>${counts}</div><div style="display:flex;gap:8px;margin-top:12px"><button onclick="meetupBackToTypeStep()" style="flex:1;padding:11px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:10px;color:#1D6FB8;font-size:12px;font-weight:800">다시 설정</button><button onclick="meetupGenerate()" style="flex:1;padding:11px;background:#ECFDF5;border:1px solid #6EE7B7;border-radius:10px;color:#047857;font-size:12px;font-weight:800">🎲 재생성</button><button onclick="${saveAction}" style="flex:1;padding:11px;background:#7C3AED;border:0;border-radius:10px;color:#fff;font-size:12px;font-weight:900">✅ 저장</button></div>`;
     return;
@@ -9467,7 +9521,8 @@ window.saveEvMonthlyMeetup=async function(){
   const evId=evExchangeCurrentEvId;
   const ev=events.find(event=>event.id===evId);
   if(!ev){alert('월례대회 정보를 찾을 수 없어요.');return;}
-  const mode=evMonthlyMode||ev.monthlyFormat||'individualLeague';
+  const isTournamentPrep=isTournamentPrepEvent(ev);
+  const mode=isTournamentPrep?'tournamentPrep':(evMonthlyMode||ev.monthlyFormat||'individualLeague');
   const teams={black:[...(evMonthlyTeams.black||[])],white:[...(evMonthlyTeams.white||[])]};
   const existingMatches=ev.matches||[];
   if(existingMatches.length){
@@ -9478,17 +9533,22 @@ window.saveEvMonthlyMeetup=async function(){
   const matches=[];
   meetupCurrentRounds.forEach(round=>(round.matches||[]).forEach(match=>{
     if(match.type==='대기')return;
-    matches.push({
+    const eventMatch={
       id:`monthly-${Date.now()}-${round.round}-${match.court}-${Math.random().toString(36).slice(2,6)}`,
       ourPair:[...(match.team1||[])],oppPair:[...(match.team2||[])],oppClub:'',
       ourScore:null,oppScore:null,round:round.round,court:match.court,courtType:match.type,
-      matchKind:'official',monthlyFormat:mode,monthlyTeamBattle:mode==='teamBattle'
-    });
+      matchKind:'official'
+    };
+    if(isTournamentPrep){ eventMatch.specialFormat='tournamentPrep'; eventMatch.tournamentPrepMatch=true; }
+    else { eventMatch.monthlyFormat=mode; eventMatch.monthlyTeamBattle=mode==='teamBattle'; }
+    matches.push(eventMatch);
   }));
   if(!matches.length){alert('저장할 월례대회 경기가 없어요.');return;}
   try{
-    const update={matches,monthlyFormat:mode,monthlyGeneratedAt:new Date().toISOString()};
-    if(mode==='teamBattle')update.monthlyTeams=teams;
+    const update=isTournamentPrep
+      ?{matches,specialFormat:'tournamentPrep',tournamentPrepGeneratedAt:new Date().toISOString()}
+      :{matches,monthlyFormat:mode,monthlyGeneratedAt:new Date().toISOString()};
+    if(!isTournamentPrep&&mode==='teamBattle')update.monthlyTeams=teams;
     await updateDoc(doc(db,'events',evId),update);
     Object.assign(ev,update);
     closeMeetupPairModal();
