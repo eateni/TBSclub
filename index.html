@@ -1729,7 +1729,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.1';
+const APP_VERSION = '1.17.2';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -10664,7 +10664,7 @@ function renderHomeTab() {
   const _pollUser = pollCurrentUser();
   const _openPolls = attendancePolls.filter(poll => isPollOpen(poll) && (_pollUser?.role !== 'guest' || poll.allowGuests));
   const _myPendingPolls = _pollUser ? _openPolls.filter(poll => !getPollResponse(poll,_pollUser.uid)) : [];
-  const attendancePollHomeHtml = _openPolls.length ? `<div onclick="navTo('polls')" style="cursor:pointer;background:linear-gradient(135deg,#FFF7ED,#FFFBEB);border:1px solid #F5D48B;border-radius:14px;padding:13px 14px;margin-bottom:12px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-size:13px;font-weight:900;color:#B45309">📮 참석 투표${_myPendingPolls.length?` <span style="font-size:10px;background:#DC2626;color:#fff;border-radius:99px;padding:3px 6px">응답 ${_myPendingPolls.length}</span>`:''}</div><span style="font-size:11px;font-weight:900;color:#B45309">전체 보기 ›</span></div><div style="font-size:12px;font-weight:800;color:#334155;margin-top:8px">${pollEscape((_myPendingPolls[0] || _openPolls[0]).title)}</div><div style="font-size:10px;color:#64748B;margin-top:4px">${_myPendingPolls.length ? '아직 응답하지 않은 투표가 있어요.' : '참석 응답을 확인하거나 변경할 수 있어요.'}</div></div>` : '';
+  const attendancePollHomeHtml = _openPolls.length ? `<button onclick="navTo('polls')" title="${pollEscape((_myPendingPolls[0] || _openPolls[0]).title)}" style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;background:#FFF7ED;border:1px solid #F5C76D;border-radius:99px;padding:7px 10px;color:#B45309;font-size:11px;font-weight:900;box-shadow:0 2px 6px rgba(180,83,9,.08)"><span>📮 참석 투표</span>${_myPendingPolls.length?`<span style="background:#DC2626;color:#fff;border-radius:99px;padding:2px 5px;font-size:10px;line-height:1">${_myPendingPolls.length}</span>`:''}<span style="font-size:14px;line-height:1">›</span></button>` : '';
 
   // 배치 순서: 공지배너 → 웰컴배너 → 통계4칸 → 내 기록 → 다음게임+이벤트전 → 하이라이트 → 바로가기
   el.innerHTML = `
@@ -10741,7 +10741,7 @@ function renderHomeTab() {
 
       <!-- 이번주 게임 현황 통합 박스 -->
       <div style="background:#FAFBFF;border:1.5px solid rgba(109,40,217,0.18);border-radius:16px;padding:14px 14px 2px;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:900;color:#6D28D9;margin-bottom:10px">🎾 경기 안내</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px"><div style="font-size:13px;font-weight:900;color:#6D28D9">🎾 경기 안내</div>${attendancePollHomeHtml}</div>
         ${cardPairHtml}
         ${_courtCardHtml}
       </div>
@@ -10751,9 +10751,6 @@ function renderHomeTab() {
 
       <!-- 개인 경기 바로가기 -->
       ${personalMatchHomeHtml}
-
-      <!-- 참석 투표 바로가기 -->
-      ${attendancePollHomeHtml}
 
       <!-- 바로가기 — 확장형 카테고리 카드 -->
       ${shortcutsHtml}
