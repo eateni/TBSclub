@@ -578,8 +578,9 @@ tr:nth-child(even){background:#F5FCFB;}
     <button class="bn-btn" data-bucket="league" onclick="navTo('league')">
       <span class="bn-icon">🏆</span><span class="bn-label">정규시즌</span>
     </button>
-    <button class="bn-btn" data-bucket="personal" onclick="navTo('personal')">
-      <span class="bn-icon">📅</span><span class="bn-label">개인 경기</span>
+    <button class="bn-btn" data-bucket="schedule" onclick="navTo('schedule')" style="position:relative">
+      <span class="bn-icon">📰</span><span class="bn-label">클럽소식</span>
+      <span id="scheduleBadgeBottom" style="display:none;position:absolute;top:5px;left:58%;background:#ef4444;color:#fff;font-size:8px;font-weight:800;padding:1px 5px;border-radius:8px">NEW</span>
     </button>
     <button class="bn-btn" data-bucket="more" onclick="toggleMoreMenu()">
       <span class="bn-icon">☰</span><span class="bn-label">메뉴</span>
@@ -8145,7 +8146,7 @@ window.navTo = function(tab){
   }
 
   document.querySelectorAll('.bn-btn').forEach(b=>b.classList.remove('active'));
-  const bucketMap = { home:'home', league:'league', analysis:'league', terra:'more', personal:'personal', schedule:'more', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
+  const bucketMap = { home:'home', league:'league', analysis:'league', terra:'more', personal:'more', schedule:'schedule', fortune:'more', event:'more', board:'more', admin:'more', photo:'more', gamesummary:'more' };
   const bucket = bucketMap[tab] || 'more';
   const bnBtn = document.querySelector(`.bn-btn[data-bucket="${bucket}"]`);
   if (bnBtn) bnBtn.classList.add('active');
@@ -10326,9 +10327,6 @@ function renderHomeTab() {
       <!-- 내 기록 상세 (로그인 시만) -->
       ${myRecordHtml}
 
-      <!-- 개인 경기 바로가기 -->
-      ${personalMatchHomeHtml}
-
       <!-- 이번주 게임 현황 통합 박스 -->
       <div style="background:#FAFBFF;border:1.5px solid rgba(109,40,217,0.18);border-radius:16px;padding:14px 14px 2px;margin-bottom:12px">
         <div style="font-size:13px;font-weight:900;color:#6D28D9;margin-bottom:10px">🎾 경기 안내</div>
@@ -10338,6 +10336,9 @@ function renderHomeTab() {
 
       <!-- 최근 날짜 하이라이트 -->
       ${highlightHtml}
+
+      <!-- 개인 경기 바로가기 -->
+      ${personalMatchHomeHtml}
 
       <!-- 바로가기 — 확장형 카테고리 카드 -->
       ${shortcutsHtml}
