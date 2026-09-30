@@ -9067,6 +9067,29 @@ function buildFriendlyRounds(attendees,config,fixedPairs=[]) {
   const mixesClubs=new Set(attendees.map(player=>player.club||'클럽')).size>1;
   const gameCount=Object.fromEntries(attendees.map(player=>[player.name,0]));
   const typeCount=Object.fromEntries(attendees.map(player=>[player.name,{혼복:0,남복:0,여복:0}]));
+  // 전체 라운드 기준 종목별 목표 횟수입니다. 예: 3라운드에 혼복·남복·여복이
+  // 각각 1코트라면 남/여 모두 혼복 1회 + 자신의 성별 복식 2회가 됩니다.
+  // 라운드별 단순 최저 횟수만 비교하면 마지막 라운드에 같은 종목이 몰릴 수 있어,
+  // 이 목표를 기준으로 남은 배정 횟수가 큰 사람을 우선 선택합니다.
+  const typeTarget=Object.fromEntries(attendees.map(player=>[player.name,{혼복:0,남복:0,여복:0}]));
+  const assignTargets=(names,type,totalSlots)=>{
+    if(!names.length||!totalSlots)return;
+    const base=Math.floor(totalSlots/names.length);
+    const extra=totalSlots%names.length;
+    shuffle([...names]).forEach((name,index)=>{typeTarget[name][type]=base+(index<extra?1:0);});
+  };
+  const totalSlotsByType={혼복:0,남복:0,여복:0};
+  for(let r=1;r<=config.rounds;r++){
+    for(let c=1;c<=config.courts;c++){
+      const type=config.types[`r${r}_c${c}`]||'혼복';
+      if(type==='혼복')totalSlotsByType.혼복+=2;
+      else if(type==='남복')totalSlotsByType.남복+=4;
+      else if(type==='여복')totalSlotsByType.여복+=4;
+    }
+  }
+  assignTargets([...males,...females],'혼복',totalSlotsByType.혼복);
+  assignTargets(males,'남복',totalSlotsByType.남복);
+  assignTargets(females,'여복',totalSlotsByType.여복);
   const pastPairs=getPastPairCounts(currentSeason);
   const pastOpp=getPastOpponents();
   const rating=name=>ratings[name]||1500;
@@ -9097,9 +9120,21 @@ function buildFriendlyRounds(attendees,config,fixedPairs=[]) {
     if(needM>males.length||needF>females.length)throw new Error(`${r}라운드 성별 인원이 부족해요. 필요: 남 ${needM}명·여 ${needF}명 / 참석: 남 ${males.length}명·여 ${females.length}명`);
     const assigned=new Set();
     const todayPairs=getMeetupTodayPairs(rounds,-1),todayOpp=getMeetupTodayOpponents(rounds,-1);
-    const pick=(pool,count,type)=>shuffle(pool.filter(name=>!assigned.has(name))).sort((a,b)=>(gameCount[a]-gameCount[b])||(typeCount[a][type]-typeCount[b][type])).slice(0,count);
+    const pick=(pool,count,type)=>shuffle(pool.filter(name=>!assigned.has(name))).sort((a,b)=>{
+      const aNeed=(typeTarget[a]?.[type]||0)-(typeCount[a]?.[type]||0);
+      const bNeed=(typeTarget[b]?.[type]||0)-(typeCount[b]?.[type]||0);
+      if(bNeed!==aNeed)return bNeed-aNeed;
+      const gameDiff=(gameCount[a]||0)-(gameCount[b]||0);
+      if(gameDiff!==0)return gameDiff;
+      return (typeCount[a]?.[type]||0)-(typeCount[b]?.[type]||0);
+    }).slice(0,count);
     const matches=[];
-    const availableFixed=fixedPairs.filter(pair=>pair.players?.length===2&&pair.players.every(name=>genderMap.has(name)));
+    // 지정 페어도 전체 종목 목표 횟수를 넘기지 않습니다. 따라서 3라운드
+    // (혼복 1 + 성별 복식 2) 구성에서는 지정 페어가 성별 복식 2회만 유지되고,
+    // 마지막 라운드에는 다른 참가자와 혼복으로 자연스럽게 순환합니다.
+    const availableFixed=fixedPairs.filter(pair=>pair.players?.length===2&&pair.players.every(name=>
+      genderMap.has(name)&&(typeTarget[name]?.[pair.type]||0)>(typeCount[name]?.[pair.type]||0)
+    ));
     types.forEach((type,index)=>{
       const fixedIndex=availableFixed.findIndex(pair=>pair.type===type&&pair.players.every(name=>!assigned.has(name)));
       const fixedPair=fixedIndex>=0?availableFixed.splice(fixedIndex,1)[0]:null;
