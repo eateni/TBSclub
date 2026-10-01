@@ -1215,57 +1215,30 @@ tr:nth-child(even){background:#F5FCFB;}
           <button class="btn-add" style="width:100%" onclick="addDay()">📅 날짜 그룹 추가</button>
         </div>
 
-        <!-- 라운드 자동 생성 -->
+        <!-- 정규시즌 통합 경기 설정 -->
         <div class="admin-sec">
-          <h3>🏆 라운드 자동 생성</h3>
-          <div style="font-size:11px;color:#64748B;margin-bottom:12px">날짜 선택 → 라운드별 코트 방식 설정 → 라운드마다 개별로 섞기</div>
-
-          <!-- 날짜 선택 -->
-          <div style="margin-bottom:10px">
-            <div style="font-size:11px;color:#64748B;margin-bottom:5px">📅 날짜 그룹 선택</div>
-            <select class="row-sel" id="rndDayId" style="width:100%" onchange="onRndDayChange()">
-              <option value="">날짜 선택...</option>
-            </select>
-          </div>
-
-          <!-- 라운드 수 + 코트 수 -->
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
-            <div>
-              <div style="font-size:11px;color:#64748B;margin-bottom:5px">총 라운드 수</div>
-              <select class="row-sel" id="totalRounds" style="width:100%" onchange="rndConfigChanged()">
-                <option value="2">2라운드</option>
-                <option value="3" selected>3라운드</option>
-                <option value="4">4라운드</option>
-                <option value="5">5라운드</option>
-                <option value="6">6라운드</option>
-                <option value="7">7라운드</option>
-                <option value="8">8라운드</option>
-              </select>
+          <div class="tprep-setup-head"><b>🏆 정규시즌 경기 설정</b><span>참석자 확인부터 라운드·코트 설정, 페어 생성과 결과 입력까지 같은 흐름으로 진행합니다.</span><div class="tprep-steps"><span class="tprep-step on">1. 참석자</span><span class="tprep-step on">2. 라운드·코트</span><span class="tprep-step">3. 페어 생성</span><span class="tprep-step">4. 결과 입력</span></div></div>
+          <div class="tprep-setup-grid">
+            <div class="tprep-setup-panel">
+              <div class="tprep-setup-title"><span>라운드와 코트 설정</span><span style="font-size:10px;color:#0F766E">⚖️ 균형 배정</span></div>
+              <div class="tprep-setup-help">날짜를 고른 뒤 라운드별 코트 종목을 설정하고, 전체 섞기 또는 라운드별 수동 편성을 선택하세요.</div>
+              <div class="tprep-basic-grid" style="margin-bottom:10px">
+                <div><label class="tprep-label">경기일</label><select class="row-sel" id="rndDayId" onchange="onRndDayChange()"><option value="">날짜 선택...</option></select></div>
+                <div><label class="tprep-label">총 라운드 수</label><select class="row-sel" id="totalRounds" onchange="rndConfigChanged()"><option value="2">2라운드</option><option value="3" selected>3라운드</option><option value="4">4라운드</option><option value="5">5라운드</option><option value="6">6라운드</option><option value="7">7라운드</option><option value="8">8라운드</option></select></div>
+              </div>
+              <div style="max-width:50%;padding-right:4px"><label class="tprep-label">코트 수</label><select class="row-sel" id="rndCourts" onchange="rndConfigChanged()"><option value="2" selected>2코트</option><option value="3">3코트</option><option value="4">4코트</option><option value="5">5코트</option><option value="6">6코트</option><option value="7">7코트</option><option value="8">8코트</option></select></div>
+              <div id="roundTypeSelectors" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>
+              <div class="tprep-actions"><button class="tprep-reset" onclick="updateRoundTypeSelectors()">코트 설정 초기화</button><button class="tprep-generate" onclick="rollAllBalanced()">🎲 하루 전체 섞기</button></div>
+              <div id="savedGameCountTable" style="margin-top:10px"></div>
+              <div id="typeStatTable" style="margin-top:6px"></div>
+              <div style="margin-top:8px"><button class="btn-add" style="width:100%" onclick="saveAllRounds(this)">✅ 전체 라운드 저장</button></div>
             </div>
-            <div>
-              <div style="font-size:11px;color:#64748B;margin-bottom:5px">코트 수</div>
-              <select class="row-sel" id="rndCourts" style="width:100%" onchange="rndConfigChanged()">
-                <option value="2" selected>2코트</option>
-                <option value="3">3코트</option>
-                <option value="4">4코트</option>
-                <option value="5">5코트</option>
-                <option value="6">6코트</option>
-                <option value="7">7코트</option>
-                <option value="8">8코트</option>
-              </select>
+            <div class="tprep-setup-panel">
+              <div class="tprep-setup-title"><span>참석자</span><span id="regularSetupAttendeeCount" style="font-size:10px;color:#0F766E">날짜 선택 필요</span></div>
+              <div class="tprep-setup-help">선택한 날짜의 참석 여부가 대진 생성에 자동 반영됩니다.</div>
+              <div id="regularSetupAttendeeSummary" class="tprep-attendee-list"><span style="font-size:11px;color:#64748B">경기일을 선택하면 참석자가 표시됩니다.</span></div>
+              <details class="tprep-options"><summary>⚙️ 정규시즌 기록 규칙</summary><div class="tprep-options-body">저장한 경기는 선택한 시즌의 공식 랭킹과 라운드 기록에 반영됩니다.<br>이벤트전·개인 경기는 별도 기록으로 관리되어 공식 랭킹과 섞이지 않습니다.</div></details>
             </div>
-          </div>
-
-          <!-- 라운드별 코트 방식 + 개별 주사위 -->
-          <div id="roundTypeSelectors" style="display:flex;flex-direction:column;gap:10px"></div>
-
-          <div style="margin-top:10px">
-            <button class="btn-add" style="width:100%;background:rgba(124,58,237,0.85)" onclick="rollAllBalanced()">🗓️ 하루 전체 섞기</button>
-          </div>
-          <div id="savedGameCountTable" style="margin-top:10px"></div>
-          <div id="typeStatTable" style="margin-top:6px"></div>
-          <div style="margin-top:8px">
-            <button class="btn-add" style="width:100%" onclick="saveAllRounds(this)">✅ 전체 라운드 저장</button>
           </div>
         </div>
       </div>
@@ -2465,6 +2438,24 @@ function getAttendees(dayId) {
   return [...attending, ...guestAttending];
 }
 
+function renderRegularSetupAttendeeSummary(){
+  const list=document.getElementById('regularSetupAttendeeSummary');
+  const count=document.getElementById('regularSetupAttendeeCount');
+  if(!list||!count)return;
+  const dayId=document.getElementById('rndDayId')?.value||'';
+  const day=days.find(item=>item.id===dayId);
+  if(!dayId||!day){
+    count.textContent='날짜 선택 필요';
+    list.innerHTML='<span style="font-size:11px;color:#64748B">경기일을 선택하면 참석자가 표시됩니다.</span>';
+    return;
+  }
+  const attendees=getAttendees(dayId);
+  const male=attendees.filter(player=>player.gender==='m').length;
+  const female=attendees.filter(player=>player.gender==='f').length;
+  count.textContent=`${attendees.length}명 · 남 ${male} · 여 ${female}`;
+  list.innerHTML=attendees.map(player=>`<span class="tprep-attendee-chip ${guests.some(guest=>guest.name===player.name)?'guest':''}">${player.gender==='f'?'♀':'♂'} ${player.name}${guests.some(guest=>guest.name===player.name)?' · 게스트':''}</span>`).join('')||'<span style="font-size:11px;color:#64748B">참석자가 없습니다.</span>';
+}
+
 // 참석 여부 저장 (attending: true=참석, false=불참, null=v2 무응답 초기화)
 window.setAttendance = async function(dayId, name, attending) {
   const day = days.find(d=>d.id===dayId); if(!day) return;
@@ -2899,6 +2890,7 @@ const TYPE_COLOR = { '혼복':'#a78bfa','남복':'#60a5fa','여복':'#f472b6','�
 const TYPE_BG    = { '혼복':'rgba(124,58,237,0.25)','남복':'rgba(37,99,235,0.25)','여복':'rgba(236,72,153,0.25)','랠리':'rgba(52,211,153,0.25)','잡복':'rgba(251,146,60,0.25)' };
 
 function updateRoundTypeSelectors() {
+  renderRegularSetupAttendeeSummary();
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
   let nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
   if (nC < 1) nC = 1;
@@ -2988,6 +2980,7 @@ window.onRndDayChange = function() {
     const nc = (day.courtNumbers && day.courtNumbers.length) ? day.courtNumbers.length : (day.numCourts || 0);
     if (nc) { ncSel.value = String(nc); updateRoundTypeSelectors(); }
   }
+  renderRegularSetupAttendeeSummary();
   renderSavedGameCount();
 };
 
