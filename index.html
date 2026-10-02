@@ -584,7 +584,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <span class="bn-icon">🏠</span><span class="bn-label">홈</span>
     </button>
     <button class="bn-btn" data-bucket="league" onclick="navTo('league')">
-      <span class="bn-icon">🏆</span><span class="bn-label">정규시즌</span>
+      <span class="bn-icon">🏆</span><span class="bn-label">경기 기록</span>
     </button>
     <button class="bn-btn" data-bucket="schedule" onclick="navTo('schedule')" style="position:relative">
       <span class="bn-icon">📰</span><span class="bn-label">클럽소식</span>
@@ -661,7 +661,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="app-guide-card">
         <h3>🧭 메뉴 길잡이</h3>
         <ul>
-          <li>하단 메뉴는 <b>홈 · 정규시즌 · 클럽소식 · 메뉴</b>로 구성됩니다.</li>
+          <li>하단 메뉴는 <b>홈 · 경기 기록 · 클럽소식 · 메뉴</b>로 구성됩니다.</li>
           <li><b>메뉴 → 개인 경기</b>에서 개인 일정, 참석 여부와 개인 게임 결과를 관리합니다.</li>
           <li><b>메뉴 → 참석 투표</b>에서 정규시즌, 이벤트전, 회식·별도 모임의 참석·미정·불참을 응답합니다.</li>
           <li>메뉴에서 이벤트전, 나의 시즌, 게시판, 사진/동영상, 오늘의 운세와 내 정보를 이용할 수 있습니다.</li>
@@ -669,7 +669,7 @@ tr:nth-child(even){background:#F5FCFB;}
       </div>
 
       <div class="app-guide-card">
-        <h3>🏆 정규시즌</h3>
+        <h3>🏆 경기 기록</h3>
         <ul>
           <li><b>대진표:</b> 라운드별 코트, 페어, 점수와 경기 상태를 확인합니다.</li>
           <li><b>랭킹·개인별:</b> 공식 순위와 회원별 정규시즌·이벤트전·개인 경기 기록을 구분해 확인합니다.</li>
@@ -1729,7 +1729,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.13';
+const APP_VERSION = '1.17.14';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
