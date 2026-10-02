@@ -672,7 +672,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <h3>🏆 정규시즌</h3>
         <ul>
           <li><b>대진표:</b> 라운드별 코트, 페어, 점수와 경기 상태를 확인합니다.</li>
-          <li><b>랭킹·개인별:</b> 전체 순위와 회원별 상세 기록을 확인합니다.</li>
+          <li><b>랭킹·개인별:</b> 공식 순위와 회원별 정규시즌·이벤트전·개인 경기 기록을 구분해 확인합니다.</li>
           <li><b>페어랭킹:</b> 함께 경기한 조합의 성적을 확인합니다.</li>
           <li><b>시즌 리포트:</b> 종료된 시즌의 개인 하이라이트를 확인합니다. 진행 중인 시즌은 종료 후 제공됩니다.</li>
         </ul>
@@ -686,6 +686,7 @@ tr:nth-child(even){background:#F5FCFB;}
           <li>선택된 참가자가 바로 게임 명단으로 저장됩니다. 참석·미정·불참 응답 없이 바로 게임을 만들 수 있습니다.</li>
           <li>개인 일정은 기본 게임 기록 모드로 생성됩니다. 미리 페어를 만들거나, 경기 수를 정하지 않고 한 경기씩 두 팀을 수동 추가할 수 있습니다. 점수·포백은 나중에 입력해도 됩니다.</li>
           <li>개인 경기 결과는 개인 기록으로 남고 정규시즌 공식 랭킹에는 포함되지 않습니다.</li>
+          <li><b>기록 분석 보기</b>에서 세 경기 유형의 전적과 파트너·최근 결과를 따로 확인합니다.</li>
         </ul>
       </div>
 
@@ -893,6 +894,7 @@ tr:nth-child(even){background:#F5FCFB;}
           <button id="scheduleViewAllBtn" onclick="setScheduleView('all')" style="flex:1;padding:8px;border:1px solid #B7DBD7;border-radius:8px;background:#0F766E;color:#fff;font-size:11px;font-weight:800;cursor:pointer">전체 일정</button>
           <button id="scheduleViewMineBtn" onclick="setScheduleView('mine')" style="flex:1;padding:8px;border:1px solid #B7DBD7;border-radius:8px;background:#fff;color:#0F766E;font-size:11px;font-weight:800;cursor:pointer">내 일정</button>
         </div>
+        <button onclick="openPersonalRecordAnalysis()" style="width:100%;padding:9px;margin-bottom:10px;border:1px solid #C4B5FD;border-radius:9px;background:#FAF7FF;color:#6D28D9;font-size:11px;font-weight:900;cursor:pointer">📊 정규시즌·이벤트전·개인 경기 분석 보기</button>
         <div id="scheduleComposer" style="display:none;background:#fff;border:1px solid #C8E0DE;border-radius:12px;padding:12px;margin-bottom:12px">
           <div style="font-size:13px;font-weight:900;color:#1E293B;margin-bottom:9px">새 개인 일정</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:7px">
@@ -1727,7 +1729,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.11';
+const APP_VERSION = '1.17.12';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -1861,6 +1863,7 @@ let personalHighlightSeason = null; // 나의 시즌에서 선택한 종료 시�
 let personalHighlightPreviewName = ''; // 관리자 미리보기용 회원
 const RESV_COURT_NAMES = ['코트1','코트2','코트3','코트4']; // 코트 예약 현황용
 let _analysisAutoSelected = false; // 개인별 분석 최초 자동 선택 완료 플래그
+let analysisSourceView = 'regular'; // 개인별 분석에서 선택한 경기 출처
 let _openDayIds = new Set(); // 날짜 카드 열림 상태 (재렌더링 후 복원용)
 let viewSeason = 1;         // 화면에서 보고 있는 시즌
 let seasonUserPicked = false; // 사용자가 과거 시즌을 직접 선택했는지
@@ -4629,6 +4632,133 @@ function renderRanking(stats) {
 }
 
 // ── 개인별 분석 (선택형) ──────────────────────────────────────────
+function analysisHasScore(value) {
+  return value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+}
+
+function collectAnalysisSourceMatches(name) {
+  const records = {regular:[], event:[], personal:[]};
+  const add = (source, team1, team2, score1, score2, meta, positions) => {
+    if (!analysisHasScore(score1) || !analysisHasScore(score2)) return;
+    const first = (team1 || []).filter(Boolean), second = (team2 || []).filter(Boolean);
+    if (!first.length || !second.length) return;
+    const inFirst = first.includes(name), inSecond = second.includes(name);
+    if (inFirst === inSecond) return;
+    const myTeam = inFirst ? first : second, oppTeam = inFirst ? second : first;
+    const myScore = Number(inFirst ? score1 : score2), oppScore = Number(inFirst ? score2 : score1);
+    records[source].push({
+      date:meta.date || '', title:meta.title || '', kind:meta.kind || '', season:meta.season || null,
+      partner:myTeam.filter(player => player !== name), opponents:oppTeam,
+      myScore, oppScore, result:myScore > oppScore ? 'win' : myScore < oppScore ? 'loss' : 'draw',
+      position:(positions || {})[name] || ''
+    });
+  };
+  days.forEach(day => (day.rounds || []).forEach(round => (round.matches || []).forEach(match => {
+    if (!match.done || match.isRally || match.tag === '랠리' || match.tag === '휴식') return;
+    add('regular',match.team1,match.team2,match.score1,match.score2,
+      {date:day.date,title:`시즌 ${day.season || 1}`,kind:match.tag || '복식',season:day.season || 1},match.positions);
+  })));
+  events.forEach(event => {
+    const matchIds = new Set((event.matches || []).map(match => match.id).filter(Boolean));
+    (event.matches || []).forEach(match => add('event',match.ourPair,match.oppPair,match.ourScore,match.oppScore,
+      {date:event.date,title:event.name || event.title || '이벤트전',kind:match.courtType || '복식'},match.positions));
+    (event.freeMatches || []).forEach(match => {
+      if (match.id && matchIds.has(match.id)) return;
+      add('event',match.team1,match.team2,match.score1,match.score2,
+        {date:event.date,title:event.name || event.title || '이벤트전',kind:match.type || '복식'},match.positions);
+    });
+  });
+  schedules.filter(schedule => schedule.recordScope === 'personal').forEach(schedule => {
+    (schedule.gamePairs || []).forEach(round => (round.matches || []).forEach(match => {
+      add('personal',match.team1,match.team2,match.score1,match.score2,
+        {date:schedule.date,title:schedule.title || schedule.content || '개인 경기',kind:match.type || '복식'},match.positions);
+    }));
+  });
+  Object.values(records).forEach(list => list.sort((a,b) => b.date.localeCompare(a.date)));
+  return records;
+}
+
+function summarizeAnalysisSource(matches) {
+  const summary = {games:matches.length,wins:0,draws:0,losses:0,scored:0,conceded:0,partners:{},opponents:{},kinds:{},positions:{fore:{games:0,wins:0},back:{games:0,wins:0}}};
+  matches.forEach(match => {
+    summary.scored += match.myScore; summary.conceded += match.oppScore;
+    if (match.result === 'win') summary.wins++;
+    else if (match.result === 'draw') summary.draws++;
+    else summary.losses++;
+    match.partner.forEach(name => {
+      const partner = summary.partners[name] || {name,games:0,wins:0,draws:0,losses:0};
+      partner.games++;
+      if (match.result === 'win') partner.wins++;
+      else if (match.result === 'draw') partner.draws++;
+      else partner.losses++;
+      summary.partners[name] = partner;
+    });
+    match.opponents.forEach(name => {
+      const opponent = summary.opponents[name] || {name,games:0,wins:0,draws:0,losses:0};
+      opponent.games++;
+      if (match.result === 'win') opponent.wins++;
+      else if (match.result === 'draw') opponent.draws++;
+      else opponent.losses++;
+      summary.opponents[name] = opponent;
+    });
+    const kind = summary.kinds[match.kind] || {name:match.kind,games:0,wins:0,draws:0,losses:0};
+    kind.games++;
+    if (match.result === 'win') kind.wins++;
+    else if (match.result === 'draw') kind.draws++;
+    else kind.losses++;
+    summary.kinds[match.kind] = kind;
+    const position = summary.positions[match.position];
+    if (position) { position.games++; if (match.result === 'win') position.wins++; }
+  });
+  summary.winRate = summary.games ? Math.round(summary.wins / summary.games * 100) : 0;
+  summary.diff = summary.scored - summary.conceded;
+  return summary;
+}
+
+window.setAnalysisSource = function(source) {
+  if (!['regular','event','personal'].includes(source)) return;
+  analysisSourceView = source;
+  renderAnalysisDetail();
+};
+
+window.openPersonalRecordAnalysis = function() {
+  analysisSourceView = 'personal';
+  navTo('league');
+  const button = document.querySelector('#tab-league .stab:nth-child(3)');
+  if (button) switchSub('analysis',button);
+  const select = document.getElementById('analysisSelect');
+  if (select && myClaim && myClaim !== 'pending' && myClaim.name) select.value = myClaim.name;
+  renderAnalysisDetail();
+};
+
+function renderAnalysisSourcePanel(source, matches) {
+  const data = summarizeAnalysisSource(matches);
+  const isEvent = source === 'event';
+  const title = isEvent ? '🎉 이벤트전' : '🎾 개인 경기';
+  const color = isEvent ? '#7C3AED' : '#0F766E';
+  const partners = Object.values(data.partners).sort((a,b) => b.games - a.games || b.wins - a.wins).slice(0,5);
+  const opponents = Object.values(data.opponents).sort((a,b) => b.games - a.games || b.losses - a.losses).slice(0,5);
+  const kinds = Object.values(data.kinds).sort((a,b) => b.games - a.games);
+  return `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px">
+    <div style="font-size:14px;font-weight:900;color:${color}">${title} · 전체 기간</div>
+    <div style="font-size:11px;color:#64748B;margin:5px 0 12px">점수가 입력된 경기만 집계 · 공식 시즌 순위와 분리</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center">${[[data.games,'경기'],[`${data.wins}승 ${data.draws}무 ${data.losses}패`,'전적'],[`${data.winRate}%`,'승률']].map(([value,label])=>`<div style="padding:9px 3px;background:#F5FAFA;border-radius:9px"><b style="display:block;font-size:14px;color:#1E293B">${value}</b><span style="font-size:10px;color:#64748B">${label}</span></div>`).join('')}</div>
+    <div style="font-size:11px;color:#475569;margin-top:10px">득점 ${data.scored} · 실점 ${data.conceded} · 득실 ${data.diff >= 0 ? '+' : ''}${data.diff}</div>
+  </div>
+  ${partners.length ? `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px"><b style="font-size:12px;color:#1E293B">🤝 함께 뛴 파트너</b>${partners.map(partner=>`<div style="display:flex;justify-content:space-between;gap:7px;padding:7px 0;border-bottom:1px solid #EDF3F2;font-size:11px"><span>${personalGameEscape(partner.name)}</span><span>${partner.games}경기 · ${partner.wins}승 ${partner.draws}무 ${partner.losses}패</span></div>`).join('')}</div>` : ''}
+  ${opponents.length ? `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px"><b style="font-size:12px;color:#1E293B">⚔️ 만난 상대</b>${opponents.map(opponent=>`<div style="display:flex;justify-content:space-between;gap:7px;padding:7px 0;border-bottom:1px solid #EDF3F2;font-size:11px"><span>${personalGameEscape(opponent.name)}</span><span>${opponent.games}경기 · ${opponent.wins}승 ${opponent.draws}무 ${opponent.losses}패</span></div>`).join('')}</div>` : ''}
+  ${kinds.length ? `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px"><b style="font-size:12px;color:#1E293B">📊 경기 방식별</b><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:9px">${kinds.map(kind=>`<span style="background:#F5FAFA;border:1px solid #D7E7E5;border-radius:8px;padding:6px 8px;font-size:10px;color:#475569">${personalGameEscape(kind.name)} · ${kind.games}경기 · ${kind.wins}승 ${kind.draws}무 ${kind.losses}패</span>`).join('')}</div></div>` : ''}
+  ${data.positions.fore.games || data.positions.back.games ? `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px"><b style="font-size:12px;color:#1E293B">🎾 포·백 기록</b><div style="font-size:11px;color:#475569;margin-top:7px">포 ${data.positions.fore.games}경기 · ${data.positions.fore.wins}승　/　백 ${data.positions.back.games}경기 · ${data.positions.back.wins}승</div></div>` : ''}
+  <div style="font-size:13px;font-weight:900;color:#1E293B;margin:14px 0 8px">📅 최근 경기</div>
+  ${matches.length ? matches.slice(0,10).map(match => `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:10px;padding:10px;margin-bottom:6px;font-size:11px"><div style="display:flex;justify-content:space-between;gap:8px"><b style="color:#1E293B">${personalGameEscape(match.title)}</b><span style="color:#64748B">${personalGameEscape(match.date)}</span></div><div style="color:#64748B;margin-top:5px">${personalGameEscape(match.kind)} · 파트너 ${match.partner.length ? personalGameEscape(match.partner.join(' / ')) : '없음'} · 상대 ${personalGameEscape(match.opponents.join(' / '))}</div><div style="font-weight:900;color:${match.result==='win'?'#059669':match.result==='loss'?'#DC2626':'#B45309'};margin-top:5px">${match.result==='win'?'승':match.result==='loss'?'패':'무'} · ${match.myScore} : ${match.oppScore}${match.position ? ` · ${match.position==='fore'?'포':'백'}` : ''}</div></div>`).join('') : `<div style="padding:18px;text-align:center;background:#fff;border:1px dashed #CBD5E1;border-radius:10px;color:#64748B;font-size:11px">완료된 ${isEvent?'이벤트전':'개인 경기'} 결과가 없어요.</div>`}`;
+}
+
+function refreshAnalysisSourcesIfVisible() {
+  const league = document.getElementById('tab-league');
+  const analysis = document.getElementById('sub-analysis');
+  if (league && analysis && league.style.display !== 'none' && analysis.style.display !== 'none' && document.getElementById('analysisSelect')?.value) renderAnalysisDetail();
+}
+
 function renderAnalysis(stats) {
   const sel = document.getElementById('analysisSelect');
   if (!sel) return;
@@ -4662,6 +4792,12 @@ window.renderAnalysisDetail = function() {
   const stats = calcStats();
   const s = stats.find(x=>x.name===name);
   if (!s) { el.innerHTML = '<div class="empty">데이터 없음</div>'; return; }
+  const sourceMatches = collectAnalysisSourceMatches(name);
+  const sourceMeta = [
+    {key:'regular',label:'🏆 정규시즌',color:'#2563EB'},
+    {key:'event',label:'🎉 이벤트전',color:'#7C3AED'},
+    {key:'personal',label:'🎾 개인 경기',color:'#0F766E'}
+  ];
 
   // 현재 등록된 사람만 (삭제된 사람 제외)
   const validNames = new Set(allPlayers().map(p=>p.name));
@@ -4770,9 +4906,22 @@ window.renderAnalysisDetail = function() {
   };
 
   el.innerHTML = `
+    <div style="background:#F8FAFC;border:1px solid #D7E7E5;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:900;color:#1E293B">${personalGameEscape(name)}님의 경기 유형별 기록</div>
+      <div style="font-size:10px;color:#64748B;margin:4px 0 10px">유형별 전체 기간 완료 경기 · 정규시즌 기록만 공식 순위에 반영</div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">${sourceMeta.map(meta=>{
+        const summary=summarizeAnalysisSource(sourceMatches[meta.key]);
+        const active=analysisSourceView===meta.key;
+        return `<button onclick="setAnalysisSource('${meta.key}')" style="min-width:0;padding:9px 4px;border:1px solid ${active?meta.color:'#D7E7E5'};border-radius:10px;background:${active?meta.color:'#fff'};color:${active?'#fff':'#334155'};text-align:center;cursor:pointer"><b style="display:block;font-size:10px">${meta.label}</b><span style="display:block;font-size:11px;font-weight:900;margin-top:3px">${summary.games}경기</span><small style="display:block;font-size:9px;margin-top:2px">${summary.wins}승 ${summary.draws}무 ${summary.losses}패</small></button>`;
+      }).join('')}</div>
+      <div style="font-size:10px;color:#64748B;margin-top:9px">과거 경기는 저장된 선수 이름으로 연결됩니다. 동명이인·이름 변경 기록은 확인이 필요할 수 있어요.</div>
+    </div>
+    ${analysisSourceView==='regular'?'':renderAnalysisSourcePanel(analysisSourceView,sourceMatches[analysisSourceView])}
+    <div style="display:${analysisSourceView==='regular'?'block':'none'}">
+    <div style="font-size:11px;font-weight:900;color:#2563EB;margin:0 0 8px">🏆 시즌 ${viewSeason} 정규시즌 상세 분석</div>
     <!-- 종합 전적 -->
     <div style="background:rgba(20,80,30,0.3);border-radius:12px;padding:14px;border:1px solid rgba(52,211,153,0.3);margin-bottom:16px;text-align:center">
-      <span style="font-size:13px;font-weight:800;color:#059669">🏅 ${name}님의 종합 전적${s.isGuest?' <span style="font-size:10px;color:#059669">(게스트)</span>':''}</span><br>
+      <span style="font-size:13px;font-weight:800;color:#059669">🏅 ${name}님의 정규시즌 공식 전적${s.isGuest?' <span style="font-size:10px;color:#059669">(게스트)</span>':''}</span><br>
       <span style="font-size:12px;color:#78909C;margin-top:4px;display:block">${s.games}전 ${s.wins}승 ${s.draws}무 ${s.losses}패 (승률 ${s.wr}%) · 📅 출석 ${s.attendance}일</span>
     </div>
 
@@ -5168,6 +5317,7 @@ window.renderAnalysisDetail = function() {
         </div>`;
       }).join('')}
     </div>` : ''}
+    </div>
   `;
 };
 
@@ -14695,6 +14845,7 @@ onSnapshot(collection(db,'days'), snap => {
 });
 onSnapshot(collection(db,'events'), snap => {
   events = snap.docs.map(d=>({id:d.id,...d.data()}));
+  refreshAnalysisSourcesIfVisible();
   renderEvents();
   renderAdminEvents();
   renderHomeTab();
@@ -14714,6 +14865,7 @@ onSnapshot(collection(db,'events'), snap => {
 });
 onSnapshot(collection(db,'schedules'), snap => {
   schedules = snap.docs.map(d=>({id:d.id,...d.data()}));
+  refreshAnalysisSourcesIfVisible();
   renderCalendar();
   renderSchedules();
   renderPersonalSchedules();
