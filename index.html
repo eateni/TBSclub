@@ -683,8 +683,8 @@ tr:nth-child(even){background:#F5FCFB;}
         <ul>
           <li><b>정회원</b>은 개인 일정을 만들고, 정회원과 게스트를 구분해 참가자로 선택할 수 있습니다.</li>
           <li>등록되지 않은 외부 게스트는 이름과 <b>테니스 시작 년월</b>을 함께 입력합니다. 참가 당시 시작 년월은 기록에 남습니다.</li>
-          <li>선택된 참가자는 기본 참석으로 저장됩니다. 참석 응답을 기다리지 않아도 대진과 결과를 만들 수 있고, <b>불참</b>으로 바꾼 사람만 대진에서 제외됩니다.</li>
-          <li>개인 일정은 기본 게임 기록 모드로 생성됩니다. 생성자 또는 관리자가 페어와 결과를 관리하며, 결과는 누구나 볼 수 있습니다.</li>
+          <li>선택된 참가자가 바로 게임 명단으로 저장됩니다. 참석·미정·불참 응답 없이 바로 게임을 만들 수 있습니다.</li>
+          <li>개인 일정은 기본 게임 기록 모드로 생성됩니다. 날짜별 게임 수와 페어를 정한 뒤, 게임마다 점수와 포·백을 기록할 수 있습니다.</li>
           <li>개인 경기 결과는 개인 기록으로 남고 정규시즌 공식 랭킹에는 포함되지 않습니다.</li>
         </ul>
       </div>
@@ -8985,16 +8985,125 @@ window.openMeetupPairModal = function(scheduleId) {
   if (!canManageSchedule(sch)) { alert('일정 생성자 또는 관리자만 대진표와 결과를 관리할 수 있어요.'); return; }
   const attendees = getScheduleGameRoster(sch).map(player => player.name);
   if (attendees.length < 4) {
-    document.getElementById('meetupPairBody').innerHTML = '<div class="empty" style="padding:16px;text-align:center;color:#78909C;font-size:13px">불참을 제외한 참가자가 4명 이상이어야 페어를 짤 수 있어요</div>';
+    document.getElementById('meetupPairBody').innerHTML = '<div class="empty" style="padding:16px;text-align:center;color:#78909C;font-size:13px">참가자가 4명 이상이어야 게임을 만들 수 있어요</div>';
     document.getElementById('meetupPairModal').style.display = 'flex';
     return;
   }
-  meetupConfig = { courts: Math.max(1, Math.min(4, Math.floor(attendees.length/4))), rounds: 1, types: {} };
+  if (sch.gamePairs?.length) {
+    meetupCurrentRounds = JSON.parse(JSON.stringify(sch.gamePairs));
+    renderPersonalMeetupResult();
+    document.getElementById('meetupPairModal').style.display = 'flex';
+    return;
+  }
+  meetupConfig = { games: 1 };
   renderMeetupConfigStep();
   document.getElementById('meetupPairModal').style.display = 'flex';
 };
 
+function isPersonalMeetupMode() {
+  return !!(meetupCurrentScheduleId && !evExchangeMode && !evFriendlyMode && !evMonthlyMode);
+}
+
+function getPersonalMatchType(players) {
+  const genders = players.map(player => player.gender || 'm');
+  const maleCount = genders.filter(gender => gender === 'm').length;
+  const femaleCount = genders.filter(gender => gender === 'f').length;
+  if (maleCount === 4) return '남복';
+  if (femaleCount === 4) return '여복';
+  if (maleCount === 2 && femaleCount === 2) return '혼복';
+  return '잡복';
+}
+
+function buildPersonalMeetupMatches(roster, gameCount) {
+  const matches = [];
+  for (let gameIndex = 0; gameIndex < gameCount; gameIndex++) {
+    const pool = shuffle([...roster]);
+    const male = pool.filter(player => player.gender === 'm');
+    const female = pool.filter(player => player.gender === 'f');
+    let players;
+    if (male.length >= 2 && female.length >= 2) {
+      players = [male[0], female[0], male[1], female[1]];
+    } else {
+      players = pool.slice(0, 4);
+    }
+    const type = getPersonalMatchType(players);
+    const names = players.map(player => player.name);
+    matches.push({
+      gameNo: gameIndex + 1, court: gameIndex + 1, type,
+      team1: type === '혼복' ? [names[0], names[1]] : [names[0], names[1]],
+      team2: type === '혼복' ? [names[2], names[3]] : [names[2], names[3]],
+      score1: null, score2: null, positions: {}
+    });
+  }
+  return matches;
+}
+
+function renderPersonalMeetupSetup() {
+  const body = document.getElementById('meetupPairBody');
+  const schedule = schedules.find(item => item.id === meetupCurrentScheduleId);
+  const roster = schedule ? getScheduleGameRoster(schedule) : [];
+  const rosterHtml = roster.map(player => `<span style="display:inline-block;margin:2px;padding:4px 6px;border-radius:99px;background:#F0FDFA;color:#0F766E;font-size:10px;font-weight:800">${player.gender==='f'?'♀':'♂'} ${player.name}</span>`).join('');
+  body.innerHTML = `
+    <div style="padding:10px 12px;background:#F5F3FF;border:1px solid #DDD6FE;border-radius:10px;font-size:11px;line-height:1.6;color:#475569">
+      <b style="color:#6D28D9">${schedule?.title||'개인 경기'} · 참가자 ${roster.length}명</b><br>
+      날짜별 게임 수만 정하면 자동으로 페어를 만듭니다. 종목은 인원 구성에 따라 자동 표시됩니다.
+      <div style="margin-top:6px">${rosterHtml}</div>
+    </div>
+    <div style="margin:14px 0 8px;font-size:12px;font-weight:900;color:#1E293B">오늘 몇 게임을 하나요?</div>
+    <select id="personalMeetupGames" class="row-sel" style="width:100%;padding:10px;font-size:13px">
+      ${[1,2,3,4,5,6,7,8,9,10].map(count => `<option value="${count}" ${count === (meetupConfig.games||1)?'selected':''}>${count}게임</option>`).join('')}
+    </select>
+    <div style="font-size:10px;color:#64748B;line-height:1.55;margin:8px 0 12px">남자 4명은 남복, 여자 4명은 여복, 남 2명·여 2명은 혼복, 그 외 구성은 잡복으로 자동 분류됩니다.</div>
+    <button onclick="generatePersonalMeetupGames()" style="width:100%;padding:11px;border:none;border-radius:10px;background:#7C3AED;color:#fff;font-size:12px;font-weight:900;cursor:pointer">🎲 페어 만들기</button>`;
+}
+
+window.generatePersonalMeetupGames = function() {
+  const schedule = schedules.find(item => item.id === meetupCurrentScheduleId);
+  const roster = schedule ? getScheduleGameRoster(schedule) : [];
+  const gameCount = Math.max(1, Math.min(10, Number(document.getElementById('personalMeetupGames')?.value || 1)));
+  meetupConfig.games = gameCount;
+  meetupCurrentRounds = [{round:1, matches:buildPersonalMeetupMatches(roster, gameCount)}];
+  renderPersonalMeetupResult();
+};
+
+window.updatePersonalMeetupMatch = function(matchIndex) {
+  const match = meetupCurrentRounds[0]?.matches?.[matchIndex];
+  if (!match) return;
+  const names = [0,1,2,3].map(slot => document.getElementById(`personalPair_${matchIndex}_${slot}`)?.value || '');
+  if (names.some(name => !name)) { alert('각 팀의 두 선수를 모두 선택해주세요.'); return; }
+  if (new Set(names).size !== 4) { alert('한 게임에 같은 선수를 중복 배정할 수 없어요.'); return; }
+  const schedule = schedules.find(item => item.id === meetupCurrentScheduleId);
+  const roster = schedule ? getScheduleGameRoster(schedule) : [];
+  const players = names.map(name => roster.find(player => player.name === name) || {name, gender:'m'});
+  match.team1 = names.slice(0,2);
+  match.team2 = names.slice(2,4);
+  match.type = getPersonalMatchType(players);
+  renderPersonalMeetupResult();
+};
+
+function renderPersonalMeetupResult() {
+  const body = document.getElementById('meetupPairBody');
+  const schedule = schedules.find(item => item.id === meetupCurrentScheduleId);
+  const roster = schedule ? getScheduleGameRoster(schedule) : [];
+  const options = selected => `<option value="">선수 선택</option>${roster.map(player => `<option value="${player.name}" ${player.name===selected?'selected':''}>${player.gender==='f'?'♀':'♂'} ${player.name}</option>`).join('')}`;
+  const matches = meetupCurrentRounds[0]?.matches || [];
+  const typeColor = {남복:'#2563EB', 여복:'#DB2777', 혼복:'#7C3AED', 잡복:'#D97706'};
+  body.innerHTML = `
+    <div style="padding:9px 11px;margin-bottom:10px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;font-size:11px;color:#047857;font-weight:800">${matches.length}게임 · 각 게임의 페어를 확인하고, 저장 후 결과와 포·백을 입력하세요.</div>
+    ${matches.map((match, index) => `<div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:11px;padding:10px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><b style="font-size:12px;color:#1E293B">🎾 ${index+1}게임</b><span style="font-size:10px;font-weight:900;color:${typeColor[match.type]||'#64748B'};background:#fff;border:1px solid ${typeColor[match.type]||'#CBD5E1'}55;border-radius:99px;padding:3px 7px">${match.type}</span></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;align-items:center"><div><select id="personalPair_${index}_0" class="row-sel" style="width:100%;padding:6px;font-size:11px">${options(match.team1?.[0])}</select><select id="personalPair_${index}_1" class="row-sel" style="width:100%;padding:6px;font-size:11px;margin-top:4px">${options(match.team1?.[1])}</select></div><div><select id="personalPair_${index}_2" class="row-sel" style="width:100%;padding:6px;font-size:11px">${options(match.team2?.[0])}</select><select id="personalPair_${index}_3" class="row-sel" style="width:100%;padding:6px;font-size:11px;margin-top:4px">${options(match.team2?.[1])}</select></div></div>
+      <button onclick="updatePersonalMeetupMatch(${index})" style="width:100%;margin-top:7px;padding:6px;border:1px solid #C4B5FD;background:#fff;color:#6D28D9;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">이 게임 페어 적용</button>
+      ${match.score1!==null&&match.score1!==undefined?`<div style="margin-top:7px;text-align:center;font-size:12px;font-weight:900;color:#0F766E">${match.score1} : ${match.score2}</div>`:''}
+    </div>`).join('')}
+    <div style="display:flex;gap:7px;margin-top:11px"><button onclick="renderPersonalMeetupSetup()" style="flex:1;padding:10px;border:1px solid #C8E0DE;background:#fff;color:#0F766E;border-radius:9px;font-size:11px;font-weight:800;cursor:pointer">게임 수 변경</button><button onclick="generatePersonalMeetupGames()" style="flex:1;padding:10px;border:1px solid #86EFAC;background:#F0FDF4;color:#15803D;border-radius:9px;font-size:11px;font-weight:800;cursor:pointer">🎲 다시 섞기</button><button onclick="saveMeetupPairs()" style="flex:1;padding:10px;border:none;background:#7C3AED;color:#fff;border-radius:9px;font-size:11px;font-weight:900;cursor:pointer">✅ 게임 저장</button></div>`;
+}
+
 function renderMeetupConfigStep() {
+  if (isPersonalMeetupMode()) {
+    renderPersonalMeetupSetup();
+    return;
+  }
   if (evMonthlyMode==='tournamentPrep') {
     renderTournamentPrepSetup();
     return;
@@ -9824,6 +9933,12 @@ window.startEvExchangeEdit = function(ri, mci, ti, idx) {
 window.saveMeetupPairs = async function() {
   const editableSchedule = schedules.find(s => s.id === meetupCurrentScheduleId);
   if (!canManageSchedule(editableSchedule)) { alert('일정 생성자 또는 관리자만 저장할 수 있어요.'); return; }
+  if (isPersonalMeetupMode()) {
+    await updateDoc(doc(db, 'schedules', meetupCurrentScheduleId), { gamePairs: meetupCurrentRounds });
+    alert('✅ 게임 페어를 저장했어요. 각 게임의 결과 입력에서 점수와 포·백을 기록할 수 있어요.');
+    hide('meetupPairModal');
+    return;
+  }
   meetupCurrentRounds.forEach(rd => {
     rd.matches.forEach((m, mi) => {
       m.score1 = parseInt(document.getElementById(`meetupS1_${rd.round}_${mi}`)?.value) || 0;
@@ -10310,17 +10425,30 @@ function renderHomeClubCalendar(year, month) {
     const isToday = dateStr === todayStr;
     const hasRegular = dayItems.some(function(item){ return item.type === 'regular'; });
     const hasEvent = dayItems.some(function(item){ return item.type === 'event'; });
+    const hasPersonal = dayItems.some(function(item){ return item.type === 'personal'; });
     const hasNotice = dayItems.some(function(item){ return item.type === 'notice'; });
     cells.push('<div class="home-club-calendar-day" style="background:'+(isToday?'rgba(37,99,235,0.12)':'transparent')+';border:1px solid '+(isToday?'rgba(37,99,235,0.35)':'transparent')+';color:'+(isToday?'#2563EB':'#334155')+';font-weight:'+(isToday?'900':'800')+'">'
       +'<span>'+d+'</span>'
-      +(dayItems.length?'<span class="home-club-calendar-dots"><i style="background:'+(hasRegular?'#2563EB':'transparent')+'"></i><i style="background:'+(hasEvent?'#7C3AED':'transparent')+'"></i><i style="background:'+(hasNotice?'#D97706':'transparent')+'"></i></span>':'')
+      +(dayItems.length?'<span class="home-club-calendar-dots"><i style="background:'+(hasRegular?'#2563EB':'transparent')+'"></i><i style="background:'+(hasEvent?'#7C3AED':'transparent')+'"></i><i style="background:'+(hasPersonal?'#059669':'transparent')+'"></i><i style="background:'+(hasNotice?'#D97706':'transparent')+'"></i></span>':'')
       +'</div>');
   }
+  const monthPrefix = `${year}-${String(month+1).padStart(2,'0')}`;
+  const typeMeta = {
+    regular:{label:'정규', color:'#2563EB'}, event:{label:'이벤트', color:'#7C3AED'},
+    personal:{label:'개인', color:'#059669'}, notice:{label:'공지', color:'#D97706'}
+  };
+  const agenda = items.filter(item => item.date?.startsWith(monthPrefix) && typeMeta[item.type])
+    .sort((a,b) => a.date.localeCompare(b.date) || Number(a.sortOrder||0)-Number(b.sortOrder||0))
+    .slice(0, 5).map(item => {
+      const meta = typeMeta[item.type];
+      return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #EEF2F7;font-size:11px"><b style="width:34px;color:#334155">${Number(item.date.slice(8))}일</b><span style="color:${meta.color};font-weight:900;white-space:nowrap">${meta.label}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#475569">${item.title.replace(/^(정규시즌|이벤트전|개인 경기) · /,'')}</span></div>`;
+    }).join('');
   return '<div class="home-club-calendar">'
     +'<div class="home-club-calendar-month">'+year+'년 '+(month+1)+'월</div>'
     +'<div class="home-club-calendar-dow"><span style="color:#DC2626">일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span style="color:#2563EB">토</span></div>'
     +'<div class="home-club-calendar-grid">'+cells.join('')+'</div>'
-    +'<div class="home-club-calendar-legend"><span><b style="color:#2563EB">●</b> 정규시즌</span><span><b style="color:#7C3AED">●</b> 이벤트전</span><span><b style="color:#D97706">●</b> 공지</span></div>'
+    +'<div class="home-club-calendar-legend"><span><b style="color:#2563EB">●</b> 정규시즌</span><span><b style="color:#7C3AED">●</b> 이벤트전</span><span><b style="color:#059669">●</b> 개인 일정</span><span><b style="color:#D97706">●</b> 공지</span></div>'
+    +(agenda?'<div style="margin-top:11px;padding:8px 10px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:9px"><div style="font-size:10px;font-weight:900;color:#475569;margin-bottom:2px">이번 달 일정</div>'+agenda+'</div>':'')
     +'</div>';
 }
 
@@ -11467,6 +11595,10 @@ window.openClubNewsItem = function(type, id) {
   if (type === 'event' || type === 'event-highlight') {
     navTo('event');
     openEventDetail(id,false);
+    return;
+  }
+  if (type === 'personal') {
+    navTo('personal');
   }
 };
 
@@ -11548,6 +11680,12 @@ function getClubCalendarItems(){
     type:'event', date:e.date, title:`이벤트전 · ${e.name||e.title||'이벤트'}`,
     detail:e.oppClub ? `상대: ${e.oppClub}` : (e.type||'이벤트전'), source:e, sortOrder:0
   }));
+  const personal = schedules.filter(schedule => schedule.recordScope === 'personal').map(schedule => ({
+    type:'personal', date:schedule.date,
+    title:`개인 경기 · ${schedule.title||schedule.content||'개인 일정'}`,
+    detail:`${schedule.time?scheduleHourLabel(schedule.time):'시간 미정'}${schedule.place?` · ${schedule.place}`:''} · 참가자 ${(schedule.participantSnapshots||[]).length||Object.keys(schedule.attend||{}).length}명`,
+    source:schedule, sortOrder:5
+  }));
   const notices = announcements.map(a => {
     const stamp = a.createdAt || a.updatedAt;
     let published = null;
@@ -11561,7 +11699,7 @@ function getClubCalendarItems(){
       detail:a.content||'', source:a
     };
   });
-  return [...regular,...eventItems,...dailyHighlights,...eventHighlights,...notices].filter(x=>x.date);
+  return [...regular,...eventItems,...personal,...dailyHighlights,...eventHighlights,...notices].filter(x=>x.date);
 }
 
 function renderCalendar(){
@@ -11580,6 +11718,7 @@ function renderCalendar(){
     const items = calendarItems.filter(s=>s.date===dateStr);
     const hasRegular = items.some(s=>s.type==='regular' || (s.type==='highlight'&&s.targetType==='regular'));
     const hasEvent = items.some(s=>s.type==='event' || (s.type==='highlight'&&s.targetType==='event'));
+    const hasPersonal = items.some(s=>s.type==='personal');
     const hasNotice = items.some(s=>s.type==='notice');
     const hasHighlight = items.some(s=>s.type==='highlight');
     const isToday = dateStr === todayStr;
@@ -11587,7 +11726,7 @@ function renderCalendar(){
     cells.push(`
       <div onclick="selectCalDate('${dateStr}')" style="aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:8px;cursor:pointer;font-size:13px;position:relative;background:${isSelected?'rgba(245,158,11,0.18)':isToday?'rgba(37,99,235,0.12)':'transparent'};border:1.5px solid ${isSelected?'rgba(217,119,6,0.55)':isToday?'rgba(37,99,235,0.4)':'transparent'};color:${isSelected?'#B45309':isToday?'#2563EB':'#334155'};font-weight:${isToday||isSelected?900:700}">
         <span>${d}</span>
-        ${items.length ? `<span style="display:flex;gap:2px;margin-top:3px"><i style="width:5px;height:5px;border-radius:50%;background:${hasRegular?'#2563EB':'transparent'}"></i><i style="width:5px;height:5px;border-radius:50%;background:${hasEvent?'#7c3aed':'transparent'}"></i><i style="width:5px;height:5px;border-radius:50%;background:${hasNotice?'#D97706':'transparent'}"></i><i style="width:5px;height:5px;border-radius:50%;background:${hasHighlight?'#0D9488':'transparent'}"></i></span>` : ''}
+        ${items.length ? `<span style="display:flex;gap:2px;margin-top:3px"><i style="width:5px;height:5px;border-radius:50%;background:${hasRegular?'#2563EB':'transparent'}"></i><i style="width:5px;height:5px;border-radius:50%;background:${hasEvent?'#7c3aed':'transparent'}"></i><i style="width:5px;height:5px;border-radius:50%;background:${hasPersonal?'#059669':'transparent'}"></i><i style="width:5px;height:5px;border-radius:50%;background:${hasNotice?'#D97706':'transparent'}"></i><i style="width:5px;height:5px;border-radius:50%;background:${hasHighlight?'#0D9488':'transparent'}"></i></span>` : ''}
       </div>`);
   }
 
@@ -11607,7 +11746,7 @@ function renderCalendar(){
       <div style="color:#DC2626">일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div style="color:#2563EB">토</div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">${cells.join('')}</div>
-    <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin-top:10px;font-size:10px;color:#64748B"><span><b style="color:#2563EB">●</b> 정규시즌</span><span><b style="color:#7c3aed">●</b> 이벤트전</span><span><b style="color:#D97706">●</b> 공지</span><span><b style="color:#0D9488">●</b> 하이라이트</span></div>
+    <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin-top:10px;font-size:10px;color:#64748B"><span><b style="color:#2563EB">●</b> 정규시즌</span><span><b style="color:#7c3aed">●</b> 이벤트전</span><span><b style="color:#059669">●</b> 개인 일정</span><span><b style="color:#D97706">●</b> 공지</span><span><b style="color:#0D9488">●</b> 하이라이트</span></div>
     ${filterChip}`;
 }
 
@@ -11628,7 +11767,6 @@ function getScheduleGameRoster(schedule) {
   const snapshots = schedule.participantSnapshots || [];
   const directory = scheduleDirectory();
   return getScheduleAttendanceRows(schedule)
-    .filter(row => row.status !== '불참')
     .map(row => {
       const snapshot = snapshots.find(item => (row.uid && item.uid === row.uid) || (!row.uid && item.name === row.name));
       const player = directory.find(item => (row.uid && item.uid === row.uid) || item.name === row.name);
@@ -11673,19 +11811,16 @@ function renderPersonalSchedules() {
     const rows = getScheduleAttendanceRows(schedule);
     const dateLabel = schedule.date ? new Date(`${schedule.date}T00:00:00`).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
     const canManage = canManageSchedule(schedule);
-    const canAttend = signedMember && (schedule.participantUids || []).includes(myClaim.uid);
-    const myStatus = canAttend ? ((schedule.attendanceByUid || {})[myClaim.uid] || '미정') : '';
-    const statusColor = {참석:'#059669', 불참:'#DC2626', 미정:'#B45309'};
-    const resultHtml = (schedule.gamePairs || []).map(round => {
-      const games = (round.matches || []).map(match => {
+    const resultHtml = (schedule.gamePairs || []).map((round, roundIndex) => {
+      const games = (round.matches || []).map((match, matchIndex) => {
         const done = match.score1 !== null && match.score1 !== undefined && match.score2 !== null && match.score2 !== undefined;
         return `<div style="display:grid;grid-template-columns:1fr auto 1fr;gap:7px;align-items:center;padding:7px 0;border-top:1px solid #E7F0EF;font-size:11px">
           <span style="font-weight:800;color:#1E293B">${(match.team1 || []).join(' / ')}</span>
           <span style="font-weight:900;color:${done?'#0F766E':'#94A3B8'}">${done ? `${match.score1} : ${match.score2}` : '예정'}</span>
           <span style="font-weight:800;color:#1E293B;text-align:right">${(match.team2 || []).join(' / ')}</span>
-        </div>`;
+        </div>${canManage ? `<button onclick="openMeetupScore('${schedule.id}',${roundIndex},${matchIndex})" style="width:100%;margin:2px 0 5px;padding:5px;border:1px solid #C4B5FD;background:#fff;color:#6D28D9;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">${done?'점수·포백 수정':'점수·포백 입력'}</button>` : ''}`;
       }).join('');
-      return games ? `<div style="margin-top:7px"><div style="font-size:10px;font-weight:900;color:#6D28D9">${round.round || '경기'}라운드</div>${games}</div>` : '';
+      return games ? `<div style="margin-top:7px"><div style="font-size:10px;font-weight:900;color:#6D28D9">${(round.matches||[]).length > 1 ? '날짜별 게임' : `${round.round || '경기'}게임`}</div>${games}</div>` : '';
     }).join('');
     return `<article style="background:#fff;border:1px solid #D6E9E7;border-radius:12px;padding:12px;margin-top:9px">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
@@ -11695,10 +11830,9 @@ function renderPersonalSchedules() {
       </div>
       ${schedule.content && schedule.content !== schedule.title ? `<div style="font-size:11px;color:#475569;line-height:1.55;margin-top:8px">${schedule.content}</div>` : ''}
       <div style="margin-top:9px;padding-top:8px;border-top:1px solid #E7F0EF"><div style="font-size:10px;font-weight:900;color:#0F766E;margin-bottom:5px">참가자 ${rows.length}명 · 참가 당시 시작 년월</div>
-        <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name} · <b style="color:${statusColor[row.status] || '#64748B'}">${row.status}</b>${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name}${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
       </div>
-      ${canAttend ? `<div style="display:flex;align-items:center;gap:6px;margin-top:10px"><span style="font-size:10px;color:#64748B;white-space:nowrap">내 참석: <b style="color:${statusColor[myStatus] || '#64748B'}">${myStatus}</b></span><button onclick="setPersonalScheduleAttendance('${schedule.id}','참석')" style="flex:1;padding:7px;border:1px solid #8FE3C4;background:${myStatus==='참석'?'#DDF9ED':'#fff'};border-radius:7px;color:#059669;font-size:10px;font-weight:800;cursor:pointer">참석</button><button onclick="setPersonalScheduleAttendance('${schedule.id}','불참')" style="flex:1;padding:7px;border:1px solid #FBC0C0;background:${myStatus==='불참'?'#FFF0F0':'#fff'};border-radius:7px;color:#DC2626;font-size:10px;font-weight:800;cursor:pointer">불참</button><button onclick="setPersonalScheduleAttendance('${schedule.id}','미정')" style="flex:1;padding:7px;border:1px solid #F6D58B;background:${myStatus==='미정'?'#FFF8E3':'#fff'};border-radius:7px;color:#B45309;font-size:10px;font-weight:800;cursor:pointer">미정</button></div>` : ''}
-      ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">대진·결과 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">선택한 참가자는 바로 게임 명단에 포함돼요. 불참으로 변경한 사람만 대진에서 제외됩니다.</div>${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 대진표가 없어요.</div>'}</div>` : ''}
+      ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">대진·결과 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">선택한 참가자 전체가 게임 명단으로 저장됩니다.</div>${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 게임을 만들지 않았어요.</div>'}</div>` : ''}
     </article>`;
   }).join('');
 }
@@ -11713,6 +11847,7 @@ function renderSchedules() {
   const typeStyle = {
     regular:{icon:'🏆', label:'정규시즌', color:'#2563EB', bg:'rgba(37,99,235,0.07)'},
     event:{icon:'🎉', label:'이벤트전', color:'#7c3aed', bg:'rgba(124,58,237,0.07)'},
+    personal:{icon:'🎾', label:'개인 경기', color:'#059669', bg:'rgba(5,150,105,0.08)'},
     notice:{icon:'📢', label:'클럽 공지', color:'#D97706', bg:'rgba(245,158,11,0.08)'},
     highlight:{icon:'✨', label:'오늘의 하이라이트', color:'#0F766E', bg:'linear-gradient(135deg,rgba(13,148,136,0.10),rgba(37,99,235,0.06))'}
   };
