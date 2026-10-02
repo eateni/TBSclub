@@ -684,7 +684,7 @@ tr:nth-child(even){background:#F5FCFB;}
           <li><b>정회원</b>은 개인 일정을 만들고, 정회원과 게스트를 구분해 참가자로 선택할 수 있습니다.</li>
           <li>등록되지 않은 외부 게스트는 이름과 <b>테니스 시작 년월</b>을 함께 입력합니다. 참가 당시 시작 년월은 기록에 남습니다.</li>
           <li>선택된 참가자가 바로 게임 명단으로 저장됩니다. 참석·미정·불참 응답 없이 바로 게임을 만들 수 있습니다.</li>
-          <li>개인 일정은 기본 게임 기록 모드로 생성됩니다. 미리 페어를 만들거나, 경기 후 두 팀과 점수·포백을 수동 등록할 수 있습니다.</li>
+          <li>개인 일정은 기본 게임 기록 모드로 생성됩니다. 미리 페어를 만들거나, 경기 수를 정하지 않고 한 경기씩 두 팀을 수동 추가할 수 있습니다. 점수·포백은 나중에 입력해도 됩니다.</li>
           <li>개인 경기 결과는 개인 기록으로 남고 정규시즌 공식 랭킹에는 포함되지 않습니다.</li>
         </ul>
       </div>
@@ -1017,6 +1017,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <button class="stab active" onclick="switchAdminSub('members',this)">👥 회원·승인</button>
         <button class="stab" onclick="switchAdminSub('match',this)">🎾 시즌·페어 설정</button>
         <button class="stab" onclick="switchAdminSub('operations',this)">📅 경기 운영</button>
+        <button class="stab" onclick="switchAdminSub('personal',this)">🎾 개인 경기</button>
         <button class="stab" onclick="switchAdminSub('polls',this)">📮 참석 투표</button>
         <button class="stab" onclick="switchAdminSub('status',this)">📊 운영 현황</button>
         <button class="stab" onclick="switchAdminSub('announce',this)">📢 공지 관리</button>
@@ -1136,6 +1137,14 @@ tr:nth-child(even){background:#F5FCFB;}
           <div class="admin-ops-step"><b>1. 일정·참석</b>날짜와 참가자 확인</div>
           <div class="admin-ops-step"><b>2. 공식 대진</b>관리자 자동·수동 생성</div>
           <div class="admin-ops-step"><b>3. 즉석 매치</b>현장 추가 경기 관리</div>
+        </div>
+      </div>
+
+      <div id="adminGroup-personal" style="display:none">
+        <div class="admin-sec">
+          <h3>🎾 회원 개인 경기 일정</h3>
+          <div id="adminPersonalScheduleSummary" style="font-size:11px;color:#64748B;margin-bottom:10px">회원들이 만든 개인 일정과 경기 결과를 확인합니다.</div>
+          <div id="adminPersonalScheduleList"></div>
         </div>
       </div>
 
@@ -1718,7 +1727,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.10';
+const APP_VERSION = '1.17.11';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -8378,7 +8387,7 @@ window.switchMatchOpsMode = function(mode, btn){
 };
 
 window.switchAdminSub = function(key, btn){
-  ['members','match','operations','schedule','events','polls','status','announce','notifications'].forEach(k => {
+  ['members','match','operations','schedule','events','personal','polls','status','announce','notifications'].forEach(k => {
     const el = document.getElementById(`adminGroup-${k}`);
     if (el) {
       const active=k === key && !['schedule','events'].includes(k);
@@ -8400,6 +8409,7 @@ window.switchAdminSub = function(key, btn){
   if (activeTopBtn) activeTopBtn.classList.add('active');
   if (key === 'announce') renderAdminAnnouncements();
   if (key === 'notifications') renderAdminNotifications();
+  if (key === 'personal') renderAdminPersonalSchedules();
   if (key === 'polls') { syncAttendancePollTargetForm(); renderAdminAttendancePolls(); }
 };
 
@@ -8985,24 +8995,29 @@ window.openMeetupPairModal = function(scheduleId) {
   meetupCurrentScheduleId = scheduleId;
   meetupCurrentRounds = [];
   const sch = schedules.find(s => s.id === scheduleId);
-  if (!sch) return;
-  if (!canManageSchedule(sch)) { alert('일정 생성자 또는 관리자만 대진표와 결과를 관리할 수 있어요.'); return; }
+  if (!sch) return false;
+  if (!canManageSchedule(sch)) { alert('일정 생성자 또는 관리자만 대진표와 결과를 관리할 수 있어요.'); return false; }
   const attendees = getScheduleGameRoster(sch).map(player => player.name);
   if (attendees.length < 4) {
     document.getElementById('meetupPairBody').innerHTML = '<div class="empty" style="padding:16px;text-align:center;color:#78909C;font-size:13px">참가자가 4명 이상이어야 게임을 만들 수 있어요</div>';
     document.getElementById('meetupPairModal').style.display = 'flex';
-    return;
+    return false;
   }
   if (sch.gamePairs?.length) {
     meetupConfig = {games:sch.gamePairs.reduce((count, round) => count + (round.matches||[]).length, 0)};
     meetupCurrentRounds = [{round:1, matches:JSON.parse(JSON.stringify(sch.gamePairs.flatMap(round => round.matches||[])))}];
     renderPersonalMeetupResult();
     document.getElementById('meetupPairModal').style.display = 'flex';
-    return;
+    return true;
   }
   meetupConfig = { games: 1 };
   renderMeetupConfigStep();
   document.getElementById('meetupPairModal').style.display = 'flex';
+  return true;
+};
+
+window.openPersonalManualGame = function(scheduleId) {
+  if (window.openMeetupPairModal(scheduleId)) window.renderPersonalManualGameForm(true);
 };
 
 function isPersonalMeetupMode() {
@@ -9065,7 +9080,7 @@ function personalGameEscape(value) {
   return String(value||'').replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
 }
 
-window.renderPersonalManualGameForm = function() {
+window.renderPersonalManualGameForm = function(direct = false) {
   const body = document.getElementById('meetupPairBody');
   const schedule = schedules.find(item => item.id === meetupCurrentScheduleId);
   const roster = schedule ? getScheduleGameRoster(schedule) : [];
@@ -9074,17 +9089,17 @@ window.renderPersonalManualGameForm = function() {
   const options = `<option value="">선수 선택</option>${roster.map(player => `<option value="${personalGameEscape(player.name)}">${player.gender==='f'?'♀':player.gender==='m'?'♂':'🎾'} ${personalGameEscape(player.name)}</option>`).join('')}`;
   const playerSelect = slot => `<select id="personalManualPlayer${slot}" class="row-sel" onchange="updatePersonalManualPositions()" style="width:100%;padding:9px;font-size:12px;margin-top:5px">${options}</select>`;
   body.innerHTML = `
-    <div style="padding:10px 12px;background:#F0FDFA;border:1px solid #A7F3D0;border-radius:10px;color:#0F766E;font-size:11px;line-height:1.6">경기 후 실제로 함께 뛴 페어와 점수를 입력하세요. 등록하면 이 날짜에 ${savedCount+1}게임으로 기록됩니다.</div>
+    <div style="padding:10px 12px;background:#F0FDFA;border:1px solid #A7F3D0;border-radius:10px;color:#0F766E;font-size:11px;line-height:1.6">게임 수를 미리 정할 필요 없이 실제 페어를 한 경기씩 추가하세요. 이번 경기는 ${savedCount+1}게임으로 기록됩니다.</div>
     <div style="display:grid;grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr);gap:5px;align-items:start;margin-top:13px">
       <div style="padding:9px;border:1px solid #BFDBFE;border-radius:10px;background:#EFF6FF"><b style="color:#1D4ED8;font-size:12px">🔵 A팀 · 같은 페어</b>${playerSelect(0)}${playerSelect(1)}</div>
       <b style="color:#64748B;text-align:center;padding-top:47px;font-size:13px">VS</b>
       <div style="padding:9px;border:1px solid #FBCFE8;border-radius:10px;background:#FDF2F8"><b style="color:#BE185D;font-size:12px">🔴 B팀 · 같은 페어</b>${playerSelect(2)}${playerSelect(3)}</div>
     </div>
-    <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 5px">경기 점수</div>
+    <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 5px">경기 점수 <span style="font-weight:500;color:#94A3B8">선택 사항 · 나중에 입력 가능</span></div>
     <div style="display:grid;grid-template-columns:1fr 24px 1fr;gap:5px;align-items:center"><input id="personalManualScore1" type="number" min="0" step="1" class="row-inp" placeholder="A팀 점수" style="width:100%;box-sizing:border-box;text-align:center;padding:9px"><b style="text-align:center;color:#64748B">:</b><input id="personalManualScore2" type="number" min="0" step="1" class="row-inp" placeholder="B팀 점수" style="width:100%;box-sizing:border-box;text-align:center;padding:9px"></div>
     <div style="font-size:11px;font-weight:800;color:#475569;margin:12px 0 5px">포·백 <span style="font-weight:500;color:#94A3B8">선택 사항 · 포 선수를 고르면 파트너는 백으로 저장</span></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px"><select id="personalManualFore1" class="row-sel" style="width:100%;padding:9px;font-size:11px"><option value="">A팀 포 선수 선택</option></select><select id="personalManualFore2" class="row-sel" style="width:100%;padding:9px;font-size:11px"><option value="">B팀 포 선수 선택</option></select></div>
-    <div style="display:flex;gap:7px;margin-top:14px"><button onclick="${canReturnToPairs?'renderPersonalMeetupResult()':'renderPersonalMeetupSetup()'}" style="flex:1;padding:10px;border:1px solid #C8E0DE;border-radius:9px;background:#fff;color:#475569;font-size:11px;font-weight:800;cursor:pointer">뒤로</button><button id="personalManualSaveBtn" onclick="savePersonalManualGame()" style="flex:2;padding:10px;border:0;border-radius:9px;background:#0F766E;color:#fff;font-size:12px;font-weight:900;cursor:pointer">✅ 결과 바로 저장</button></div>`;
+    <div style="display:flex;gap:7px;margin-top:14px"><button onclick="${direct?"hide('meetupPairModal')":canReturnToPairs?'renderPersonalMeetupResult()':'renderPersonalMeetupSetup()'}" style="flex:1;padding:10px;border:1px solid #C8E0DE;border-radius:9px;background:#fff;color:#475569;font-size:11px;font-weight:800;cursor:pointer">${direct?'닫기':'뒤로'}</button><button id="personalManualSaveBtn" onclick="savePersonalManualGame()" style="flex:2;padding:10px;border:0;border-radius:9px;background:#0F766E;color:#fff;font-size:12px;font-weight:900;cursor:pointer">✅ 경기 추가</button></div>`;
 };
 
 window.updatePersonalManualPositions = function() {
@@ -9104,8 +9119,10 @@ window.savePersonalManualGame = async function() {
   const names = [0,1,2,3].map(slot => document.getElementById(`personalManualPlayer${slot}`)?.value || '');
   if (names.some(name => !name) || new Set(names).size !== 4) { alert('A팀과 B팀에 서로 다른 선수 네 명을 선택해주세요.'); return; }
   const rawScores = [document.getElementById('personalManualScore1')?.value, document.getElementById('personalManualScore2')?.value];
-  const scores = rawScores.map(value => Number(value));
-  if (rawScores.some(value => value === '' || value == null) || scores.some(value => !Number.isInteger(value) || value < 0)) { alert('양쪽 팀의 점수를 0 이상의 정수로 입력해주세요.'); return; }
+  const hasScores = rawScores.every(value => value !== '' && value != null);
+  const scores = hasScores ? rawScores.map(value => Number(value)) : [null, null];
+  if (rawScores.some(value => value !== '' && value != null) && !hasScores) { alert('점수를 입력하려면 양쪽 팀 점수를 모두 적어주세요.'); return; }
+  if (hasScores && scores.some(value => !Number.isInteger(value) || value < 0)) { alert('양쪽 팀의 점수를 0 이상의 정수로 입력해주세요.'); return; }
   const roster = getScheduleGameRoster(schedule);
   if (names.some(name => !roster.some(player => player.name === name))) { alert('일정 참가자 명단에 없는 선수가 있어요. 다시 선택해주세요.'); return; }
   const type = getPersonalMatchType(names.map(name => roster.find(player => player.name === name)));
@@ -10543,7 +10560,7 @@ function renderHomeClubCalendar(year, month) {
     .sort((a,b) => a.date.localeCompare(b.date) || Number(a.sortOrder||0)-Number(b.sortOrder||0))
     .slice(0, 5).map(item => {
       const meta = typeMeta[item.type];
-      return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #EEF2F7;font-size:11px"><b style="width:34px;color:#334155">${Number(item.date.slice(8))}일</b><span style="color:${meta.color};font-weight:900;white-space:nowrap">${meta.label}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#475569">${item.title.replace(/^(정규시즌|이벤트전|개인 경기) · /,'')}</span></div>`;
+      return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #EEF2F7;font-size:11px"><b style="width:34px;color:#334155">${Number(item.date.slice(8))}일</b><span style="color:${meta.color};font-weight:900;white-space:nowrap">${meta.label}</span><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#475569">${item.title.replace(/^(정규시즌|이벤트전|개인 경기) · /,'')}${item.type==='personal'?` · 호스트 ${personalGameEscape(item.hostName)}`:''}</span></div>`;
     }).join('');
   return '<div class="home-club-calendar">'
     +'<div class="home-club-calendar-month">'+year+'년 '+(month+1)+'월</div>'
@@ -11077,6 +11094,7 @@ function renderHomeTab() {
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-size:13px;font-weight:900;color:#0F766E">📅 다가오는 개인 경기</div><span style="font-size:11px;font-weight:900;color:#0F766E">전체 보기 ›</span></div>
       <div style="font-size:14px;font-weight:900;color:#1E293B;margin-top:8px">${_nextPersonalSchedule.title || _nextPersonalSchedule.content || '개인 경기 일정'}</div>
       <div style="font-size:11px;color:#475569;margin-top:4px">${dateLabel}${_nextPersonalSchedule.time?` · ${scheduleHourLabel(_nextPersonalSchedule.time)}`:''}${_nextPersonalSchedule.place?` · ${_nextPersonalSchedule.place}`:''}</div>
+      <div style="font-size:10px;font-weight:800;color:#0F766E;margin-top:5px">👤 호스트 · ${personalGameEscape(personalScheduleHostName(_nextPersonalSchedule))}</div>
       ${myRow ? `<div style="font-size:10px;color:#0F766E;margin-top:7px;font-weight:800">내 참석 상태 · ${myRow.status}</div>` : ''}
     </div>`;
   })() : `<div onclick="navTo('personal')" style="cursor:pointer;background:#F8FCFC;border:1px solid #C8E0DE;border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px"><div><div style="font-size:13px;font-weight:900;color:#0F766E">📅 개인 경기</div><div style="font-size:11px;color:#64748B;margin-top:3px">일정, 참석 여부와 개인 경기 결과를 확인하세요.</div></div><span style="font-size:18px;color:#0F766E">›</span></div>`;
@@ -11785,7 +11803,8 @@ function getClubCalendarItems(){
   const personal = schedules.filter(schedule => schedule.recordScope === 'personal').map(schedule => ({
     type:'personal', date:schedule.date,
     title:`개인 경기 · ${schedule.title||schedule.content||'개인 일정'}`,
-    detail:`${schedule.time?scheduleHourLabel(schedule.time):'시간 미정'}${schedule.place?` · ${schedule.place}`:''} · 참가자 ${(schedule.participantSnapshots||[]).length||Object.keys(schedule.attend||{}).length}명`,
+    hostName:personalScheduleHostName(schedule),
+    detail:`👤 호스트 ${personalGameEscape(personalScheduleHostName(schedule))} · ${schedule.time?scheduleHourLabel(schedule.time):'시간 미정'}${schedule.place?` · ${schedule.place}`:''} · 참가자 ${(schedule.participantSnapshots||[]).length||Object.keys(schedule.attend||{}).length}명`,
     source:schedule, sortOrder:5
   }));
   const notices = announcements.map(a => {
@@ -11865,6 +11884,11 @@ function getScheduleAttendanceRows(schedule) {
   return Object.entries(schedule.attend || {}).map(([name, status]) => ({name, uid:null, status, tennisStartDate:''}));
 }
 
+function personalScheduleHostName(schedule) {
+  const owner = members.find(member => member.uid && member.uid === (schedule.ownerUid || schedule.writerUid));
+  return owner?.name || schedule.writer || '호스트 미등록';
+}
+
 function getScheduleGameRoster(schedule) {
   const snapshots = schedule.participantSnapshots || [];
   const directory = scheduleDirectory();
@@ -11892,12 +11916,12 @@ window.setPersonalScheduleAttendance = async function(scheduleId, status) {
   }
 };
 
-function renderPersonalSchedules() {
-  const el = document.getElementById('personalScheduleList');
+function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = false) {
+  const el = document.getElementById(targetId);
   if (!el) return;
   const signedMember = !!(myClaim && myClaim !== 'pending' && !myClaim.isGuest);
   let list = schedules.filter(schedule => schedule.recordScope === 'personal');
-  if (scheduleView === 'mine') {
+  if (!forceAll && scheduleView === 'mine') {
     if (!signedMember) {
       el.innerHTML = '<div style="font-size:11px;color:#64748B;padding:10px 2px">내 일정은 정회원 로그인 후 확인할 수 있어요.</div>';
       return;
@@ -11906,13 +11930,14 @@ function renderPersonalSchedules() {
   }
   list.sort((a,b) => (a.date || '').localeCompare(b.date || '') || Number(b.ts || 0) - Number(a.ts || 0));
   if (!list.length) {
-    el.innerHTML = `<div style="padding:12px;background:#fff;border:1px dashed #C8E0DE;border-radius:10px;font-size:11px;color:#64748B">${scheduleView === 'mine' ? '내가 포함된 개인 일정이 없어요.' : '등록된 회원 일정이 없어요.'}</div>`;
+    el.innerHTML = `<div style="padding:12px;background:#fff;border:1px dashed #C8E0DE;border-radius:10px;font-size:11px;color:#64748B">${!forceAll && scheduleView === 'mine' ? '내가 포함된 개인 일정이 없어요.' : '등록된 회원 일정이 없어요.'}</div>`;
     return;
   }
   el.innerHTML = list.map(schedule => {
     const rows = getScheduleAttendanceRows(schedule);
     const dateLabel = schedule.date ? new Date(`${schedule.date}T00:00:00`).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
     const canManage = canManageSchedule(schedule);
+    const hostName = personalGameEscape(personalScheduleHostName(schedule));
     let gameNumber = 0;
     const resultHtml = (schedule.gamePairs || []).map((round, roundIndex) => {
       const games = (round.matches || []).map((match, matchIndex) => {
@@ -11930,16 +11955,25 @@ function renderPersonalSchedules() {
     return `<article style="background:#fff;border:1px solid #D6E9E7;border-radius:12px;padding:12px;margin-top:9px">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
         <div><div style="font-size:13px;font-weight:900;color:#1E293B">${schedule.title || schedule.content || '회원 일정'}</div>
-          <div style="font-size:10px;color:#64748B;margin-top:4px">📅 ${dateLabel}${schedule.time?` · ${scheduleHourLabel(schedule.time)}`:''}${schedule.place?` · 📍 ${schedule.place}`:''}</div></div>
+          <div style="font-size:10px;color:#64748B;margin-top:4px">📅 ${dateLabel}${schedule.time?` · ${scheduleHourLabel(schedule.time)}`:''}${schedule.place?` · 📍 ${schedule.place}`:''}</div>
+          <div style="font-size:11px;font-weight:800;color:#0F766E;margin-top:5px">👤 호스트 · ${hostName}</div></div>
         <span style="font-size:9px;font-weight:900;color:#0F766E;background:#E5F7F3;border-radius:99px;padding:5px 7px;white-space:nowrap">개인 기록</span>
       </div>
       ${schedule.content && schedule.content !== schedule.title ? `<div style="font-size:11px;color:#475569;line-height:1.55;margin-top:8px">${schedule.content}</div>` : ''}
       <div style="margin-top:9px;padding-top:8px;border-top:1px solid #E7F0EF"><div style="font-size:10px;font-weight:900;color:#0F766E;margin-bottom:5px">참가자 ${rows.length}명 · 참가 당시 시작 년월</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name}${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
       </div>
-      ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">미리 페어를 만들거나, 경기 후 결과를 수동 등록할 수 있어요.</div>${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>` : ''}
+      ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">게임 수를 미리 정하지 않고 한 경기씩 추가할 수 있어요.</div>${canManage ? `<button onclick="openPersonalManualGame('${schedule.id}')" style="width:100%;margin-top:8px;padding:8px;border:1px solid #6EE7B7;background:#ECFDF5;color:#047857;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">＋ 수동 경기 추가</button>` : ''}${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>` : ''}
     </article>`;
   }).join('');
+}
+
+function renderAdminPersonalSchedules() {
+  if (!isAdmin) return;
+  const summary = document.getElementById('adminPersonalScheduleSummary');
+  const count = schedules.filter(schedule => schedule.recordScope === 'personal').length;
+  if (summary) summary.textContent = `전체 ${count}건 · 호스트, 참가자와 날짜별 경기 결과를 확인할 수 있습니다.`;
+  renderPersonalSchedules('adminPersonalScheduleList', true);
 }
 
 function renderSchedules() {
@@ -14631,6 +14665,10 @@ onSnapshot(doc(db,'club','members'), snap => {
   populateSignupNameSelect();
   updateTerraSelects();
   renderAll();
+  renderPersonalSchedules();
+  renderAdminPersonalSchedules();
+  renderCalendar();
+  renderSchedules();
   resolveMyClaim();
   syncMemberRoleDocs();
 });
@@ -14679,6 +14717,7 @@ onSnapshot(collection(db,'schedules'), snap => {
   renderCalendar();
   renderSchedules();
   renderPersonalSchedules();
+  renderAdminPersonalSchedules();
   renderTodayBanner();
   updateScheduleBadge();
   renderHomeTab();
