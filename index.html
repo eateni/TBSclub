@@ -1729,7 +1729,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.12';
+const APP_VERSION = '1.17.13';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4736,21 +4736,58 @@ function renderAnalysisSourcePanel(source, matches) {
   const isEvent = source === 'event';
   const title = isEvent ? '🎉 이벤트전' : '🎾 개인 경기';
   const color = isEvent ? '#7C3AED' : '#0F766E';
-  const partners = Object.values(data.partners).sort((a,b) => b.games - a.games || b.wins - a.wins).slice(0,5);
-  const opponents = Object.values(data.opponents).sort((a,b) => b.games - a.games || b.losses - a.losses).slice(0,5);
-  const kinds = Object.values(data.kinds).sort((a,b) => b.games - a.games);
+  const card = (heading, body) => `<section style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px"><b style="font-size:12px;color:#1E293B">${heading}</b>${body}</section>`;
+  const record = item => `${item.wins}승 ${item.draws}무 ${item.losses}패`;
+  const rate = item => item.games ? Math.round(item.wins / item.games * 100) : 0;
+  const bar = item => `<div style="height:5px;background:#EDF3F2;border-radius:5px;margin-top:5px;overflow:hidden"><div style="width:${rate(item)}%;height:100%;background:${color}"></div></div>`;
+  const row = (label, item, detail = '') => `<div style="padding:8px 0;border-bottom:1px solid #EDF3F2;font-size:11px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b style="color:#334155">${personalGameEscape(label)}</b><span style="color:#475569">${item.games}경기 · ${record(item)} · 승률 ${rate(item)}%${detail}</span></div>${bar(item)}</div>`;
+  const resultLabel = result => result === 'win' ? '승' : result === 'loss' ? '패' : '무';
+  const resultColor = result => result === 'win' ? '#059669' : result === 'loss' ? '#DC2626' : '#B45309';
+  const matchRow = match => `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:10px;padding:10px;margin-bottom:6px;font-size:11px"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><b style="color:#1E293B">${personalGameEscape(match.title)}</b><span style="color:#64748B">${personalGameEscape(match.date)}</span></div><div style="color:#475569;margin-top:5px">${personalGameEscape(match.kind)} · 파트너 ${match.partner.length ? personalGameEscape(match.partner.join(' / ')) : '없음'} · 상대 ${personalGameEscape(match.opponents.join(' / '))}</div><div style="font-weight:900;color:${resultColor(match.result)};margin-top:5px">${resultLabel(match.result)} · ${match.myScore} : ${match.oppScore}${match.position === 'fore' || match.position === 'back' ? ` · ${match.position === 'fore' ? '포' : '백'}` : ''}</div></div>`;
+  const groupBy = keyFn => {
+    const groups = new Map();
+    matches.forEach(match => {
+      const key = keyFn(match);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(match);
+    });
+    return [...groups.entries()].map(([key, group]) => ({key, ...summarizeAnalysisSource(group)})).sort((a,b) => b.key.localeCompare(a.key));
+  };
+  const months = groupBy(match => (match.date || '').slice(0,7) || '날짜 미정');
+  const dates = groupBy(match => match.date || '날짜 미정');
+  const partners = Object.values(data.partners).sort((a,b) => b.games - a.games || b.wins - a.wins || a.name.localeCompare(b.name));
+  const opponents = Object.values(data.opponents).sort((a,b) => b.games - a.games || b.losses - a.losses || a.name.localeCompare(b.name));
+  const kinds = Object.values(data.kinds).sort((a,b) => b.games - a.games || a.name.localeCompare(b.name));
+  const recent = matches.slice(0,5);
+  const recentSummary = summarizeAnalysisSource(recent);
+  let longestWin = 0, longestLoss = 0, winRun = 0, lossRun = 0;
+  [...matches].reverse().forEach(match => {
+    winRun = match.result === 'win' ? winRun + 1 : 0;
+    lossRun = match.result === 'loss' ? lossRun + 1 : 0;
+    longestWin = Math.max(longestWin,winRun);
+    longestLoss = Math.max(longestLoss,lossRun);
+  });
+  const currentResult = matches[0]?.result;
+  const currentRun = currentResult === 'draw' ? 0 : matches.findIndex(match => match.result !== currentResult);
+  const currentStreak = !currentResult ? '기록 없음' : currentResult === 'draw' ? '최근 무승부' : `${currentRun < 0 ? matches.length : currentRun}연${currentResult === 'win' ? '승' : '패'}`;
+  const positions = ['fore','back'].map(position => ({name:position === 'fore' ? '포' : '백',...summarizeAnalysisSource(matches.filter(match => match.position === position))})).filter(item => item.games);
   return `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px">
     <div style="font-size:14px;font-weight:900;color:${color}">${title} · 전체 기간</div>
     <div style="font-size:11px;color:#64748B;margin:5px 0 12px">점수가 입력된 경기만 집계 · 공식 시즌 순위와 분리</div>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center">${[[data.games,'경기'],[`${data.wins}승 ${data.draws}무 ${data.losses}패`,'전적'],[`${data.winRate}%`,'승률']].map(([value,label])=>`<div style="padding:9px 3px;background:#F5FAFA;border-radius:9px"><b style="display:block;font-size:14px;color:#1E293B">${value}</b><span style="font-size:10px;color:#64748B">${label}</span></div>`).join('')}</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center">${[[data.games,'경기'],[record(data),'전적'],[`${data.winRate}%`,'승률']].map(([value,label])=>`<div style="padding:9px 3px;background:#F5FAFA;border-radius:9px"><b style="display:block;font-size:14px;color:#1E293B">${value}</b><span style="font-size:10px;color:#64748B">${label}</span></div>`).join('')}</div>
     <div style="font-size:11px;color:#475569;margin-top:10px">득점 ${data.scored} · 실점 ${data.conceded} · 득실 ${data.diff >= 0 ? '+' : ''}${data.diff}</div>
   </div>
-  ${partners.length ? `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px"><b style="font-size:12px;color:#1E293B">🤝 함께 뛴 파트너</b>${partners.map(partner=>`<div style="display:flex;justify-content:space-between;gap:7px;padding:7px 0;border-bottom:1px solid #EDF3F2;font-size:11px"><span>${personalGameEscape(partner.name)}</span><span>${partner.games}경기 · ${partner.wins}승 ${partner.draws}무 ${partner.losses}패</span></div>`).join('')}</div>` : ''}
-  ${opponents.length ? `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px"><b style="font-size:12px;color:#1E293B">⚔️ 만난 상대</b>${opponents.map(opponent=>`<div style="display:flex;justify-content:space-between;gap:7px;padding:7px 0;border-bottom:1px solid #EDF3F2;font-size:11px"><span>${personalGameEscape(opponent.name)}</span><span>${opponent.games}경기 · ${opponent.wins}승 ${opponent.draws}무 ${opponent.losses}패</span></div>`).join('')}</div>` : ''}
-  ${kinds.length ? `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px"><b style="font-size:12px;color:#1E293B">📊 경기 방식별</b><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:9px">${kinds.map(kind=>`<span style="background:#F5FAFA;border:1px solid #D7E7E5;border-radius:8px;padding:6px 8px;font-size:10px;color:#475569">${personalGameEscape(kind.name)} · ${kind.games}경기 · ${kind.wins}승 ${kind.draws}무 ${kind.losses}패</span>`).join('')}</div></div>` : ''}
-  ${data.positions.fore.games || data.positions.back.games ? `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:12px"><b style="font-size:12px;color:#1E293B">🎾 포·백 기록</b><div style="font-size:11px;color:#475569;margin-top:7px">포 ${data.positions.fore.games}경기 · ${data.positions.fore.wins}승　/　백 ${data.positions.back.games}경기 · ${data.positions.back.wins}승</div></div>` : ''}
-  <div style="font-size:13px;font-weight:900;color:#1E293B;margin:14px 0 8px">📅 최근 경기</div>
-  ${matches.length ? matches.slice(0,10).map(match => `<div style="background:#fff;border:1px solid #D7E7E5;border-radius:10px;padding:10px;margin-bottom:6px;font-size:11px"><div style="display:flex;justify-content:space-between;gap:8px"><b style="color:#1E293B">${personalGameEscape(match.title)}</b><span style="color:#64748B">${personalGameEscape(match.date)}</span></div><div style="color:#64748B;margin-top:5px">${personalGameEscape(match.kind)} · 파트너 ${match.partner.length ? personalGameEscape(match.partner.join(' / ')) : '없음'} · 상대 ${personalGameEscape(match.opponents.join(' / '))}</div><div style="font-weight:900;color:${match.result==='win'?'#059669':match.result==='loss'?'#DC2626':'#B45309'};margin-top:5px">${match.result==='win'?'승':match.result==='loss'?'패':'무'} · ${match.myScore} : ${match.oppScore}${match.position ? ` · ${match.position==='fore'?'포':'백'}` : ''}</div></div>`).join('') : `<div style="padding:18px;text-align:center;background:#fff;border:1px dashed #CBD5E1;border-radius:10px;color:#64748B;font-size:11px">완료된 ${isEvent?'이벤트전':'개인 경기'} 결과가 없어요.</div>`}`;
+  ${!matches.length ? `<div style="padding:18px;text-align:center;background:#fff;border:1px dashed #CBD5E1;border-radius:10px;color:#64748B;font-size:11px">완료된 ${isEvent ? '이벤트전' : '개인 경기'} 결과가 없어요.</div>` : `
+  ${card('📈 최근 경기 흐름', `<div style="display:flex;gap:6px;margin:10px 0">${recent.map(match => `<span title="${personalGameEscape(match.date)}" style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:${resultColor(match.result)};color:#fff;font-size:11px;font-weight:900">${resultLabel(match.result)}</span>`).join('')}</div><div style="font-size:11px;color:#475569">최근 ${recent.length}경기 ${record(recentSummary)} · 승률 ${recentSummary.winRate}%<br>현재 ${currentStreak} · 최다 ${longestWin}연승 / ${longestLoss}연패</div>`)}
+  ${card('🗓️ 월별 성적', months.map(item => row(item.key,item,` · 득실 ${item.diff >= 0 ? '+' : ''}${item.diff}`)).join(''))}
+  ${card('📅 날짜별 성적', `<details><summary style="cursor:pointer;font-size:11px;color:${color};margin-top:9px">${dates.length}일의 경기 기록 보기</summary>${dates.map(item => row(item.key,item,` · 득실 ${item.diff >= 0 ? '+' : ''}${item.diff}`)).join('')}</details>`)}
+  ${partners.length ? card('🤝 함께 뛴 파트너', partners.map(item => row(item.name,item)).join('')) : ''}
+  ${opponents.length ? card('⚔️ 만난 상대', opponents.map(item => row(item.name,item)).join('')) : ''}
+  ${kinds.length ? card('📊 경기 방식별', kinds.map(item => row(item.name,item)).join('')) : ''}
+  ${positions.length ? card('🎾 포·백 기록', positions.map(item => row(item.name,item,` · 득실 ${item.diff >= 0 ? '+' : ''}${item.diff}`)).join('')) : ''}
+  <div style="font-size:13px;font-weight:900;color:#1E293B;margin:14px 0 8px">📋 경기별 상세 기록</div>
+  ${matches.slice(0,10).map(matchRow).join('')}
+  ${matches.length > 10 ? `<details style="margin-top:8px"><summary style="cursor:pointer;text-align:center;padding:10px;background:#F5FAFA;border:1px solid #D7E7E5;border-radius:10px;color:${color};font-size:11px;font-weight:800">나머지 ${matches.length - 10}경기 더 보기</summary><div style="margin-top:8px">${matches.slice(10).map(matchRow).join('')}</div></details>` : ''}`}`;
 }
 
 function refreshAnalysisSourcesIfVisible() {
