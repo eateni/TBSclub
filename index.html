@@ -3021,17 +3021,19 @@ function renderRegularSavedPairEditor(){
   (day.rounds||[]).forEach((round,rIdx)=>{
     (round.matches||[]).forEach(match=>{
       if(match.isRally||match.tag==='랠리'||match.tag==='휴식'||!match.id)return;
+      const score=match.done?`${match.score1??0} : ${match.score2??0}`:'예정';
       rows.push(`<div style="display:flex;align-items:center;gap:7px;padding:8px 0;border-top:1px solid #E6F0EE">
         <div style="min-width:62px;font-size:10px;font-weight:900;color:#0F766E">${rIdx+1}R · ${match.court||'코트'}</div>
-        <div style="flex:1;min-width:0;font-size:11px;color:#334155;line-height:1.45"><b>${(match.team1||[]).join(' / ')}</b><span style="color:#94A3B8;margin:0 4px">vs</span><b>${(match.team2||[]).join(' / ')}</b><span style="font-size:9px;color:#64748B;margin-left:4px">${match.tag||'경기'}${match.done?' · 결과 입력됨':''}</span></div>
+        <div style="flex:1;min-width:0;font-size:11px;color:#334155;line-height:1.45"><b>${(match.team1||[]).join(' / ')}</b><span style="color:#94A3B8;margin:0 4px">vs</span><b>${(match.team2||[]).join(' / ')}</b><span style="font-size:9px;color:#64748B;margin-left:4px">${match.tag||'경기'}</span></div>
+        <span style="font-size:11px;font-weight:900;color:${match.done?'#0F766E':'#94A3B8'};white-space:nowrap">${score}</span>
         <button onclick="openPairEdit('${day.id}','${rIdx}','${match.id}')" style="padding:6px 8px;border:1px solid #86EFAC;border-radius:7px;background:#F0FDF4;color:#047857;font-size:10px;font-weight:900;white-space:nowrap;cursor:pointer">✏️ 페어 수정</button>
       </div>`);
     });
   });
   if(!rows.length){el.innerHTML='';return;}
   el.innerHTML=`<details style="padding:10px 12px;background:#F0FDF9;border:1px solid #99D8CD;border-radius:10px" open>
-    <summary style="cursor:pointer;font-size:12px;font-weight:900;color:#0F766E">✏️ 저장된 대진표 페어 수정 <span style="font-size:10px;color:#64748B;font-weight:600">· 관리자만 가능</span></summary>
-    <div style="font-size:10px;color:#64748B;line-height:1.5;margin:7px 0">경기 결과가 입력된 뒤에도 페어를 바꿀 수 있으며, 점수는 유지되고 개인 기록은 수정된 페어 기준으로 다시 계산됩니다.</div>
+    <summary style="cursor:pointer;font-size:12px;font-weight:900;color:#0F766E">📋 저장된 대진표 · ${rows.length}경기 <span style="font-size:10px;color:#64748B;font-weight:600">· 관리자용</span></summary>
+    <div style="font-size:10px;color:#64748B;line-height:1.5;margin:7px 0">라운드·코트·양 팀·종목·점수를 확인하고, 필요한 경기만 페어를 수정할 수 있습니다.</div>
     <div>${rows.join('')}</div>
   </details>`;
 }
