@@ -1757,7 +1757,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.17';
+const APP_VERSION = '1.17.18';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -12241,6 +12241,51 @@ window.savePersonalParticipantReplacement = async function() {
   } finally { button.disabled = false; }
 };
 
+window.deletePersonalGame = async function(scheduleId, roundIndex, matchIndex) {
+  const schedule = schedules.find(item => item.id === scheduleId);
+  if (!schedule || !canManageSchedule(schedule) || schedule.recordScope !== 'personal') return;
+  const match = schedule.gamePairs?.[roundIndex]?.matches?.[matchIndex];
+  if (!match) { alert('경기를 찾을 수 없어요. 화면을 새로고침해 주세요.'); return; }
+  const gameNumber = (schedule.gamePairs || []).slice(0, roundIndex).reduce((total, round) => total + (round.matches || []).length, 0) + matchIndex + 1;
+  const hasScore = match.score1 != null || match.score2 != null;
+  if (!confirm(`${gameNumber}게임 (${(match.team1 || []).join(' / ')} vs ${(match.team2 || []).join(' / ')})을 삭제할까요?${hasScore ? '\n입력된 점수와 포·백 기록도 함께 삭제됩니다.' : ''}`)) return;
+  try {
+    const updatedPairs = await runTransaction(db, async transaction => {
+      const scheduleRef = doc(db, 'schedules', scheduleId);
+      const snapshot = await transaction.get(scheduleRef);
+      if (!snapshot.exists() || snapshot.data().recordScope !== 'personal') throw new Error('개인 일정을 찾을 수 없어요.');
+      const pairs = JSON.parse(JSON.stringify(snapshot.data().gamePairs || []));
+      const latest = pairs[roundIndex]?.matches?.[matchIndex];
+      if (!latest || JSON.stringify(latest) !== JSON.stringify(match)) throw new Error('경기 내용이 변경됐어요. 새로고침 후 다시 시도해 주세요.');
+      pairs[roundIndex].matches.splice(matchIndex, 1);
+      const remaining = pairs.filter(round => (round.matches || []).length);
+      let number = 0;
+      remaining.forEach(round => round.matches.forEach(item => { item.gameNo = ++number; }));
+      transaction.update(scheduleRef, {gamePairs:remaining, updatedAt:serverTimestamp()});
+      return remaining;
+    });
+    schedule.gamePairs = updatedPairs;
+    renderPersonalSchedules();
+    renderAdminPersonalSchedules();
+    alert('경기를 삭제하고 게임 수를 변경했어요.');
+  } catch (error) { alert(`경기를 삭제하지 못했어요. ${error.message || error}`); }
+};
+
+window.deletePersonalSchedule = async function(scheduleId) {
+  const schedule = schedules.find(item => item.id === scheduleId);
+  if (!schedule || !canManageSchedule(schedule) || schedule.recordScope !== 'personal') return;
+  const count = (schedule.gamePairs || []).reduce((total, round) => total + (round.matches || []).length, 0);
+  if (!confirm(`개인 일정 "${schedule.title || schedule.content || '회원 일정'}"을 삭제할까요?\n등록된 ${count}경기와 점수 기록도 함께 삭제되며 복구할 수 없습니다.`)) return;
+  try {
+    await deleteDoc(doc(db, 'schedules', scheduleId));
+    schedules = schedules.filter(item => item.id !== scheduleId);
+    renderPersonalSchedules();
+    renderAdminPersonalSchedules();
+    renderCalendar();
+    alert('개인 일정과 해당 경기 기록을 삭제했어요.');
+  } catch (error) { alert(`일정을 삭제하지 못했어요. ${error.message || error}`); }
+};
+
 window.setPersonalScheduleAttendance = async function(scheduleId, status) {
   const schedule = schedules.find(item => item.id === scheduleId);
   if (!schedule || !myClaim || myClaim === 'pending' || myClaim.isGuest || !myClaim.uid) return;
@@ -12289,7 +12334,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
           <span style="font-weight:800;color:#1D4ED8"><small style="display:block;color:#2563EB">A팀</small>${(match.team1 || []).join(' / ')}${positionText(match.team1||[])?`<small style="display:block;color:#64748B;font-weight:500">${positionText(match.team1||[])}</small>`:''}</span>
           <span style="font-weight:900;color:${done?'#0F766E':'#94A3B8'};white-space:nowrap">${done ? `${match.score1} : ${match.score2}` : 'VS'}</span>
           <span style="font-weight:800;color:#BE185D;text-align:right"><small style="display:block;color:#DB2777">B팀</small>${(match.team2 || []).join(' / ')}${positionText(match.team2||[])?`<small style="display:block;color:#64748B;font-weight:500">${positionText(match.team2||[])}</small>`:''}</span>
-        </div>${canManage ? `<button onclick="openMeetupScore('${schedule.id}',${roundIndex},${matchIndex})" style="width:100%;margin:2px 0 5px;padding:5px;border:1px solid #C4B5FD;background:#fff;color:#6D28D9;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">${done?'점수·포백 수정':'점수·포백 입력'}</button>` : ''}`;
+        </div>${canManage ? `<div style="display:flex;gap:5px;margin:2px 0 5px"><button onclick="openMeetupScore('${schedule.id}',${roundIndex},${matchIndex})" style="flex:1;padding:5px;border:1px solid #C4B5FD;background:#fff;color:#6D28D9;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">${done?'점수·포백 수정':'점수·포백 입력'}</button><button onclick="deletePersonalGame('${schedule.id}',${roundIndex},${matchIndex})" style="padding:5px 8px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">경기 삭제</button></div>` : ''}`;
       }).join('');
       return games;
     }).join('');
@@ -12304,7 +12349,8 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
       <div style="margin-top:9px;padding-top:8px;border-top:1px solid #E7F0EF"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:10px;font-weight:900;color:#0F766E">참가자 ${rows.length}명 · 참가 당시 시작 년월</span>${canManage ? `<button onclick="openPersonalParticipantReplacement('${schedule.id}')" style="padding:5px 7px;border:1px solid #C8E0DE;background:#F0FDFA;color:#0F766E;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">✏️ 참가자 변경</button>` : ''}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name}${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
       </div>
-      ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">게임 수를 미리 정하지 않고 한 경기씩 추가할 수 있어요.</div>${canManage ? `<button onclick="openPersonalManualGame('${schedule.id}')" style="width:100%;margin-top:8px;padding:8px;border:1px solid #6EE7B7;background:#ECFDF5;color:#047857;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">＋ 수동 경기 추가</button>` : ''}${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>` : ''}
+      ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록 · ${gameNumber}게임</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">게임 수를 바꾸려면 경기를 추가하거나 각 경기의 삭제 버튼을 누르세요.</div>${canManage ? `<button onclick="openPersonalManualGame('${schedule.id}')" style="width:100%;margin-top:8px;padding:8px;border:1px solid #6EE7B7;background:#ECFDF5;color:#047857;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">＋ 수동 경기 추가</button>` : ''}${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>` : ''}
+      ${canManage ? `<button onclick="deletePersonalSchedule('${schedule.id}')" style="display:block;margin:11px 0 0 auto;padding:6px 9px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🗑️ 일정 삭제</button>` : ''}
     </article>`;
   }).join('');
 }
