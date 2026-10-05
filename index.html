@@ -1669,8 +1669,14 @@ tr:nth-child(even){background:#F5FCFB;}
     <input type="hidden" id="personalParticipantScheduleId">
     <label style="display:block;font-size:11px;color:#64748B;margin:10px 0 5px">변경할 참가자</label>
     <select id="personalParticipantOld" class="row-sel" style="width:100%;padding:10px"></select>
-    <label style="display:block;font-size:11px;color:#64748B;margin:12px 0 5px">새 참가자 (정회원·기존 게스트)</label>
-    <select id="personalParticipantNew" class="row-sel" style="width:100%;padding:10px"></select>
+    <label style="display:block;font-size:11px;color:#64748B;margin:12px 0 5px">새 참가자</label>
+    <select id="personalParticipantNew" class="row-sel" style="width:100%;padding:10px" onchange="togglePersonalParticipantManual()"></select>
+    <div id="personalParticipantManual" style="display:none;margin-top:10px;padding:10px;background:#F8FCFC;border:1px solid #D9EAE8;border-radius:9px">
+      <label style="display:block;font-size:11px;color:#64748B;margin-bottom:5px">새 게스트 이름</label>
+      <input id="personalParticipantManualName" class="row-inp" style="width:100%;margin-bottom:9px" placeholder="이름 직접 입력">
+      <label style="display:block;font-size:11px;color:#64748B;margin-bottom:5px">테니스 시작 년월</label>
+      <input id="personalParticipantManualStart" type="month" class="row-inp" style="width:100%">
+    </div>
     <div id="personalParticipantNote" style="font-size:11px;color:#64748B;line-height:1.55;margin-top:12px"></div>
     <div class="mft"><button class="btn-cancel" onclick="hide('personalParticipantModal')">취소</button><button class="btn-ok" id="personalParticipantSave" onclick="savePersonalParticipantReplacement()">변경 저장</button></div>
   </div>
@@ -1751,7 +1757,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.16';
+const APP_VERSION = '1.17.17';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -12149,7 +12155,7 @@ function buildPersonalParticipantReplacement(schedule, oldKey, replacement) {
   if (oldIndex < 0) throw new Error('변경할 참가자가 일정에 없어요. 화면을 새로고침해 주세요.');
   const old = snapshots[oldIndex];
   if (old.uid && old.uid === (schedule.ownerUid || schedule.writerUid)) throw new Error('호스트는 참가자 변경에서 제외할 수 없어요.');
-  const next = makeScheduleParticipant(replacement);
+  const next = makeScheduleParticipant(replacement, replacement.source === 'creator' ? 'creator' : 'profile');
   if (!next.name) throw new Error('새 참가자를 선택해 주세요.');
   if (snapshots.some((item, index) => index !== oldIndex && (item.name === next.name || (next.uid && item.uid === next.uid)))) throw new Error('이미 이 일정에 포함된 참가자예요.');
   const oldName = old.name;
@@ -12182,10 +12188,17 @@ window.openPersonalParticipantReplacement = function(scheduleId) {
   if (!replaceable.length) { alert('변경 가능한 참가자가 없어요. 호스트는 변경할 수 없습니다.'); return; }
   document.getElementById('personalParticipantScheduleId').value = scheduleId;
   document.getElementById('personalParticipantOld').innerHTML = '<option value="">변경할 사람 선택</option>' + replaceable.map(item => `<option value="${personalGameEscape(item.key || scheduleParticipantKey(item))}">${personalGameEscape(item.name)} · ${item.role === 'member' ? '정회원' : '게스트'}</option>`).join('');
-  document.getElementById('personalParticipantNew').innerHTML = '<option value="">새 참가자 선택</option>' + scheduleDirectory().filter(player => !current.some(item => item.name === player.name || (player.uid && item.uid === player.uid))).map(player => `<option value="${personalGameEscape(scheduleParticipantKey(player))}">${personalGameEscape(player.name)} · ${player.role === 'member' ? '정회원' : '게스트'}</option>`).join('');
+  document.getElementById('personalParticipantNew').innerHTML = '<option value="">새 참가자 선택</option>' + scheduleDirectory().filter(player => !current.some(item => item.name === player.name || (player.uid && item.uid === player.uid))).map(player => `<option value="${personalGameEscape(scheduleParticipantKey(player))}">${personalGameEscape(player.name)} · ${player.role === 'member' ? '정회원' : '게스트'}</option>`).join('') + '<option value="manual">＋ 새 게스트 직접 입력</option>';
+  document.getElementById('personalParticipantManualName').value = '';
+  document.getElementById('personalParticipantManualStart').value = '';
+  togglePersonalParticipantManual();
   const count = (schedule.gamePairs || []).reduce((total, round) => total + (round.matches || []).length, 0);
   document.getElementById('personalParticipantNote').textContent = count ? `등록된 ${count}경기에서 해당 선수 이름과 포·백도 함께 바뀝니다. 기존 점수는 유지됩니다.` : '참가자 명단을 변경합니다. 호스트는 변경할 수 없습니다.';
   document.getElementById('personalParticipantModal').style.display = 'flex';
+};
+
+window.togglePersonalParticipantManual = function() {
+  document.getElementById('personalParticipantManual').style.display = document.getElementById('personalParticipantNew').value === 'manual' ? 'block' : 'none';
 };
 
 window.savePersonalParticipantReplacement = async function() {
@@ -12194,7 +12207,14 @@ window.savePersonalParticipantReplacement = async function() {
   const newKey = document.getElementById('personalParticipantNew').value;
   const schedule = schedules.find(item => item.id === scheduleId);
   if (!schedule || !canManageSchedule(schedule)) { alert('일정 호스트 또는 관리자만 참가자를 변경할 수 있어요.'); return; }
-  const replacement = scheduleDirectory().find(player => scheduleParticipantKey(player) === newKey);
+  let replacement = scheduleDirectory().find(player => scheduleParticipantKey(player) === newKey);
+  if (newKey === 'manual') {
+    const name = document.getElementById('personalParticipantManualName').value.trim();
+    const tennisStartDate = document.getElementById('personalParticipantManualStart').value;
+    if (!name || !tennisStartDate) { alert('새 게스트의 이름과 테니스 시작 년월을 입력해 주세요.'); return; }
+    if (scheduleDirectory().some(player => player.name === name)) { alert('등록된 정회원 또는 게스트예요. 목록에서 선택해 주세요.'); return; }
+    replacement = {uid:null, name, gender:'', role:'guest', tennisStartDate, source:'creator'};
+  }
   if (!oldKey || !replacement) { alert('변경할 참가자와 새 참가자를 모두 선택해 주세요.'); return; }
   const count = (schedule.gamePairs || []).reduce((total, round) => total + (round.matches || []).length, 0);
   if (count && !confirm(`이미 등록된 ${count}경기의 선수 이름과 포·백을 함께 변경합니다. 점수는 유지됩니다. 계속할까요?`)) return;
