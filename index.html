@@ -1019,6 +1019,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <button class="stab active" onclick="switchAdminSub('members',this)">👥 회원·승인</button>
         <button class="stab" onclick="switchAdminSub('match',this)">🎾 시즌·페어 설정</button>
         <button class="stab" onclick="switchAdminSub('operations',this)">📅 경기 운영</button>
+        <button class="stab" onclick="switchAdminSub('highlights',this)">✨ 홈 하이라이트</button>
         <button class="stab" onclick="switchAdminSub('personal',this)">🎾 개인 경기</button>
         <button class="stab" onclick="switchAdminSub('polls',this)">📮 참석 투표</button>
         <button class="stab" onclick="switchAdminSub('status',this)">📊 운영 현황</button>
@@ -1272,6 +1273,14 @@ tr:nth-child(even){background:#F5FCFB;}
           <button onclick="openEventModal()" style="flex:none;padding:9px 14px;background:#7C3AED;border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:900;cursor:pointer">＋ 이벤트 추가</button>
         </div>
         <div id="adminEvList"></div>
+      </div>
+
+      <div id="adminGroup-highlights" style="display:none">
+        <div class="admin-sec">
+          <h3>✨ 홈 하이라이트 관리</h3>
+          <div style="font-size:11px;color:#64748B;line-height:1.6;margin-bottom:12px">정규시즌은 가장 최근 완료된 경기일을 자동으로 보여줍니다. 이벤트전은 아래에서 게시 여부를 선택하며, 두 영역은 홈에 함께 표시됩니다.</div>
+          <div id="adminHomeHighlightStatus"></div>
+        </div>
       </div>
 
       <div id="adminGroup-announce" style="display:none">
@@ -1729,7 +1738,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.14';
+const APP_VERSION = '1.17.15';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -6309,6 +6318,9 @@ window.toggleEventHighlightPublication = async function(evId) {
     });
     ev.homeHighlightPublished=next;
     ev.homeHighlightPublishedAt=publishedAt;
+    renderAdminHomeHighlights();
+    renderAdminEvents();
+    renderHomeTab();
     if(currentEvView==='scoreboard') openEvScoreboard(evId,true);
     else openEventDetail(evId,true);
   } catch(e) { console.error(e); alert('홈 게시 상태를 저장하지 못했어요.'); }
@@ -8275,6 +8287,34 @@ function renderAdminEvents(){
   }).join('');
 }
 
+function renderAdminHomeHighlights() {
+  const el = document.getElementById('adminHomeHighlightStatus');
+  if (!el || !isAdmin) return;
+  const latestDay = [...days]
+    .filter(day => day.date && makeDayHighlightItem(day))
+    .sort((a,b) => (b.date || '').localeCompare(a.date || ''))[0];
+  const eligibleEvents = [...events]
+    .filter(event => isPartnershipLeagueEvent(event))
+    .sort((a,b) => (b.date || '').localeCompare(a.date || ''));
+  const featuredEvent = [...eligibleEvents]
+    .filter(event => event.homeHighlightPublished && getPartnershipEventHighlightData(event))
+    .sort((a,b) => (b.homeHighlightPublishedAt || b.date || '').localeCompare(a.homeHighlightPublishedAt || a.date || ''))[0];
+  el.innerHTML = `<div style="padding:11px;border:1px solid #BFDBFE;background:#EFF6FF;border-radius:10px;margin-bottom:12px">
+      <div style="font-size:12px;font-weight:900;color:#1D4ED8">🏆 정규시즌 · 자동 표시</div>
+      <div style="font-size:11px;color:#475569;margin-top:5px">${latestDay ? `${personalGameEscape(latestDay.date)} · 시즌 ${Number(latestDay.season) || 1}${getRegularSeasonRoundNumber(latestDay) ? ` ${getRegularSeasonRoundNumber(latestDay)}라운드` : ''}` : '완료된 경기일이 없어 아직 표시할 카드가 없습니다.'}</div>
+    </div>
+    <div style="font-size:12px;font-weight:900;color:#7C3AED;margin-bottom:7px">🎉 이벤트전 · 수동 게시</div>
+    ${eligibleEvents.length ? eligibleEvents.map(event => {
+      const hasResult = !!getPartnershipEventHighlightData(event);
+      const isFeatured = featuredEvent?.id === event.id;
+      return `<div style="padding:10px;border:1px solid #DDD6FE;border-radius:10px;margin-bottom:7px;background:#FAF7FF;display:flex;justify-content:space-between;align-items:center;gap:9px;flex-wrap:wrap">
+        <div style="min-width:0"><div style="font-size:11px;font-weight:800;color:#1E293B">${personalGameEscape(event.name || '파트너 대전')}</div><div style="font-size:10px;color:#64748B;margin-top:3px">${personalGameEscape(event.date || '날짜 미정')} · ${isFeatured ? '현재 홈 표시 중' : event.homeHighlightPublished ? '게시 중 · 다른 이벤트가 대표 표시 중' : hasResult ? '홈 미게시' : '결과 입력 후 게시 가능'}</div></div>
+        <button onclick="toggleEventHighlightPublication('${event.id}')" ${hasResult ? '' : 'disabled'} style="padding:7px 10px;border-radius:8px;border:1px solid #7C3AED;background:${event.homeHighlightPublished ? '#fff' : '#7C3AED'};color:${event.homeHighlightPublished ? '#7C3AED' : '#fff'};font-size:11px;font-weight:800;cursor:${hasResult ? 'pointer' : 'not-allowed'};opacity:${hasResult ? '1' : '.45'}">${event.homeHighlightPublished ? '홈 게시 해제' : '홈에 게시'}</button>
+      </div>`;
+    }).join('') : '<div style="font-size:11px;color:#64748B;padding:12px 0">등록된 파트너 대전이 없습니다.</div>'}
+    <div style="font-size:10px;color:#64748B;line-height:1.5;margin-top:7px">게시한 이벤트가 여러 개라면 가장 최근에 게시한 1건이 홈의 이벤트전 영역에 표시됩니다. 정규시즌 카드는 계속 별도로 표시됩니다.</div>`;
+}
+
 // ── 공지사항 관리 ───────────────────────────────────────────────────
 function renderAdminAnnouncements() {
   const el = document.getElementById('adminAnnounceList');
@@ -8574,7 +8614,7 @@ window.switchMatchOpsMode = function(mode, btn){
 };
 
 window.switchAdminSub = function(key, btn){
-  ['members','match','operations','schedule','events','personal','polls','status','announce','notifications'].forEach(k => {
+  ['members','match','operations','schedule','events','highlights','personal','polls','status','announce','notifications'].forEach(k => {
     const el = document.getElementById(`adminGroup-${k}`);
     if (el) {
       const active=k === key && !['schedule','events'].includes(k);
@@ -8595,6 +8635,7 @@ window.switchAdminSub = function(key, btn){
     : btn;
   if (activeTopBtn) activeTopBtn.classList.add('active');
   if (key === 'announce') renderAdminAnnouncements();
+  if (key === 'highlights') renderAdminHomeHighlights();
   if (key === 'notifications') renderAdminNotifications();
   if (key === 'personal') renderAdminPersonalSchedules();
   if (key === 'polls') { syncAttendancePollTargetForm(); renderAdminAttendancePolls(); }
@@ -11031,7 +11072,7 @@ function renderHomeTab() {
   ];
   if (isAdmin) {
     CATS.push({ id:'admin-panel', icon:'⚙️', label:'관리자', grad:'linear-gradient(135deg,rgba(100,10,10,0.28),rgba(239,68,68,0.1))', border:'rgba(239,68,68,0.38)', cardCls:'sc-card-admin',
-      items:[{icon:'👥',name:'회원·승인',go:'admin-members'},{icon:'🎾',name:'시즌·페어',go:'admin-match'},{icon:'📅',name:'경기 운영',go:'admin-schedule'},{icon:'📊',name:'운영 현황',go:'admin-status'},{icon:'📢',name:'공지 관리',go:'admin-announce'},{icon:'🔔',name:'알림 관리',go:'admin-notifications'}] });
+      items:[{icon:'👥',name:'회원·승인',go:'admin-members'},{icon:'🎾',name:'시즌·페어',go:'admin-match'},{icon:'📅',name:'경기 운영',go:'admin-schedule'},{icon:'✨',name:'홈 하이라이트',go:'admin-highlights'},{icon:'📊',name:'운영 현황',go:'admin-status'},{icon:'📢',name:'공지 관리',go:'admin-announce'},{icon:'🔔',name:'알림 관리',go:'admin-notifications'}] });
   }
   var shortcutsHtml = CATS.map(function(cat) {
     var isOpen = openCategory === cat.id;
@@ -11217,8 +11258,7 @@ function renderHomeTab() {
       <button onclick="dismissAnnouncement('${ann.id}')" style="background:none;border:none;color:#94A3B8;font-size:20px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0">×</button>
     </div>`).join('');
 
-  // 메인 대표 하이라이트: 관리자가 게시한 이벤트전이 있으면 우선 노출한다.
-  // 이벤트 게시가 없을 때만 기존 최근 정규시즌 하이라이트를 표시한다.
+  // 정규시즌과 관리자가 게시한 이벤트전은 각각 독립된 홈 하이라이트 영역에 표시한다.
   const _homeFeaturedEvent=[...events]
     .filter(event=>event.homeHighlightPublished&&getPartnershipEventHighlightData(event))
     .sort(function(a,b){
@@ -11229,20 +11269,19 @@ function renderHomeTab() {
 
   // 최근 완료 정규시즌 날짜 하이라이트 카드
   const _completedDays=days.filter(function(d){
-    const rds=d.rounds||[];
-    const tot=rds.reduce(function(a,r){return a+(r.matches||[]).filter(function(m){return !m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식';}).length;},0);
-    const done=rds.reduce(function(a,r){return a+(r.matches||[]).filter(function(m){return m.done&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식';}).length;},0);
-    return tot>0&&done===tot&&d.date;
+    return d.date && makeDayHighlightItem(d);
   }).sort(function(a,b){return (b.date||'')>(a.date||'')?1:(b.date||'')<(a.date||'')?-1:0;});
   const _hDay=_completedDays[0];
-  let highlightHtml='';
+  let regularHighlightHtml='';
+  let eventHighlightHtml='';
   if(_homeFeaturedEvent){
-    highlightHtml='<div style="background:#FFFDF7;border:1px solid rgba(180,120,20,.38);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 5px 16px rgba(120,80,10,.14)">'
-      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 3px 9px"><div style="font-size:13px;font-weight:900;color:#9A3412">🏆 홈 대표 이벤트 하이라이트</div><span style="font-size:10px;font-weight:800;color:#0F766E;background:#CCFBF1;border-radius:999px;padding:3px 7px">파트너십 리그</span></div>'
+    eventHighlightHtml='<div style="background:#FFFDF7;border:1px solid rgba(180,120,20,.38);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 5px 16px rgba(120,80,10,.14)">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 3px 9px"><div style="font-size:13px;font-weight:900;color:#9A3412">🎉 이벤트전 하이라이트</div><span style="font-size:10px;font-weight:800;color:#0F766E;background:#CCFBF1;border-radius:999px;padding:3px 7px">파트너십 리그</span></div>'
       +'<canvas data-event-highlight-card="'+_homeFeaturedEvent.id+'" onclick="openEventDetail(\''+_homeFeaturedEvent.id+'\',false)" width="1080" height="1350" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto;border-radius:12px;cursor:pointer;background:#EAFBF8"></canvas>'
       +'<div style="display:flex;gap:7px;margin-top:9px"><button onclick="openEventDetail(\''+_homeFeaturedEvent.id+'\',false)" style="flex:1;border:1px solid #D6B76A;background:#fff;color:#9A3412;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">이벤트 상세보기</button><button onclick="shareEventHighlightCard(\''+_homeFeaturedEvent.id+'\')" style="flex:1;border:none;background:#B45309;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button></div>'
       +'</div>';
-  } else if(_hDay){
+  }
+  if(_hDay){
     let hBadges=_hDay.dayBadges;
     let hSummary=_hDay.daySummary;
     if((!hBadges||!hSummary||_hDay.highlightVersion!==HIGHLIGHT_VERSION)&&guestsLoaded){
@@ -11256,7 +11295,8 @@ function renderHomeTab() {
       }
     }
     if((hBadges||[]).length||hSummary){
-      highlightHtml='<div style="background:#F7FBFA;border:1px solid rgba(13,148,136,.25);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 5px 16px rgba(6,48,71,.12)">'
+      regularHighlightHtml='<div style="background:#F7FBFA;border:1px solid rgba(13,148,136,.25);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 5px 16px rgba(6,48,71,.12)">'
+        +'<div style="font-size:13px;font-weight:900;color:#0F766E;padding:3px 3px 9px">🏆 최신 정규시즌 하이라이트</div>'
         +'<canvas data-day-highlight-card="'+_hDay.id+'" onclick="goToGameDay(\''+_hDay.id+'\')" width="1080" height="1350" style="display:block;width:100%;max-width:520px;height:auto;aspect-ratio:4/5;margin:0 auto;border-radius:12px;cursor:pointer;background:#061C2D"></canvas>'
         +'<div style="display:flex;gap:7px;margin-top:9px"><button onclick="goToGameDay(\''+_hDay.id+'\')" style="flex:1;border:1px solid #B7DBD7;background:#fff;color:#0F766E;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">경기 상세보기</button><button onclick="shareDayHighlightCard(\''+_hDay.id+'\')" style="flex:1;border:none;background:#0F766E;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button></div>'
         +'</div>';
@@ -11370,8 +11410,9 @@ function renderHomeTab() {
         ${_courtCardHtml}
       </div>
 
-      <!-- 최근 날짜 하이라이트 -->
-      ${highlightHtml}
+      <!-- 정규시즌·이벤트전 하이라이트를 독립적으로 표시 -->
+      ${regularHighlightHtml}
+      ${eventHighlightHtml}
 
       <!-- 개인 경기 바로가기 -->
       ${personalMatchHomeHtml}
@@ -11616,7 +11657,7 @@ window.homeGoTo = function(target) {
       const b = document.querySelector('#tab-league .stab:nth-child(4)');
       if (b) switchSub('pairs', b);
     }, 60);
-  } else if (target === 'admin-members' || target === 'admin-match' || target === 'admin-schedule' || target === 'admin-events' || target === 'admin-status' || target === 'admin-announce' || target === 'admin-notifications') {
+  } else if (target === 'admin-members' || target === 'admin-match' || target === 'admin-schedule' || target === 'admin-events' || target === 'admin-highlights' || target === 'admin-status' || target === 'admin-announce' || target === 'admin-notifications') {
     const sub = target.replace('admin-', '');
     navTo('admin');
     setTimeout(()=>{
