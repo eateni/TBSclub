@@ -1663,6 +1663,19 @@ tr:nth-child(even){background:#F5FCFB;}
   </div>
 </div>
 
+<div class="overlay" id="personalParticipantModal" style="display:none" onclick="if(event.target.id==='personalParticipantModal')hide('personalParticipantModal')">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">👤 개인 일정 참가자 변경</div>
+    <input type="hidden" id="personalParticipantScheduleId">
+    <label style="display:block;font-size:11px;color:#64748B;margin:10px 0 5px">변경할 참가자</label>
+    <select id="personalParticipantOld" class="row-sel" style="width:100%;padding:10px"></select>
+    <label style="display:block;font-size:11px;color:#64748B;margin:12px 0 5px">새 참가자 (정회원·기존 게스트)</label>
+    <select id="personalParticipantNew" class="row-sel" style="width:100%;padding:10px"></select>
+    <div id="personalParticipantNote" style="font-size:11px;color:#64748B;line-height:1.55;margin-top:12px"></div>
+    <div class="mft"><button class="btn-cancel" onclick="hide('personalParticipantModal')">취소</button><button class="btn-ok" id="personalParticipantSave" onclick="savePersonalParticipantReplacement()">변경 저장</button></div>
+  </div>
+</div>
+
 <div class="overlay" id="editScheduleModal" style="display:none" onclick="if(event.target.id==='editScheduleModal')hide('editScheduleModal')">
   <div class="modal">
     <div class="modal-title">✏️ 일정 수정</div>
@@ -1738,7 +1751,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.15';
+const APP_VERSION = '1.17.16';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -12128,6 +12141,86 @@ function getScheduleGameRoster(schedule) {
     });
 }
 
+function buildPersonalParticipantReplacement(schedule, oldKey, replacement) {
+  const snapshots = (schedule.participantSnapshots || []).length
+    ? schedule.participantSnapshots
+    : Object.keys(schedule.attend || {}).map(name => makeScheduleParticipant(scheduleDirectory().find(player => player.name === name) || {name, role:'guest'}, 'legacy'));
+  const oldIndex = snapshots.findIndex(item => (item.key || scheduleParticipantKey(item)) === oldKey);
+  if (oldIndex < 0) throw new Error('변경할 참가자가 일정에 없어요. 화면을 새로고침해 주세요.');
+  const old = snapshots[oldIndex];
+  if (old.uid && old.uid === (schedule.ownerUid || schedule.writerUid)) throw new Error('호스트는 참가자 변경에서 제외할 수 없어요.');
+  const next = makeScheduleParticipant(replacement);
+  if (!next.name) throw new Error('새 참가자를 선택해 주세요.');
+  if (snapshots.some((item, index) => index !== oldIndex && (item.name === next.name || (next.uid && item.uid === next.uid)))) throw new Error('이미 이 일정에 포함된 참가자예요.');
+  const oldName = old.name;
+  const participantSnapshots = snapshots.map((item, index) => index === oldIndex ? next : item);
+  const participantUids = [...new Set([...participantSnapshots.filter(item => item.role === 'member' && item.uid).map(item => item.uid), schedule.ownerUid].filter(Boolean))];
+  const attendanceByUid = {...(schedule.attendanceByUid || {})};
+  const attend = {...(schedule.attend || {})};
+  const status = (old.uid && attendanceByUid[old.uid]) || attend[oldName] || '참석';
+  if (old.uid) delete attendanceByUid[old.uid];
+  if (next.uid) attendanceByUid[next.uid] = status;
+  delete attend[oldName];
+  attend[next.name] = status;
+  const gamePairs = (schedule.gamePairs || []).map(round => ({...round, matches:(round.matches || []).map(match => {
+    const team1 = (match.team1 || []).map(name => name === oldName ? next.name : name);
+    const team2 = (match.team2 || []).map(name => name === oldName ? next.name : name);
+    const positions = {...(match.positions || {})};
+    if (Object.hasOwn(positions, oldName)) { positions[next.name] = positions[oldName]; delete positions[oldName]; }
+    const roster = participantSnapshots.map(item => ({name:item.name, gender:item.gender || ''}));
+    const players = [...team1, ...team2].map(name => roster.find(item => item.name === name) || {name,gender:''});
+    return {...match, team1, team2, positions, type:players.length === 4 ? getPersonalMatchType(players) : match.type};
+  })}));
+  return {participantSnapshots, participantUids, attendanceByUid, attend, gamePairs};
+}
+
+window.openPersonalParticipantReplacement = function(scheduleId) {
+  const schedule = schedules.find(item => item.id === scheduleId);
+  if (!schedule || !canManageSchedule(schedule)) return;
+  const current = (schedule.participantSnapshots || []).length ? schedule.participantSnapshots : Object.keys(schedule.attend || {}).map(name => makeScheduleParticipant(scheduleDirectory().find(player => player.name === name) || {name, role:'guest'}, 'legacy'));
+  const replaceable = current.filter(item => !item.uid || item.uid !== (schedule.ownerUid || schedule.writerUid));
+  if (!replaceable.length) { alert('변경 가능한 참가자가 없어요. 호스트는 변경할 수 없습니다.'); return; }
+  document.getElementById('personalParticipantScheduleId').value = scheduleId;
+  document.getElementById('personalParticipantOld').innerHTML = '<option value="">변경할 사람 선택</option>' + replaceable.map(item => `<option value="${personalGameEscape(item.key || scheduleParticipantKey(item))}">${personalGameEscape(item.name)} · ${item.role === 'member' ? '정회원' : '게스트'}</option>`).join('');
+  document.getElementById('personalParticipantNew').innerHTML = '<option value="">새 참가자 선택</option>' + scheduleDirectory().filter(player => !current.some(item => item.name === player.name || (player.uid && item.uid === player.uid))).map(player => `<option value="${personalGameEscape(scheduleParticipantKey(player))}">${personalGameEscape(player.name)} · ${player.role === 'member' ? '정회원' : '게스트'}</option>`).join('');
+  const count = (schedule.gamePairs || []).reduce((total, round) => total + (round.matches || []).length, 0);
+  document.getElementById('personalParticipantNote').textContent = count ? `등록된 ${count}경기에서 해당 선수 이름과 포·백도 함께 바뀝니다. 기존 점수는 유지됩니다.` : '참가자 명단을 변경합니다. 호스트는 변경할 수 없습니다.';
+  document.getElementById('personalParticipantModal').style.display = 'flex';
+};
+
+window.savePersonalParticipantReplacement = async function() {
+  const scheduleId = document.getElementById('personalParticipantScheduleId').value;
+  const oldKey = document.getElementById('personalParticipantOld').value;
+  const newKey = document.getElementById('personalParticipantNew').value;
+  const schedule = schedules.find(item => item.id === scheduleId);
+  if (!schedule || !canManageSchedule(schedule)) { alert('일정 호스트 또는 관리자만 참가자를 변경할 수 있어요.'); return; }
+  const replacement = scheduleDirectory().find(player => scheduleParticipantKey(player) === newKey);
+  if (!oldKey || !replacement) { alert('변경할 참가자와 새 참가자를 모두 선택해 주세요.'); return; }
+  const count = (schedule.gamePairs || []).reduce((total, round) => total + (round.matches || []).length, 0);
+  if (count && !confirm(`이미 등록된 ${count}경기의 선수 이름과 포·백을 함께 변경합니다. 점수는 유지됩니다. 계속할까요?`)) return;
+  const button = document.getElementById('personalParticipantSave');
+  button.disabled = true;
+  try {
+    const updated = await runTransaction(db, async transaction => {
+      const scheduleRef = doc(db, 'schedules', scheduleId);
+      const snapshot = await transaction.get(scheduleRef);
+      if (!snapshot.exists()) throw new Error('일정을 찾을 수 없어요.');
+      const latest = snapshot.data();
+      if (latest.recordScope !== 'personal') throw new Error('개인 일정만 참가자를 변경할 수 있어요.');
+      const changes = buildPersonalParticipantReplacement(latest, oldKey, replacement);
+      transaction.update(scheduleRef, {...changes, updatedAt:serverTimestamp()});
+      return changes;
+    });
+    Object.assign(schedule, updated);
+    hide('personalParticipantModal');
+    renderPersonalSchedules();
+    renderAdminPersonalSchedules();
+    alert('✅ 참가자를 변경했어요. 저장된 경기 점수는 유지됐습니다.');
+  } catch (error) {
+    alert(`참가자를 변경하지 못했어요. ${error.message || error}`);
+  } finally { button.disabled = false; }
+};
+
 window.setPersonalScheduleAttendance = async function(scheduleId, status) {
   const schedule = schedules.find(item => item.id === scheduleId);
   if (!schedule || !myClaim || myClaim === 'pending' || myClaim.isGuest || !myClaim.uid) return;
@@ -12188,7 +12281,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
         <span style="font-size:9px;font-weight:900;color:#0F766E;background:#E5F7F3;border-radius:99px;padding:5px 7px;white-space:nowrap">개인 기록</span>
       </div>
       ${schedule.content && schedule.content !== schedule.title ? `<div style="font-size:11px;color:#475569;line-height:1.55;margin-top:8px">${schedule.content}</div>` : ''}
-      <div style="margin-top:9px;padding-top:8px;border-top:1px solid #E7F0EF"><div style="font-size:10px;font-weight:900;color:#0F766E;margin-bottom:5px">참가자 ${rows.length}명 · 참가 당시 시작 년월</div>
+      <div style="margin-top:9px;padding-top:8px;border-top:1px solid #E7F0EF"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:10px;font-weight:900;color:#0F766E">참가자 ${rows.length}명 · 참가 당시 시작 년월</span>${canManage ? `<button onclick="openPersonalParticipantReplacement('${schedule.id}')" style="padding:5px 7px;border:1px solid #C8E0DE;background:#F0FDFA;color:#0F766E;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">✏️ 참가자 변경</button>` : ''}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name}${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
       </div>
       ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">게임 수를 미리 정하지 않고 한 경기씩 추가할 수 있어요.</div>${canManage ? `<button onclick="openPersonalManualGame('${schedule.id}')" style="width:100%;margin-top:8px;padding:8px;border:1px solid #6EE7B7;background:#ECFDF5;color:#047857;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">＋ 수동 경기 추가</button>` : ''}${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>` : ''}
@@ -12729,8 +12822,8 @@ window.openEventScoreProposal = function(evId, mi){
   const eventMatchKey = match.id ? `id:${match.id}` : `idx:${mi}`;
   pendingScoreProposal = { type:'eventMatch', dayId:evId, rIdx:-1, mId:eventMatchKey, team1:[...(match.ourPair||[])], team2:[...(match.oppPair||[])], positions };
   document.getElementById('scoreProposalInfo').textContent = `${pendingScoreProposal.team1.join(' / ')||'우리팀'} vs ${pendingScoreProposal.team2.join(' / ')||'상대팀'}`;
-  document.getElementById('proposalS1Label').textContent = '우리팀 스코어';
-  document.getElementById('proposalS2Label').textContent = '상대팀 스코어';
+  document.getElementById('proposalS1Label').textContent = `${pendingScoreProposal.team1.filter(Boolean).join(' / ') || '1페어'} 점수`;
+  document.getElementById('proposalS2Label').textContent = `${pendingScoreProposal.team2.filter(Boolean).join(' / ') || '2페어'} 점수`;
   document.getElementById('proposalS1').value = '';
   document.getElementById('proposalS2').value = '';
   document.getElementById('proposalSubmitterName').value = myClaim && myClaim !== 'pending' ? myClaim.name : '';
@@ -12745,7 +12838,7 @@ function renderProposalPositionSelectors(){
   el.innerHTML = teams.map((team, teamIdx) => {
     const names = team.filter(Boolean);
     return `<div style="padding:10px 12px;background:#F8FCFC;border:1px solid #E0F2F1;border-radius:10px">
-      <div style="font-size:13px;color:#64748B;font-weight:800;margin-bottom:7px">${teamIdx===0?'팀 1':'팀 2'}</div>
+      <div style="font-size:13px;color:#64748B;font-weight:800;margin-bottom:7px">${pendingScoreProposal.type === 'eventMatch' ? personalGameEscape(names.join(' / ') || `${teamIdx+1}페어`) : `팀 ${teamIdx+1}`}</div>
       ${names.map((name, idx) => {
         const partner = names.length===2 ? (idx===0 ? 1 : 0) : -1;
         const pos = pendingScoreProposal.positions[name] || '';
@@ -13060,9 +13153,8 @@ window.openEvScore=function(evId, mi){
   const clubLabel=m.oppClub||(ev.oppClub||'');
   document.getElementById('scoreInfo').innerHTML=
     `<strong style="color:#1E293B">${ourStr}</strong> <span style="color:#64748B">vs</span> <strong style="color:#2563EB">${oppStr}${clubLabel?` <span style="font-size:10px;color:#64748B">(${clubLabel})</span>`:''}</strong>`;
-  const isCouplesMatch=m.fixedPairMatch||isPartnershipLeagueEvent(ev);
-  const ourLabel=isCouplesMatch?((m.ourPair||[]).filter(Boolean).join(' · ')||'우리팀')+' 스코어':'우리팀 스코어';
-  const oppLabel=isCouplesMatch?((m.oppPair||[]).filter(Boolean).join(' · ')||'상대팀')+' 스코어':'상대팀 스코어';
+  const ourLabel=((m.ourPair||[]).filter(Boolean).join(' / ')||'1페어')+' 점수';
+  const oppLabel=((m.oppPair||[]).filter(Boolean).join(' / ')||'2페어')+' 점수';
   document.getElementById('s1Label').textContent=ourLabel;
   document.getElementById('s2Label').textContent=oppLabel;
   setScoreMatchKind(m.matchKind==='instant'?'instant':'official','교류·이벤트전 · 스코어와 포·백을 입력하세요');
@@ -13071,8 +13163,8 @@ window.openEvScore=function(evId, mi){
   document.getElementById('s2').value=done?m.oppScore:'';
   const existPos=m.positions||{};
   const evTeamGroups=[
-    {label:'우리팀',players:m.ourPair||[]},
-    {label:'상대팀',players:m.oppPair||[]}
+    {label:(m.ourPair||[]).filter(Boolean).join(' / ')||'1페어',players:m.ourPair||[]},
+    {label:(m.oppPair||[]).filter(Boolean).join(' / ')||'2페어',players:m.oppPair||[]}
   ];
   document.getElementById('positionSelectors').innerHTML=evTeamGroups.map(({label,players})=>{
     const fp=players.filter(Boolean);
@@ -13103,8 +13195,8 @@ window.openPendingEvScore=function(ri, mci, idx){
   const oppStr=[opp1,opp2].filter(Boolean).join(' / ')||'상대팀';
   document.getElementById('scoreInfo').innerHTML=
     `<strong style="color:#1E293B">${ourStr}</strong> <span style="color:#64748B">vs</span> <strong style="color:#2563EB">${oppStr}${clubLabel?` <span style="font-size:10px;color:#64748B">(${clubLabel})</span>`:''}</strong>`;
-  document.getElementById('s1Label').textContent='우리팀 스코어';
-  document.getElementById('s2Label').textContent='상대팀 스코어';
+  document.getElementById('s1Label').textContent=(pair.filter(Boolean).join(' / ')||'1페어')+' 점수';
+  document.getElementById('s2Label').textContent=([opp1,opp2].filter(Boolean).join(' / ')||'2페어')+' 점수';
   setScoreMatchKind('official','교류·이벤트전 · 스코어와 포·백을 입력하세요');
   const inMemDone=m.score1!==null&&m.score1!==undefined;
   const exDone=ex.ourScore!==null&&ex.ourScore!==undefined;
@@ -13112,8 +13204,8 @@ window.openPendingEvScore=function(ri, mci, idx){
   document.getElementById('s1').value=done?(inMemDone?m.score1:ex.ourScore):'';
   document.getElementById('s2').value=done?(inMemDone?m.score2:ex.oppScore):'';
   const pendingPlayers=[
-    {label:'우리팀',players:pair},
-    {label:'상대팀',players:[opp1,opp2].filter(Boolean)}
+    {label:pair.filter(Boolean).join(' / ')||'1페어',players:pair},
+    {label:[opp1,opp2].filter(Boolean).join(' / ')||'2페어',players:[opp1,opp2].filter(Boolean)}
   ];
   const pendingPos=m.positions||ex.positions||{};
   document.getElementById('positionSelectors').innerHTML=pendingPlayers.map(({label,players})=>{
