@@ -686,6 +686,7 @@ tr:nth-child(even){background:#F5FCFB;}
           <li>선택된 참가자가 바로 게임 명단으로 저장됩니다. 참석·미정·불참 응답 없이 바로 게임을 만들 수 있습니다.</li>
           <li>개인 일정은 기본 게임 기록 모드로 생성됩니다. 미리 페어를 만들거나, 경기 수를 정하지 않고 한 경기씩 두 팀을 수동 추가할 수 있습니다. 점수·포백은 나중에 입력해도 됩니다.</li>
           <li>개인 경기 결과는 개인 기록으로 남고 정규시즌 공식 랭킹에는 포함되지 않습니다.</li>
+          <li>개인 일정은 다가오는 날짜부터 표시되고 지난 일정은 아래로 이동합니다. 일정별로 접기·펼치기가 가능합니다.</li>
           <li>점수가 입력되면 개인 일정의 하이라이트 카드가 표시되며 이미지로 공유할 수 있습니다.</li>
           <li><b>기록 분석 보기</b>에서 세 경기 유형의 전적과 파트너·최근 결과를 따로 확인합니다.</li>
         </ul>
@@ -1758,7 +1759,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.19';
+const APP_VERSION = '1.17.20';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -1851,6 +1852,7 @@ let openAttBodies = new Set();
 let events = [];
 let attendancePolls = [];
 let schedules = [];
+const personalScheduleExpanded = new Map();
 let announcements = [];
 let boardPosts = [];
 let notificationSettings = {
@@ -12420,6 +12422,33 @@ window.setPersonalScheduleAttendance = async function(scheduleId, status) {
   }
 };
 
+function comparePersonalScheduleDates(a,b,today) {
+  const aDate = a.date || '', bDate = b.date || '';
+  const aGroup = !aDate ? 2 : aDate < today ? 1 : 0;
+  const bGroup = !bDate ? 2 : bDate < today ? 1 : 0;
+  if (aGroup !== bGroup) return aGroup - bGroup;
+  const dateOrder = aGroup === 0 ? aDate.localeCompare(bDate) : bDate.localeCompare(aDate);
+  return dateOrder || Number(b.ts || 0) - Number(a.ts || 0);
+}
+
+window.togglePersonalScheduleCard = function(scheduleId) {
+  const schedule = schedules.find(item => item.id === scheduleId);
+  if (!schedule) return;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const current = personalScheduleExpanded.has(scheduleId) ? personalScheduleExpanded.get(scheduleId) : (schedule.date || '') >= today;
+  const expanded = !current;
+  personalScheduleExpanded.set(scheduleId,expanded);
+  document.querySelectorAll('[data-personal-schedule-card]').forEach(card => {
+    if (card.dataset.personalScheduleCard !== scheduleId) return;
+    const body = card.querySelector('[data-personal-schedule-body]');
+    const button = card.querySelector('[data-personal-schedule-toggle]');
+    if (body) body.style.display = expanded ? '' : 'none';
+    if (button) { button.textContent = expanded ? '접기 ▴' : '펼치기 ▾'; button.setAttribute('aria-expanded',String(expanded)); }
+    if (expanded) renderPersonalScheduleHighlightCards(card);
+  });
+};
+
 function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = false) {
   const el = document.getElementById(targetId);
   if (!el) return;
@@ -12432,7 +12461,9 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
     }
     list = list.filter(schedule => schedule.ownerUid === myClaim.uid || (schedule.participantUids || []).includes(myClaim.uid));
   }
-  list.sort((a,b) => (a.date || '').localeCompare(b.date || '') || Number(b.ts || 0) - Number(a.ts || 0));
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  list.sort((a,b) => comparePersonalScheduleDates(a,b,today));
   if (!list.length) {
     el.innerHTML = `<div style="padding:12px;background:#fff;border:1px dashed #C8E0DE;border-radius:10px;font-size:11px;color:#64748B">${!forceAll && scheduleView === 'mine' ? '내가 포함된 개인 일정이 없어요.' : '등록된 회원 일정이 없어요.'}</div>`;
     return;
@@ -12443,6 +12474,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
     const dateLabel = schedule.date ? new Date(`${schedule.date}T00:00:00`).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
     const canManage = canManageSchedule(schedule);
     const hostName = personalGameEscape(personalScheduleHostName(schedule));
+    const expanded = personalScheduleExpanded.has(schedule.id) ? personalScheduleExpanded.get(schedule.id) : (schedule.date || '') >= today;
     let gameNumber = 0;
     const resultHtml = (schedule.gamePairs || []).map((round, roundIndex) => {
       const games = (round.matches || []).map((match, matchIndex) => {
@@ -12457,13 +12489,14 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
       }).join('');
       return games;
     }).join('');
-    return `<article style="background:#fff;border:1px solid #D6E9E7;border-radius:12px;padding:12px;margin-top:9px">
+    return `<article data-personal-schedule-card="${schedule.id}" style="background:#fff;border:1px solid #D6E9E7;border-radius:12px;padding:12px;margin-top:9px">
       <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
         <div><div style="font-size:13px;font-weight:900;color:#1E293B">${schedule.title || schedule.content || '회원 일정'}</div>
           <div style="font-size:10px;color:#64748B;margin-top:4px">📅 ${dateLabel}${schedule.time?` · ${scheduleHourLabel(schedule.time)}`:''}${schedule.place?` · 📍 ${schedule.place}`:''}</div>
-          <div style="font-size:11px;font-weight:800;color:#0F766E;margin-top:5px">👤 호스트 · ${hostName}</div></div>
-        <span style="font-size:9px;font-weight:900;color:#0F766E;background:#E5F7F3;border-radius:99px;padding:5px 7px;white-space:nowrap">개인 기록</span>
+          <div style="font-size:11px;font-weight:800;color:#0F766E;margin-top:5px">👤 호스트 · ${hostName} <span style="color:#64748B;font-weight:600">· ${gameNumber}게임</span></div></div>
+        <button data-personal-schedule-toggle onclick="togglePersonalScheduleCard('${schedule.id}')" aria-expanded="${expanded}" style="flex:none;padding:6px 9px;border:1px solid #B7DBD7;border-radius:8px;background:#F0FDFA;color:#0F766E;font-size:10px;font-weight:900;cursor:pointer">${expanded?'접기 ▴':'펼치기 ▾'}</button>
       </div>
+      <div data-personal-schedule-body="${schedule.id}" style="${expanded?'':'display:none'}">
       ${schedule.content && schedule.content !== schedule.title ? `<div style="font-size:11px;color:#475569;line-height:1.55;margin-top:8px">${schedule.content}</div>` : ''}
       <div style="margin-top:9px;padding-top:8px;border-top:1px solid #E7F0EF"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:10px;font-weight:900;color:#0F766E">참가자 ${rows.length}명 · 참가 당시 시작 년월</span>${canManage ? `<button onclick="openPersonalParticipantReplacement('${schedule.id}')" style="padding:5px 7px;border:1px solid #C8E0DE;background:#F0FDFA;color:#0F766E;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">✏️ 참가자 변경</button>` : ''}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name}${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
@@ -12471,6 +12504,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
       ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록 · ${gameNumber}게임</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">게임 수를 바꾸려면 경기를 추가하거나 각 경기의 삭제 버튼을 누르세요.</div>${canManage ? `<button onclick="openPersonalManualGame('${schedule.id}')" style="width:100%;margin-top:8px;padding:8px;border:1px solid #6EE7B7;background:#ECFDF5;color:#047857;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">＋ 수동 경기 추가</button>` : ''}${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>` : ''}
       ${highlightData ? `<div style="margin-top:11px;padding:9px;background:#F0FDFA;border:1px solid #99DCCF;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px"><b style="font-size:11px;color:#0F766E">✨ 개인 일정 하이라이트</b><button onclick="sharePersonalScheduleHighlightCard('${schedule.id}')" style="padding:6px 8px;border:1px solid #0F766E;background:#fff;color:#0F766E;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🖼️ 카드 공유</button></div><canvas data-personal-schedule-highlight="${schedule.id}" width="1080" height="680" style="display:block;width:100%;height:auto;border-radius:8px;background:#0C766E"></canvas><div style="font-size:10px;color:#475569;line-height:1.5;margin-top:7px">${personalGameEscape(highlightData.summary)}</div></div>` : ''}
       ${canManage ? `<button onclick="deletePersonalSchedule('${schedule.id}')" style="display:block;margin:11px 0 0 auto;padding:6px 9px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🗑️ 일정 삭제</button>` : ''}
+      </div>
     </article>`;
   }).join('');
   renderPersonalScheduleHighlightCards(el);
