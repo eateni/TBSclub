@@ -1759,7 +1759,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.20';
+const APP_VERSION = '1.17.21';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -1893,6 +1893,10 @@ let currentSeason = 1;      // 현재 진행 시즌
 let personalHighlightSeason = null; // 나의 시즌에서 선택한 종료 시즌
 let personalHighlightPreviewName = ''; // 관리자 미리보기용 회원
 const RESV_COURT_NAMES = ['코트1','코트2','코트3','코트4']; // 코트 예약 현황용
+function getDayCourtLabels(day) {
+  if (day.courtNumbers?.length) return day.courtNumbers;
+  return Array.from({length: Math.max(1, Number(day.numCourts) || RESV_COURT_NAMES.length)}, (_, i) => RESV_COURT_NAMES[i] || `코트${i+1}`);
+}
 let _analysisAutoSelected = false; // 개인별 분석 최초 자동 선택 완료 플래그
 let analysisSourceView = 'regular'; // 개인별 분석에서 선택한 경기 출처
 let analysisPartnerOwner = '';
@@ -8238,10 +8242,23 @@ function renderAdmin(){
         const cr = day.courtReservation || {};
         const crSlots = cr.timeSlots || [];
         const crCourts = cr.courts || {};
-        const resvCourts = (day.courtNumbers && day.courtNumbers.length) ? day.courtNumbers : RESV_COURT_NAMES;
+        const resvCourts = getDayCourtLabels(day);
         const courtResHtml = `
           <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(37,99,235,0.15)">
-            <div style="font-size:11px;font-weight:700;color:#2563EB;margin-bottom:6px">🏟️ 코트 예약 현황</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+              <div style="font-size:11px;font-weight:700;color:#2563EB">🏟️ 코트 예약 현황</div>
+              <button onclick="toggleDayCourtNumberEditor('${day.id}')" style="padding:4px 9px;border:1px solid rgba(37,99,235,0.3);border-radius:7px;background:#fff;color:#2563EB;font-size:11px;font-weight:700;cursor:pointer">✏️ 코트 번호 수정</button>
+            </div>
+            <div id="courtNumberEditor_${day.id}" style="display:none;padding:9px;margin-bottom:8px;border:1px solid rgba(37,99,235,0.25);border-radius:8px;background:#fff">
+              <div style="font-size:11px;color:#64748B;margin-bottom:7px">코트 순서는 그대로 두고 번호만 변경합니다. 예약과 저장된 대진표에도 반영됩니다.</div>
+              <div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:8px">
+                ${resvCourts.map((court, ci) => `<label style="font-size:11px;color:#475569;font-weight:700">${ci+1}번째 코트
+                  <input id="courtNumber_${day.id}_${ci}" type="number" min="1" max="999" step="1" inputmode="numeric" value="${Number(String(court).match(/\d+/)?.[0]) || ci+1}"
+                    style="display:block;width:76px;margin-top:3px;padding:6px;border:1px solid #BFDBFE;border-radius:7px;color:#1E293B;background:#fff;font-size:13px">
+                </label>`).join('')}
+              </div>
+              <button onclick="saveDayCourtNumbers('${day.id}')" style="padding:6px 13px;border:none;border-radius:7px;background:#2563EB;color:#fff;font-size:11px;font-weight:700;cursor:pointer">번호 저장</button>
+            </div>
             ${crSlots.length ? crSlots.map(slot => {
               const slotC = crCourts[slot] || {};
               return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;flex-wrap:wrap">
@@ -13915,6 +13932,64 @@ window._adminClearBadgeCache = async function() {
   } catch(e) {
     if (el) el.textContent = '❌ 실패: ' + (e.message||e.code||e);
     console.error('badge cache clear 실패:', e);
+  }
+};
+
+// 기존 날짜 그룹의 코트 번호 변경. 예약은 인덱스 기반이므로 그대로 유지한다.
+window.toggleDayCourtNumberEditor = function(dayId) {
+  if (!isAdmin) return;
+  const editor = document.getElementById('courtNumberEditor_'+dayId);
+  if (editor) editor.style.display = editor.style.display === 'none' ? 'block' : 'none';
+};
+window.saveDayCourtNumbers = async function(dayId) {
+  if (!isAdmin) return;
+  const day = days.find(d => d.id === dayId);
+  if (!day) { alert('날짜 그룹을 찾을 수 없습니다.'); return; }
+  const oldLabels = getDayCourtLabels(day);
+  const numbers = oldLabels.map((_, i) => Number(document.getElementById(`courtNumber_${dayId}_${i}`)?.value));
+  if (numbers.some(n => !Number.isInteger(n) || n < 1 || n > 999)) {
+    alert('코트 번호는 1~999 사이의 정수로 입력해주세요.'); return;
+  }
+  if (new Set(numbers).size !== numbers.length) {
+    alert('같은 코트 번호를 두 번 사용할 수 없습니다.'); return;
+  }
+  const newLabels = numbers.map(n => `${n}번`);
+  const saveButton = document.querySelector(`#courtNumberEditor_${dayId} button[onclick^="saveDayCourtNumbers"]`);
+  if (saveButton) saveButton.disabled = true;
+  try {
+    await runTransaction(db, async transaction => {
+      const dayRef = doc(db, 'days', dayId);
+      const snap = await transaction.get(dayRef);
+      if (!snap.exists()) throw new Error('날짜 그룹이 삭제되었습니다.');
+      const latest = snap.data();
+      const latestLabels = getDayCourtLabels(latest);
+      if (JSON.stringify(latestLabels) !== JSON.stringify(oldLabels)) {
+        throw new Error('다른 곳에서 코트 번호가 변경되었습니다. 화면을 새로고침한 뒤 다시 시도해주세요.');
+      }
+      const labelMap = new Map(oldLabels.map((label, i) => [label, newLabels[i]]));
+      // 번호가 없던 예전 대진표의 기본 코트 표기도 같은 순서로 변경한다.
+      if (!latest.courtNumbers?.length) {
+        COURT_NAMES.slice(0, oldLabels.length).forEach((label, i) => labelMap.set(label, newLabels[i]));
+      }
+      let changedMatches = false;
+      const rounds = (latest.rounds || []).map(round => ({
+        ...round,
+        matches: (round.matches || []).map(match => {
+          if (!labelMap.has(match.court)) return match;
+          changedMatches = true;
+          return {...match, court: labelMap.get(match.court)};
+        })
+      }));
+      const updates = {courtNumbers: newLabels, numCourts: newLabels.length};
+      if (changedMatches) updates.rounds = rounds;
+      transaction.update(dayRef, updates);
+    });
+    generatedAllRounds = [];
+    alert('코트 번호를 수정했습니다. 기존 예약과 경기 점수는 유지됩니다.');
+  } catch (e) {
+    alert('코트 번호 수정 실패: ' + (e.message || e));
+  } finally {
+    if (saveButton) saveButton.disabled = false;
   }
 };
 
