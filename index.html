@@ -672,7 +672,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <h3>🏆 경기 기록</h3>
         <ul>
           <li><b>대진표:</b> 라운드별 코트, 페어, 점수와 경기 상태를 확인합니다.</li>
-          <li><b>랭킹·개인별:</b> 공식 순위와 회원별 정규시즌·이벤트전·개인 경기 기록을 구분해 확인합니다.</li>
+          <li><b>랭킹·개인별:</b> 공식 순위와 회원별 정규시즌·이벤트전·개인 경기 기록을 구분하고, 정회원·게스트를 선택해 함께 뛴 페어 전적을 확인합니다.</li>
           <li><b>페어랭킹:</b> 함께 경기한 조합의 성적을 확인합니다.</li>
           <li><b>시즌 리포트:</b> 종료된 시즌의 개인 하이라이트를 확인합니다. 진행 중인 시즌은 종료 후 제공됩니다.</li>
         </ul>
@@ -686,6 +686,7 @@ tr:nth-child(even){background:#F5FCFB;}
           <li>선택된 참가자가 바로 게임 명단으로 저장됩니다. 참석·미정·불참 응답 없이 바로 게임을 만들 수 있습니다.</li>
           <li>개인 일정은 기본 게임 기록 모드로 생성됩니다. 미리 페어를 만들거나, 경기 수를 정하지 않고 한 경기씩 두 팀을 수동 추가할 수 있습니다. 점수·포백은 나중에 입력해도 됩니다.</li>
           <li>개인 경기 결과는 개인 기록으로 남고 정규시즌 공식 랭킹에는 포함되지 않습니다.</li>
+          <li>점수가 입력되면 개인 일정의 하이라이트 카드가 표시되며 이미지로 공유할 수 있습니다.</li>
           <li><b>기록 분석 보기</b>에서 세 경기 유형의 전적과 파트너·최근 결과를 따로 확인합니다.</li>
         </ul>
       </div>
@@ -1757,7 +1758,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.18';
+const APP_VERSION = '1.17.19';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -1892,6 +1893,8 @@ let personalHighlightPreviewName = ''; // 관리자 미리보기용 회원
 const RESV_COURT_NAMES = ['코트1','코트2','코트3','코트4']; // 코트 예약 현황용
 let _analysisAutoSelected = false; // 개인별 분석 최초 자동 선택 완료 플래그
 let analysisSourceView = 'regular'; // 개인별 분석에서 선택한 경기 출처
+let analysisPartnerOwner = '';
+let analysisSelectedPartner = '';
 let _openDayIds = new Set(); // 날짜 카드 열림 상태 (재렌더링 후 복원용)
 let viewSeason = 1;         // 화면에서 보고 있는 시즌
 let seasonUserPicked = false; // 사용자가 과거 시즌을 직접 선택했는지
@@ -4849,6 +4852,37 @@ function renderAnalysis(stats) {
   }
 }
 
+window.selectAnalysisPartner = function(partnerName) {
+  analysisSelectedPartner = partnerName || '';
+  renderAnalysisDetail();
+};
+
+function renderAnalysisPartnerPanel(name, sourceMatches, sourceMeta) {
+  const allMatches = sourceMeta.flatMap(meta => sourceMatches[meta.key].map(match => ({...match, source:meta.key, sourceLabel:meta.label})));
+  const pairedCounts = new Map();
+  allMatches.forEach(match => match.partner.forEach(partner => pairedCounts.set(partner, (pairedCounts.get(partner) || 0) + 1)));
+  const memberNames = new Set(members.map(member => member.name).filter(Boolean));
+  const guestNames = new Set(guests.map(guest => guest.name).filter(Boolean));
+  const regular = [...memberNames].filter(player => player !== name).sort((a,b) => a.localeCompare(b,'ko'));
+  const guest = [...new Set([...guestNames, ...pairedCounts.keys()])].filter(player => player !== name && !memberNames.has(player)).sort((a,b) => a.localeCompare(b,'ko'));
+  const options = players => players.map(player => `<option value="${personalGameEscape(player)}"${player === analysisSelectedPartner ? ' selected' : ''}>${personalGameEscape(player)}${pairedCounts.has(player) ? ` · ${pairedCounts.get(player)}경기` : ''}</option>`).join('');
+  const partner = [...regular, ...guest].includes(analysisSelectedPartner) ? analysisSelectedPartner : '';
+  const selectedMatches = partner ? allMatches.filter(match => match.partner.includes(partner)).sort((a,b) => b.date.localeCompare(a.date)) : [];
+  const total = summarizeAnalysisSource(selectedMatches);
+  const bySource = sourceMeta.map(meta => ({...meta, ...summarizeAnalysisSource(selectedMatches.filter(match => match.source === meta.key))}));
+  const resultText = result => result === 'win' ? '승' : result === 'loss' ? '패' : '무';
+  return `<section style="background:#fff;border:1px solid #D7E7E5;border-radius:12px;padding:13px;margin-bottom:14px">
+    <div style="font-size:14px;font-weight:900;color:#0F766E">🤝 ${personalGameEscape(name)}님의 페어별 기록</div>
+    <div style="font-size:11px;color:#64748B;line-height:1.5;margin:5px 0 10px">함께 페어로 출전한 경기만 집계합니다. 정규시즌·이벤트전·개인 경기 기록은 아래에서 구분해 표시해요.</div>
+    <select id="analysisPartnerSelect" class="row-sel" style="width:100%;padding:10px;font-size:12px" onchange="selectAnalysisPartner(this.value)"><option value="">함께 뛴 선수를 선택하세요</option><optgroup label="정회원">${options(regular)}</optgroup><optgroup label="게스트·직접 입력 대타">${options(guest)}</optgroup></select>
+    ${!partner ? '<div style="font-size:11px;color:#64748B;margin-top:11px">정회원 또는 게스트 이름을 선택하면 페어 전적이 나와요.</div>' : !selectedMatches.length ? `<div style="font-size:11px;color:#64748B;margin-top:11px">${personalGameEscape(partner)}님과 함께 점수가 기록된 경기가 아직 없어요.</div>` : `
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:14px"><b style="font-size:13px;color:#1E293B">${personalGameEscape(name)} / ${personalGameEscape(partner)}</b><b style="font-size:12px;color:#0F766E">${total.games}경기 · ${total.wins}승 ${total.draws}무 ${total.losses}패</b></div>
+      <div style="font-size:11px;color:#64748B;margin-top:5px">승률 ${total.winRate}% · 득실 ${total.diff >= 0 ? '+' : ''}${total.diff}</div>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:10px">${bySource.map(item => `<div style="min-width:0;padding:8px 4px;background:#F5FAFA;border-radius:8px;text-align:center"><b style="display:block;font-size:10px;color:${item.color}">${item.label}</b><span style="display:block;font-size:10px;color:#334155;margin-top:3px">${item.games}경기 · ${item.wins}승 ${item.draws}무 ${item.losses}패</span></div>`).join('')}</div>
+      <details style="margin-top:10px"><summary style="cursor:pointer;font-size:11px;font-weight:800;color:#0F766E">함께 뛴 ${selectedMatches.length}경기 보기</summary><div style="margin-top:6px">${selectedMatches.map(match => `<div style="padding:8px 0;border-top:1px solid #EDF3F2;font-size:10px;color:#475569"><b style="color:#1E293B">${personalGameEscape(match.date)} · ${personalGameEscape(match.sourceLabel)} · ${personalGameEscape(match.title)}</b><div style="margin-top:3px">상대 ${personalGameEscape(match.opponents.join(' / '))} · ${match.myScore}:${match.oppScore} · ${resultText(match.result)}</div></div>`).join('')}</div></details>`}
+  </section>`;
+}
+
 window.renderAnalysisDetail = function() {
   const name = document.getElementById('analysisSelect').value;
   const el = document.getElementById('analysisDetail');
@@ -4858,6 +4892,7 @@ window.renderAnalysisDetail = function() {
   const s = stats.find(x=>x.name===name);
   if (!s) { el.innerHTML = '<div class="empty">데이터 없음</div>'; return; }
   const sourceMatches = collectAnalysisSourceMatches(name);
+  if (analysisPartnerOwner !== name) { analysisPartnerOwner = name; analysisSelectedPartner = ''; }
   const sourceMeta = [
     {key:'regular',label:'🏆 정규시즌',color:'#2563EB'},
     {key:'event',label:'🎉 이벤트전',color:'#7C3AED'},
@@ -4981,6 +5016,7 @@ window.renderAnalysisDetail = function() {
       }).join('')}</div>
       <div style="font-size:10px;color:#64748B;margin-top:9px">과거 경기는 저장된 선수 이름으로 연결됩니다. 동명이인·이름 변경 기록은 확인이 필요할 수 있어요.</div>
     </div>
+    ${renderAnalysisPartnerPanel(name,sourceMatches,sourceMeta)}
     ${analysisSourceView==='regular'?'':renderAnalysisSourcePanel(analysisSourceView,sourceMatches[analysisSourceView])}
     <div style="display:${analysisSourceView==='regular'?'block':'none'}">
     <div style="font-size:11px;font-weight:900;color:#2563EB;margin:0 0 8px">🏆 시즌 ${viewSeason} 정규시즌 상세 분석</div>
@@ -12147,6 +12183,88 @@ function getScheduleGameRoster(schedule) {
     });
 }
 
+function getPersonalScheduleHighlightData(schedule) {
+  if (!schedule || schedule.recordScope !== 'personal') return null;
+  const matches = (schedule.gamePairs || []).flatMap(round => round.matches || []);
+  const scored = matches.filter(match => analysisHasScore(match.score1) && analysisHasScore(match.score2) && (match.team1 || []).length && (match.team2 || []).length);
+  if (!scored.length) return null;
+  const pairs = new Map();
+  scored.forEach(match => [
+    {names:match.team1, scored:Number(match.score1), conceded:Number(match.score2)},
+    {names:match.team2, scored:Number(match.score2), conceded:Number(match.score1)}
+  ].forEach(team => {
+    const names = team.names.filter(Boolean);
+    if (names.length !== 2) return;
+    const key = [...names].sort((a,b) => a.localeCompare(b,'ko')).join('\u0000');
+    const item = pairs.get(key) || {names,games:0,wins:0,draws:0,losses:0,diff:0};
+    item.games++; item.diff += team.scored - team.conceded;
+    if (team.scored > team.conceded) item.wins++;
+    else if (team.scored < team.conceded) item.losses++;
+    else item.draws++;
+    pairs.set(key,item);
+  }));
+  const ranking = [...pairs.values()].sort((a,b) => b.wins - a.wins || b.diff - a.diff || b.games - a.games || a.names.join(' / ').localeCompare(b.names.join(' / '),'ko'));
+  const leader = ranking[0] || null;
+  const closeGames = scored.filter(match => Math.abs(Number(match.score1) - Number(match.score2)) <= 2).length;
+  const summary = leader && leader.wins
+    ? `${leader.names.join(' · ')} 페어가 ${leader.wins}승으로 좋은 호흡을 보여줬습니다.${closeGames ? ` ${closeGames}경기는 두 점 차 이내의 접전이었습니다.` : ' 함께 만든 플레이가 경기의 흐름을 이끌었습니다.'}`
+    : `${scored.length}경기 동안 서로 다른 페어가 호흡을 맞췄습니다.${closeGames ? ` ${closeGames}경기는 두 점 차 이내의 접전이었습니다.` : ' 다음 경기를 위한 경험을 쌓았습니다.'}`;
+  return {planned:matches.length, completed:scored.length, pairs:ranking, leader, summary};
+}
+
+function drawPersonalScheduleHighlightCard(schedule, data, canvas) {
+  canvas = canvas || document.createElement('canvas');
+  canvas.width = 1080; canvas.height = 680;
+  const ctx = canvas.getContext('2d');
+  const bg = ctx.createLinearGradient(0,0,1080,680);
+  bg.addColorStop(0,'#073A42'); bg.addColorStop(0.55,'#0C766E'); bg.addColorStop(1,'#164E63');
+  ctx.fillStyle = bg; ctx.fillRect(0,0,1080,680);
+  ctx.strokeStyle = 'rgba(255,255,255,.25)'; ctx.lineWidth = 3; ctx.strokeRect(38,38,1004,604);
+  ctx.textAlign = 'left'; ctx.fillStyle = '#A7F3D0'; ctx.font = '800 31px Arial, sans-serif'; ctx.fillText('TBS HISTORY · PERSONAL MATCH',78,104);
+  const title = `${schedule.title || schedule.content || '개인 경기'} 하이라이트`;
+  const titleSize = _fitHighlightText(ctx,title,920,56,32,900);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = `900 ${titleSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`; ctx.fillText(title,78,174);
+  const metaText = `${schedule.date || '날짜 미정'}  ·  ${schedule.place || '장소 미정'}  ·  호스트 ${personalScheduleHostName(schedule)}`;
+  const metaSize = _fitHighlightText(ctx,metaText,920,27,20,500);
+  ctx.fillStyle = '#CFFAFE'; ctx.font = `500 ${metaSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`; ctx.fillText(metaText,78,220);
+  _cardRoundRect(ctx,72,256,936,198,24); ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fill();
+  ctx.fillStyle = '#A7F3D0'; ctx.font = '800 26px Arial, sans-serif'; ctx.fillText('MATCH HIGHLIGHT',100,309);
+  const pairText = data.leader ? data.leader.names.join(' · ') : '함께한 페어';
+  const pairSize = _fitHighlightText(ctx,pairText,650,53,29,900);
+  ctx.fillStyle = '#FFFFFF'; ctx.font = `900 ${pairSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`; ctx.fillText(pairText,100,375);
+  ctx.fillStyle = '#FDE68A'; ctx.font = '800 34px Arial, sans-serif';
+  ctx.fillText(data.leader ? `${data.leader.wins}승 ${data.leader.draws}무 ${data.leader.losses}패 · 득실 ${data.leader.diff >= 0 ? '+' : ''}${data.leader.diff}` : '경기 기록',100,420);
+  ctx.textAlign = 'right'; ctx.fillStyle = '#FFFFFF'; ctx.font = '900 48px Arial, sans-serif'; ctx.fillText(`${data.completed}/${data.planned}`,965,368);
+  ctx.font = '600 24px Arial, sans-serif'; ctx.fillText('완료 경기',965,410);
+  ctx.textAlign = 'left'; ctx.fillStyle = '#E6FFFB'; ctx.font = '500 25px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';
+  _cardWrap(ctx,data.summary,900).slice(0,3).forEach((line,index) => ctx.fillText(line,88,510 + index*34));
+  ctx.fillStyle = '#A7F3D0'; ctx.font = '700 23px Arial, sans-serif'; ctx.fillText(data.completed < data.planned ? '진행 중인 일정 · 기록된 경기 기준' : '함께한 오늘의 경기를 기억합니다',88,625);
+  return canvas;
+}
+
+window.sharePersonalScheduleHighlightCard = async function(scheduleId) {
+  const schedule = schedules.find(item => item.id === scheduleId);
+  const data = getPersonalScheduleHighlightData(schedule);
+  if (!data) { alert('점수가 입력된 경기가 있어야 하이라이트 카드를 만들 수 있어요.'); return; }
+  const canvas = drawPersonalScheduleHighlightCard(schedule,data);
+  const blob = await new Promise(resolve => canvas.toBlob(resolve,'image/png'));
+  if (!blob) { alert('카드 이미지를 만들지 못했어요.'); return; }
+  const safeName = (schedule.title || 'personal').replace(/[\\/:*?"<>|]/g,'-');
+  const file = new File([blob],`TBS-${safeName}-personal-highlight.png`,{type:'image/png'});
+  try {
+    if (navigator.canShare && navigator.canShare({files:[file]})) await navigator.share({title:`${schedule.title || '개인 경기'} 하이라이트`,text:data.summary,files:[file]});
+    else { const url=URL.createObjectURL(blob), link=document.createElement('a'); link.href=url; link.download=file.name; link.click(); setTimeout(()=>URL.revokeObjectURL(url),1000); alert('하이라이트 카드 이미지가 저장됐어요.'); }
+  } catch (error) { if (error?.name !== 'AbortError') alert('카드를 공유하지 못했어요. 다시 시도해 주세요.'); }
+};
+
+function renderPersonalScheduleHighlightCards(root) {
+  requestAnimationFrame(() => (root || document).querySelectorAll('canvas[data-personal-schedule-highlight]').forEach(canvas => {
+    const schedule = schedules.find(item => item.id === canvas.dataset.personalScheduleHighlight);
+    const data = getPersonalScheduleHighlightData(schedule);
+    if (data) drawPersonalScheduleHighlightCard(schedule,data,canvas);
+  }));
+}
+
 function buildPersonalParticipantReplacement(schedule, oldKey, replacement) {
   const snapshots = (schedule.participantSnapshots || []).length
     ? schedule.participantSnapshots
@@ -12321,6 +12439,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
   }
   el.innerHTML = list.map(schedule => {
     const rows = getScheduleAttendanceRows(schedule);
+    const highlightData = getPersonalScheduleHighlightData(schedule);
     const dateLabel = schedule.date ? new Date(`${schedule.date}T00:00:00`).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
     const canManage = canManageSchedule(schedule);
     const hostName = personalGameEscape(personalScheduleHostName(schedule));
@@ -12350,9 +12469,11 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
         <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name}${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
       </div>
       ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록 · ${gameNumber}게임</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">게임 수를 바꾸려면 경기를 추가하거나 각 경기의 삭제 버튼을 누르세요.</div>${canManage ? `<button onclick="openPersonalManualGame('${schedule.id}')" style="width:100%;margin-top:8px;padding:8px;border:1px solid #6EE7B7;background:#ECFDF5;color:#047857;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">＋ 수동 경기 추가</button>` : ''}${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>` : ''}
+      ${highlightData ? `<div style="margin-top:11px;padding:9px;background:#F0FDFA;border:1px solid #99DCCF;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px"><b style="font-size:11px;color:#0F766E">✨ 개인 일정 하이라이트</b><button onclick="sharePersonalScheduleHighlightCard('${schedule.id}')" style="padding:6px 8px;border:1px solid #0F766E;background:#fff;color:#0F766E;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🖼️ 카드 공유</button></div><canvas data-personal-schedule-highlight="${schedule.id}" width="1080" height="680" style="display:block;width:100%;height:auto;border-radius:8px;background:#0C766E"></canvas><div style="font-size:10px;color:#475569;line-height:1.5;margin-top:7px">${personalGameEscape(highlightData.summary)}</div></div>` : ''}
       ${canManage ? `<button onclick="deletePersonalSchedule('${schedule.id}')" style="display:block;margin:11px 0 0 auto;padding:6px 9px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🗑️ 일정 삭제</button>` : ''}
     </article>`;
   }).join('');
+  renderPersonalScheduleHighlightCards(el);
 }
 
 function renderAdminPersonalSchedules() {
