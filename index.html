@@ -672,7 +672,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <h3>🏆 경기 기록</h3>
         <ul>
           <li><b>대진표:</b> 라운드별 코트, 페어, 점수와 경기 상태를 확인합니다.</li>
-          <li><b>경기 영상:</b> 관리자(개인 경기는 호스트)가 경기 카드 아래에서 URL을 등록합니다. 전체 영상은 <b>메뉴 → 사진/동영상</b>에서 모아 보고 등록할 수 있습니다.</li>
+          <li><b>경기 영상:</b> <b>메뉴 → 사진/동영상</b>에서 등록된 영상을 모아 봅니다. 관리자(개인 경기는 호스트)는 날짜를 선택해 경기 목록에서 바로 URL을 등록하거나 전체 영상 링크를 추가할 수 있습니다.</li>
           <li><b>랭킹·개인별:</b> 공식 순위와 회원별 정규시즌·이벤트전·개인 경기 기록을 구분하고, 정회원·게스트를 선택해 함께 뛴 페어 전적을 확인합니다.</li>
           <li><b>페어랭킹:</b> 함께 경기한 조합의 성적을 확인합니다.</li>
           <li><b>시즌 리포트:</b> 종료된 시즌의 개인 하이라이트를 확인합니다. 진행 중인 시즌은 종료 후 제공됩니다.</li>
@@ -1760,7 +1760,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.23';
+const APP_VERSION = '1.17.24';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4373,6 +4373,7 @@ window.editMatchVideoLink = async function(kind, recordId, roundIndex, matchInde
         }
       });
     }
+    if (document.getElementById('tab-photo')?.style.display !== 'none') renderPhotoTab();
     alert(url ? '경기 영상 링크를 저장했습니다.' : '경기 영상 링크를 삭제했습니다.');
   } catch (error) { alert('영상 링크를 저장하지 못했어요. ' + (error.message || error)); }
 };
@@ -11649,6 +11650,41 @@ function photoVideoRecords() {
       .map(record => ({kind:'personal',record,group:'개인 경기',label:`${record.date || '날짜 미정'} · ${record.title || record.content || '개인 경기'}`}))
   ].sort((a,b) => (b.record.date || '').localeCompare(a.record.date || ''));
 }
+let photoVideoSelectedTarget = '';
+window.selectPhotoVideoTarget = function(value) {
+  photoVideoSelectedTarget = value;
+  renderPhotoTab();
+};
+function photoVideoMatches(entry) {
+  const {kind,record} = entry;
+  const rows = [];
+  if (kind === 'day') {
+    (record.rounds || []).forEach((round, roundIndex) => (round.matches || []).forEach((match, matchIndex) => {
+      if (match.isRally || ['랠리','휴식'].includes(match.tag)) return;
+      rows.push({roundIndex, matchIndex:match.id, label:`${roundIndex+1}라운드 · ${matchIndex+1}경기${match.court?' · '+match.court:''}`, team1:match.team1 || [], team2:match.team2 || [], score1:match.score1, score2:match.score2, done:!!match.done, url:match.videoUrl});
+    }));
+  } else if (kind === 'event') {
+    (record.matches || []).forEach((match, matchIndex) => rows.push({roundIndex:0, matchIndex, label:`${match.round || 1}라운드${match.court?' · '+match.court+'코트':''}`, team1:match.ourPair || [], team2:match.oppPair || [], score1:match.ourScore, score2:match.oppScore, done:match.ourScore != null && match.ourScore !== '' && match.oppScore != null && match.oppScore !== '', url:match.videoUrl}));
+  } else {
+    let gameNo = 0;
+    (record.gamePairs || []).forEach((round, roundIndex) => (round.matches || []).forEach((match, matchIndex) => {
+      gameNo++;
+      rows.push({roundIndex, matchIndex, label:`${gameNo}게임${match.type?' · '+match.type:''}`, team1:match.team1 || [], team2:match.team2 || [], score1:match.score1, score2:match.score2, done:match.score1 != null && match.score2 != null, url:match.videoUrl});
+    }));
+  }
+  return rows;
+}
+function photoVideoHasLinks(entry) {
+  return (entry.record.fullVideoLinks || []).some(link => checkedVideoUrl(link.url)) || photoVideoMatches(entry).some(match => checkedVideoUrl(match.url));
+}
+function photoVideoMatchHtml(entry, match, canEdit) {
+  const score = match.done ? `${videoLinkEscape(match.score1)} : ${videoLinkEscape(match.score2)}` : 'VS';
+  return `<div style="padding:9px 10px;border:1px solid #E0EAF2;border-radius:9px;background:#fff;margin-top:6px">
+    <div style="font-size:10px;color:#64748B;font-weight:800">🎾 ${videoLinkEscape(match.label)}</div>
+    <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:7px;align-items:center;margin-top:5px;font-size:11px"><b style="color:#1D4ED8;overflow-wrap:anywhere">${videoLinkEscape(match.team1.join(' / ') || 'A팀')}</b><b style="color:#64748B">${score}</b><b style="color:#BE185D;text-align:right;overflow-wrap:anywhere">${videoLinkEscape(match.team2.join(' / ') || 'B팀')}</b></div>
+    ${matchVideoHtml(entry.kind,entry.record.id,match.roundIndex,match.matchIndex,match.url,canEdit)}
+  </div>`;
+}
 window.savePhotoFullVideo = async function() {
   const target = document.getElementById('photoVideoTarget')?.value || '';
   const divider = target.indexOf(':');
@@ -11665,28 +11701,32 @@ function renderPhotoTab() {
   const el = document.getElementById('tab-photo');
   if (!el) return;
   const all = photoVideoRecords();
-  const editable = all.filter(item => canEditVideoRecord(item.kind, item.record));
-  const linked = all.filter(item => (item.record.fullVideoLinks || []).some(link => checkedVideoUrl(link.url)));
-  const previousTarget = document.getElementById('photoVideoTarget')?.value || '';
-  const form = editable.length ? `<div style="padding:13px;border:1px solid #BFDBFE;border-radius:12px;background:#EFF6FF;margin:14px 0">
-    <div style="font-size:13px;font-weight:900;color:#1D4ED8;margin-bottom:5px">＋ 전체 영상 URL 등록</div>
-    <div style="font-size:11px;color:#64748B;line-height:1.5;margin-bottom:10px">연결할 경기일·이벤트·개인 일정을 고른 뒤 긴 영상 링크를 등록하세요.</div>
-    <select id="photoVideoTarget" class="row-inp" style="width:100%;margin-bottom:7px;padding:9px"><option value="">경기일 또는 일정 선택</option>${editable.map(item => `<option value="${videoLinkEscape(item.kind + ':' + item.record.id)}"${previousTarget === item.kind + ':' + item.record.id ? ' selected' : ''}>${videoLinkEscape(item.group + ' · ' + item.label)}</option>`).join('')}</select>
-    <input id="photoVideoTitle" class="row-inp" style="width:100%;margin-bottom:7px;padding:9px" maxlength="80" placeholder="영상 제목 (예: 10월 7일 전체 경기)">
-    <input id="photoVideoUrl" class="row-inp" style="width:100%;margin-bottom:8px;padding:9px" type="url" inputmode="url" placeholder="https://youtu.be/…">
-    <button onclick="savePhotoFullVideo()" style="width:100%;padding:10px;border:0;border-radius:9px;background:#2563EB;color:#fff;font-size:12px;font-weight:900;cursor:pointer">전체 영상 링크 저장</button>
+  const available = all.filter(item => canEditVideoRecord(item.kind,item.record) || photoVideoHasLinks(item));
+  const selected = available.find(item => item.kind + ':' + item.record.id === photoVideoSelectedTarget);
+  if (photoVideoSelectedTarget && !selected) photoVideoSelectedTarget = '';
+  const canEditSelected = selected && canEditVideoRecord(selected.kind,selected.record);
+  const previousTitle = document.getElementById('photoVideoTitle')?.value || '';
+  const previousUrl = document.getElementById('photoVideoUrl')?.value || '';
+  const form = canEditSelected ? `<div style="padding:12px;border:1px solid #BFDBFE;border-radius:11px;background:#EFF6FF;margin:11px 0">
+    <div style="font-size:12px;font-weight:900;color:#1D4ED8;margin-bottom:6px">＋ 이 날짜의 전체 영상 URL 등록</div>
+    <div style="display:grid;grid-template-columns:1fr;gap:6px"><input id="photoVideoTitle" class="row-inp" style="width:100%;padding:9px" maxlength="80" placeholder="영상 제목" value="${videoLinkEscape(previousTitle)}"><input id="photoVideoUrl" class="row-inp" style="width:100%;padding:9px" type="url" inputmode="url" placeholder="https://youtu.be/…" value="${videoLinkEscape(previousUrl)}"><button onclick="savePhotoFullVideo()" style="padding:9px;border:0;border-radius:8px;background:#2563EB;color:#fff;font-size:11px;font-weight:900;cursor:pointer">전체 영상 링크 저장</button></div>
   </div>` : '';
-  const groups = ['정규시즌','이벤트전','개인 경기'].map(group => {
-    const items = linked.filter(item => item.group === group);
-    if (!items.length) return '';
-    return `<section style="margin-top:15px"><h3 style="font-size:14px;color:#1E293B;margin-bottom:8px">${group}</h3>${items.map(item => `<div style="padding:11px;margin-bottom:8px;border:1px solid #D8E7EF;border-radius:12px;background:#fff"><div style="font-size:12px;font-weight:800;color:#334155">${videoLinkEscape(item.label)}</div>${fullVideoFolderHtml(item.kind,item.record,canEditVideoRecord(item.kind,item.record))}</div>`).join('')}</section>`;
+  const visible = selected ? [selected] : all.filter(photoVideoHasLinks);
+  const cards = visible.map((item,index) => {
+    const canEdit = !!selected && canEditVideoRecord(item.kind,item.record);
+    const matches = photoVideoMatches(item).filter(match => canEdit || checkedVideoUrl(match.url));
+    const fullLinks = (item.record.fullVideoLinks || []).filter(link => checkedVideoUrl(link.url)).length;
+    return `<details ${selected || index < 2 ? 'open' : ''} style="border:1px solid #D8E7EF;border-radius:12px;background:#fff;margin-top:9px;overflow:hidden"><summary style="cursor:pointer;padding:11px 12px;font-size:12px;font-weight:900;color:#1E293B;background:#F5FAFA">${videoLinkEscape(item.group)} · ${videoLinkEscape(item.label)} <span style="color:#64748B;font-size:10px;font-weight:600">영상 ${fullLinks + matches.filter(match => checkedVideoUrl(match.url)).length}개</span></summary><div style="padding:8px 11px 12px">
+      ${fullLinks ? fullVideoFolderHtml(item.kind,item.record,canEdit) : ''}
+      ${matches.length ? `<div style="font-size:11px;font-weight:900;color:#0F766E;margin-top:9px">🎾 경기별 영상${canEdit ? ' · 아래 경기에서 URL 등록' : ''}</div>${matches.map(match => photoVideoMatchHtml(item,match,canEdit)).join('')}` : `<div style="font-size:11px;color:#94A3B8;margin-top:8px">${canEdit ? '등록할 경기가 아직 없습니다.' : '경기별 영상은 아직 없습니다.'}</div>`}
+    </div></details>`;
   }).join('');
   el.innerHTML = `<div class="admin-sec" style="max-width:900px;margin:12px auto;padding:16px">
     <h2 style="font-size:18px;color:#1E293B">📸 사진 · 동영상</h2>
-    <p style="font-size:11px;color:#64748B;line-height:1.6;margin-top:7px">전체 경기 영상은 여기에서 모아 봅니다. 경기 한 판의 URL은 해당 경기 기록 아래의 <b>＋ 이 경기 영상 URL 등록</b>에서 입력하세요.</p>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><button onclick="navTo('league')" style="padding:6px 9px;border:1px solid #C8E0DE;border-radius:8px;background:#fff;color:#0F766E;font-size:10px;font-weight:800;cursor:pointer">정규시즌 경기로</button><button onclick="navTo('event')" style="padding:6px 9px;border:1px solid #C8E0DE;border-radius:8px;background:#fff;color:#0F766E;font-size:10px;font-weight:800;cursor:pointer">이벤트전 경기로</button><button onclick="navTo('personal')" style="padding:6px 9px;border:1px solid #C8E0DE;border-radius:8px;background:#fff;color:#0F766E;font-size:10px;font-weight:800;cursor:pointer">개인 경기로</button></div>
+    <p style="font-size:11px;color:#64748B;line-height:1.6;margin-top:7px">영상이 있는 경기는 여기에서 바로 볼 수 있습니다. URL을 등록하려면 날짜를 선택한 뒤 아래 경기 목록에서 버튼을 누르세요.</p>
+    <select id="photoVideoTarget" onchange="selectPhotoVideoTarget(this.value)" class="row-inp" style="width:100%;margin-top:12px;padding:10px"><option value="">모든 등록 영상 보기</option>${available.map(item => `<option value="${videoLinkEscape(item.kind + ':' + item.record.id)}"${selected === item ? ' selected' : ''}>${videoLinkEscape(item.group + ' · ' + item.label)}</option>`).join('')}</select>
     ${form}
-    ${groups || '<div style="padding:32px 12px;text-align:center;color:#64748B;font-size:12px">아직 등록된 전체 영상 링크가 없어요.</div>'}
+    ${cards || '<div style="padding:32px 12px;text-align:center;color:#64748B;font-size:12px">아직 등록된 영상 링크가 없어요. 관리자 또는 개인 일정 호스트는 위에서 날짜를 선택해 등록할 수 있습니다.</div>'}
     <p style="font-size:10px;color:#64748B;margin-top:14px;line-height:1.5">일부 공개 영상은 링크를 아는 사람이 다시 공유할 수 있습니다. 사진 업로드는 추후 제공됩니다.</p>
   </div>`;
 }
