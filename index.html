@@ -672,7 +672,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <h3>🏆 경기 기록</h3>
         <ul>
           <li><b>대진표:</b> 라운드별 코트, 페어, 점수와 경기 상태를 확인합니다.</li>
-          <li><b>경기 영상:</b> <b>홈 → 경기 → 경기 영상</b> 또는 <b>메뉴 → 경기 영상</b>에서 날짜별 영상을 펼쳐 봅니다. 관리자(개인 경기는 호스트)는 날짜를 선택해 경기 목록에서 바로 URL을 등록하거나 전체 영상 링크를 추가할 수 있습니다.</li>
+          <li><b>경기 영상:</b> <b>홈 → 경기 → 경기 영상</b> 또는 <b>메뉴 → 경기 영상</b>에서 날짜별 영상을 펼쳐 봅니다. 관리자(개인 경기는 호스트)는 경기에서 편집 영상 URL, 경기분석 영상 URL, 편집기가 저장한 TBS 경기분석 JSON 로그를 함께 등록할 수 있습니다. 로그의 페어별 득점은 개인별 분석과 하이라이트에 표시되지만 공식 승패·랭킹에는 더하지 않습니다.</li>
           <li><b>랭킹·개인별:</b> 공식 순위와 회원별 정규시즌·이벤트전·개인 경기 기록을 구분하고, 정회원·게스트를 선택해 함께 뛴 페어 전적을 확인합니다.</li>
           <li><b>페어랭킹:</b> 함께 경기한 조합의 성적을 확인합니다.</li>
           <li><b>시즌 리포트:</b> 종료된 시즌의 개인 하이라이트를 확인합니다. 진행 중인 시즌은 종료 후 제공됩니다.</li>
@@ -1760,7 +1760,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.26';
+const APP_VERSION = '1.17.27';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4309,13 +4309,16 @@ function checkedVideoUrl(value) {
     return url.protocol === 'https:' && !url.username && !url.password && url.hostname ? url.href : '';
   } catch (_) { return ''; }
 }
-function matchVideoHtml(kind, recordId, roundIndex, matchIndex, url, canEdit) {
+function matchVideoHtml(kind, recordId, roundIndex, matchIndex, url, canEdit, analysisVideoUrl, videoAnalysis) {
   const href = checkedVideoUrl(url);
+  const analysisHref = checkedVideoUrl(analysisVideoUrl);
   const action = `editMatchVideoLink('${kind}','${recordId}',${roundIndex},'${matchIndex}')`;
-  if (!href && !canEdit) return '';
+  if (!href && !analysisHref && !videoAnalysis && !canEdit) return '';
   return `<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:7px">
-    ${href ? `<a href="${videoLinkEscape(href)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:6px 9px;border:1px solid #93C5FD;border-radius:8px;background:#EFF6FF;color:#1D4ED8;font-size:11px;font-weight:800;text-decoration:none">🎥 경기 영상 보기 ↗</a>` : ''}
-    ${canEdit ? `<button onclick="${action}" style="padding:5px 8px;border:1px solid #CBD5E1;border-radius:7px;background:#fff;color:#475569;font-size:10px;font-weight:800;cursor:pointer">${href ? '✏️ 영상 URL 수정' : '＋ 이 경기 영상 URL 등록'}</button>` : ''}
+    ${href ? `<a href="${videoLinkEscape(href)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:6px 9px;border:1px solid #93C5FD;border-radius:8px;background:#EFF6FF;color:#1D4ED8;font-size:11px;font-weight:800;text-decoration:none">🎬 편집 영상 ↗</a>` : ''}
+    ${analysisHref ? `<a href="${videoLinkEscape(analysisHref)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:6px 9px;border:1px solid #99F6E4;border-radius:8px;background:#F0FDFA;color:#0F766E;font-size:11px;font-weight:800;text-decoration:none">🔎 경기분석 영상 ↗</a>` : ''}
+    ${canEdit ? `<button onclick="${action}" style="padding:5px 8px;border:1px solid #CBD5E1;border-radius:7px;background:#fff;color:#475569;font-size:10px;font-weight:800;cursor:pointer">${href || analysisHref || videoAnalysis ? '✏️ 영상·분석 수정' : '＋ 영상·분석 등록'}</button>` : ''}
+    ${videoAnalysis ? `<details style="width:100%;font-size:10px;color:#475569"><summary style="cursor:pointer;font-weight:800;color:#0F766E">📊 경기분석 로그 · ${Number(videoAnalysis.totalPoints)||0}포인트</summary><div style="margin-top:5px;line-height:1.6">${videoLinkEscape((videoAnalysis.team1Players||[]).join(' / '))} ${Number(videoAnalysis.team1Points)||0}점 · ${videoLinkEscape((videoAnalysis.team2Players||[]).join(' / '))} ${Number(videoAnalysis.team2Points)||0}점<br>최장 연속 득점 ${Math.max(Number(videoAnalysis.team1Streak)||0,Number(videoAnalysis.team2Streak)||0)}점 · 페어 단위 분석 (공식 랭킹 미반영)</div><button onclick="showMatchAnalysisTimeline('${kind}','${recordId}',${roundIndex},'${matchIndex}')" style="margin-top:6px;padding:5px 8px;border:1px solid #99F6E4;border-radius:7px;background:#fff;color:#0F766E;font-size:10px;font-weight:800;cursor:pointer">📋 득점 로그 보기</button></details>` : ''}
   </div>`;
 }
 function fullVideoFolderHtml(kind, record, canEdit) {
@@ -4337,20 +4340,128 @@ function canEditVideoRecord(kind, record) {
   return !!record && (kind === 'personal' ? canManageSchedule(record) : isAdmin);
 }
 function videoCollection(kind) { return kind === 'day' ? 'days' : kind === 'event' ? 'events' : 'schedules'; }
-window.editMatchVideoLink = async function(kind, recordId, roundIndex, matchIndex) {
+function videoMatchForRecord(kind, record, roundIndex, matchIndex) {
+  return kind === 'day' ? record.rounds?.[roundIndex]?.matches?.find(item => item.id === matchIndex)
+    : kind === 'event' ? record.matches?.[matchIndex] : record.gamePairs?.[roundIndex]?.matches?.[matchIndex];
+}
+function videoMatchTeams(kind, match) {
+  return kind === 'event' ? [match.ourPair || [], match.oppPair || []] : [match.team1 || [], match.team2 || []];
+}
+window.closeMatchAnalysisTimeline = function() { document.getElementById('matchAnalysisTimeline')?.remove(); };
+window.showMatchAnalysisTimeline = function(kind, recordId, roundIndex, matchIndex) {
+  const record = videoRecord(kind,recordId);
+  const log = record && videoMatchForRecord(kind,record,roundIndex,matchIndex)?.videoAnalysis;
+  if (!log?.points?.length) return;
+  window.closeMatchAnalysisTimeline();
+  const modal = document.createElement('div');
+  modal.id = 'matchAnalysisTimeline';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:10030;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:14px';
+  modal.innerHTML = `<div style="width:min(100%,520px);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:18px">
+    <div style="font-size:16px;font-weight:900;color:#1E293B">📋 경기분석 득점 로그</div>
+    <div style="font-size:10px;color:#64748B;line-height:1.5;margin:6px 0 12px">영상편집기에서 수동 기록한 페어별 득점 시각입니다. 선수 개인의 타구 기록이나 공식 경기 점수는 아닙니다.</div>
+    ${log.points.map((point,index) => { const seconds=Math.max(0,Math.floor(Number(point.atSeconds)||0)); const team=point.winnerTeam==='team1'?log.team1Players:log.team2Players; return `<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid #EDF3F2;font-size:11px;color:#334155"><b style="width:30px">${index+1}</b><span style="width:45px">${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}</span><span>${videoLinkEscape((team||[]).join(' / '))} 득점</span></div>`; }).join('')}
+    <button onclick="closeMatchAnalysisTimeline()" style="width:100%;margin-top:12px;padding:10px;border:1px solid #CBD5E1;border-radius:9px;background:#F8FAFC;color:#334155;font-weight:800">닫기</button>
+  </div>`;
+  document.body.append(modal);
+};
+function videoAnalysisForRecord(kind, record) {
+  const matches = kind === 'day' ? (record.rounds || []).flatMap(round => round.matches || [])
+    : kind === 'event' ? (record.matches || []) : (record.gamePairs || []).flatMap(round => round.matches || []);
+  return matches.filter(match => match.videoAnalysis?.schemaVersion === '1.0').map(match => ({match,log:match.videoAnalysis}));
+}
+function videoAnalysisHighlightText(kind, record) {
+  const entries = videoAnalysisForRecord(kind,record);
+  if (!entries.length) return '';
+  const points = entries.reduce((sum,item) => sum + (Number(item.log.totalPoints) || 0),0);
+  const longest = Math.max(...entries.map(item => Math.max(Number(item.log.team1Streak)||0,Number(item.log.team2Streak)||0)));
+  return `${entries.length}경기 영상에서 ${points}개 득점 장면을 기록했습니다. 페어의 최장 연속 득점은 ${longest}점입니다.`;
+}
+function videoAnalysisHighlightHtml(kind, record) {
+  const text = videoAnalysisHighlightText(kind,record);
+  return text ? `<div style="font-size:10px;color:#0F766E;line-height:1.6;margin-top:8px;padding:8px;background:#F0FDFA;border:1px solid #99F6E4;border-radius:8px">🎥 영상 분석 하이라이트 · ${videoLinkEscape(text)} <span style="color:#64748B">(페어 단위 · 공식 기록 미반영)</span></div>` : '';
+}
+function normalizeVideoAnalysisLog(raw, kind, match, recordDate) {
+  if (raw?.schema !== 'tbsclub.match-analysis' || raw.schemaVersion !== '1.0' || raw.analysisScope !== 'team_pair' || !Array.isArray(raw.points) || !raw.points.length || raw.points.length > 500) {
+    throw new Error('TBS 영상편집기에서 저장한 경기분석 JSON 파일을 선택해 주세요. (최대 500포인트)');
+  }
+  const importedTeams = [raw.match?.team1Players, raw.match?.team2Players];
+  if (recordDate && raw.match?.date && raw.match.date !== recordDate) throw new Error('분석 로그의 경기 날짜가 선택한 경기 날짜와 달라요.');
+  if (importedTeams.some(team => !Array.isArray(team) || !team.length || team.length > 2 || team.some(name => typeof name !== 'string' || !name.trim() || name.length > 40))) throw new Error('분석 로그의 선수 정보가 올바르지 않아요.');
+  const [actual1, actual2] = videoMatchTeams(kind, match);
+  const key = team => (team || []).map(name => String(name).trim()).sort((a,b) => a.localeCompare(b,'ko')).join('\u0000');
+  if (!((key(importedTeams[0]) === key(actual1) && key(importedTeams[1]) === key(actual2)) || (key(importedTeams[0]) === key(actual2) && key(importedTeams[1]) === key(actual1)))) throw new Error('분석 로그의 선수와 선택한 경기의 페어가 달라요.');
+  let team1Points = 0, team2Points = 0, team1Streak = 0, team2Streak = 0, streakTeam = '', streak = 0;
+  const points = raw.points.map(point => {
+    if (!['team1','team2'].includes(point?.winnerTeam) || !Number.isFinite(Number(point.atSeconds)) || Number(point.atSeconds) < 0 || Number(point.atSeconds) > 86400) throw new Error('분석 로그의 득점 시점이 올바르지 않아요.');
+    if (point.winnerTeam === 'team1') team1Points++; else team2Points++;
+    streak = point.winnerTeam === streakTeam ? streak + 1 : 1;
+    streakTeam = point.winnerTeam;
+    if (streakTeam === 'team1') team1Streak = Math.max(team1Streak,streak); else team2Streak = Math.max(team2Streak,streak);
+    return {atSeconds:Number(point.atSeconds),winnerTeam:point.winnerTeam};
+  });
+  return {schemaVersion:'1.0',attribution:'team_only',reviewStatus:'draft',affectsOfficialRanking:false,
+    team1Players:importedTeams[0].map(name => name.trim()),team2Players:importedTeams[1].map(name => name.trim()),
+    totalPoints:points.length,team1Points,team2Points,team1Streak,team2Streak,points,importedAt:new Date().toISOString()};
+}
+let matchVideoEditContext = null;
+window.closeMatchVideoEditor = function() {
+  document.getElementById('matchVideoEditor')?.remove();
+  matchVideoEditContext = null;
+};
+window.editMatchVideoLink = function(kind, recordId, roundIndex, matchIndex) {
   const record = videoRecord(kind, recordId);
   if (!canEditVideoRecord(kind, record)) return;
-  const match = kind === 'day' ? record.rounds?.[roundIndex]?.matches?.find(item => item.id === matchIndex)
-    : kind === 'event' ? record.matches?.[matchIndex] : record.gamePairs?.[roundIndex]?.matches?.[matchIndex];
+  const match = videoMatchForRecord(kind, record, roundIndex, matchIndex);
   if (!match) { alert('경기를 찾을 수 없어요.'); return; }
-  const entered = prompt('이 경기의 영상 URL을 입력하세요.\n기존 링크를 삭제하려면 내용을 모두 지우고 확인을 누르세요.', match.videoUrl || '');
-  if (entered === null) return;
-  const url = entered.trim();
-  if (url && !checkedVideoUrl(url)) { alert('https://로 시작하는 올바른 영상 URL을 입력해 주세요.'); return; }
-  if (!url && match.videoUrl && !confirm('이 경기의 영상 링크를 삭제할까요?')) return;
+  window.closeMatchVideoEditor();
+  matchVideoEditContext = {kind,recordId,roundIndex,matchIndex,teams:videoMatchTeams(kind,match)};
+  const modal = document.createElement('div');
+  modal.id = 'matchVideoEditor';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:10020;background:rgba(15,23,42,.72);display:flex;align-items:center;justify-content:center;padding:14px';
+  modal.innerHTML = `<div style="width:min(100%,520px);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:18px;box-shadow:0 15px 50px #0005">
+    <div style="font-size:17px;font-weight:900;color:#1E293B">🎥 영상·경기분석 등록</div>
+    <div style="font-size:11px;color:#64748B;margin:6px 0 14px">${videoLinkEscape(matchVideoEditContext.teams[0].join(' / '))} vs ${videoLinkEscape(matchVideoEditContext.teams[1].join(' / '))}</div>
+    <label style="display:block;font-size:11px;font-weight:800;color:#334155;margin-bottom:5px">편집 영상 URL</label><input id="matchEditedVideoUrl" class="row-inp" type="url" inputmode="url" style="width:100%;padding:10px;margin-bottom:12px" placeholder="https://…" value="${videoLinkEscape(match.videoUrl || '')}">
+    <label style="display:block;font-size:11px;font-weight:800;color:#334155;margin-bottom:5px">경기분석 영상 URL (선택)</label><input id="matchAnalysisVideoUrl" class="row-inp" type="url" inputmode="url" style="width:100%;padding:10px;margin-bottom:12px" placeholder="https://…" value="${videoLinkEscape(match.analysisVideoUrl || '')}">
+    <label style="display:block;font-size:11px;font-weight:800;color:#334155;margin-bottom:5px">영상편집기 경기분석 로그 JSON (선택)</label><input id="matchAnalysisFile" type="file" accept=".json,application/json" style="display:block;width:100%;font-size:11px;margin-bottom:8px">
+    <div style="font-size:10px;color:#64748B;line-height:1.6">편집기에서 ‘TBS 경기분석 로그 저장’으로 받은 파일을 선택하세요. 기존 로그는 새 파일을 선택할 때만 교체됩니다. 기록은 페어 단위이며 공식 승패·랭킹은 변경하지 않습니다.</div>
+    ${match.videoAnalysis ? '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#B91C1C;margin-top:10px"><input id="removeMatchAnalysis" type="checkbox"> 기존 분석 로그 삭제</label>' : ''}
+    <div style="display:flex;gap:8px;margin-top:18px"><button onclick="closeMatchVideoEditor()" style="flex:1;padding:11px;border:1px solid #CBD5E1;border-radius:9px;background:#fff;color:#475569;font-weight:800">취소</button><button id="saveMatchVideoButton" onclick="saveMatchVideoPackage()" style="flex:2;padding:11px;border:0;border-radius:9px;background:#0F766E;color:#fff;font-weight:900">저장</button></div>
+  </div>`;
+  document.body.append(modal);
+};
+window.saveMatchVideoPackage = async function() {
+  const context = matchVideoEditContext;
+  if (!context) return;
+  const {kind,recordId,roundIndex,matchIndex} = context;
+  const record = videoRecord(kind,recordId);
+  if (!canEditVideoRecord(kind,record)) return;
+  const match = videoMatchForRecord(kind,record,roundIndex,matchIndex);
+  if (!match) { alert('경기를 찾을 수 없어요.'); return; }
+  const editedInput = document.getElementById('matchEditedVideoUrl')?.value.trim() || '';
+  const analysisInput = document.getElementById('matchAnalysisVideoUrl')?.value.trim() || '';
+  const videoUrl = editedInput ? checkedVideoUrl(editedInput) : '';
+  const analysisVideoUrl = analysisInput ? checkedVideoUrl(analysisInput) : '';
+  if ((editedInput && !videoUrl) || (analysisInput && !analysisVideoUrl)) { alert('https://로 시작하는 올바른 영상 URL을 입력해 주세요.'); return; }
+  const file = document.getElementById('matchAnalysisFile')?.files?.[0];
+  const removeLog = !!document.getElementById('removeMatchAnalysis')?.checked;
+  if (file && removeLog) { alert('새 로그 등록과 기존 로그 삭제를 동시에 선택할 수 없어요.'); return; }
+  if (file && !videoUrl && !analysisVideoUrl) { alert('분석 로그와 함께 볼 영상 URL을 하나 이상 입력해 주세요.'); return; }
+  let importedLog = null;
+  try {
+    if (file) {
+      if (file.size > 256000) throw new Error('분석 로그 파일은 256KB 이하만 등록할 수 있어요.');
+      importedLog = normalizeVideoAnalysisLog(JSON.parse(await file.text()),kind,match,record.date);
+    }
+  } catch (error) { alert('분석 로그를 읽지 못했어요. ' + (error.message || error)); return; }
+  const button = document.getElementById('saveMatchVideoButton');
+  if (button) { button.disabled = true; button.textContent = '저장 중…'; }
   try {
     if (kind === 'day') {
-      await updateDayMatchSafely(recordId, roundIndex, matchIndex, current => ({...current, videoUrl:url}), {history:false});
+      await updateDayMatchSafely(recordId, roundIndex, matchIndex, current => {
+        if (JSON.stringify(videoMatchTeams(kind,current)) !== JSON.stringify(context.teams)) throw new Error('경기 페어가 변경되었습니다. 새로고침 후 다시 시도해 주세요.');
+        return {...current, videoUrl, analysisVideoUrl, videoAnalysis:importedLog || (removeLog ? null : current.videoAnalysis || null)};
+      }, {history:false});
     } else {
       const ref = doc(db, videoCollection(kind), recordId);
       await runTransaction(db, async transaction => {
@@ -4361,21 +4472,23 @@ window.editMatchVideoLink = async function(kind, recordId, roundIndex, matchInde
           const matches = [...(data.matches || [])];
           const current = matches[matchIndex];
           if (!current || JSON.stringify(current.ourPair || []) !== JSON.stringify(match.ourPair || []) || JSON.stringify(current.oppPair || []) !== JSON.stringify(match.oppPair || [])) throw new Error('경기가 변경되었습니다. 새로고침 후 다시 시도해 주세요.');
-          matches[matchIndex] = {...current, videoUrl:url};
+          matches[matchIndex] = {...current, videoUrl, analysisVideoUrl, videoAnalysis:importedLog || (removeLog ? null : current.videoAnalysis || null)};
           transaction.update(ref, {matches});
         } else {
           if (data.ownerUid !== record.ownerUid || data.recordScope !== 'personal') throw new Error('일정이 변경되었습니다.');
           const gamePairs = (data.gamePairs || []).map(round => ({...round, matches:[...(round.matches || [])]}));
           const current = gamePairs[roundIndex]?.matches?.[matchIndex];
           if (!current || JSON.stringify(current.team1 || []) !== JSON.stringify(match.team1 || []) || JSON.stringify(current.team2 || []) !== JSON.stringify(match.team2 || [])) throw new Error('경기가 변경되었습니다. 새로고침 후 다시 시도해 주세요.');
-          gamePairs[roundIndex].matches[matchIndex] = {...current, videoUrl:url};
+          gamePairs[roundIndex].matches[matchIndex] = {...current, videoUrl, analysisVideoUrl, videoAnalysis:importedLog || (removeLog ? null : current.videoAnalysis || null)};
           transaction.update(ref, {gamePairs, updatedAt:serverTimestamp()});
         }
       });
     }
+    window.closeMatchVideoEditor();
     if (document.getElementById('tab-photo')?.style.display !== 'none') renderPhotoTab();
-    alert(url ? '경기 영상 링크를 저장했습니다.' : '경기 영상 링크를 삭제했습니다.');
-  } catch (error) { alert('영상 링크를 저장하지 못했어요. ' + (error.message || error)); }
+    alert('영상 링크와 경기분석 로그를 저장했습니다.');
+  } catch (error) { alert('영상·분석 기록을 저장하지 못했어요. ' + (error.message || error)); }
+  finally { if (button) { button.disabled = false; button.textContent = '저장'; } }
 };
 window.addFullVideoLink = async function(kind, recordId, providedUrl, providedTitle) {
   const record = videoRecord(kind, recordId);
@@ -4562,7 +4675,7 @@ function renderDays() {
           ${resultAuthorHtml}
           ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(13,148,136,0.05);border-radius:7px;border-left:2px solid rgba(13,148,136,0.2)">${evalHtml}</div>`:''}
           ${matchHighlightHtml}
-          ${matchVideoHtml('day',day.id,rIdx,m.id,m.videoUrl,isAdmin)}
+          ${matchVideoHtml('day',day.id,rIdx,m.id,m.videoUrl,isAdmin,m.analysisVideoUrl,m.videoAnalysis)}
           <div style="display:flex;align-items:center;gap:5px;margin-top:8px">
             ${basicInputBtn}${editBtn}${pairEditBtn}${liveBtn}${delBtn}
             <button onclick="toggleMatchCard('${m.id}')" id="marr_${m.id}" style="margin-left:auto;background:none;border:1px solid rgba(50,110,200,0.22);border-radius:7px;color:#64748B;font-size:12px;cursor:pointer;padding:2px 9px;transition:transform 0.2s;flex-shrink:0">⌄</button>
@@ -4625,6 +4738,7 @@ function renderDays() {
           +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px"><div style="font-size:11px;font-weight:800;color:#059669">✨ 시즌 '+(day.season||1)+' '+seasonRoundLabel+' 하이라이트</div><button onclick="shareDayHighlightCard(\''+day.id+'\')" style="border:1px solid rgba(13,148,136,.38);background:#fff;color:#047857;border-radius:8px;padding:5px 8px;font-size:10px;font-weight:800;cursor:pointer">🖼️ 카드 공유</button></div>'
           +chipsHtml
           +(dSummary?'<div style="font-size:11px;color:#475569;line-height:1.7;margin-top:'+(chipsHtml?'8':'0')+'px;padding:8px 10px;background:rgba(13,148,136,0.05);border-radius:8px;border-left:2px solid rgba(13,148,136,0.2)">'+dSummary+'</div>':'')
+          +videoAnalysisHighlightHtml('day',day)
           +'</div>';
       }
     }
@@ -4984,6 +5098,38 @@ window.selectAnalysisPartner = function(partnerName) {
   renderAnalysisDetail();
 };
 
+function collectPlayerVideoAnalysis(name) {
+  const sources = [
+    ...days.map(record => ({kind:'day',record,label:'정규시즌'})),
+    ...events.map(record => ({kind:'event',record,label:'이벤트전'})),
+    ...schedules.filter(record => record.recordScope === 'personal').map(record => ({kind:'personal',record,label:'개인 경기'}))
+  ];
+  return sources.flatMap(source => videoAnalysisForRecord(source.kind,source.record).flatMap(({match,log}) => {
+    const inFirst = (log.team1Players || []).includes(name);
+    const inSecond = (log.team2Players || []).includes(name);
+    if (inFirst === inSecond) return [];
+    return [{date:source.record.date || '',source:source.label,partner:(inFirst ? log.team1Players : log.team2Players).filter(player => player !== name),
+      opponents:inFirst ? log.team2Players : log.team1Players,points:Number(inFirst ? log.team1Points : log.team2Points)||0,
+      conceded:Number(inFirst ? log.team2Points : log.team1Points)||0,streak:Number(inFirst ? log.team1Streak : log.team2Streak)||0,
+      videoUrl:checkedVideoUrl(match.analysisVideoUrl) || checkedVideoUrl(match.videoUrl)}];
+  })).sort((a,b) => b.date.localeCompare(a.date));
+}
+function renderPlayerVideoAnalysis(name) {
+  const entries = collectPlayerVideoAnalysis(name);
+  if (!entries.length) return '';
+  const won = entries.reduce((sum,item) => sum + item.points,0);
+  const conceded = entries.reduce((sum,item) => sum + item.conceded,0);
+  const best = Math.max(...entries.map(item => item.streak));
+  return `<section style="background:#F0FDFA;border:1px solid #99F6E4;border-radius:12px;padding:12px;margin-bottom:14px">
+    <div style="font-size:13px;font-weight:900;color:#0F766E">🎥 ${videoLinkEscape(name)}님의 영상 기반 페어 분석</div>
+    <div style="font-size:10px;color:#64748B;line-height:1.5;margin:5px 0 10px">편집기에서 기록한 득점 로그만 집계합니다. 페어가 만든 팀 기록이며 개인 타구·공식 승패·랭킹에 더하지 않습니다.</div>
+    <div style="font-size:12px;font-weight:800;color:#0F766E">${entries.length}경기 · 함께 획득 ${won}점 · 상대 ${conceded}점 · 최장 ${best}연속 득점</div>
+    <details style="margin-top:9px"><summary style="cursor:pointer;font-size:11px;font-weight:800;color:#0F766E">분석된 경기별 기록 보기</summary>
+      ${entries.map(item => `<div style="padding:8px 0;border-top:1px solid #CCFBF1;font-size:10px;color:#475569"><b>${videoLinkEscape(item.date)} · ${videoLinkEscape(item.source)}</b><div style="margin-top:3px">함께 뛴 페어: ${videoLinkEscape(item.partner.join(' / ') || '단식')} · 상대: ${videoLinkEscape(item.opponents.join(' / '))}</div><div>페어 득점 ${item.points} : ${item.conceded} · 최장 ${item.streak}연속 득점 ${item.videoUrl ? `· <a href="${videoLinkEscape(item.videoUrl)}" target="_blank" rel="noopener noreferrer" style="color:#0F766E;font-weight:800">영상 보기 ↗</a>` : ''}</div></div>`).join('')}
+    </details>
+  </section>`;
+}
+
 function renderAnalysisPartnerPanel(name, sourceMatches, sourceMeta) {
   const allMatches = sourceMeta.flatMap(meta => sourceMatches[meta.key].map(match => ({...match, source:meta.key, sourceLabel:meta.label})));
   const pairedCounts = new Map();
@@ -5143,6 +5289,7 @@ window.renderAnalysisDetail = function() {
       }).join('')}</div>
       <div style="font-size:10px;color:#64748B;margin-top:9px">과거 경기는 저장된 선수 이름으로 연결됩니다. 동명이인·이름 변경 기록은 확인이 필요할 수 있어요.</div>
     </div>
+    ${renderPlayerVideoAnalysis(name)}
     ${renderAnalysisPartnerPanel(name,sourceMatches,sourceMeta)}
     ${analysisSourceView==='regular'?'':renderAnalysisSourcePanel(analysisSourceView,sourceMatches[analysisSourceView])}
     <div style="display:${analysisSourceView==='regular'?'block':'none'}">
@@ -6338,6 +6485,8 @@ async function _drawDayHighlightCard(day,badges,summary,canvas) {
   _cardRoundRect(ctx,102,932,876,226,20);ctx.fillStyle='rgba(1,14,30,.82)';ctx.fill();ctx.strokeStyle='#E8C56A';ctx.lineWidth=2;ctx.stroke();
   ctx.textAlign='left';ctx.fillStyle='rgba(255,255,255,.94)';ctx.font='500 27px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';
   const lines=_cardWrap(ctx,summary,790).slice(0,5);const lineH=39,startY=990+(5-lines.length)*8;lines.forEach((line,i)=>ctx.fillText(line,145,startY+i*lineH));
+  const videoSummary=videoAnalysisHighlightText('day',day);
+  if(videoSummary){ctx.textAlign='center';ctx.fillStyle='#A7F3D0';const size=_fitHighlightText(ctx,'🎥 '+videoSummary,820,22,16,700);ctx.font=`700 ${size}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText('🎥 '+videoSummary,540,1190);}
   ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='800 27px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('AFTER MATCH, START AGAIN',540,1228);
   ctx.fillStyle='rgba(255,255,255,.92)';ctx.font='600 24px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('경기가 끝나도 우리의 즐거움은 시작',540,1273);
   return canvas;
@@ -6439,7 +6588,8 @@ async function drawPartnershipEventHighlightCard(ev, data, canvas) {
   const rankRows=Math.max(1,ranking.length);
   const rankingHeight=72+rankRows*58;
   const summaryY=650+rankingHeight;
-  const cardHeight=Math.max(1350,summaryY+315);
+  const videoSummary=videoAnalysisHighlightText('event',ev);
+  const cardHeight=Math.max(1350,summaryY+315+(videoSummary?45:0));
   canvas.width = 1080; canvas.height = cardHeight;
   const ctx = canvas.getContext('2d');
   try {
@@ -6479,6 +6629,7 @@ async function drawPartnershipEventHighlightCard(ev, data, canvas) {
   const summary=getPartnershipEventHighlightSummary(ev,data);
   ctx.fillStyle='#0F766E';ctx.font='800 21px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('✨ 경기 총평',160,summaryY+43);
   ctx.fillStyle='#40586A';ctx.font='500 22px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';_cardWrap(ctx,summary,730).slice(0,4).forEach((line,index)=>ctx.fillText(line,160,summaryY+83+index*28));
+  if(videoSummary){ctx.textAlign='center';ctx.fillStyle='#0F766E';const size=_fitHighlightText(ctx,'🎥 '+videoSummary,800,21,16,700);ctx.font=`700 ${size}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText('🎥 '+videoSummary,540,summaryY+210);}
   // 영문 슬로건과 한글 문구를 같은 카드 안에서 또렷하게 한 쌍으로 배치한다.
   ctx.textAlign='center';ctx.fillStyle='#185B5A';ctx.font='800 25px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('TOGETHER, WE PLAY BETTER',540,cardHeight-115);
   ctx.fillStyle='#185B5A';ctx.font='600 21px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('좋은 파트너와 함께 만든 최고의 세트',540,cardHeight-72);
@@ -6623,7 +6774,7 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
     ${genderNoticeHtml}
     ${resultAuthorHtml}
     ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(109,40,217,0.05);border-radius:7px;border-left:2px solid rgba(109,40,217,0.2)">${evalHtml}</div>`:''}
-    ${matchVideoHtml('event',evId,0,mi,m.videoUrl,isAdmin)}
+    ${matchVideoHtml('event',evId,0,mi,m.videoUrl,isAdmin,m.analysisVideoUrl,m.videoAnalysis)}
     ${isMember?`<div style="display:flex;gap:5px;margin-top:8px">
       <button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button>
       <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#059669" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${isMonthlyTeamBattle?'백팀':isInternalEvent?'팀2':'상대팀'} 수정</button>
@@ -6874,6 +7025,7 @@ window.openEvScoreboard=function(evId, adminContext){
     ${monthlyRankSec}
     ${couplesRankSec}
     ${partnershipHighlightSec}
+    ${videoAnalysisHighlightHtml('event',ev)}
     ${gameCntSec}
     ${statSec}
     ${oppStatSec}
@@ -11474,6 +11626,7 @@ function renderHomeTab() {
     eventHighlightHtml='<div style="background:#FFFDF7;border:1px solid rgba(180,120,20,.38);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 5px 16px rgba(120,80,10,.14)">'
       +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:3px 3px 9px"><div style="font-size:13px;font-weight:900;color:#9A3412">🎉 이벤트전 하이라이트</div><span style="font-size:10px;font-weight:800;color:#0F766E;background:#CCFBF1;border-radius:999px;padding:3px 7px">파트너십 리그</span></div>'
       +'<canvas data-event-highlight-card="'+_homeFeaturedEvent.id+'" onclick="openEventDetail(\''+_homeFeaturedEvent.id+'\',false)" width="1080" height="1350" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto;border-radius:12px;cursor:pointer;background:#EAFBF8"></canvas>'
+      +videoAnalysisHighlightHtml('event',_homeFeaturedEvent)
       +'<div style="display:flex;gap:7px;margin-top:9px"><button onclick="openEventDetail(\''+_homeFeaturedEvent.id+'\',false)" style="flex:1;border:1px solid #D6B76A;background:#fff;color:#9A3412;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">이벤트 상세보기</button><button onclick="shareEventHighlightCard(\''+_homeFeaturedEvent.id+'\')" style="flex:1;border:none;background:#B45309;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button></div>'
       +'</div>';
   }
@@ -11494,6 +11647,7 @@ function renderHomeTab() {
       regularHighlightHtml='<div style="background:#F7FBFA;border:1px solid rgba(13,148,136,.25);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 5px 16px rgba(6,48,71,.12)">'
         +'<div style="font-size:13px;font-weight:900;color:#0F766E;padding:3px 3px 9px">🏆 최신 정규시즌 하이라이트</div>'
         +'<canvas data-day-highlight-card="'+_hDay.id+'" onclick="goToGameDay(\''+_hDay.id+'\')" width="1080" height="1350" style="display:block;width:100%;max-width:520px;height:auto;aspect-ratio:4/5;margin:0 auto;border-radius:12px;cursor:pointer;background:#061C2D"></canvas>'
+        +videoAnalysisHighlightHtml('day',_hDay)
         +'<div style="display:flex;gap:7px;margin-top:9px"><button onclick="goToGameDay(\''+_hDay.id+'\')" style="flex:1;border:1px solid #B7DBD7;background:#fff;color:#0F766E;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">경기 상세보기</button><button onclick="shareDayHighlightCard(\''+_hDay.id+'\')" style="flex:1;border:none;background:#0F766E;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button></div>'
         +'</div>';
     }
@@ -11664,28 +11818,28 @@ function photoVideoMatches(entry) {
   if (kind === 'day') {
     (record.rounds || []).forEach((round, roundIndex) => (round.matches || []).forEach((match, matchIndex) => {
       if (match.isRally || ['랠리','휴식'].includes(match.tag)) return;
-      rows.push({roundIndex, matchIndex:match.id, label:`${roundIndex+1}라운드 · ${matchIndex+1}경기${match.court?' · '+match.court:''}`, team1:match.team1 || [], team2:match.team2 || [], score1:match.score1, score2:match.score2, done:!!match.done, url:match.videoUrl});
+      rows.push({roundIndex, matchIndex:match.id, label:`${roundIndex+1}라운드 · ${matchIndex+1}경기${match.court?' · '+match.court:''}`, team1:match.team1 || [], team2:match.team2 || [], score1:match.score1, score2:match.score2, done:!!match.done, url:match.videoUrl, analysisVideoUrl:match.analysisVideoUrl, videoAnalysis:match.videoAnalysis});
     }));
   } else if (kind === 'event') {
-    (record.matches || []).forEach((match, matchIndex) => rows.push({roundIndex:0, matchIndex, label:`${match.round || 1}라운드${match.court?' · '+match.court+'코트':''}`, team1:match.ourPair || [], team2:match.oppPair || [], score1:match.ourScore, score2:match.oppScore, done:match.ourScore != null && match.ourScore !== '' && match.oppScore != null && match.oppScore !== '', url:match.videoUrl}));
+    (record.matches || []).forEach((match, matchIndex) => rows.push({roundIndex:0, matchIndex, label:`${match.round || 1}라운드${match.court?' · '+match.court+'코트':''}`, team1:match.ourPair || [], team2:match.oppPair || [], score1:match.ourScore, score2:match.oppScore, done:match.ourScore != null && match.ourScore !== '' && match.oppScore != null && match.oppScore !== '', url:match.videoUrl, analysisVideoUrl:match.analysisVideoUrl, videoAnalysis:match.videoAnalysis}));
   } else {
     let gameNo = 0;
     (record.gamePairs || []).forEach((round, roundIndex) => (round.matches || []).forEach((match, matchIndex) => {
       gameNo++;
-      rows.push({roundIndex, matchIndex, label:`${gameNo}게임${match.type?' · '+match.type:''}`, team1:match.team1 || [], team2:match.team2 || [], score1:match.score1, score2:match.score2, done:match.score1 != null && match.score2 != null, url:match.videoUrl});
+      rows.push({roundIndex, matchIndex, label:`${gameNo}게임${match.type?' · '+match.type:''}`, team1:match.team1 || [], team2:match.team2 || [], score1:match.score1, score2:match.score2, done:match.score1 != null && match.score2 != null, url:match.videoUrl, analysisVideoUrl:match.analysisVideoUrl, videoAnalysis:match.videoAnalysis});
     }));
   }
   return rows;
 }
 function photoVideoHasLinks(entry) {
-  return (entry.record.fullVideoLinks || []).some(link => checkedVideoUrl(link.url)) || photoVideoMatches(entry).some(match => checkedVideoUrl(match.url));
+  return (entry.record.fullVideoLinks || []).some(link => checkedVideoUrl(link.url)) || photoVideoMatches(entry).some(match => checkedVideoUrl(match.url) || checkedVideoUrl(match.analysisVideoUrl) || match.videoAnalysis);
 }
 function photoVideoMatchHtml(entry, match, canEdit) {
   const score = match.done ? `${videoLinkEscape(match.score1)} : ${videoLinkEscape(match.score2)}` : 'VS';
   return `<div style="padding:9px 10px;border:1px solid #E0EAF2;border-radius:9px;background:#fff;margin-top:6px">
     <div style="font-size:10px;color:#64748B;font-weight:800">🎾 ${videoLinkEscape(match.label)}</div>
     <div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:7px;align-items:center;margin-top:5px;font-size:11px"><b style="color:#1D4ED8;overflow-wrap:anywhere">${videoLinkEscape(match.team1.join(' / ') || 'A팀')}</b><b style="color:#64748B">${score}</b><b style="color:#BE185D;text-align:right;overflow-wrap:anywhere">${videoLinkEscape(match.team2.join(' / ') || 'B팀')}</b></div>
-    ${matchVideoHtml(entry.kind,entry.record.id,match.roundIndex,match.matchIndex,match.url,canEdit)}
+    ${matchVideoHtml(entry.kind,entry.record.id,match.roundIndex,match.matchIndex,match.url,canEdit,match.analysisVideoUrl,match.videoAnalysis)}
   </div>`;
 }
 window.savePhotoFullVideo = async function() {
@@ -11718,17 +11872,17 @@ function renderPhotoTab() {
   const visible = selected ? [selected] : all.filter(photoVideoHasLinks);
   const cards = visible.map(item => {
     const canEdit = !!selected && canEditVideoRecord(item.kind,item.record);
-    const matches = photoVideoMatches(item).filter(match => canEdit || checkedVideoUrl(match.url));
+    const matches = photoVideoMatches(item).filter(match => canEdit || checkedVideoUrl(match.url) || checkedVideoUrl(match.analysisVideoUrl) || match.videoAnalysis);
     const fullLinks = (item.record.fullVideoLinks || []).filter(link => checkedVideoUrl(link.url)).length;
     const cardKey = item.kind + ':' + item.record.id;
-    return `<details class="photo-video-card" data-key="${videoLinkEscape(cardKey)}" ${selected || openedCards.has(cardKey) ? 'open' : ''} style="border:1px solid #D8E7EF;border-radius:12px;background:#fff;margin-top:9px;overflow:hidden"><summary style="cursor:pointer;padding:11px 12px;font-size:12px;font-weight:900;color:#1E293B;background:#F5FAFA">${videoLinkEscape(item.group)} · ${videoLinkEscape(item.label)} <span style="color:#64748B;font-size:10px;font-weight:600">영상 ${fullLinks + matches.filter(match => checkedVideoUrl(match.url)).length}개 · 눌러서 펼치기/접기</span></summary><div style="padding:8px 11px 12px">
+    return `<details class="photo-video-card" data-key="${videoLinkEscape(cardKey)}" ${selected || openedCards.has(cardKey) ? 'open' : ''} style="border:1px solid #D8E7EF;border-radius:12px;background:#fff;margin-top:9px;overflow:hidden"><summary style="cursor:pointer;padding:11px 12px;font-size:12px;font-weight:900;color:#1E293B;background:#F5FAFA">${videoLinkEscape(item.group)} · ${videoLinkEscape(item.label)} <span style="color:#64748B;font-size:10px;font-weight:600">영상·분석 ${fullLinks + matches.filter(match => checkedVideoUrl(match.url) || checkedVideoUrl(match.analysisVideoUrl) || match.videoAnalysis).length}경기 · 눌러서 펼치기/접기</span></summary><div style="padding:8px 11px 12px">
       ${fullLinks ? fullVideoFolderHtml(item.kind,item.record,canEdit) : ''}
       ${matches.length ? `<div style="font-size:11px;font-weight:900;color:#0F766E;margin-top:9px">🎾 경기별 영상${canEdit ? ' · 아래 경기에서 URL 등록' : ''}</div>${matches.map(match => photoVideoMatchHtml(item,match,canEdit)).join('')}` : `<div style="font-size:11px;color:#94A3B8;margin-top:8px">${canEdit ? '등록할 경기가 아직 없습니다.' : '경기별 영상은 아직 없습니다.'}</div>`}
     </div></details>`;
   }).join('');
   el.innerHTML = `<div class="admin-sec" style="max-width:900px;margin:12px auto;padding:16px">
     <h2 style="font-size:18px;color:#1E293B">🎥 경기 영상</h2>
-    <p style="font-size:11px;color:#64748B;line-height:1.6;margin-top:7px">영상이 있는 경기는 여기에서 바로 볼 수 있습니다. URL을 등록하려면 날짜를 선택한 뒤 아래 경기 목록에서 버튼을 누르세요.</p>
+    <p style="font-size:11px;color:#64748B;line-height:1.6;margin-top:7px">편집 영상과 경기분석 영상을 여기에서 볼 수 있습니다. 날짜를 선택한 뒤 경기 목록의 ‘영상·분석 등록’에서 영상 URL과 편집기 JSON 분석 로그를 함께 등록하세요.</p>
     <select id="photoVideoTarget" onchange="selectPhotoVideoTarget(this.value)" class="row-inp" style="width:100%;margin-top:12px;padding:10px"><option value="">모든 등록 영상 보기</option>${available.map(item => `<option value="${videoLinkEscape(item.kind + ':' + item.record.id)}"${selected === item ? ' selected' : ''}>${videoLinkEscape(item.group + ' · ' + item.label)}</option>`).join('')}</select>
     ${form}
     ${cards ? '<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:10px"><button onclick="togglePhotoVideoCards(true)" style="padding:6px 9px;border:1px solid #C8E0DE;border-radius:7px;background:#fff;color:#0F766E;font-size:10px;font-weight:800;cursor:pointer">모두 펼치기</button><button onclick="togglePhotoVideoCards(false)" style="padding:6px 9px;border:1px solid #C8E0DE;border-radius:7px;background:#fff;color:#0F766E;font-size:10px;font-weight:800;cursor:pointer">모두 접기</button></div>' : ''}
@@ -12433,7 +12587,7 @@ function getPersonalScheduleHighlightData(schedule) {
   const summary = leader && leader.wins
     ? `${leader.names.join(' · ')} 페어가 ${leader.wins}승으로 좋은 호흡을 보여줬습니다.${closeGames ? ` ${closeGames}경기는 두 점 차 이내의 접전이었습니다.` : ' 함께 만든 플레이가 경기의 흐름을 이끌었습니다.'}`
     : `${scored.length}경기 동안 서로 다른 페어가 호흡을 맞췄습니다.${closeGames ? ` ${closeGames}경기는 두 점 차 이내의 접전이었습니다.` : ' 다음 경기를 위한 경험을 쌓았습니다.'}`;
-  return {planned:matches.length, completed:scored.length, pairs:ranking, leader, summary};
+  return {planned:matches.length, completed:scored.length, pairs:ranking, leader, summary, videoSummary:videoAnalysisHighlightText('personal',schedule)};
 }
 
 function drawPersonalScheduleHighlightCard(schedule, data, canvas) {
@@ -12462,7 +12616,8 @@ function drawPersonalScheduleHighlightCard(schedule, data, canvas) {
   ctx.font = '600 24px Arial, sans-serif'; ctx.fillText('완료 경기',965,410);
   ctx.textAlign = 'left'; ctx.fillStyle = '#E6FFFB'; ctx.font = '500 25px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';
   _cardWrap(ctx,data.summary,900).slice(0,3).forEach((line,index) => ctx.fillText(line,88,510 + index*34));
-  ctx.fillStyle = '#A7F3D0'; ctx.font = '700 23px Arial, sans-serif'; ctx.fillText(data.completed < data.planned ? '진행 중인 일정 · 기록된 경기 기준' : '함께한 오늘의 경기를 기억합니다',88,625);
+  ctx.fillStyle = '#A7F3D0'; ctx.font = '700 23px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';
+  ctx.fillText(data.videoSummary ? data.videoSummary.slice(0,52) : data.completed < data.planned ? '진행 중인 일정 · 기록된 경기 기준' : '함께한 오늘의 경기를 기억합니다',88,625);
   return canvas;
 }
 
@@ -12707,7 +12862,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
           <span style="font-weight:800;color:#1D4ED8"><small style="display:block;color:#2563EB">A팀</small>${(match.team1 || []).join(' / ')}${positionText(match.team1||[])?`<small style="display:block;color:#64748B;font-weight:500">${positionText(match.team1||[])}</small>`:''}</span>
           <span style="font-weight:900;color:${done?'#0F766E':'#94A3B8'};white-space:nowrap">${done ? `${match.score1} : ${match.score2}` : 'VS'}</span>
           <span style="font-weight:800;color:#BE185D;text-align:right"><small style="display:block;color:#DB2777">B팀</small>${(match.team2 || []).join(' / ')}${positionText(match.team2||[])?`<small style="display:block;color:#64748B;font-weight:500">${positionText(match.team2||[])}</small>`:''}</span>
-        </div>${matchVideoHtml('personal',schedule.id,roundIndex,matchIndex,match.videoUrl,canManage)}${canManage ? `<div style="display:flex;gap:5px;margin:2px 0 5px"><button onclick="openMeetupScore('${schedule.id}',${roundIndex},${matchIndex})" style="flex:1;padding:5px;border:1px solid #C4B5FD;background:#fff;color:#6D28D9;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">${done?'점수·포백 수정':'점수·포백 입력'}</button><button onclick="deletePersonalGame('${schedule.id}',${roundIndex},${matchIndex})" style="padding:5px 8px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">경기 삭제</button></div>` : ''}`;
+        </div>${matchVideoHtml('personal',schedule.id,roundIndex,matchIndex,match.videoUrl,canManage,match.analysisVideoUrl,match.videoAnalysis)}${canManage ? `<div style="display:flex;gap:5px;margin:2px 0 5px"><button onclick="openMeetupScore('${schedule.id}',${roundIndex},${matchIndex})" style="flex:1;padding:5px;border:1px solid #C4B5FD;background:#fff;color:#6D28D9;font-size:10px;font-weight:800;cursor:pointer">${done?'점수·포백 수정':'점수·포백 입력'}</button><button onclick="deletePersonalGame('${schedule.id}',${roundIndex},${matchIndex})" style="padding:5px 8px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">경기 삭제</button></div>` : ''}`;
       }).join('');
       return games;
     }).join('');
@@ -12724,7 +12879,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
         <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name}${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
       </div>
       ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록 · ${gameNumber}게임</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">게임 수를 바꾸려면 경기를 추가하거나 각 경기의 삭제 버튼을 누르세요.</div>${canManage ? `<button onclick="openPersonalManualGame('${schedule.id}')" style="width:100%;margin-top:8px;padding:8px;border:1px solid #6EE7B7;background:#ECFDF5;color:#047857;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">＋ 수동 경기 추가</button>` : ''}${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>` : ''}
-      ${highlightData ? `<div style="margin-top:11px;padding:9px;background:#F0FDFA;border:1px solid #99DCCF;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px"><b style="font-size:11px;color:#0F766E">✨ 개인 일정 하이라이트</b><button onclick="sharePersonalScheduleHighlightCard('${schedule.id}')" style="padding:6px 8px;border:1px solid #0F766E;background:#fff;color:#0F766E;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🖼️ 카드 공유</button></div><canvas data-personal-schedule-highlight="${schedule.id}" width="1080" height="680" style="display:block;width:100%;height:auto;border-radius:8px;background:#0C766E"></canvas><div style="font-size:10px;color:#475569;line-height:1.5;margin-top:7px">${personalGameEscape(highlightData.summary)}</div></div>` : ''}
+      ${highlightData ? `<div style="margin-top:11px;padding:9px;background:#F0FDFA;border:1px solid #99DCCF;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px"><b style="font-size:11px;color:#0F766E">✨ 개인 일정 하이라이트</b><button onclick="sharePersonalScheduleHighlightCard('${schedule.id}')" style="padding:6px 8px;border:1px solid #0F766E;background:#fff;color:#0F766E;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🖼️ 카드 공유</button></div><canvas data-personal-schedule-highlight="${schedule.id}" width="1080" height="680" style="display:block;width:100%;height:auto;border-radius:8px;background:#0C766E"></canvas><div style="font-size:10px;color:#475569;line-height:1.5;margin-top:7px">${personalGameEscape(highlightData.summary)}</div>${videoAnalysisHighlightHtml('personal',schedule)}</div>` : videoAnalysisHighlightHtml('personal',schedule)}
       ${canManage ? `<button onclick="deletePersonalSchedule('${schedule.id}')" style="display:block;margin:11px 0 0 auto;padding:6px 9px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🗑️ 일정 삭제</button>` : ''}
       </div>
     </article>`;
@@ -12775,6 +12930,7 @@ function renderSchedules() {
         const detailLabel=isEventHighlight?'이벤트 상세보기':'경기 상세보기';
         return `<div style="background:#F7FBFA;border:1px solid rgba(13,148,136,.28);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 4px 14px rgba(15,118,110,.08)">
           <canvas ${canvasAttr}="${sourceId}" onclick="openClubNewsItem('${openType}','${sourceId}')" width="1080" height="1350" style="display:block;width:100%;max-width:430px;height:auto;margin:0 auto;border-radius:12px;cursor:pointer;background:#EAFBF8"></canvas>
+          ${videoAnalysisHighlightHtml(isEventHighlight?'event':'day',item.source)}
           <div style="display:flex;gap:7px;margin-top:9px">
             <button onclick="openClubNewsItem('${openType}','${sourceId}')" style="flex:1;border:1px solid #B7DBD7;background:#fff;color:#0F766E;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">${detailLabel}</button>
             <button onclick="${shareAction}" style="flex:1;border:none;background:#0F766E;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button>
