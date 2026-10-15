@@ -1764,7 +1764,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.29';
+const APP_VERSION = '1.17.30';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -2360,7 +2360,7 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
     if(m&&f&&!seedM.has(m)&&!seedF.has(f)){ seeds.push([m,f]); seedM.add(m); seedF.add(f); }
   });
 
-  let best = { pairs:[], bad:Infinity, todayDup:Infinity, previousDup:Infinity, pastDup:Infinity };
+  let best = { pairs:[], todayDup:Infinity, previousDup:Infinity, pastDup:Infinity };
   for (let attempt=0; attempt<200; attempt++) {
     const ms = shuffle(males.filter(x=>!seedM.has(x)));
     const fs = shuffle(females.filter(x=>!seedF.has(x)));
@@ -2382,10 +2382,9 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
         const _min = Math.min(..._base.map(f => _pCnt(m,f)));
         candidates = _base.filter(f => _pCnt(m,f) === _min);
       } else {
-        // c3/c4: 폴백 (당일 중복 허용)
+        // 당일 중복은 허용할 수 있어도 금지 페어는 허용하지 않는다.
         const _c3 = fs.filter(f => !usedF.has(f) && !isBan(m,f));
-        const _c4 = fs.filter(f => !usedF.has(f));
-        candidates = _c3.length ? _c3 : _c4;
+        candidates = _c3;
       }
       if (candidates.length === 0) break;
       const pick = candidates[Math.floor(Math.random()*candidates.length)];
@@ -2393,22 +2392,42 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
       usedM.add(m); usedF.add(pick);
     }
 
-    // 시드(지정)는 강제이므로 평가 제외, 자유 페어만 위반 평가
+    if(pairs.length!==males.length)continue;
+    // 시드(지정)는 강제이므로 평가 제외, 자유 페어만 중복 평가
     const freePairs = pairs.slice(seeds.length);
-    const bad = freePairs.filter(p=>isBan(p[0],p[1])).length;
     const todayDup = freePairs.filter(p=>todayPairs.has(dayPairKey(p[0],p[1]))).length;
     const previousDup = freePairs.filter(p=>previousPairs.has(dayPairKey(p[0],p[1]))).length;
     // pastDup: 시즌 내 함께한 횟수 합산 (많을수록 페널티)
     const pastDup = freePairs.reduce((s,p) => s + _pCnt(p[0],p[1]), 0);
 
-    if (bad < best.bad ||
-        (bad===best.bad && (todayDup < best.todayDup ||
+    if (todayDup < best.todayDup ||
         (todayDup === best.todayDup && (previousDup < best.previousDup ||
-        (previousDup === best.previousDup && pastDup < best.pastDup)))))) {
-      best = { pairs:[...pairs], bad, todayDup, previousDup, pastDup };
-      if (bad===0 && todayDup===0 && previousDup===0 && pastDup===0) break;
+        (previousDup === best.previousDup && pastDup < best.pastDup)))) {
+      best = { pairs:[...pairs], todayDup, previousDup, pastDup };
+      if (todayDup===0 && previousDup===0 && pastDup===0) break;
     }
   }
+  if(best.pairs.length!==males.length){
+    // 무작위 탐색이 드문 유효 조합을 놓치면 금지 조건을 지키며 완전 탐색한다.
+    const freeF=females.filter(name=>!seedF.has(name));
+    const freeM=males.filter(name=>!seedM.has(name)).sort((a,b)=>
+      freeF.filter(woman=>!isBan(a,woman)).length-freeF.filter(woman=>!isBan(b,woman)).length);
+    const search=(index,available,chosen)=>{
+      if(index===freeM.length)return chosen;
+      const man=freeM[index];
+      const options=shuffle(available.filter(woman=>!isBan(man,woman))).sort((a,b)=>
+        (todayPairs.has(dayPairKey(man,a))?100:0)+_pCnt(man,a)-
+        ((todayPairs.has(dayPairKey(man,b))?100:0)+_pCnt(man,b)));
+      for(const woman of options){
+        const found=search(index+1,available.filter(name=>name!==woman),[...chosen,[man,woman]]);
+        if(found)return found;
+      }
+      return null;
+    };
+    const fallback=search(0,freeF,[]);
+    if(fallback)best.pairs=[...seeds,...fallback];
+  }
+  if(best.pairs.length!==males.length)throw new Error('혼복 금지 페어 조건으로 모든 선수를 배정할 수 없어요. 금지·지정 페어를 확인해주세요.');
   return best.pairs;
 }
 
@@ -2428,7 +2447,7 @@ function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtName
     }
   });
 
-  let best = { matches:[], bad:Infinity, todayDup:Infinity, pastDupSum:Infinity };
+  let best = { matches:[], todayDup:Infinity, pastDupSum:Infinity };
   for (let attempt=0; attempt<80; attempt++) {
     const rest = shuffle(pool.filter(p=>!usedSeed.has(p)));
     const teams = seedTeams.map(t=>[...t]);
@@ -2448,30 +2467,52 @@ function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtName
         const _min = Math.min(..._base.map(p => _pCnt(a,p)));
         cands = _base.filter(p => _pCnt(a,p) === _min);
       } else {
-        // c3/c4: 폴백 (당일 중복 허용)
-        const _c3 = rest.filter(p=>p!==a && !used.has(p) && !isBan(a,p));
-        cands = _c3.length ? _c3 : rest.filter(p=>p!==a && !used.has(p));
+        // 당일 중복은 허용할 수 있어도 금지 페어는 허용하지 않는다.
+        cands = rest.filter(p=>p!==a && !used.has(p) && !isBan(a,p));
       }
       if(!cands.length) break;
       const partner = cands[Math.floor(Math.random()*cands.length)];
       teams.push([a,partner]); used.add(a); used.add(partner);
     }
+    if(teams.length!==pool.length/2)continue;
     // 팀들을 상대전적 최소화하며 매치업으로 짝짓기
     const matches = (pastOpp && todayOpp) ? matchUpUnits(teams, pastOpp, todayOpp, teamMatchCounts)
       : teams.reduce((acc,t,i,arr)=>{ if(i%2===0 && arr[i+1]) acc.push({team1:t,team2:arr[i+1]}); return acc; }, []);
 
     const freeTeams = teams.slice(seedTeams.length);
-    const bad = freeTeams.filter(t=>isBan(t[0],t[1])).length;
     const todayDup = teams.reduce((acc,t)=> acc + (todayPairs.has(dayPairKey(t[0],t[1]))?1:0), 0);
     // pastDupSum: 시즌 내 함께한 횟수 합산 (많을수록 페널티)
     const pastDupSum = freeTeams.reduce((s,t) => s + _pCnt(t[0],t[1]), 0);
 
-    if (bad < best.bad || (bad===best.bad && todayDup < best.todayDup) ||
-        (bad===best.bad && todayDup===best.todayDup && pastDupSum < best.pastDupSum)) {
-      best = { matches, bad, todayDup, pastDupSum };
-      if (bad===0 && todayDup===0 && pastDupSum===0) break;
+    if (todayDup < best.todayDup || (todayDup===best.todayDup && pastDupSum < best.pastDupSum)) {
+      best = { matches, todayDup, pastDupSum };
+      if (todayDup===0 && pastDupSum===0) break;
     }
   }
+  if(best.matches.length!==numCourts){
+    const free=pool.filter(name=>!usedSeed.has(name));
+    let searched=0;
+    const search=(remaining,teams)=>{
+      if(!remaining.length)return teams;
+      if(++searched>30000)return null;
+      const first=[...remaining].sort((a,b)=>
+        remaining.filter(name=>name!==a&&!isBan(a,name)).length-
+        remaining.filter(name=>name!==b&&!isBan(b,name)).length)[0];
+      const options=shuffle(remaining.filter(name=>name!==first&&!isBan(first,name))).sort((a,b)=>
+        (todayPairs.has(dayPairKey(first,a))?100:0)+_pCnt(first,a)-
+        ((todayPairs.has(dayPairKey(first,b))?100:0)+_pCnt(first,b)));
+      for(const partner of options){
+        const found=search(remaining.filter(name=>name!==first&&name!==partner),[...teams,[first,partner]]);
+        if(found)return found;
+      }
+      return null;
+    };
+    const fallback=search(free,seedTeams.map(team=>[...team]));
+    if(fallback)best.matches=(pastOpp&&todayOpp)
+      ?matchUpUnits(fallback,pastOpp,todayOpp,teamMatchCounts)
+      :fallback.reduce((out,team,i)=>{if(i%2===0&&fallback[i+1])out.push({team1:team,team2:fallback[i+1]});return out},[]);
+  }
+  if(best.matches.length!==numCourts)throw new Error(`${tag} 금지 페어 조건으로 모든 코트를 배정할 수 없어요. 금지·지정 페어를 확인해주세요.`);
   return best.matches;
 }
 window.selectGender = function(g) {
@@ -3131,11 +3172,11 @@ function generateOneRoundByType(type, numCourts) {
 }
 
 // ── 코트별 방식으로 한 라운드 생성 (커플/중복 회피) ──────────────
-function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
+function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule, history) {
   const pool = dayId ? getAttendees(dayId) : allPlayers();
   const _gcDay = days.find(d=>d.id===dayId);
   const courtLabels = (_gcDay && _gcDay.courtNumbers && _gcDay.courtNumbers.length) ? _gcDay.courtNumbers : COURT_NAMES;
-  const allPastPairs = getPastPairCounts(currentSeason);
+  const allPastPairs = history?.pastPairs||getPastPairCounts(currentSeason);
   const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
   const previousMatches = (generatedAllRounds[rIdx]?.matches||[]).filter(m=>m.tag==='혼복');
   const previousMixedPairs = new Set(previousMatches.flatMap(m=>[m.team1,m.team2])
@@ -3150,6 +3191,8 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   const genderOf = {}; pool.forEach(p=>{ genderOf[p.name]=p.gender; });
   const attendNames = new Set(pool.map(p=>p.name));
   const fixAll = getDayFixPairs(dayId).filter(p=>attendNames.has(p[0])&&attendNames.has(p[1]));
+  const conflictingFix=fixAll.find(p=>banSet.has(dayPairKey(p[0],p[1])));
+  if(conflictingFix)throw new Error(`${conflictingFix[0]}·${conflictingFix[1]} 페어가 지정과 금지에 모두 등록돼 있어요.`);
   const forcedMix=[], forcedMale=[], forcedFemale=[]; const fixedNames=new Set();
   fixAll.forEach(p=>{
     if(fixedNames.has(p[0])||fixedNames.has(p[1])) return; // 한 사람이 여러 지정에 겹치면 첫 것만
@@ -3279,7 +3322,7 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   const mForMix = mPool.splice(0, mixedCourts*2);
   const fForMix = fPool.splice(0, mixedCourts*2);
   const mixedPairs = makeMixedPairs(mForMix, fForMix, todayPairs, allPastPairs, rIdx, banSet, forcedMix, previousMixedPairs);
-  const pastOpp = getPastOpponents();
+  const pastOpp = history?.pastOpp||getPastOpponents();
   const todayOpp = getTodayOpponents(dayId, rIdx);
   const teamMatchCounts = getTodayTeamMatchCounts(dayId, rIdx);
   const mixedMatchups = matchUpUnits(mixedPairs, pastOpp, todayOpp, teamMatchCounts, previousMixedMatchups);
@@ -3405,26 +3448,74 @@ function applyDayDefaults(nC, nR) {
   }
 }
 
+function scoreRegularSchedule(rounds,previousRounds,attendees){
+  const pairCounts=new Map(),opponentCounts=new Map(),matchCounts=new Map();
+  const gameCounts=new Map(attendees.map(player=>[player.name,0]));
+  const oldPairs=new Set(),oldMatches=new Set();
+  (previousRounds||[]).forEach(round=>(round?.matches||[]).forEach(match=>{
+    if(match.isRally||(match.team1||[]).length!==2||(match.team2||[]).length!==2)return;
+    [match.team1,match.team2].forEach(team=>oldPairs.add(dayPairKey(...team)));
+    oldMatches.add(teamMatchKey(match.team1,match.team2));
+  }));
+  let oldPairOverlap=0,oldMatchOverlap=0;
+  (rounds||[]).forEach(round=>(round.matches||[]).forEach(match=>{
+    if(match.isRally||(match.team1||[]).length!==2||(match.team2||[]).length!==2)return;
+    [match.team1,match.team2].forEach(team=>{
+      const key=dayPairKey(...team);
+      pairCounts.set(key,(pairCounts.get(key)||0)+1);
+      if(oldPairs.has(key))oldPairOverlap++;
+      team.forEach(name=>gameCounts.set(name,(gameCounts.get(name)||0)+1));
+    });
+    const matchKey=teamMatchKey(match.team1,match.team2);
+    matchCounts.set(matchKey,(matchCounts.get(matchKey)||0)+1);
+    if(oldMatches.has(matchKey))oldMatchOverlap++;
+    match.team1.forEach(a=>match.team2.forEach(b=>{
+      const key=dayPairKey(a,b);
+      opponentCounts.set(key,(opponentCounts.get(key)||0)+1);
+    }));
+  }));
+  const repeated=counts=>[...counts.values()].reduce((sum,count)=>sum+count*(count-1)/2,0);
+  const games=[...gameCounts.values()];
+  const gameGap=games.length?Math.max(...games)-Math.min(...games):0;
+  return repeated(pairCounts)*60+repeated(opponentCounts)*8+repeated(matchCounts)*100+
+    oldPairOverlap*6+oldMatchOverlap*10+gameGap*30;
+}
 window.rollAllBalanced = function() {
   const nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
   const dayId = document.getElementById('rndDayId')?.value || '';
-  // 공유 이력으로 전 라운드 균형 생성
-  const typeHistory = {};
-  // 지정 페어(여복/남복) 코트타입 배정 라운드를 사전에 랜덤 결정 → 누를 때마다 다른 패턴
-  const _pairSchedule = {};
-  const _poolForSched = dayId ? getAttendees(dayId) : allPlayers();
-  getDayFixPairs(dayId).forEach(([a,b,ct])=>{
-    if(ct==='전체')return;
-    if(!_poolForSched.some(p=>p.name===a)||!_poolForSched.some(p=>p.name===b))return;
-    const key=[a,b].sort().join('|');
-    const tgt=Math.max(1,Math.round(nR/2));
-    _pairSchedule[key]=new Set(shuffle(Array.from({length:nR},(_,i)=>i)).slice(0,tgt));
-  });
-  generatedAllRounds = Array.from({length:nR},(_,r)=>({name:`${r+1}라운드`,matches:[]}));
-  for (let r=0; r<nR; r++) {
-    generatedAllRounds[r] = {name:`${r+1}라운드`, matches:generateRoundByCourtTypes(r, nC, dayId, typeHistory, _pairSchedule)};
+  const previousRounds=generatedAllRounds;
+  if(previousRounds.some(round=>(round?.matches||[]).some(match=>match.tag==='수동'||match.manual))&&
+      !confirm('수동 등록한 경기가 있어요. 하루 전체 섞기를 하면 수동 경기가 모두 지워져요. 계속할까요?'))return;
+  const attendees=dayId?getAttendees(dayId):allPlayers();
+  const history={pastPairs:getPastPairCounts(currentSeason),pastOpp:getPastOpponents()};
+  let bestRounds=null,bestScore=Infinity,bestMatchCount=-1,lastError=null;
+  // 한 번의 순차 생성 결과만 사용하지 않고 여러 전체 대진의 반복·균형을 비교한다.
+  for(let attempt=0;attempt<12;attempt++){
+    const typeHistory={};
+    const pairSchedule={};
+    getDayFixPairs(dayId).forEach(([a,b,ct])=>{
+      if(ct==='전체'||!attendees.some(p=>p.name===a)||!attendees.some(p=>p.name===b))return;
+      const key=dayPairKey(a,b);
+      const target=Math.max(1,Math.round(nR/2));
+      pairSchedule[key]=new Set(shuffle(Array.from({length:nR},(_,i)=>i)).slice(0,target));
+    });
+    generatedAllRounds=Array.from({length:nR},(_,r)=>({name:`${r+1}라운드`,matches:[]}));
+    try{
+      for(let r=0;r<nR;r++){
+        generatedAllRounds[r]={name:`${r+1}라운드`,matches:generateRoundByCourtTypes(r,nC,dayId,typeHistory,pairSchedule,history)};
+      }
+      const candidate=generatedAllRounds;
+      const matchCount=candidate.reduce((sum,round)=>sum+round.matches.filter(match=>!match.isRally).length,0);
+      const score=scoreRegularSchedule(candidate,previousRounds,attendees);
+      if(matchCount>bestMatchCount||(matchCount===bestMatchCount&&
+          (score<bestScore||(score===bestScore&&Math.random()<.35)))){
+        bestRounds=candidate;bestMatchCount=matchCount;bestScore=score;
+      }
+    }catch(error){lastError=error;}
   }
+  generatedAllRounds=bestRounds||previousRounds;
+  if(!bestRounds){alert(lastError?.message||'대진을 생성하지 못했습니다. 참가자와 페어 조건을 확인해주세요.');return;}
   // 3) 미리보기 렌더링
   for (let r=0; r<nR; r++) {
     const el = document.getElementById(`rndPreview_${r}`);
@@ -3556,7 +3647,9 @@ window.rollRound = function(rIdx) {
       });
     });
   }
-  const matches = generateRoundByCourtTypes(rIdx, nC, dayId, rIdx > 0 ? typeHistory : undefined);
+  let matches;
+  try{matches=generateRoundByCourtTypes(rIdx, nC, dayId, rIdx > 0 ? typeHistory : undefined);}
+  catch(error){alert(error.message||error);return;}
 
   // 저장용 업데이트
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
