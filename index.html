@@ -1760,7 +1760,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.27';
+const APP_VERSION = '1.17.28';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -2262,9 +2262,10 @@ function getTodayTeamMatchCounts(dayId, excludeRoundIdx) {
   generatedAllRounds.forEach((r,idx)=>{if(r&&idx!==excludeRoundIdx)collect(r.matches);});
   return counts;
 }
-function matchUpUnits(units, pastOpp, todayOpp, teamMatchCounts) {
+function matchUpUnits(units, pastOpp, todayOpp, teamMatchCounts, previousMatches) {
   if (units.length < 2) return [];
   const counts=teamMatchCounts||new Map();
+  const previous=previousMatches||new Set();
   let bestMatches=[];
   let bestScore=Infinity;
   // 첫 팀부터 차례로 고르는 방식은 고정 페어 순서가 같을 때 같은 대결을
@@ -2276,6 +2277,7 @@ function matchUpUnits(units, pastOpp, todayOpp, teamMatchCounts) {
     for(let i=0;i+1<ordered.length;i+=2){
       const team1=ordered[i],team2=ordered[i+1];
       score+=(counts.get(teamMatchKey(team1,team2))||0)*10000;
+      if(previous.has(teamMatchKey(team1,team2)))score+=10;
       team1.forEach(a=>team2.forEach(b=>{
         const key=[a,b].sort().join('|');
         if(todayOpp.has(key))score+=100;
@@ -2337,9 +2339,10 @@ function getDayFixPairs(dayId){
 }
 
 // ── 혼복 페어 생성 (부부/금지 절대금지 + 지정 강제 + 당일/시즌 중복 회피) ──
-function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundIdx, banSet, forcedPairs) {
+function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundIdx, banSet, forcedPairs, previousPairs) {
   banSet = banSet || new Set();
   forcedPairs = forcedPairs || [];
+  previousPairs = previousPairs || new Set();
   const isBan = (a,b)=> banSet.has(dayPairKey(a,b));
   // allPastPairs: Map<"A|B", count> — 시즌 내 파트너 조합 횟수
   const _pCnt = (a,b) => allPastPairs.get(dayPairKey(a,b)) || 0;
@@ -2353,7 +2356,7 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
     if(m&&f&&!seedM.has(m)&&!seedF.has(f)){ seeds.push([m,f]); seedM.add(m); seedF.add(f); }
   });
 
-  let best = { pairs:[], bad:Infinity, todayDup:Infinity, pastDup:Infinity };
+  let best = { pairs:[], bad:Infinity, todayDup:Infinity, previousDup:Infinity, pastDup:Infinity };
   for (let attempt=0; attempt<200; attempt++) {
     const ms = shuffle(males.filter(x=>!seedM.has(x)));
     const fs = shuffle(females.filter(x=>!seedF.has(x)));
@@ -2390,14 +2393,16 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
     const freePairs = pairs.slice(seeds.length);
     const bad = freePairs.filter(p=>isBan(p[0],p[1])).length;
     const todayDup = freePairs.filter(p=>todayPairs.has(dayPairKey(p[0],p[1]))).length;
+    const previousDup = freePairs.filter(p=>previousPairs.has(dayPairKey(p[0],p[1]))).length;
     // pastDup: 시즌 내 함께한 횟수 합산 (많을수록 페널티)
     const pastDup = freePairs.reduce((s,p) => s + _pCnt(p[0],p[1]), 0);
 
     if (bad < best.bad ||
         (bad===best.bad && (todayDup < best.todayDup ||
-        (todayDup === best.todayDup && pastDup < best.pastDup)))) {
-      best = { pairs:[...pairs], bad, todayDup, pastDup };
-      if (bad===0 && todayDup === 0 && pastDup === 0) break;
+        (todayDup === best.todayDup && (previousDup < best.previousDup ||
+        (previousDup === best.previousDup && pastDup < best.pastDup)))))) {
+      best = { pairs:[...pairs], bad, todayDup, previousDup, pastDup };
+      if (bad===0 && todayDup===0 && previousDup===0 && pastDup===0) break;
     }
   }
   return best.pairs;
@@ -3128,6 +3133,10 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   const courtLabels = (_gcDay && _gcDay.courtNumbers && _gcDay.courtNumbers.length) ? _gcDay.courtNumbers : COURT_NAMES;
   const allPastPairs = getPastPairCounts(currentSeason);
   const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
+  const previousMatches = (generatedAllRounds[rIdx]?.matches||[]).filter(m=>m.tag==='혼복');
+  const previousMixedPairs = new Set(previousMatches.flatMap(m=>[m.team1,m.team2])
+    .filter(team=>team?.length===2).map(team=>dayPairKey(team[0],team[1])));
+  const previousMixedMatchups = new Set(previousMatches.map(m=>teamMatchKey(m.team1,m.team2)));
   let mPool = shuffle(pool.filter(m=>m.gender==='m').map(m=>m.name));
   let fPool = shuffle(pool.filter(m=>m.gender==='f').map(m=>m.name));
   const guestNameSet = new Set(guests.map(g=>g.name));
@@ -3265,11 +3274,11 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule) {
   // 1) 혼복 페어
   const mForMix = mPool.splice(0, mixedCourts*2);
   const fForMix = fPool.splice(0, mixedCourts*2);
-  const mixedPairs = makeMixedPairs(mForMix, fForMix, todayPairs, allPastPairs, rIdx, banSet, forcedMix);
+  const mixedPairs = makeMixedPairs(mForMix, fForMix, todayPairs, allPastPairs, rIdx, banSet, forcedMix, previousMixedPairs);
   const pastOpp = getPastOpponents();
   const todayOpp = getTodayOpponents(dayId, rIdx);
   const teamMatchCounts = getTodayTeamMatchCounts(dayId, rIdx);
-  const mixedMatchups = matchUpUnits(mixedPairs, pastOpp, todayOpp, teamMatchCounts);
+  const mixedMatchups = matchUpUnits(mixedPairs, pastOpp, todayOpp, teamMatchCounts, previousMixedMatchups);
 
   // 2) 남복
   if (_thBs) { const mF2=new Set(forcedMale.flat().filter(n=>mPool.includes(n))); mPool=_thBs(mPool,mF2,'남복'); }
@@ -3526,6 +3535,9 @@ window.rollRound = function(rIdx) {
   if (noteEl) noteEl.remove();
   const nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
   const dayId = document.getElementById('rndDayId')?.value || '';
+  const previousMixedPairs = new Set((existing?.matches||[]).filter(m=>m.tag==='혼복')
+    .flatMap(m=>[m.team1,m.team2]).filter(team=>team?.length===2)
+    .map(team=>dayPairKey(team[0],team[1])));
   // 이전 라운드 기반 typeHistory 재구성 → 개별 라운드 재섞기도 코트 타입 균등화 적용
   const typeHistory = {};
   for (let i = 0; i < rIdx; i++) {
@@ -3574,6 +3586,13 @@ window.rollRound = function(rIdx) {
       <div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team2.join(' / ')}</div>
     </div>`;
   }).join('');
+  const nextMixedPairs = new Set(matches.filter(m=>m.tag==='혼복')
+    .flatMap(m=>[m.team1,m.team2]).filter(team=>team?.length===2)
+    .map(team=>dayPairKey(team[0],team[1])));
+  if (previousMixedPairs.size && previousMixedPairs.size===nextMixedPairs.size &&
+      [...previousMixedPairs].every(key=>nextMixedPairs.has(key))) {
+    el.insertAdjacentHTML('beforeend', '<div style="margin-top:7px;color:#b45309;font-size:11px">혼복 페어가 그대로예요. 지정 페어·다른 라운드 조합을 확인하거나 전체 라운드를 다시 섞어보세요.</div>');
+  }
   renderTypeStatTable();
 };
 
