@@ -1764,7 +1764,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.31';
+const APP_VERSION = '1.17.32';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -7011,7 +7011,7 @@ window.openEvScoreboard=function(evId, adminContext){
   const canAdministerEvent=isAdmin&&currentEventAdminContext;
   const isCouplesScoreEvent=isPartnershipLeagueEvent(ev);
   const evMatches=ev.matches||[];
-  const parts=ev.type==='friendly'?getFriendlyEventAttendees(ev).map(player=>player.name):(ev.participants||[]);
+  const parts=ev.type==='friendly'?getEventTbsRoster(ev).map(player=>player.name):(ev.participants||[]);
   const allocationParts=['exchange','friendly'].includes(ev.type)?getEventMatchRoster(ev).map(player=>player.name):parts;
   const defaultOppClub=ev.type==='friendly'?'':(ev.oppClub||'');
   const isMember=isAdmin||(myClaim&&myClaim!=='pending'&&!myClaim.isGuest);
@@ -7086,7 +7086,8 @@ window.openEvScoreboard=function(evId, adminContext){
 
   const statRows=parts.map(p=>{
     let w=0,l=0,d=0;
-    evMatches.forEach(m=>{
+    if(ev.type==='friendly')({w,l,d}=getFriendlyPlayerRecord(evMatches,p));
+    else evMatches.forEach(m=>{
       const s1=m.ourScore, s2=m.oppScore;
       const scored=s1!==null&&s1!==undefined&&s1!==''&&s2!==null&&s2!==undefined&&s2!=='';
       const onTeam1=(m.ourPair||[]).includes(p),onTeam2=(ev.type==='friendly'||ev.type==='monthly'||isCouplesScoreEvent)&&(m.oppPair||[]).includes(p);
@@ -7106,7 +7107,7 @@ window.openEvScoreboard=function(evId, adminContext){
     </div>`;
   }).join('');
   const statSec=parts.length?`<div style="margin-bottom:16px">
-    <div style="font-size:13px;font-weight:700;margin-bottom:6px">📊 개인 전적 <span style="font-size:10px;color:#64748B;font-weight:400">(이번 이벤트전)</span></div>
+    <div style="font-size:13px;font-weight:700;margin-bottom:6px">📊 ${ev.type==='friendly'?'TBS 선수 기록':'개인 전적'} <span style="font-size:10px;color:#64748B;font-weight:400">(이번 이벤트전${ev.type==='friendly'?' · 혼합 페어 포함':''})</span></div>
     ${statRows}
   </div>`:'';
 
@@ -7124,7 +7125,7 @@ window.openEvScoreboard=function(evId, adminContext){
   const ourTeamName=isMonthlyTeamBattle?'⚫ 흑팀':'TBS';
   const oppTeamName=isMonthlyTeamBattle?'⚪ 백팀':(ev.oppClub||'상대팀');
   let teamResultSec='';
-  if(evMatches.length>0&&!isMonthlyIndividual&&!isCouplesScoreEvent){
+  if(evMatches.length>0&&!isMonthlyIndividual&&!isCouplesScoreEvent&&ev.type!=='friendly'){
     const mkScore=(w,d,l)=>`<span style="font-size:15px;font-weight:900;color:#059669">${w}승</span>${d?`<span style="font-size:15px;font-weight:900;color:#D97706;margin-left:4px">${d}무</span>`:''}<span style="font-size:15px;font-weight:900;color:#f87171;margin-left:4px">${l}패</span>`;
     const scoreBody=teamTotal>0
       ?`<div style="display:flex;align-items:center;justify-content:center;gap:12px">
@@ -7186,7 +7187,11 @@ window.openEvScoreboard=function(evId, adminContext){
 
   // [2] 상대팀 선수별 기록 (oppPair 기준 역산)
   const oppStatMap={};
-  evMatches.forEach(m=>{
+  if(ev.type==='friendly'){
+    getEventOpponentRoster(ev).forEach(player=>{
+      if(!oppStatMap[player.name])oppStatMap[player.name]=getFriendlyPlayerRecord(evMatches,player.name);
+    });
+  }else evMatches.forEach(m=>{
     const s1=m.ourScore,s2=m.oppScore;
     const scored=s1!==null&&s1!==undefined&&s1!==''&&s2!==null&&s2!==undefined&&s2!=='';
     (m.oppPair||[]).forEach(raw=>{
@@ -7205,7 +7210,7 @@ window.openEvScoreboard=function(evId, adminContext){
       return `<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="flex:1;font-size:13px;font-weight:700;color:#2563EB">${p}</span><span style="font-size:12px;font-weight:700;color:#059669">${w}승</span>${d?`<span style="font-size:12px;font-weight:700;color:#D97706">${d}무</span>`:''}<span style="font-size:12px;font-weight:700;color:#f87171">${l}패</span></div>`;
     }).join('');
     oppStatSec=`<div style="margin-bottom:16px">
-      <div style="font-size:13px;font-weight:700;margin-bottom:6px">📊 상대팀 기록 <span style="font-size:10px;color:#64748B;font-weight:400">(${oppTeamName})</span></div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">📊 ${ev.type==='friendly'?'상대 클럽 선수 기록':'상대팀 기록'} <span style="font-size:10px;color:#64748B;font-weight:400">(${oppTeamName}${ev.type==='friendly'?' · 혼합 페어 포함':''})</span></div>
       ${oppStatRows}
     </div>`;
   }
@@ -7682,6 +7687,23 @@ function getEventOpponentRoster(ev){
 }
 function getEventMatchRoster(ev){
   return [...getEventTbsRoster(ev),...getEventOpponentRoster(ev)];
+}
+// 친선전에서는 페어의 왼쪽/오른쪽이 소속 클럽을 뜻하지 않는다.
+function getFriendlyPlayerRecord(matches,name){
+  const record={w:0,d:0,l:0};
+  (matches||[]).forEach(match=>{
+    const raw1=match.ourScore ?? match.score1,raw2=match.oppScore ?? match.score2;
+    if(raw1===null||raw1===undefined||raw1===''||raw2===null||raw2===undefined||raw2==='')return;
+    const score1=Number(raw1),score2=Number(raw2);
+    if(!Number.isFinite(score1)||!Number.isFinite(score2))return;
+    const onFirst=(match.ourPair||match.team1||[]).includes(name);
+    const onSecond=(match.oppPair||match.team2||[]).includes(name);
+    if(onFirst===onSecond)return;
+    if(score1===score2)record.d++;
+    else if((onFirst&&score1>score2)||(onSecond&&score2>score1))record.w++;
+    else record.l++;
+  });
+  return record;
 }
 function getTennisMonths(player){
   if(!player)return null;
