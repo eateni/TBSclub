@@ -1764,7 +1764,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.33';
+const APP_VERSION = '1.17.34';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4428,7 +4428,7 @@ function checkedVideoUrl(value) {
 function matchVideoHtml(kind, recordId, roundIndex, matchIndex, url, canEdit, analysisVideoUrl, videoAnalysis) {
   const href = checkedVideoUrl(url) || checkedVideoUrl(analysisVideoUrl);
   const action = `editMatchVideoLink('${kind}','${recordId}',${roundIndex},'${matchIndex}')`;
-  if (!href && !analysisHref && !videoAnalysis && !canEdit) return '';
+  if (!href && !videoAnalysis && !canEdit) return '';
   return `<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:7px">
     ${href ? `<a href="${videoLinkEscape(href)}" target="_blank" rel="noopener noreferrer" style="display:inline-block;padding:6px 9px;border:1px solid #93C5FD;border-radius:8px;background:#EFF6FF;color:#1D4ED8;font-size:11px;font-weight:800;text-decoration:none">🎬 경기 영상 ↗</a>` : ''}
     ${canEdit ? `<button onclick="${action}" style="padding:5px 8px;border:1px solid #CBD5E1;border-radius:7px;background:#fff;color:#475569;font-size:10px;font-weight:800;cursor:pointer">${href || videoAnalysis ? '✏️ 경기 영상 수정' : '＋ 경기 영상 등록'}</button>` : ''}
