@@ -1762,7 +1762,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.36';
+const APP_VERSION = '1.17.37';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -12125,7 +12125,7 @@ function photoVideoRecords() {
     ...events.map(record => ({kind:'event',record,group:'이벤트전',label:`${record.date || '날짜 미정'} · ${record.name || '이벤트전'}`})),
     ...schedules.filter(record => record.recordScope === 'personal' && record.isGameMeetup)
       .map(record => ({kind:'personal',record,group:'개인 경기',label:`${record.date || '날짜 미정'} · ${record.title || record.content || '개인 경기'}`}))
-  ].sort((a,b) => (a.record.date || '9999-12-31').localeCompare(b.record.date || '9999-12-31'));
+  ].sort((a,b) => (b.record.date || '').localeCompare(a.record.date || ''));
 }
 let photoVideoSelectedTarget = '';
 window.selectPhotoVideoTarget = function(value) {
