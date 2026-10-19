@@ -1762,7 +1762,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.37';
+const APP_VERSION = '1.17.38';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -12206,7 +12206,9 @@ function renderPhotoTab() {
   el.innerHTML = `<div class="admin-sec" style="max-width:900px;margin:12px auto;padding:16px">
     <h2 style="font-size:18px;color:#1E293B">🎥 경기 영상</h2>
     <p style="font-size:11px;color:#64748B;line-height:1.6;margin-top:7px">날짜별 경기 영상을 여기에서 볼 수 있습니다. 경기별 유튜브 링크는 하나만 등록하며, 편집기 JSON 분석 로그는 선택 사항입니다.</p>
-    <select id="photoVideoTarget" onchange="selectPhotoVideoTarget(this.value)" class="row-inp" style="width:100%;margin-top:12px;padding:10px"><option value="">모든 등록 영상 보기</option>${available.map(item => `<option value="${videoLinkEscape(item.kind + ':' + item.record.id)}"${selected === item ? ' selected' : ''}>${videoLinkEscape(item.group + ' · ' + item.label)}</option>`).join('')}</select>
+    <label for="photoVideoTarget" style="display:block;font-size:11px;font-weight:900;color:#0F766E;margin-top:12px">영상을 보거나 등록할 날짜 선택</label>
+    <select id="photoVideoTarget" onchange="selectPhotoVideoTarget(this.value)" class="row-inp" style="width:100%;margin-top:6px;padding:10px"><option value="">전체 영상 보기</option>${available.map(item => `<option value="${videoLinkEscape(item.kind + ':' + item.record.id)}"${selected === item ? ' selected' : ''}>${videoLinkEscape(item.group + ' · ' + item.label)}</option>`).join('')}</select>
+    <p style="font-size:10px;color:#64748B;margin-top:6px">날짜를 선택하면 해당 경기 영상만 표시되고, 등록 권한이 있으면 URL 입력란도 열립니다.</p>
     ${form}
     ${cards ? '<div style="display:flex;justify-content:flex-end;gap:6px;margin-top:10px"><button onclick="togglePhotoVideoCards(true)" style="padding:6px 9px;border:1px solid #C8E0DE;border-radius:7px;background:#fff;color:#0F766E;font-size:10px;font-weight:800;cursor:pointer">모두 펼치기</button><button onclick="togglePhotoVideoCards(false)" style="padding:6px 9px;border:1px solid #C8E0DE;border-radius:7px;background:#fff;color:#0F766E;font-size:10px;font-weight:800;cursor:pointer">모두 접기</button></div>' : ''}
     ${cards || '<div style="padding:32px 12px;text-align:center;color:#64748B;font-size:12px">아직 등록된 영상 링크가 없어요. 관리자 또는 개인 일정 호스트는 위에서 날짜를 선택해 등록할 수 있습니다.</div>'}
