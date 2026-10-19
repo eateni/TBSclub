@@ -1645,9 +1645,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <div class="mf"><label>장소</label><input id="evPlace" placeholder="예: 부천 테니스장"></div>
     </div>
     <div class="mf-full"><label>설명</label><textarea id="evDesc"></textarea></div>
-    <div class="mf-full"><label>상태</label>
-      <select id="evStatus"><option value="upcoming">예정</option><option value="ongoing">진행중</option><option value="done">완료</option></select>
-    </div>
+    <div class="mf-full" style="font-size:12px;color:#64748B">상태는 결과 입력에 따라 자동 변경됩니다. 생성 시 예정으로 시작합니다.</div>
     <div class="mft">
       <button class="btn-cancel" onclick="hide('eventModal')">취소</button>
       <button class="btn-ok" id="submitEventBtn" onclick="submitEvent()">추가</button>
@@ -1764,7 +1762,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.35';
+const APP_VERSION = '1.17.36';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -5813,6 +5811,24 @@ const EV_TYPE_BADGE={exchange:'badge-exchange',friendly:'badge-friendly',monthly
 const EV_TYPE_EMOJI={exchange:'🤝',friendly:'🤝',monthly:'🏅',special:'⭐'};
 const EV_STATUS_LABEL={upcoming:'예정',ongoing:'진행중',done:'완료'};
 const EV_STATUS_CLASS={upcoming:'st-upcoming',ongoing:'st-ongoing',done:'st-done'};
+function eventScoreEntered(score){
+  return score!==null&&score!==undefined&&score!==''&&Number.isFinite(Number(score));
+}
+function getEventAutoStatus(ev){
+  const hasMatchList=Array.isArray(ev?.matches);
+  const matches=hasMatchList?ev.matches:(ev?.freeMatches||[]);
+  if(!matches.length)return 'upcoming';
+  const scoreFields=hasMatchList?['ourScore','oppScore']:['score1','score2'];
+  const started=matches.some(match=>scoreFields.some(field=>eventScoreEntered(match[field])));
+  if(!started)return 'upcoming';
+  return matches.every(match=>scoreFields.every(field=>eventScoreEntered(match[field])))?'done':'ongoing';
+}
+function eventMatchesUpdate(matches,extra={}){
+  return {...extra,matches,status:getEventAutoStatus({matches})};
+}
+function eventFreeMatchesUpdate(ev,freeMatches){
+  return {freeMatches,status:getEventAutoStatus({...ev,freeMatches})};
+}
 const MONTHLY_FORMAT_LABEL={individualLeague:'🏅 개인 리그전',teamBattle:'⚫⚪ 팀 흑백대전',ybobBattle:'🟡🔵🟠⚫ 팀 YBOB 대전'};
 const SPECIAL_FORMAT_LABEL={kingOfCourt:'👑 킹 오브 코트',genderBattle:'🚻 성별 대항전',handicap:'⚖️ 핸디캡전',luckyDraw:'🎲 복불복전',foreBack:'🎾 포·백 조합전',couplesLeague:'🤝 파트너십 리그',tournamentPrep:'🎯 대회 준비 매치데이'};
 function getEventCategory(ev){
@@ -5861,8 +5877,8 @@ window.saveEvMeta = async function(evId, field, value) {
   const update = {};
   if(field==='oppClub'){ update.oppClub=value.trim(); ev.oppClub=update.oppClub; }
   else if(field==='oppRoster'){ update.oppRoster=value; ev.oppRoster=value; }
-  else if(field==='status'){ update.status=value; ev.status=value; }
   else if(field==='name'){ const trimmed=value.trim(); if(!trimmed)return; update.name=trimmed; ev.name=trimmed; }
+  else return;
   await updateDoc(doc(db,'events',evId), update);
   renderEvents();
   renderAdminEvents();
@@ -6220,7 +6236,7 @@ window.openEventDetail=function(evId, adminContext){
 
   const opponentAdminFields=['exchange','friendly'].includes(ev.type)?`<div style="display:flex;gap:6px;align-items:center;flex:1;min-width:260px"><input id="evMetaOppClub_${evId}" style="flex:1;min-width:80px;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="상대팀명" value="${(ev.oppClub||'').replace(/"/g,'&quot;')}"><button onclick="saveEvMeta('${evId}','oppClub',document.getElementById('evMetaOppClub_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">팀명 저장</button></div>`:'';
   const opponentRosterAdmin=['exchange','friendly'].includes(ev.type)?buildOppRosterAdminHtml(ev,evId):'';
-  const adminMetaEdit=canAdministerEvent?`<div style="margin-top:6px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><select onchange="saveEvMeta('${evId}','status',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;cursor:pointer"><option value="upcoming"${ev.status==='upcoming'?' selected':''}>예정</option><option value="ongoing"${ev.status==='ongoing'?' selected':''}>진행중</option><option value="done"${ev.status==='done'?' selected':''}>종료</option></select>${opponentAdminFields}</div><div style="display:flex;gap:6px;align-items:center;margin-top:6px"><input id="evMetaName_${evId}" style="flex:1;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="이벤트 이름" value="${(ev.name||'').replace(/"/g,'&quot;')}"><button onclick="saveEvMeta('${evId}','name',document.getElementById('evMetaName_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">이름 저장</button></div>${opponentRosterAdmin}</div>`:'';
+  const adminMetaEdit=canAdministerEvent?`<div style="margin-top:6px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px"><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11px;color:#64748B">상태 자동 변경 · ${EV_STATUS_LABEL[ev.status]}</span>${opponentAdminFields}</div><div style="display:flex;gap:6px;align-items:center;margin-top:6px"><input id="evMetaName_${evId}" style="flex:1;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="이벤트 이름" value="${(ev.name||'').replace(/"/g,'&quot;')}"><button onclick="saveEvMeta('${evId}','name',document.getElementById('evMetaName_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">이름 저장</button></div>${opponentRosterAdmin}</div>`:'';
 
   const _ec2=document.getElementById('eventDetailContent');
   const eventCategory=getEventCategory(ev);
@@ -7212,11 +7228,7 @@ window.openEvScoreboard=function(evId, adminContext){
 
   const scoreboardOpponentFields=['exchange','friendly'].includes(ev.type)?`<input id="evSbMetaOppClub_${evId}" style="flex:1;min-width:80px;padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1" placeholder="상대팀명" value="${(ev.oppClub||'').replace(/"/g,'&quot;')}"><button onclick="saveEvMeta('${evId}','oppClub',document.getElementById('evSbMetaOppClub_${evId}').value)" style="padding:4px 10px;background:rgba(52,211,153,0.15);border:1px solid rgba(52,211,153,0.4);border-radius:6px;color:#059669;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">팀명 저장</button>`:'';
   const adminMetaEditSb=canAdministerEvent?`<div style="margin-top:6px;margin-bottom:12px;padding:8px 10px;background:rgba(15,35,90,0.25);border:1px solid rgba(100,150,220,0.25);border-radius:8px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-    <select onchange="saveEvMeta('${evId}','status',this.value)" style="padding:4px 8px;font-size:11px;border-radius:6px;border:1px solid rgba(100,150,200,0.4);background:rgba(15,35,90,0.7);color:#CBD5E1;cursor:pointer">
-      <option value="upcoming"${ev.status==='upcoming'?' selected':''}>예정</option>
-      <option value="ongoing"${ev.status==='ongoing'?' selected':''}>진행중</option>
-      <option value="done"${ev.status==='done'?' selected':''}>종료</option>
-    </select>
+    <span style="font-size:11px;color:#64748B">상태 자동 변경 · ${EV_STATUS_LABEL[ev.status]}</span>
     ${scoreboardOpponentFields}
   </div>`:'';
   const partnershipHighlightData=getEventHighlightData(ev);
@@ -7483,7 +7495,7 @@ window.generateCouplesLeagueMatches=async function(evId){
   }
   try{
     ev.matches=matches;
-    await updateDoc(doc(db,'events',evId),{matches,couplesGeneratedAt:new Date().toISOString()});
+    await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches,{couplesGeneratedAt:new Date().toISOString()}));
     if(unassigned.length%2)alert('자동 페어를 만들 수 없는 미배정 참가자 1명은 이번 대진에서 제외됐어요.');
     openEventDetail(evId);
   }catch(error){alert('고정 페어 리그 대진 생성 실패: '+(error.message||error.code||error));}
@@ -7561,7 +7573,7 @@ window.saveAddEvMatch=async function(){
       const latestMatches=[...(snapshot.data().matches||[])];
       const latestRound=latestMatches.filter(match=>(match.round||1)===roundNum);
       const nextCourt=(latestRound.length?Math.max(...latestRound.map(match=>Number(match.court)||0)):0)+1;
-      transaction.update(eventRef,{matches:[...latestMatches,{...newMatch,court:nextCourt}]});
+      transaction.update(eventRef,eventMatchesUpdate([...latestMatches,{...newMatch,court:nextCourt}]));
     });
     hide('addEvMatchModal');
     if(currentEvView==='scoreboard')openEvScoreboard(evId);else openEventDetail(evId);
@@ -7592,7 +7604,7 @@ window.saveAddEvMatchFromFm=async function(evId){
   matches.push({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ourPair:[p1,p2],oppPair:[opp1,opp2].filter(Boolean),oppClub:ev.oppClub||'',ourScore:null,oppScore:null,round:roundNum,court:nextCourt,courtType:courtType,matchKind:'instant'});
   if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon:',e.code);}}
   try{
-    await updateDoc(doc(db,'events',evId),{matches});
+    await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches));
     ev.matches=matches;
     // onSnapshot이 스크롤 보존하며 openEventDetail 자동 재실행
   }catch(e){
@@ -7611,7 +7623,7 @@ window.deleteEvMatch=async function(evId,mi){
   if(!confirm(`${summary} 경기를 삭제할까요?${hasScore?'\n\n입력된 점수와 해당 경기의 전적도 함께 사라집니다.':''}`))return;
   matches.splice(mi,1);
   try{
-    await updateDoc(doc(db,'events',evId),{matches});
+    await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches));
     ev.matches=matches;
     if(currentEvView==='scoreboard')openEvScoreboard(evId,true);
     else openEventDetail(evId,true);
@@ -7901,7 +7913,7 @@ window.saveAddFreeMatch=async function(evId){
   };
   const updated=[...(ev.freeMatches||[]),newMatch];
   try{
-    await updateDoc(doc(db,'events',evId),{freeMatches:updated});
+    await updateDoc(doc(db,'events',evId),eventFreeMatchesUpdate(ev,updated));
     ev.freeMatches=updated;
     // events onSnapshot이 스크롤 보존하며 자동 재렌더
   }catch(e){
@@ -7916,7 +7928,7 @@ window.deleteFreeMatch=async function(evId,matchId){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const updated=(ev.freeMatches||[]).filter(function(m){return m.id!==matchId;});
   try{
-    await updateDoc(doc(db,'events',evId),{freeMatches:updated});
+    await updateDoc(doc(db,'events',evId),eventFreeMatchesUpdate(ev,updated));
     ev.freeMatches=updated;
     // events onSnapshot이 스크롤 보존하며 자동 재렌더
   }catch(e){
@@ -7938,7 +7950,7 @@ window.saveFreeMatchTeam2=async function(evId,matchId){
     return Object.assign({},m,{team2:[p3,p4],lastModifiedBy:modifiedBy});
   });
   try{
-    await updateDoc(doc(db,'events',evId),{freeMatches:updated});
+    await updateDoc(doc(db,'events',evId),eventFreeMatchesUpdate(ev,updated));
     ev.freeMatches=updated;
     // events onSnapshot이 스크롤 보존하며 자동 재렌더
   }catch(e){
@@ -7956,7 +7968,7 @@ window.saveFreeMatchType=async function(evId,matchId,newType){
     return Object.assign({},m,{type:newType,lastModifiedBy:modifiedBy});
   });
   try{
-    await updateDoc(doc(db,'events',evId),{freeMatches:updated});
+    await updateDoc(doc(db,'events',evId),eventFreeMatchesUpdate(ev,updated));
     ev.freeMatches=updated;
     // events onSnapshot이 스크롤 보존하며 자동 재렌더 → statRows 자동 재계산
   }catch(e){
@@ -7975,7 +7987,7 @@ window.saveFreeMatchScore=async function(evId,matchId,s1raw,s2raw){
     return Object.assign({},m,{score1:s1,score2:s2});
   });
   try{
-    await updateDoc(doc(db,'events',evId),{freeMatches:updated});
+    await updateDoc(doc(db,'events',evId),eventFreeMatchesUpdate(ev,updated));
     ev.freeMatches=updated;
   }catch(e){
     alert('저장 실패: '+(e.message||e.code||e));
@@ -8244,7 +8256,7 @@ window.saveEvExchangePairs=async function(evId){
       oppScore:s2!==''?parseInt(s2):null
     };
   });
-  await updateDoc(doc(db,'events',evId),{matches});
+  await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches));
   const ev=events.find(e=>e.id===evId); if(ev) ev.matches=matches;
   openEventDetail(evId);
 };
@@ -8274,7 +8286,7 @@ window.saveEvMatchDetail=async function(evId,mi){
   });
   matches[mi]={...matches[mi],ourScore:s1!==''&&s1!==undefined?parseInt(s1):null,oppScore:s2!==''&&s2!==undefined?parseInt(s2):null,positions};
   try{
-    await updateDoc(doc(db,'events',evId),{matches});
+    await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches));
     ev.matches=matches;
     openEventDetail(evId);
   }catch(e){
@@ -8301,7 +8313,7 @@ window.saveEvOppOnly=async function(evId,mi){
   console.log('[saveEvOppOnly] mi='+mi+', opp1='+opp1+', opp2='+opp2+', auth='+!!auth.currentUser);
   matches[mi]={...current,oppPair:[opp1,opp2],oppClub:['friendly','monthly'].includes(ev.type)?'':oppClub,courtType:genderInfo.type||current.courtType||'잡복',genderNotice:genderInfo.notice,evalText:'',highlightVersion:0};
   try{
-    await updateDoc(doc(db,'events',evId),{matches});
+    await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches));
     ev.matches=matches;
     if(currentEvView==='scoreboard') openEvScoreboard(evId); else openEventDetail(evId);
   }catch(e){
@@ -8321,7 +8333,7 @@ window.saveEvSbOpp=async function(evId,mi){
   const oppClub=document.getElementById(`evSbOppClub_${mi}`)?.value.trim()||'';
   matches[mi]={...matches[mi],oppPair:[opp1,opp2].filter(Boolean),oppClub};
   try{
-    await updateDoc(doc(db,'events',evId),{matches});
+    await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches));
     ev.matches=matches;
     openEvScoreboard(evId);
   }catch(e){
@@ -8350,7 +8362,7 @@ window.saveEvPairEdit=async function(evId,mi){
     matches[mi]={...m,ourPair:[p1,p2],courtType:newCourtType};
   }
   try{
-    await updateDoc(doc(db,'events',evId),{matches});
+    await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches));
     ev.matches=matches;
     if(currentEvView==='scoreboard') openEvScoreboard(evId); else openEventDetail(evId);
   }catch(e){
@@ -8380,7 +8392,7 @@ window.saveEvMatchAndRefresh=async function(evId,mi){
     const s2=document.getElementById(`evGenS2_${mi}`)?.value;
     return{...prev,ourPair:pair,oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:s1!==''?parseInt(s1):null,oppScore:s2!==''?parseInt(s2):null};
   });
-  await updateDoc(doc(db,'events',evId),{matches});
+  await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches));
   ev.matches=matches;
   renderEvExchangePairResult(evId);
 };
@@ -11015,6 +11027,7 @@ window.saveEvMonthlyMeetup=async function(){
     const update=isTournamentPrep
       ?{matches,specialFormat:'tournamentPrep',tournamentPrepGeneratedAt:new Date().toISOString()}
       :{matches,monthlyFormat:mode,monthlyGeneratedAt:new Date().toISOString()};
+    update.status=getEventAutoStatus({matches});
     if(!isTournamentPrep&&mode==='teamBattle')update.monthlyTeams=teams;
     await updateDoc(doc(db,'events',evId),update);
     Object.assign(ev,update);
@@ -11047,7 +11060,7 @@ window.saveEvFriendlyMeetup=async function(){
   }));
   if(!matches.length){alert('저장할 친선 경기가 없어요.');return;}
   try{
-    await updateDoc(doc(db,'events',evId),{matches,friendlyGeneratedAt:new Date().toISOString()});
+    await updateDoc(doc(db,'events',evId),eventMatchesUpdate(matches,{friendlyGeneratedAt:new Date().toISOString()}));
     ev.matches=matches;
     closeMeetupPairModal();
     openEvScoreboard(evId);
@@ -11082,7 +11095,7 @@ window.saveEvExchangeMeetup = async function() {
   }
   const evId = evExchangeCurrentEvId;
   try {
-    await updateDoc(doc(db, 'events', evId), { matches });
+    await updateDoc(doc(db, 'events', evId), eventMatchesUpdate(matches));
     const ev = events.find(e => e.id === evId);
     if (ev) ev.matches = matches;
     closeMeetupPairModal();
@@ -13840,7 +13853,7 @@ window.approveScoreProposal = async function(submissionId){
         positions:{...(m.positions||{}), ...(submission.positions||{})},
         enteredBy:submission.submittedBy||'게스트', approvedSubmissionId:submissionId
       });
-      await updateDoc(doc(db,'events',event.id), { matches });
+      await updateDoc(doc(db,'events',event.id), eventMatchesUpdate(matches));
       await updateDoc(doc(db,'scoreSubmissions',submissionId), { status:'approved', resolvedAt:serverTimestamp(), resolvedBy:auth.currentUser?.uid||'' });
       alert('✅ 이벤트전 점수를 확정했어요.');
     } catch(e) {
@@ -14201,7 +14214,7 @@ window.submitScore=async function(){
         matches[mi]={...current,ourScore:s1,oppScore:s2,positions:{...(current.positions||{}),...evPos},
           enteredBy:current.enteredBy||editorName,editedBy:current.enteredBy?editorName:null,
           ...(scoreChanged?{evalText:'',highlightVersion:0}:{})};
-        transaction.update(ref,{matches});
+        transaction.update(ref,eventMatchesUpdate(matches));
         savedMatches=matches;
       });
       ev.matches=savedMatches;
@@ -14817,7 +14830,7 @@ window.submitEvent=async function(){
       desc:document.getElementById('evDesc').value,
       oppClub:isClubEvent?(document.getElementById('evOppClub')?.value.trim()||''):'',
       oppRoster,
-      status:document.getElementById('evStatus').value,
+      status:'upcoming',
       participants:[],results:[],createdAt:serverTimestamp()
     });
     ['evName','evDate','evPlace','evDesc','evOppClub'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -16015,7 +16028,7 @@ onSnapshot(collection(db,'days'), snap => {
   if(document.getElementById('matchModal')?.style.display!=='none')renderMatchAllocationPreview();
 });
 onSnapshot(collection(db,'events'), snap => {
-  events = snap.docs.map(d=>({id:d.id,...d.data()}));
+  events = snap.docs.map(d=>{const ev={id:d.id,...d.data()};return {...ev,status:getEventAutoStatus(ev)};});
   refreshAnalysisSourcesIfVisible();
   renderEvents();
   renderAdminEvents();
