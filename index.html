@@ -1498,7 +1498,7 @@ tr:nth-child(even){background:#F5FCFB;}
 <!-- 점수 입력 모달 -->
 <div class="overlay-bottom" id="scoreModal" style="display:none;z-index:400" onclick="if(event.target.id==='scoreModal')hide('scoreModal')">
   <div class="modal-bottom">
-    <div class="modal-title">⚡ 경기 결과 입력</div>
+    <div class="modal-title" id="scoreModalTitle">⚡ 경기 결과 입력</div>
     <div class="score-kind-line"><span id="scoreMatchKind" class="match-kind-badge match-kind-official">🛡️ 공식 대진</span><span id="scoreMatchContext">스코어와 포·백을 입력하세요</span></div>
     <div id="scoreInfo" style="font-size:13px;color:#78909C;margin-bottom:14px;line-height:1.6"></div>
     <div class="mg">
@@ -1512,7 +1512,7 @@ tr:nth-child(even){background:#F5FCFB;}
     </div>
     <div class="mft">
       <button class="btn-cancel" onclick="hide('scoreModal')">취소</button>
-      <button class="btn-ok" onclick="submitScore()">저장</button>
+      <button class="btn-ok" id="scoreModalSave" onclick="submitScore()">저장</button>
     </div>
   </div>
 </div>
@@ -1764,7 +1764,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.34';
+const APP_VERSION = '1.17.35';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -6986,9 +6986,9 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
     ${genderNoticeHtml}
     ${resultAuthorHtml}
     ${evalHtml?`<div style="font-size:11px;color:#64748B;line-height:1.65;margin-top:6px;padding:6px 8px;background:rgba(109,40,217,0.05);border-radius:7px;border-left:2px solid rgba(109,40,217,0.2)">${evalHtml}</div>`:''}
-    ${matchVideoHtml('event',evId,0,mi,m.videoUrl,isAdmin,m.analysisVideoUrl,m.videoAnalysis)}
+    ${matchVideoHtml('event',evId,0,mi,m.videoUrl,canEditVideoRecord('event',_ev),m.analysisVideoUrl,m.videoAnalysis)}
     ${isMember?`<div style="display:flex;gap:5px;margin-top:8px">
-      <button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">📝 결과 입력</button>
+      <button class="btn-input" style="margin-top:0;flex:1" onclick="openEvScore('${evId}',${mi})">${done?'✏️ 결과 수정':'📝 결과 입력'}</button>
       <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(52,211,153,0.4);color:#059669" onclick="toggleEvMatchInput('${oppInpId}')">👤 ${isMonthlyTeamBattle?'백팀':isInternalEvent?'팀2':'상대팀'} 수정</button>
       <button class="btn-input" style="margin-top:0;flex:1;border-color:rgba(192,132,252,0.4);color:#c084fc" onclick="toggleEvMatchInput('${pairInpId}')">✏️ ${isMonthlyTeamBattle?'흑팀':isInternalEvent?'팀1':'우리팀'} 수정</button>
     </div>`:(!done?`<div style="display:flex;gap:5px;margin-top:8px"><button class="btn-input" style="margin-top:0;flex:1" onclick="openEventScoreProposal('${evId}',${mi})">📝 점수 제안</button></div>`:'')}
@@ -8200,7 +8200,7 @@ function renderEvExchangePairResult(evId){
         <div class="m-team ${lost?'win':''}">${oppLabel}</div>
       </div>
       <div style="display:flex;gap:5px;margin-top:8px">
-        <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">📝 결과 입력</button>
+        <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${inpId}')">${done?'✏️ 결과 수정':'📝 결과 입력'}</button>
       </div>
       <div id="${inpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
         <div style="font-size:10px;color:#2563EB;font-weight:700;margin-bottom:4px">상대팀</div>
@@ -8365,6 +8365,11 @@ window.toggleEvMatchInput=function(id){
 
 window.saveEvMatchAndRefresh=async function(evId,mi){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
+  const previous=(ev.matches||[])[mi];
+  const hadResult=eventScoreIsComplete(previous);
+  const nextScore1=document.getElementById(`evGenS1_${mi}`)?.value;
+  const nextScore2=document.getElementById(`evGenS2_${mi}`)?.value;
+  if(hadResult && !confirm(`기존 경기 결과 ${previous.ourScore} : ${previous.oppScore}를 ${nextScore1} : ${nextScore2}로 수정할까요?`))return;
   const matches=evExchangeGeneratedPairs.map((pair,i)=>{
     const prev=(ev.matches||[])[i]||{};
     if(i!==mi)return{...prev,ourPair:pair};
@@ -8373,7 +8378,7 @@ window.saveEvMatchAndRefresh=async function(evId,mi){
     const oppClub=document.getElementById(`evGenOppClub_${mi}`)?.value.trim()||'';
     const s1=document.getElementById(`evGenS1_${mi}`)?.value;
     const s2=document.getElementById(`evGenS2_${mi}`)?.value;
-    return{ourPair:pair,oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:s1!==''?parseInt(s1):null,oppScore:s2!==''?parseInt(s2):null};
+    return{...prev,ourPair:pair,oppPair:[opp1,opp2].filter(Boolean),oppClub,ourScore:s1!==''?parseInt(s1):null,oppScore:s2!==''?parseInt(s2):null};
   });
   await updateDoc(doc(db,'events',evId),{matches});
   ev.matches=matches;
@@ -10791,8 +10796,9 @@ function renderMeetupResultStep() {
         }
         // 재렌더 전 captureEvExchangeInputs로 저장한 사용자 입력값 우선 사용
         const inp = evExchangeCurrentInputs[idx] || {};
-        const inMemDone = m.score1 !== null && m.score1 !== undefined && m.score1 !== '';
-        const exDone = ex.ourScore !== null && ex.ourScore !== undefined && ex.ourScore !== '';
+        const inMemDone = m.score1 !== null && m.score1 !== undefined && m.score1 !== ''
+          && m.score2 !== null && m.score2 !== undefined && m.score2 !== '';
+        const exDone = eventScoreIsComplete(ex);
         const done = inMemDone || exDone;
         const sc1 = inMemDone ? m.score1 : ex.ourScore;
         const sc2 = inMemDone ? m.score2 : ex.oppScore;
@@ -10819,7 +10825,7 @@ function renderMeetupResultStep() {
           <div style="display:flex;gap:5px;margin-top:8px">
             <button onclick="startEvExchangeEdit(${ri},${mci},0,${idx})" style="padding:5px 8px;background:#E0F2F1;border:1px solid #C8E0DE;border-radius:7px;color:#1D6FB8;font-size:11px;font-weight:700;cursor:pointer">✏️ 수정</button>
             <button class="btn-input" style="margin-top:0;flex:1" onclick="toggleEvMatchInput('${oppInpId}')">👤 상대팀 입력</button>
-            <button class="btn-input" style="margin-top:0;flex:1" onclick="openPendingEvScore(${ri},${mci},${idx})">📝 결과 입력</button>
+            <button class="btn-input" style="margin-top:0;flex:1" onclick="openPendingEvScore(${ri},${mci},${idx})">${done?'✏️ 결과 수정':'📝 결과 입력'}</button>
           </div>
           <div id="${oppInpId}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid rgba(35,90,180,0.15)">
             <div style="font-size:10px;color:#2563EB;font-weight:700;margin-bottom:4px">상대팀 명단에서 페어 선택${opponentRoster.length?'':' · 먼저 이벤트 상세에서 명단을 등록하세요'}</div>
@@ -13950,6 +13956,7 @@ window.submitScore=async function(){
 
 // 점수 입력
 function setScoreMatchKind(kind, context){
+  setEventScoreModalMode(false);
   const badge=document.getElementById('scoreMatchKind');
   const detail=document.getElementById('scoreMatchContext');
   const instant=kind==='instant';
@@ -14047,10 +14054,19 @@ window.selectPos=function(playerKey, pos, partnerKey){
   if(partnerKey)selectPos(partnerKey, pos==='fore'?'back':'fore');
 };
 
+function eventScoreIsComplete(match) {
+  return match?.ourScore !== null && match?.ourScore !== undefined && match?.ourScore !== ''
+    && match?.oppScore !== null && match?.oppScore !== undefined && match?.oppScore !== '';
+}
+function setEventScoreModalMode(done) {
+  document.getElementById('scoreModalTitle').textContent=done?'✏️ 경기 결과 수정':'⚡ 경기 결과 입력';
+  document.getElementById('scoreModalSave').textContent=done?'수정 저장':'저장';
+}
 window.openEvScore=function(evId, mi){
   const ev=events.find(e=>e.id===evId); if(!ev)return;
   const m=(ev.matches||[])[parseInt(mi)]; if(!m)return;
-  pendingScore={type:'evMatch', evId, mi:parseInt(mi)};
+  const done=eventScoreIsComplete(m);
+  pendingScore={type:'evMatch', evId, mi:parseInt(mi), expectedScore:[m.ourScore??null,m.oppScore??null], expectedTeams:JSON.stringify([m.ourPair||[],m.oppPair||[]])};
   const ourStr=(m.ourPair||[]).filter(Boolean).join(' / ')||'우리팀';
   const oppStr=(m.oppPair||[]).filter(Boolean).join(' / ')||'상대팀';
   const clubLabel=m.oppClub||(ev.oppClub||'');
@@ -14061,7 +14077,7 @@ window.openEvScore=function(evId, mi){
   document.getElementById('s1Label').textContent=ourLabel;
   document.getElementById('s2Label').textContent=oppLabel;
   setScoreMatchKind(m.matchKind==='instant'?'instant':'official','교류·이벤트전 · 스코어와 포·백을 입력하세요');
-  const done=m.ourScore!==null&&m.ourScore!==undefined;
+  setEventScoreModalMode(done);
   document.getElementById('s1').value=done?m.ourScore:'';
   document.getElementById('s2').value=done?m.oppScore:'';
   const existPos=m.positions||{};
@@ -14101,9 +14117,13 @@ window.openPendingEvScore=function(ri, mci, idx){
   document.getElementById('s1Label').textContent=(pair.filter(Boolean).join(' / ')||'1페어')+' 점수';
   document.getElementById('s2Label').textContent=([opp1,opp2].filter(Boolean).join(' / ')||'2페어')+' 점수';
   setScoreMatchKind('official','교류·이벤트전 · 스코어와 포·백을 입력하세요');
-  const inMemDone=m.score1!==null&&m.score1!==undefined;
-  const exDone=ex.ourScore!==null&&ex.ourScore!==undefined;
+  const inMemDone=m.score1!==null&&m.score1!==undefined&&m.score1!==''
+    && m.score2!==null&&m.score2!==undefined&&m.score2!=='';
+  const exDone=eventScoreIsComplete(ex);
   const done=inMemDone||exDone;
+  setEventScoreModalMode(done);
+  pendingScore.wasDone=done;
+  pendingScore.oldScore=done?[inMemDone?m.score1:ex.ourScore,inMemDone?m.score2:ex.oppScore]:null;
   document.getElementById('s1').value=done?(inMemDone?m.score1:ex.ourScore):'';
   document.getElementById('s2').value=done?(inMemDone?m.score2:ex.oppScore):'';
   const pendingPlayers=[
@@ -14153,8 +14173,9 @@ window.submitScore=async function(){
   if(pendingScore.type==='evMatch'){
     const {evId,mi}=pendingScore;
     const ev=events.find(e=>e.id===evId); if(!ev)return;
-    const matches=[...(ev.matches||[])];
-    const m=matches[mi]; if(!m)return;
+    const m=(ev.matches||[])[mi]; if(!m)return;
+    const isEdit=eventScoreIsComplete(m);
+    if(isEdit && !confirm(`기존 경기 결과 ${m.ourScore} : ${m.oppScore}를 ${s1} : ${s2}로 수정할까요?\n저장하면 경기 기록과 하이라이트에 변경된 결과가 반영됩니다.`))return;
     const evPos={...(m.positions||{})};
     [...(m.ourPair||[]),...(m.oppPair||[])].filter(Boolean).forEach(name=>{
       const key=name.replace(/\s/g,'_');
@@ -14164,19 +14185,34 @@ window.submitScore=async function(){
       else if(bb?.dataset?.selected==='1')evPos[name]='back';
     });
     const editorName = getSeasonScoreEditorName();
-    matches[mi]={...m,ourScore:s1,oppScore:s2,positions:evPos,
-      enteredBy:m.enteredBy||editorName, editedBy:m.enteredBy?editorName:null};
     if(!auth.currentUser){try{await signInAnonymously(auth);}catch(e){console.warn('anon auth:',e.code);}}
     try{
-      await updateDoc(doc(db,'events',evId),{matches});
-      ev.matches=matches;
-    }catch(e){alert('저장 실패: '+e.code);return;}
+      let savedMatches;
+      await runTransaction(db,async transaction=>{
+        const ref=doc(db,'events',evId);
+        const snapshot=await transaction.get(ref);
+        if(!snapshot.exists())throw new Error('이벤트전이 삭제됐습니다.');
+        const matches=[...(snapshot.data().matches||[])];
+        const current=matches[mi];
+        if(!current || JSON.stringify([current.ourPair||[],current.oppPair||[]])!==pendingScore.expectedTeams
+          || JSON.stringify([current.ourScore??null,current.oppScore??null])!==JSON.stringify(pendingScore.expectedScore))
+          throw new Error('경기 또는 점수가 다른 기기에서 변경됐습니다. 다시 열어 확인해 주세요.');
+        const scoreChanged=Number(current.ourScore)!==s1 || Number(current.oppScore)!==s2;
+        matches[mi]={...current,ourScore:s1,oppScore:s2,positions:{...(current.positions||{}),...evPos},
+          enteredBy:current.enteredBy||editorName,editedBy:current.enteredBy?editorName:null,
+          ...(scoreChanged?{evalText:'',highlightVersion:0}:{})};
+        transaction.update(ref,{matches});
+        savedMatches=matches;
+      });
+      ev.matches=savedMatches;
+    }catch(e){alert('경기 결과를 저장하지 못했어요. '+(e.message||e.code||e));return;}
     hide('scoreModal');
     openEvScoreboard(evId);
     return;
   }
   if(pendingScore.type==='pendingEvScore'){
     const {ri,mci}=pendingScore;
+    if(pendingScore.wasDone && !confirm(`입력된 경기 결과 ${pendingScore.oldScore?.[0]} : ${pendingScore.oldScore?.[1]}를 ${s1} : ${s2}로 수정할까요?`))return;
     const pendingMatch=meetupCurrentRounds[ri].matches[mci];
     pendingMatch.score1=s1;
     pendingMatch.score2=s2;
