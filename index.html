@@ -1762,7 +1762,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.39';
+const APP_VERSION = '1.17.40';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -2148,10 +2148,11 @@ function getPastPairs() {
   return pairs;
 }
 // 시즌별 파트너 조합 횟수 Map 반환 (key: "A|B", value: count)
-function getPastPairCounts(season) {
+function getPastPairCounts(season, excludeDayId) {
   const counts = new Map();
   const s = season != null ? season : currentSeason;
-  days.filter(d => (d.season||1) === s).forEach(day => {
+  const cutoff = days.find(d=>d.id===excludeDayId)?.date;
+  days.filter(d => (d.season||1) === s && d.id !== excludeDayId && (!cutoff || d.date < cutoff)).forEach(day => {
     (day.rounds||[]).forEach(r => {
       (r.matches||[]).forEach(m => {
         [m.team1||[], m.team2||[]].forEach(team => {
@@ -2206,13 +2207,18 @@ function wasPaired(a, b, pairs) {
 }
 
 // ── 과거 상대전적 (팀1 vs 팀2로 맞붙은 적 있는 조합) ──
-function getPastOpponents() {
-  const opp = new Set();
+function getPastOpponents(excludeDayId) {
+  const opp = new Map();
+  const cutoff = days.find(d=>d.id===excludeDayId)?.date;
   days.forEach(day => {
+    if (day.id === excludeDayId || (cutoff && day.date >= cutoff)) return;
     (day.rounds||[]).forEach(r => {
       (r.matches||[]).forEach(m => {
         (m.team1||[]).forEach(a => (m.team2||[]).forEach(b => {
-          if (a && b) opp.add([a,b].sort().join('|'));
+          if (a && b) {
+            const key = dayPairKey(a,b);
+            opp.set(key, (opp.get(key)||0)+1);
+          }
         }));
       });
     });
@@ -2220,12 +2226,15 @@ function getPastOpponents() {
   return opp;
 }
 function getTodayOpponents(dayId, excludeRoundIdx) {
-  const opp = new Set();
+  const opp = new Map();
   const collect = matches => {
     (matches||[]).forEach(m => {
       if (m.isRally || m.tag==='랠리' || m.tag==='휴식') return;
       (m.team1||[]).forEach(a => (m.team2||[]).forEach(b => {
-        if (a && b) opp.add([a,b].sort().join('|'));
+        if (a && b) {
+          const key = dayPairKey(a,b);
+          opp.set(key, (opp.get(key)||0)+1);
+        }
       }));
     });
   };
@@ -2248,6 +2257,18 @@ function teamMatchKey(team1, team2) {
   const key1=(team1||[]).filter(Boolean).slice().sort().join('|');
   const key2=(team2||[]).filter(Boolean).slice().sort().join('|');
   return [key1,key2].sort().join('::');
+}
+function historyCount(history, key) {
+  return history instanceof Map ? (history.get(key)||0) : (history?.has(key) ? 1 : 0);
+}
+function matchupHistoryScore(team1, team2, pastOpp, todayOpp, teamMatchCounts, previousMatches) {
+  let score = historyCount(teamMatchCounts, teamMatchKey(team1,team2))*500;
+  if (previousMatches?.has(teamMatchKey(team1,team2))) score += 20;
+  team1.forEach(a=>team2.forEach(b=>{
+    const key=dayPairKey(a,b);
+    score += historyCount(todayOpp,key)*40 + historyCount(pastOpp,key)*2;
+  }));
+  return score;
 }
 function getTodayTeamMatchCounts(dayId, excludeRoundIdx) {
   const counts = new Map();
@@ -2272,19 +2293,13 @@ function matchUpUnits(units, pastOpp, todayOpp, teamMatchCounts, previousMatches
   let bestScore=Infinity;
   // 첫 팀부터 차례로 고르는 방식은 고정 페어 순서가 같을 때 같은 대결을
   // 만들기 쉬워서, 가능한 전체 조합을 비교해 가장 덜 만난 대진을 선택한다.
-  for(let attempt=0;attempt<200;attempt++){
+  for(let attempt=0;attempt<(units.length<=2?1:80);attempt++){
     const ordered=shuffle(units.map(unit=>[...unit]));
     const candidate=[];
     let score=0;
     for(let i=0;i+1<ordered.length;i+=2){
       const team1=ordered[i],team2=ordered[i+1];
-      score+=(counts.get(teamMatchKey(team1,team2))||0)*10000;
-      if(previous.has(teamMatchKey(team1,team2)))score+=10;
-      team1.forEach(a=>team2.forEach(b=>{
-        const key=[a,b].sort().join('|');
-        if(todayOpp.has(key))score+=100;
-        else if(pastOpp.has(key))score+=1;
-      }));
+      score+=matchupHistoryScore(team1,team2,pastOpp,todayOpp,counts,previous);
       candidate.push({team1,team2});
     }
     if(score<bestScore){bestScore=score;bestMatches=candidate;}
@@ -2341,7 +2356,7 @@ function getDayFixPairs(dayId){
 }
 
 // ── 혼복 페어 생성 (부부/금지 절대금지 + 지정 강제 + 당일/시즌 중복 회피) ──
-function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundIdx, banSet, forcedPairs, previousPairs) {
+function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundIdx, banSet, forcedPairs, previousPairs, pastOpp, todayOpp, teamMatchCounts) {
   banSet = banSet || new Set();
   forcedPairs = forcedPairs || [];
   previousPairs = previousPairs || new Set();
@@ -2358,7 +2373,7 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
     if(m&&f&&!seedM.has(m)&&!seedF.has(f)){ seeds.push([m,f]); seedM.add(m); seedF.add(f); }
   });
 
-  let best = { pairs:[], todayDup:Infinity, previousDup:Infinity, pastDup:Infinity };
+  let best = { pairs:[], score:Infinity };
   for (let attempt=0; attempt<200; attempt++) {
     const ms = shuffle(males.filter(x=>!seedM.has(x)));
     const fs = shuffle(females.filter(x=>!seedF.has(x)));
@@ -2398,11 +2413,14 @@ function makeMixedPairs(males, females, todayPairs, allPastPairs, currentRoundId
     // pastDup: 시즌 내 함께한 횟수 합산 (많을수록 페널티)
     const pastDup = freePairs.reduce((s,p) => s + _pCnt(p[0],p[1]), 0);
 
-    if (todayDup < best.todayDup ||
-        (todayDup === best.todayDup && (previousDup < best.previousDup ||
-        (previousDup === best.previousDup && pastDup < best.pastDup)))) {
-      best = { pairs:[...pairs], todayDup, previousDup, pastDup };
-      if (todayDup===0 && previousDup===0 && pastDup===0) break;
+    const matchups = pastOpp && todayOpp
+      ? matchUpUnits(pairs,pastOpp,todayOpp,teamMatchCounts) : [];
+    const opponentScore = matchups.reduce((sum,m)=>sum+
+      matchupHistoryScore(m.team1,m.team2,pastOpp,todayOpp,teamMatchCounts),0);
+    const score = todayDup*400 + previousDup*20 + pastDup*4 + opponentScore;
+    if (score < best.score) {
+      best = { pairs:[...pairs], score };
+      if (score===0) break;
     }
   }
   if(best.pairs.length!==males.length){
@@ -2445,7 +2463,7 @@ function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtName
     }
   });
 
-  let best = { matches:[], todayDup:Infinity, pastDupSum:Infinity };
+  let best = { matches:[], score:Infinity };
   for (let attempt=0; attempt<80; attempt++) {
     const rest = shuffle(pool.filter(p=>!usedSeed.has(p)));
     const teams = seedTeams.map(t=>[...t]);
@@ -2482,9 +2500,12 @@ function makeDoublesMatches(pool, todayPairs, allPastPairs, numCourts, courtName
     // pastDupSum: 시즌 내 함께한 횟수 합산 (많을수록 페널티)
     const pastDupSum = freeTeams.reduce((s,t) => s + _pCnt(t[0],t[1]), 0);
 
-    if (todayDup < best.todayDup || (todayDup===best.todayDup && pastDupSum < best.pastDupSum)) {
-      best = { matches, todayDup, pastDupSum };
-      if (todayDup===0 && pastDupSum===0) break;
+    const opponentScore = matches.reduce((sum,m)=>sum+
+      matchupHistoryScore(m.team1,m.team2,pastOpp,todayOpp,teamMatchCounts),0);
+    const score = todayDup*400 + pastDupSum*4 + opponentScore;
+    if (score < best.score) {
+      best = { matches, score };
+      if (score===0) break;
     }
   }
   if(best.matches.length!==numCourts){
@@ -3174,7 +3195,7 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule, h
   const pool = dayId ? getAttendees(dayId) : allPlayers();
   const _gcDay = days.find(d=>d.id===dayId);
   const courtLabels = (_gcDay && _gcDay.courtNumbers && _gcDay.courtNumbers.length) ? _gcDay.courtNumbers : COURT_NAMES;
-  const allPastPairs = history?.pastPairs||getPastPairCounts(currentSeason);
+  const allPastPairs = history?.pastPairs||getPastPairCounts(currentSeason,dayId);
   const todayPairs = getTodayPairs(dayId, rIdx);  // 현재 라운드는 제외
   const previousMatches = (generatedAllRounds[rIdx]?.matches||[]).filter(m=>m.tag==='혼복');
   const previousMixedPairs = new Set(previousMatches.flatMap(m=>[m.team1,m.team2])
@@ -3319,10 +3340,10 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule, h
   // 1) 혼복 페어
   const mForMix = mPool.splice(0, mixedCourts*2);
   const fForMix = fPool.splice(0, mixedCourts*2);
-  const mixedPairs = makeMixedPairs(mForMix, fForMix, todayPairs, allPastPairs, rIdx, banSet, forcedMix, previousMixedPairs);
-  const pastOpp = history?.pastOpp||getPastOpponents();
+  const pastOpp = history?.pastOpp||getPastOpponents(dayId);
   const todayOpp = getTodayOpponents(dayId, rIdx);
   const teamMatchCounts = getTodayTeamMatchCounts(dayId, rIdx);
+  const mixedPairs = makeMixedPairs(mForMix, fForMix, todayPairs, allPastPairs, rIdx, banSet, forcedMix, previousMixedPairs, pastOpp, todayOpp, teamMatchCounts);
   const mixedMatchups = matchUpUnits(mixedPairs, pastOpp, todayOpp, teamMatchCounts, previousMixedMatchups);
 
   // 2) 남복
@@ -3379,19 +3400,33 @@ function generateRoundByCourtTypes(rIdx, nC, dayId, typeHistory, pairSchedule, h
       const threeP = majorityIsM ? mPool : fPool;
       const oneP = majorityIsM ? fPool : mPool;
       if (threeP.length >= 3 && oneP.length >= 1) {
+        const pickTeams = candidates => candidates
+          .filter(([t1,t2])=>!banSet.has(dayPairKey(...t1))&&!banSet.has(dayPairKey(...t2)))
+          .map(([t1,t2])=>({t1,t2,score:
+            [t1,t2].reduce((sum,t)=>sum+(todayPairs.has(dayPairKey(...t))?400:0)+
+              (allPastPairs.get(dayPairKey(...t))||0)*4,0)+
+            matchupHistoryScore(t1,t2,pastOpp,todayOpp,teamMatchCounts)}))
+          .sort((a,b)=>a.score-b.score)[0];
         // 소수 성별 1자리: 정회원 우선 (게스트 배정 제외)
         const regIdx = oneP.findIndex(n => !guestNameSet.has(n));
         if (regIdx > 0) oneP.unshift(oneP.splice(regIdx, 1)[0]); // 정회원을 앞으로
         if (regIdx < 0 && threeP.length >= 2 && oneP.length >= 2) {
           // 소수 자리 정회원 없음 → 2:2로 재조정 (양쪽 1명씩)
-          const t1 = [threeP.shift(), oneP.shift()];
-          const t2 = [threeP.shift(), oneP.shift()];
-          matches.push({team1: t1, team2: t2, court, tag:'잡복'});
+          const major=threeP.splice(0,2),minor=oneP.splice(0,2);
+          const chosen=pickTeams([
+            [[major[0],minor[0]],[major[1],minor[1]]],
+            [[major[0],minor[1]],[major[1],minor[0]]]
+          ]);
+          if (!chosen) throw new Error('잡복 금지 페어 조건으로 대진을 만들 수 없어요.');
+          matches.push({team1:chosen.t1,team2:chosen.t2,court,tag:'잡복'});
         } else {
           if (regIdx < 0) console.warn('[잡복] 소수 성별 정회원 없음, 게스트 배정 불가피:', court);
-          const t1 = [threeP.shift(), threeP.shift()];
-          const t2 = [threeP.shift(), oneP.shift()];
-          matches.push({team1: t1, team2: t2, court, tag:'잡복'});
+          const major=threeP.splice(0,3),minor=oneP.shift();
+          const chosen=pickTeams(major.map((partner,i)=>[
+            [partner,minor],major.filter((_,j)=>j!==i)
+          ]));
+          if (!chosen) throw new Error('잡복 금지 페어 조건으로 대진을 만들 수 없어요.');
+          matches.push({team1:chosen.t1,team2:chosen.t2,court,tag:'잡복'});
         }
       }
     }
@@ -3446,7 +3481,7 @@ function applyDayDefaults(nC, nR) {
   }
 }
 
-function scoreRegularSchedule(rounds,previousRounds,attendees){
+function scoreRegularSchedule(rounds,previousRounds,attendees,pastPairs,pastOpp){
   const pairCounts=new Map(),opponentCounts=new Map(),matchCounts=new Map();
   const gameCounts=new Map(attendees.map(player=>[player.name,0]));
   const oldPairs=new Set(),oldMatches=new Set();
@@ -3455,13 +3490,14 @@ function scoreRegularSchedule(rounds,previousRounds,attendees){
     [match.team1,match.team2].forEach(team=>oldPairs.add(dayPairKey(...team)));
     oldMatches.add(teamMatchKey(match.team1,match.team2));
   }));
-  let oldPairOverlap=0,oldMatchOverlap=0;
+  let oldPairOverlap=0,oldMatchOverlap=0,historyScore=0;
   (rounds||[]).forEach(round=>(round.matches||[]).forEach(match=>{
     if(match.isRally||(match.team1||[]).length!==2||(match.team2||[]).length!==2)return;
     [match.team1,match.team2].forEach(team=>{
       const key=dayPairKey(...team);
       pairCounts.set(key,(pairCounts.get(key)||0)+1);
       if(oldPairs.has(key))oldPairOverlap++;
+      historyScore+=(pastPairs?.get(key)||0)*4;
       team.forEach(name=>gameCounts.set(name,(gameCounts.get(name)||0)+1));
     });
     const matchKey=teamMatchKey(match.team1,match.team2);
@@ -3470,13 +3506,14 @@ function scoreRegularSchedule(rounds,previousRounds,attendees){
     match.team1.forEach(a=>match.team2.forEach(b=>{
       const key=dayPairKey(a,b);
       opponentCounts.set(key,(opponentCounts.get(key)||0)+1);
+      historyScore+=historyCount(pastOpp,key)*2;
     }));
   }));
   const repeated=counts=>[...counts.values()].reduce((sum,count)=>sum+count*(count-1)/2,0);
   const games=[...gameCounts.values()];
   const gameGap=games.length?Math.max(...games)-Math.min(...games):0;
-  return repeated(pairCounts)*60+repeated(opponentCounts)*8+repeated(matchCounts)*100+
-    oldPairOverlap*6+oldMatchOverlap*10+gameGap*30;
+  return repeated(pairCounts)*400+repeated(opponentCounts)*40+repeated(matchCounts)*500+
+    oldPairOverlap*12+oldMatchOverlap*20+gameGap*30+historyScore;
 }
 window.rollAllBalanced = function() {
   const nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
@@ -3486,10 +3523,10 @@ window.rollAllBalanced = function() {
   if(previousRounds.some(round=>(round?.matches||[]).some(match=>match.tag==='수동'||match.manual))&&
       !confirm('수동 등록한 경기가 있어요. 하루 전체 섞기를 하면 수동 경기가 모두 지워져요. 계속할까요?'))return;
   const attendees=dayId?getAttendees(dayId):allPlayers();
-  const history={pastPairs:getPastPairCounts(currentSeason),pastOpp:getPastOpponents()};
+  const history={pastPairs:getPastPairCounts(currentSeason,dayId),pastOpp:getPastOpponents(dayId)};
   let bestRounds=null,bestScore=Infinity,bestMatchCount=-1,lastError=null;
   // 한 번의 순차 생성 결과만 사용하지 않고 여러 전체 대진의 반복·균형을 비교한다.
-  for(let attempt=0;attempt<12;attempt++){
+  for(let attempt=0;attempt<24;attempt++){
     const typeHistory={};
     const pairSchedule={};
     getDayFixPairs(dayId).forEach(([a,b,ct])=>{
@@ -3505,7 +3542,7 @@ window.rollAllBalanced = function() {
       }
       const candidate=generatedAllRounds;
       const matchCount=candidate.reduce((sum,round)=>sum+round.matches.filter(match=>!match.isRally).length,0);
-      const score=scoreRegularSchedule(candidate,previousRounds,attendees);
+      const score=scoreRegularSchedule(candidate,previousRounds,attendees,history.pastPairs,history.pastOpp);
       if(matchCount>bestMatchCount||(matchCount===bestMatchCount&&
           (score<bestScore||(score===bestScore&&Math.random()<.35)))){
         bestRounds=candidate;bestMatchCount=matchCount;bestScore=score;
