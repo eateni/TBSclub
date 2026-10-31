@@ -476,6 +476,11 @@ tr:nth-child(even){background:#F5FCFB;}
 .score-kind-line{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:-7px 0 12px;padding:8px 10px;border-radius:10px;background:#F5FAFA;border:1px solid #DCEBE8;font-size:10px;color:#64748B}
 .admin-pc-heading{display:none}
 .admin-mobile-home{display:inline-flex;align-items:center;gap:6px;margin-bottom:12px;padding:9px 13px;border:1px solid #BFE0DA;border-radius:10px;background:#F5FFFC;color:#0F766E;font-size:12px;font-weight:900;cursor:pointer}
+.admin-menu-label{display:none}
+@media(max-width:899px){
+  body.admin-view #tab-admin>.subtabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:7px}
+  body.admin-view #tab-admin>.subtabs .stab{min-width:0;padding:10px 6px;line-height:1.35;font-size:12px}
+}
 @media(min-width:900px){
   body.admin-view #headerSlogan{display:none}
   body.admin-view .bottom-nav{display:none}
@@ -490,15 +495,41 @@ tr:nth-child(even){background:#F5FCFB;}
   .admin-pc-home:hover{background:rgba(255,255,255,.24)}
   body.admin-view #tab-admin>.subtabs{float:left;position:sticky;top:86px;width:218px;display:flex;flex-direction:column;gap:7px;margin:0;padding:10px;border:1px solid #D7E8E5;border-radius:15px;background:rgba(255,255,255,.94);box-shadow:0 7px 22px rgba(15,23,42,.08)}
   body.admin-view #tab-admin>.subtabs .stab{flex:none;width:100%;padding:12px 14px;text-align:left;font-size:13px;border-radius:10px}
+  body.admin-view #tab-admin>.subtabs .admin-menu-label{display:block;padding:8px 10px 1px;color:#64748B;font-size:11px;font-weight:900}
   body.admin-view #tab-admin>[id^="adminGroup-"]{margin-left:238px}
   body.admin-view #tab-admin .admin-sec{padding:20px;border-radius:16px;margin-bottom:16px}
   body.admin-view #tab-admin .admin-sec h3{font-size:16px}
-  body.admin-view #adminGroup-match.admin-group-active{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
-  body.admin-view #adminGroup-match .admin-sec{margin-bottom:0;height:100%}
+  body.admin-view #adminGroup-match.admin-group-active{display:grid!important;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+  body.admin-view #adminGroup-match>.admin-sec{margin-bottom:0}
   body.admin-view #adminGroup-notifications>.admin-sec{max-width:860px}
   body.admin-view #adminGroup-announce>.admin-sec{max-width:900px}
 }
 @media(max-width:520px){.admin-ops-guide{grid-template-columns:1fr}.admin-ops-step{text-align:left;padding:8px 10px}.day-play-count-grid{grid-template-columns:1fr 1fr}}
+.admin-maintenance>summary{cursor:pointer;color:#0F766E;font-size:14px;font-weight:900}
+.admin-maintenance[open]>summary{margin-bottom:12px}
+.admin-tool-card{border:1px solid;border-radius:10px;padding:12px;margin-top:10px}
+.admin-tool-card h3{margin-bottom:7px}
+.regular-setup-grid{grid-template-columns:minmax(0,1fr)}
+.regular-setup-grid>.tprep-setup-panel{min-width:0}
+.regular-setup-grid .tprep-setup-title>span:last-child:not(:first-child){color:#0F766E;font-size:12px}
+.regular-setup-grid .tprep-balance-badge{color:#0F766E;font-size:11px}
+.regular-setup-grid .tprep-label{font-size:12px}
+.regular-setup-grid .tprep-setup-help{font-size:12px}
+.regular-setup-grid .tprep-attendee-chip{font-size:12px}
+.regular-setup-grid .row-sel{box-sizing:border-box;min-width:0;font-size:14px}
+.regular-setup-grid #datePairBody .row-form{flex-wrap:wrap}
+.regular-setup-grid #datePairBody .row-form select{min-width:120px}
+@media(max-width:600px){
+  .regular-setup-grid .tprep-setup-panel{padding:12px}
+  .regular-setup-grid .tprep-basic-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .regular-round-head{align-items:flex-start!important;flex-wrap:wrap;gap:8px}
+  .regular-round-actions{width:100%;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .regular-round-actions button{min-width:0;padding:9px 4px!important;font-size:12px!important}
+  .regular-setup-grid #datePairBody .row-form select{flex:1 1 44%!important}
+  .regular-setup-grid #datePairBody .row-form button{flex:1 1 100%}
+  .regular-setup-grid .tprep-actions{flex-wrap:wrap}
+  .regular-setup-grid .tprep-actions button{flex:1 1 100%}
+}
 
 </style>
 <!-- 음양력 변환 라이브러리 (korean-lunar-calendar by usingsky, MIT) -->
@@ -1021,13 +1052,16 @@ tr:nth-child(even){background:#F5FCFB;}
       </div>
 
       <div class="subtabs" style="margin-bottom:14px">
+        <span class="admin-menu-label">회원·시즌</span>
         <button class="stab active" onclick="switchAdminSub('members',this)">👥 회원·승인</button>
-        <button class="stab" onclick="switchAdminSub('match',this)">🎾 시즌·페어 설정</button>
+        <button class="stab" onclick="switchAdminSub('match',this)">🗓️ 시즌 관리</button>
+        <span class="admin-menu-label">경기</span>
         <button class="stab" onclick="switchAdminSub('operations',this)">📅 경기 운영</button>
-        <button class="stab" onclick="switchAdminSub('highlights',this)">✨ 홈 하이라이트</button>
         <button class="stab" onclick="switchAdminSub('personal',this)">🎾 개인 경기</button>
         <button class="stab" onclick="switchAdminSub('polls',this)">📮 참석 투표</button>
+        <span class="admin-menu-label">현황·소식</span>
         <button class="stab" onclick="switchAdminSub('status',this)">📊 운영 현황</button>
+        <button class="stab" onclick="switchAdminSub('highlights',this)">✨ 홈 하이라이트</button>
         <button class="stab" onclick="switchAdminSub('announce',this)">📢 공지 관리</button>
         <button class="stab" onclick="switchAdminSub('notifications',this)">🔔 알림 관리</button>
       </div>
@@ -1098,18 +1132,18 @@ tr:nth-child(even){background:#F5FCFB;}
       </div>
 
       <div id="adminGroup-match" style="display:none">
-        <!-- 일자별 금지/지정 페어 -->
+        <!-- 시즌 관리 -->
         <div class="admin-sec">
-          <h3>🗓️ 일자별 금지/지정 페어</h3>
-          <div style="font-size:11px;color:#64748B;margin-bottom:10px">선택한 날짜의 페어링에만 적용돼요 · 🚫금지=같은 팀 안 됨 · 📌지정=같은 팀으로 묶기</div>
-          <select class="row-inp" id="datePairSel" style="width:100%;margin-bottom:12px" onchange="changeDatePairSel()">
-            <option value="">날짜 선택...</option>
-          </select>
-          <div id="datePairBody"><div style="color:#64748B;font-size:12px">날짜를 선택하세요</div></div>
+          <h3>🗓️ 시즌 관리</h3>
+          <div style="font-size:11px;color:#64748B;margin-bottom:10px">현재 <b id="curSeasonLabel">시즌 1</b> 진행 중 · 마감하면 기록이 보존되고 새 시즌부터 랭킹이 새로 집계돼요</div>
+          <button class="btn-add" style="width:100%;background:#f59e0b;color:#1a120a;font-weight:800" onclick="startNewSeason()">🏁 이번 시즌 마감하고 새 시즌 시작</button>
         </div>
 
+        <details class="admin-sec admin-maintenance">
+          <summary>⚙️ 기록 관리 도구</summary>
+
         <!-- Elo 레이팅 재계산 -->
-        <div class="admin-sec" style="border-color:rgba(139,92,246,0.4);background:rgba(20,10,50,0.2)">
+        <div class="admin-tool-card" style="border-color:rgba(139,92,246,0.4);background:rgba(20,10,50,0.2)">
           <h3>⚡ Elo 레이팅 관리</h3>
           <div style="font-size:11px;color:#94A3B8;margin-bottom:10px">시즌1부터 전체 정규시즌 경기를 시간순 재생해 개인 레이팅을 초기화합니다. 배포 직후 최초 1회 또는 데이터 불일치 시 사용하세요.</div>
           <button onclick="window._adminRecalcRatings()" style="width:100%;padding:9px;background:rgba(139,92,246,0.15);border:1px solid rgba(139,92,246,0.45);border-radius:8px;color:#a78bfa;font-size:12px;font-weight:700;cursor:pointer">🔄 레이팅 전체 재계산</button>
@@ -1117,19 +1151,14 @@ tr:nth-child(even){background:#F5FCFB;}
         </div>
 
         <!-- 하이라이트 캐시 초기화 -->
-        <div class="admin-sec" style="border-color:rgba(13,148,136,0.4);background:rgba(0,30,20,0.2)">
+        <div class="admin-tool-card" style="border-color:rgba(13,148,136,0.4);background:rgba(0,30,20,0.2)">
           <h3>🗑️ 하이라이트 캐시 초기화</h3>
           <div style="font-size:11px;color:#94A3B8;margin-bottom:10px">days 컬렉션의 dayBadges/daySummary 캐시를 삭제해 뱃지 로직 변경 사항을 재적용합니다. 버튼 클릭 시 대상 건수를 먼저 표시합니다.</div>
           <button onclick="window._adminClearBadgeCache()" style="width:100%;padding:9px;background:rgba(13,148,136,0.15);border:1px solid rgba(13,148,136,0.45);border-radius:8px;color:#34d399;font-size:12px;font-weight:700;cursor:pointer">🗑️ 캐시 현황 확인 → 초기화</button>
           <div id="badgeCacheResult" style="margin-top:8px;font-size:11px;color:#64748B"></div>
         </div>
 
-        <!-- 시즌 관리 -->
-        <div class="admin-sec">
-          <h3>🗓️ 시즌 관리</h3>
-          <div style="font-size:11px;color:#64748B;margin-bottom:10px">현재 <b id="curSeasonLabel">시즌 1</b> 진행 중 · 마감하면 기록이 보존되고 새 시즌부터 랭킹이 새로 집계돼요</div>
-          <button class="btn-add" style="width:100%;background:#f59e0b;color:#1a120a;font-weight:800" onclick="startNewSeason()">🏁 이번 시즌 마감하고 새 시즌 시작</button>
-        </div>
+        </details>
       </div>
 
       <div id="adminGroup-operations" style="display:none">
@@ -1143,8 +1172,8 @@ tr:nth-child(even){background:#F5FCFB;}
         </div>
         <div class="admin-ops-guide">
           <div class="admin-ops-step"><b>1. 일정·참석</b>날짜와 참가자 확인</div>
-          <div class="admin-ops-step"><b>2. 공식 대진</b>관리자 자동·수동 생성</div>
-          <div class="admin-ops-step"><b>3. 즉석 매치</b>현장 추가 경기 관리</div>
+          <div class="admin-ops-step"><b>2. 페어 조건·대진</b>금지·지정 페어와 코트 설정</div>
+          <div class="admin-ops-step"><b>3. 경기 기록</b>결과·즉석 매치 관리</div>
         </div>
       </div>
 
@@ -1185,13 +1214,6 @@ tr:nth-child(even){background:#F5FCFB;}
           <span style="font-size:12px;color:#64748B;font-weight:700;white-space:nowrap">🗓️ 시즌</span>
           <select id="adminDaySeasonSel" class="row-sel" style="flex:1;font-size:12px;padding:6px" onchange="changeAdminDaySeason()"></select>
         </div>
-        <!-- 날짜별 참석자 관리 -->
-        <div class="admin-sec">
-          <h3>📋 날짜별 참석자 관리</h3>
-          <div style="font-size:11px;color:#64748B;margin-bottom:10px">참석/불참 설정 후 페어링 생성 시 자동 반영돼요</div>
-          <div id="attendanceSection"><div style="color:#64748B;font-size:12px">날짜 그룹을 먼저 추가해주세요</div></div>
-        </div>
-
         <!-- 날짜 그룹 추가 -->
         <div class="admin-sec">
           <h3>📅 날짜 그룹 추가</h3>
@@ -1232,18 +1254,37 @@ tr:nth-child(even){background:#F5FCFB;}
           <button class="btn-add" style="width:100%" onclick="addDay()">📅 날짜 그룹 추가</button>
         </div>
 
+        <!-- 날짜별 참석자 관리 -->
+        <div class="admin-sec">
+          <h3>📋 날짜별 참석자 관리</h3>
+          <div style="font-size:11px;color:#64748B;margin-bottom:10px">참석/불참 설정 후 페어링 생성 시 자동 반영돼요</div>
+          <div id="attendanceSection"><div style="color:#64748B;font-size:12px">날짜 그룹을 먼저 추가해주세요</div></div>
+        </div>
+
         <!-- 정규시즌 통합 경기 설정 -->
         <div class="admin-sec">
-          <div class="tprep-setup-head"><b>🏆 정규시즌 경기 설정</b><span>참석자 확인부터 라운드·코트 설정, 페어 생성과 결과 입력까지 같은 흐름으로 진행합니다.</span><div class="tprep-steps"><span class="tprep-step on">1. 참석자</span><span class="tprep-step on">2. 라운드·코트</span><span class="tprep-step">3. 페어 생성</span><span class="tprep-step">4. 결과 입력</span></div></div>
-          <div class="tprep-setup-grid">
+          <div class="tprep-setup-head"><b>🏆 정규시즌 경기 설정</b><span>경기일과 참석자를 확인한 뒤 페어 조건, 라운드·코트를 순서대로 설정하세요.</span><div class="tprep-steps"><span class="tprep-step on">1. 경기일·참석</span><span class="tprep-step">2. 페어 조건</span><span class="tprep-step">3. 라운드·코트</span><span class="tprep-step">4. 대진·저장</span></div></div>
+          <div class="tprep-setup-grid regular-setup-grid">
             <div class="tprep-setup-panel">
-              <div class="tprep-setup-title"><span>라운드와 코트 설정</span><span style="font-size:10px;color:#0F766E">⚖️ 균형 배정</span></div>
-              <div class="tprep-setup-help">날짜를 고른 뒤 라운드별 코트 종목을 설정하고, 전체 섞기 또는 라운드별 수동 편성을 선택하세요.</div>
+              <div class="tprep-setup-title"><span>1. 경기일과 참석자</span><span id="regularSetupAttendeeCount">날짜 선택 필요</span></div>
+              <label class="tprep-label" for="rndDayId">경기일</label>
+              <select class="row-sel" id="rndDayId" onchange="onRndDayChange()"><option value="">날짜 선택...</option></select>
+              <div class="tprep-setup-help" style="margin-top:8px">선택한 날짜의 참석 여부가 대진 생성에 자동 반영됩니다. 참가자를 바꾸려면 위의 날짜별 참석자 관리에서 수정하세요.</div>
+              <div id="regularSetupAttendeeSummary" class="tprep-attendee-list"><span>경기일을 선택하면 참석자가 표시됩니다.</span></div>
+            </div>
+            <div class="tprep-setup-panel">
+              <div class="tprep-setup-title"><span>2. 금지·지정 페어</span></div>
+              <div class="tprep-setup-help">선택한 경기일에만 적용됩니다. 금지 페어는 같은 팀에 배정하지 않고, 지정 페어는 같은 팀으로 묶습니다.</div>
+              <select id="datePairSel" aria-label="금지·지정 페어 경기일" style="display:none"><option value="">경기일을 먼저 선택하세요</option></select>
+              <div id="datePairBody" style="margin-top:10px"><div class="tprep-setup-help">경기일을 선택하세요.</div></div>
+            </div>
+            <div class="tprep-setup-panel">
+              <div class="tprep-setup-title"><span>3. 라운드·코트와 대진</span><span class="tprep-balance-badge">⚖️ 균형 배정</span></div>
+              <div class="tprep-setup-help">라운드별 코트 종목을 설정하고, 전체 섞기 또는 라운드별 수동 편성을 선택하세요.</div>
               <div class="tprep-basic-grid" style="margin-bottom:10px">
-                <div><label class="tprep-label">경기일</label><select class="row-sel" id="rndDayId" onchange="onRndDayChange()"><option value="">날짜 선택...</option></select></div>
                 <div><label class="tprep-label">총 라운드 수</label><select class="row-sel" id="totalRounds" onchange="rndConfigChanged()"><option value="2">2라운드</option><option value="3" selected>3라운드</option><option value="4">4라운드</option><option value="5">5라운드</option><option value="6">6라운드</option><option value="7">7라운드</option><option value="8">8라운드</option></select></div>
+                <div><label class="tprep-label">코트 수</label><select class="row-sel" id="rndCourts" onchange="rndConfigChanged()"><option value="2" selected>2코트</option><option value="3">3코트</option><option value="4">4코트</option><option value="5">5코트</option><option value="6">6코트</option><option value="7">7코트</option><option value="8">8코트</option></select></div>
               </div>
-              <div style="max-width:50%;padding-right:4px"><label class="tprep-label">코트 수</label><select class="row-sel" id="rndCourts" onchange="rndConfigChanged()"><option value="2" selected>2코트</option><option value="3">3코트</option><option value="4">4코트</option><option value="5">5코트</option><option value="6">6코트</option><option value="7">7코트</option><option value="8">8코트</option></select></div>
               <div style="margin-top:10px"><label class="tprep-label" for="regularShuffleMode">섞기 기준</label><select class="row-sel" id="regularShuffleMode"><option value="diverse" selected>새 조합 우선 · 다시 누르면 다른 대진 탐색</option><option value="balanced">균형 우선 · 반복 최소화</option></select><div class="tprep-setup-help" style="margin:4px 0 0">새 조합 우선도 경기 수와 페어 중복을 확인한 뒤 대진을 고릅니다.</div></div>
               <div id="roundTypeSelectors" style="display:flex;flex-direction:column;gap:10px;margin-top:12px"></div>
               <div class="tprep-actions"><button class="tprep-reset" onclick="updateRoundTypeSelectors()">코트 설정 초기화</button><button class="tprep-generate" onclick="rollAllBalanced()">🎲 하루 전체 섞기</button></div>
@@ -1254,9 +1295,6 @@ tr:nth-child(even){background:#F5FCFB;}
               <div style="margin-top:8px"><button class="btn-add" style="width:100%" onclick="saveAllRounds(this)">✅ 전체 라운드 저장</button></div>
             </div>
             <div class="tprep-setup-panel">
-              <div class="tprep-setup-title"><span>참석자</span><span id="regularSetupAttendeeCount" style="font-size:10px;color:#0F766E">날짜 선택 필요</span></div>
-              <div class="tprep-setup-help">선택한 날짜의 참석 여부가 대진 생성에 자동 반영됩니다.</div>
-              <div id="regularSetupAttendeeSummary" class="tprep-attendee-list"><span style="font-size:11px;color:#64748B">경기일을 선택하면 참석자가 표시됩니다.</span></div>
               <details class="tprep-options"><summary>⚙️ 정규시즌 기록 규칙</summary><div class="tprep-options-body">저장한 경기는 선택한 시즌의 공식 랭킹과 라운드 기록에 반영됩니다.<br>이벤트전·개인 경기는 별도 기록으로 관리되어 공식 랭킹과 섞이지 않습니다.</div></details>
             </div>
           </div>
@@ -1764,7 +1802,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.41';
+const APP_VERSION = '1.17.42';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -3049,9 +3087,9 @@ function updateRoundTypeSelectors() {
 
   el.innerHTML = Array.from({length:nR}, (_,r) => `
     <div style="background:#F5FAFA;border-radius:10px;padding:12px;border:1px solid #C8E0DE">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div class="regular-round-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;font-weight:800;color:#f59e0b">🏆 ${r+1}라운드</span>
-        <div style="display:flex;gap:5px">
+        <div class="regular-round-actions" style="display:flex;gap:5px">
           <button onclick="rollRound(${r})"
             style="padding:5px 12px;background:rgba(5,150,105,0.85);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">
             🎲 섞기
@@ -3110,6 +3148,9 @@ window.onRndDayChange = function() {
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
   for (let r=0;r<nR;r++) fillManualSelectors(r);
   const dayId = document.getElementById('rndDayId')?.value || '';
+  const pairDay = document.getElementById('datePairSel');
+  if (pairDay) pairDay.value = dayId;
+  renderDatePairs();
   const day = days.find(d=>d.id===dayId);
   const ncSel = document.getElementById('rndCourts');
   if (ncSel && day) {
@@ -4295,7 +4336,16 @@ window.submitScoreEdit = async function() {
 
 
 // ── 일자별 금지/지정 페어 UI ───────────────────────────────────────
-window.changeDatePairSel = function(){ renderDatePairs(); };
+window.changeDatePairSel = function(){
+  const dayId = document.getElementById('datePairSel')?.value || '';
+  const roundDay = document.getElementById('rndDayId');
+  if (roundDay && dayId && roundDay.value !== dayId) {
+    roundDay.value = dayId;
+    onRndDayChange();
+  } else {
+    renderDatePairs();
+  }
+};
 
 function renderDatePairs(){
   const sel = document.getElementById('datePairSel');
@@ -4305,7 +4355,9 @@ function renderDatePairs(){
   const pairDays = getAdminDays();
   sel.innerHTML = '<option value="">날짜 선택...</option>' +
     pairDays.map(d=>`<option value="${d.id}">${d.date}${d.place?' · '+d.place:''}</option>`).join('');
+  const roundDayId = document.getElementById('rndDayId')?.value || '';
   if(cur && pairDays.some(d=>d.id===cur)) sel.value = cur;
+  else if(roundDayId && pairDays.some(d=>d.id===roundDayId)) sel.value = roundDayId;
   const dayId = sel.value;
   if(!dayId){ body.innerHTML = '<div style="color:#64748B;font-size:12px">날짜를 선택하세요</div>'; return; }
   const day = days.find(d=>d.id===dayId) || {};
@@ -11875,7 +11927,7 @@ function renderHomeTab() {
   ];
   if (isAdmin) {
     CATS.push({ id:'admin-panel', icon:'⚙️', label:'관리자', grad:'linear-gradient(135deg,rgba(100,10,10,0.28),rgba(239,68,68,0.1))', border:'rgba(239,68,68,0.38)', cardCls:'sc-card-admin',
-      items:[{icon:'👥',name:'회원·승인',go:'admin-members'},{icon:'🎾',name:'시즌·페어',go:'admin-match'},{icon:'📅',name:'경기 운영',go:'admin-schedule'},{icon:'✨',name:'홈 하이라이트',go:'admin-highlights'},{icon:'📊',name:'운영 현황',go:'admin-status'},{icon:'📢',name:'공지 관리',go:'admin-announce'},{icon:'🔔',name:'알림 관리',go:'admin-notifications'}] });
+      items:[{icon:'👥',name:'회원·승인',go:'admin-members'},{icon:'🗓️',name:'시즌 관리',go:'admin-match'},{icon:'📅',name:'경기 운영',go:'admin-schedule'},{icon:'✨',name:'홈 하이라이트',go:'admin-highlights'},{icon:'📊',name:'운영 현황',go:'admin-status'},{icon:'📢',name:'공지 관리',go:'admin-announce'},{icon:'🔔',name:'알림 관리',go:'admin-notifications'}] });
   }
   var shortcutsHtml = CATS.map(function(cat) {
     var isOpen = openCategory === cat.id;
