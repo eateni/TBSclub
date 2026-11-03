@@ -1802,7 +1802,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.42';
+const APP_VERSION = '1.17.43';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4451,9 +4451,15 @@ function renderSeasonSelect(){
 }
 window.changeViewSeason = function(){
   const sel = document.getElementById('seasonSelect'); if(!sel) return;
-  viewSeason = parseInt(sel.value,10) || currentSeason;
+  const nextSeason = parseInt(sel.value,10) || currentSeason;
+  if (nextSeason !== viewSeason) _openDayIds.clear();
+  viewSeason = nextSeason;
   seasonUserPicked = (viewSeason !== currentSeason);
-  renderAll();
+  // 시즌 전환은 경기 기록 화면만 갱신한다. 홈·관리자 등 다른 화면의 재렌더를 피한다.
+  const stats = calcStats();
+  renderTop3(stats); renderDays(); renderStats(stats);
+  renderRanking(stats); renderAnalysis(stats); renderSeasonReport();
+  renderSeasonSelect();
 };
 
 // ── 어드민 날짜 목록 시즌 필터 ──────────────────────────────────────
@@ -4832,6 +4838,9 @@ function renderDays() {
   const sorted = [...seasonDays].sort((a,b)=>(b.date||'')>(a.date||'')?1:(b.date||'')<(a.date||'')?-1:0);
 
   el.innerHTML = sorted.map(day => {
+    const dayId = `day_${day.id}`;
+    const isHistorical = viewSeason !== currentSeason;
+    const isExpanded = _openDayIds.has(dayId);
     const dateStr = day.date ? new Date(day.date).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
     const rounds = day.rounds || [];
     const seasonRoundNo = getRegularSeasonRoundNumber(day);
@@ -4866,9 +4875,10 @@ function renderDays() {
     const attendStr = attendingAll.length > 0
       ? `<span style="font-size:10px;color:rgba(100,200,150,0.8);font-weight:400;margin-left:6px">👥 ${attendingAll.length}명 참석</span>`
       : '';
-    const instantBoardHtml=(isFreeMode||instantMatchCount>0)?buildInstantMatchBoard(day,rounds,playCounts,attendingAll):'';
+    const instantBoardHtml=(!isHistorical || isExpanded) && (isFreeMode||instantMatchCount>0)
+      ? buildInstantMatchBoard(day,rounds,playCounts,attendingAll) : '';
 
-    const roundsHtml = rounds.map((r, rIdx) => {
+    const roundsHtml = (!isHistorical || isExpanded ? rounds : []).map((r, rIdx) => {
       const gameLabel = `${rIdx + 1}경기`;
       const matchesHtml = (r.matches||[]).map(m => {
         // 랠리 카드는 별도로 표시
@@ -4916,7 +4926,7 @@ function renderDays() {
               m.evalText=evalHtml;
               m.highlightVersion=HIGHLIGHT_VERSION;
               const _dId=day.id,_rI=rIdx,_mId=m.id,_et=evalHtml,_hv=HIGHLIGHT_VERSION;
-              (async()=>{const _d=days.find(d=>d.id===_dId);if(!_d)return;const nr=(_d.rounds||[]).map((rn,ri)=>ri!==_rI?rn:{...rn,matches:(rn.matches||[]).map(mx=>mx.id===_mId?{...mx,evalText:_et,highlightVersion:_hv}:mx)});try{await updateDoc(doc(db,'days',_dId),{rounds:nr});}catch(e){}})();
+              if (!isHistorical) (async()=>{const _d=days.find(d=>d.id===_dId);if(!_d)return;const nr=(_d.rounds||[]).map((rn,ri)=>ri!==_rI?rn:{...rn,matches:(rn.matches||[]).map(mx=>mx.id===_mId?{...mx,evalText:_et,highlightVersion:_hv}:mx)});try{await updateDoc(doc(db,'days',_dId),{rounds:nr});}catch(e){}})();
             }
           }
         }
@@ -5012,7 +5022,7 @@ function renderDays() {
     }).join('');
 
     let daySummaryHtml='';
-    if(totalMatches>0&&doneMatches===totalMatches){
+    if((!isHistorical || isExpanded) && totalMatches>0&&doneMatches===totalMatches){
       let dBadges=day.dayBadges;
       let dSummary=day.daySummary;
       if((!dBadges||!dSummary||day.highlightVersion!==HIGHLIGHT_VERSION)&&guestsLoaded){
@@ -5022,7 +5032,7 @@ function renderDays() {
         if(dBadges.length&&dSummary){
           day.dayBadges=dBadges;day.daySummary=dSummary;day.highlightVersion=HIGHLIGHT_VERSION;
           const _dId=day.id,_db=dBadges,_ds=dSummary,_hv=HIGHLIGHT_VERSION;
-          (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds,highlightVersion:_hv});}catch(e){}})();
+          if (!isHistorical) (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds,highlightVersion:_hv});}catch(e){}})();
         }
       }
       const chipsHtml=buildDayBadgesHtml(dBadges||[]);
@@ -5037,7 +5047,6 @@ function renderDays() {
     }
 
     const delDayBtn = isAdmin ? `<button onclick="delDay('${day.id}')" style="background:none;border:none;color:#f87171;font-size:11px;cursor:pointer;margin-left:8px">날짜 삭제</button>` : '';
-    const dayId = `day_${day.id}`;
     const dayArr = `darr_${day.id}`;
     const progressPct = totalMatches > 0 ? Math.round(doneMatches/totalMatches*100) : 0;
     const dayAddMatchBtn = (isFreeMode && rounds.length===0 && (isAdmin || isDayRegularMember))
@@ -5055,7 +5064,7 @@ function renderDays() {
         </div>
         <span id="${dayArr}" style="color:#64748B;transition:transform 0.2s">›</span>
       </button>
-      <div class="round-body" id="${dayId}" style="display:none">
+      <div class="round-body" id="${dayId}" ${isHistorical && !isExpanded ? 'data-lazy-history="1"' : ''} style="display:none">
         ${instantBoardHtml}
         ${roundsHtml || '<div style="color:#64748B;font-size:13px;padding:8px 0">아직 라운드가 없어요</div>'}
         ${dayAddMatchBtn}
@@ -13872,6 +13881,11 @@ window.toggleR=function(bodyId,arrId){
   const el=document.getElementById(bodyId),arr=document.getElementById(arrId);
   if(!el)return;
   const open=el.style.display==='none';
+  if(open && bodyId.startsWith('day_') && el.dataset.lazyHistory==='1'){
+    _openDayIds.add(bodyId);
+    renderDays();
+    return;
+  }
   el.style.display=open?'flex':'none';
   if(arr)arr.style.transform=open?'rotate(90deg)':'';
   if(bodyId.startsWith('day_')){if(open)_openDayIds.add(bodyId);else _openDayIds.delete(bodyId);}
