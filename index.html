@@ -1802,7 +1802,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.43';
+const APP_VERSION = '1.17.44';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -6455,6 +6455,61 @@ window.openEventDetail=function(evId, adminContext){
 
 // ── 경기별 평가 엔진 ──────────────────────────────────────────
 const HIGHLIGHT_VERSION = 2;
+// 기존 경기의 문구와 캐시는 보존하고, 이후 경기부터 새 서술 방식을 적용한다.
+const HIGHLIGHT_STYLE_START_DATE = '2026-11-04';
+
+function buildMatchEvalFromScore(norm, date) {
+  const score1 = Number(norm.score1), score2 = Number(norm.score2);
+  if (!Number.isFinite(score1) || !Number.isFinite(score2) || (score1 === 0 && score2 === 0)) return '';
+  const first = (norm.team1 || []).filter(Boolean).join('·') || '첫 번째 페어';
+  const second = (norm.team2 || []).filter(Boolean).join('·') || '두 번째 페어';
+  if (score1 === score2) return `${first}와 ${second}, ${score1}:${score2} 무승부.`;
+
+  const firstWon = score1 > score2;
+  const winner = firstWon ? first : second;
+  const loser = firstWon ? second : first;
+  const won = Math.max(score1, score2), lost = Math.min(score1, score2);
+  const margin = won - lost;
+  const scoreParticle = String(lost).endsWith('0') ? '으로' : '로';
+  let result = `${winner}${getJosa(winner, '이가')} ${loser}${getJosa(loser, '을를')} ${won}:${lost}${scoreParticle} 이겼다.`;
+  if (lost === 0) result += ' 상대에게 한 게임도 내주지 않았다.';
+  else if (margin === 1) result += ' 한 게임 차 승부였다.';
+
+  // 날짜가 같은 경기의 순서는 알 수 없으므로 이전 날짜의 맞대결만 참고한다.
+  const pairKey = team => [...(team || [])].filter(Boolean).sort().join('|');
+  const winnerKey = pairKey(firstWon ? norm.team1 : norm.team2);
+  const loserKey = pairKey(firstWon ? norm.team2 : norm.team1);
+  if (winnerKey && loserKey) {
+    const previous = _getAllMatchHistory(date).filter(match =>
+      match.date < date &&
+      ((pairKey(match.team1) === winnerKey && pairKey(match.team2) === loserKey) ||
+       (pairKey(match.team1) === loserKey && pairKey(match.team2) === winnerKey)));
+    if (previous.length) {
+      const wins = previous.filter(match => {
+        const winnerWasFirst = pairKey(match.team1) === winnerKey;
+        return winnerWasFirst ? match.score1 > match.score2 : match.score2 > match.score1;
+      }).length;
+      const draws = previous.filter(match => match.score1 === match.score2).length;
+      result += ` 이날 전까지 두 페어의 맞대결은 ${winner} 기준 ${wins}승 ${draws}무 ${previous.length - wins - draws}패였다.`;
+    }
+  }
+  return result;
+}
+
+function buildDaySummaryFromResults(dayMatches, badges) {
+  const total = dayMatches.length;
+  const close = dayMatches.filter(match => Math.abs(Number(match.score1) - Number(match.score2)) === 1).length;
+  const draws = dayMatches.filter(match => Number(match.score1) === Number(match.score2)).length;
+  const shutouts = dayMatches.filter(match => Number(match.score1) !== Number(match.score2) &&
+    Math.min(Number(match.score1), Number(match.score2)) === 0).length;
+  let summary = `총 ${total}경기를 마쳤다.`;
+  if (close) summary += ` ${close}경기는 한 게임 차로 끝났다.`;
+  else if (draws) summary += ` 무승부는 ${draws}경기였다.`;
+  else if (shutouts) summary += ` 상대에게 한 게임도 내주지 않은 경기가 ${shutouts}번 나왔다.`;
+  const mvp = (badges || []).find(badge => badge.type === 'mvp');
+  if (mvp) summary += ` ${mvp.name}${getJosa(mvp.name, '이가')} ${mvp.wins}승으로 이날 MVP에 선정됐다.`;
+  return summary;
+}
 
 // 같은 경기·날짜에는 같은 문장을, 서로 다른 경기에는 다양한 문장을 선택한다.
 function stableHighlightPick(arr, seed) {
@@ -6493,6 +6548,7 @@ function _getAllMatchHistory(upToDate) {
 
 function buildMatchEval(norm, date) {
   if (!norm||!date) return '';
+  if (date >= HIGHLIGHT_STYLE_START_DATE) return buildMatchEvalFromScore(norm, date);
   const s1=Number(norm.score1), s2=Number(norm.score2);
   if (isNaN(s1)||isNaN(s2)||(s1===0&&s2===0)) return '';
   const allFull=_getAllMatchHistory(date);
@@ -6641,6 +6697,7 @@ function getJosa(name, type) {
 }
 function buildDaySummary(dayMatches, badges, date) {
   if (!dayMatches||!dayMatches.length) return '';
+  if (date >= HIGHLIGHT_STYLE_START_DATE) return buildDaySummaryFromResults(dayMatches, badges);
   const total=dayMatches.length;
   let pickSeq=0;
   function pick(arr){return stableHighlightPick(arr,[date,total,pickSeq++].join('|'));}
@@ -6875,6 +6932,17 @@ function getPartnershipEventHighlightData(ev) {
 
 function getPartnershipEventHighlightSummary(ev, data) {
   if (!ev || !data) return '';
+  if (ev.date >= HIGHLIGHT_STYLE_START_DATE) {
+    const winner = data.winner;
+    const name = winner.players.join('·');
+    let summary = `${name} 페어가 ${winner.points}점, ${winner.wins}승 ${winner.draws}무 ${winner.losses}패로 1위를 기록했다.`;
+    if (data.runnerUp) {
+      const gap = winner.points - data.runnerUp.points;
+      summary += gap ? ` 2위 ${data.runnerUp.players.join('·')} 페어와 승점 차는 ${gap}점이다.`
+        : ` 2위 ${data.runnerUp.players.join('·')} 페어와 승점은 같았다.`;
+    }
+    return summary;
+  }
   const completedMatches=(ev.matches||[]).filter(match => {
     const score1=match.ourScore ?? match.score1, score2=match.oppScore ?? match.score2;
     return score1 !== null && score1 !== undefined && score1 !== '' &&
@@ -6944,6 +7012,11 @@ function getFriendlyEventHighlightData(ev) {
 function getFriendlyEventHighlightSummary(ev,data) {
   if(!ev||!data) return '';
   const {mvp,completed,closeGames}=data;
+  if (ev.date >= HIGHLIGHT_STYLE_START_DATE) {
+    let summary = `${completed}경기 결과를 집계했다. ${mvp.name}${getJosa(mvp.name, '이가')} ${mvp.wins}승 ${mvp.draws}무 ${mvp.losses}패로 MVP에 선정됐다.`;
+    if (closeGames) summary += ` 한 게임 차 경기는 ${closeGames}경기였다.`;
+    return summary;
+  }
   const record=`${mvp.wins}승 ${mvp.draws}무 ${mvp.losses}패`;
   const lead=`${mvp.name} 선수가 ${record}로 이날의 MVP에 올랐습니다.`;
   const close=closeGames?`${completed}경기 중 ${closeGames}경기가 1점 차로 갈릴 만큼 마지막 포인트까지 팽팽했습니다.`
@@ -13103,7 +13176,11 @@ function getPersonalScheduleHighlightData(schedule) {
   const ranking = [...pairs.values()].sort((a,b) => b.wins - a.wins || b.diff - a.diff || b.games - a.games || a.names.join(' / ').localeCompare(b.names.join(' / '),'ko'));
   const leader = ranking[0] || null;
   const closeGames = scored.filter(match => Math.abs(Number(match.score1) - Number(match.score2)) <= 2).length;
-  const summary = leader && leader.wins
+  const summary = schedule.date >= HIGHLIGHT_STYLE_START_DATE
+    ? (leader && leader.wins
+      ? `${scored.length}경기 중 ${leader.names.join('·')} 페어가 ${leader.wins}승 ${leader.draws}무 ${leader.losses}패를 기록했다.${closeGames ? ` 두 게임 차 이내로 끝난 경기는 ${closeGames}경기였다.` : ''}`
+      : `${scored.length}경기 결과가 기록됐다.${closeGames ? ` 두 게임 차 이내로 끝난 경기는 ${closeGames}경기였다.` : ''}`)
+    : leader && leader.wins
     ? `${leader.names.join(' · ')} 페어가 ${leader.wins}승으로 좋은 호흡을 보여줬습니다.${closeGames ? ` ${closeGames}경기는 두 점 차 이내의 접전이었습니다.` : ' 함께 만든 플레이가 경기의 흐름을 이끌었습니다.'}`
     : `${scored.length}경기 동안 서로 다른 페어가 호흡을 맞췄습니다.${closeGames ? ` ${closeGames}경기는 두 점 차 이내의 접전이었습니다.` : ' 다음 경기를 위한 경험을 쌓았습니다.'}`;
   return {planned:matches.length, completed:scored.length, pairs:ranking, leader, summary, videoSummary:videoAnalysisHighlightText('personal',schedule)};
