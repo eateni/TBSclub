@@ -1802,7 +1802,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.44';
+const APP_VERSION = '1.17.45';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -9569,6 +9569,15 @@ window.navTo = function(tab){
   if (overlay) overlay.style.display = 'none';
   window.scrollTo({top:0, behavior:'smooth'});
 };
+window.openHomePersonalSchedule = function(scheduleId) {
+  navTo('personal');
+  setScheduleView('all');
+  requestAnimationFrame(() => {
+    const card = [...document.querySelectorAll('[data-personal-schedule-card]')]
+      .find(item => item.dataset.personalScheduleCard === scheduleId);
+    if (card) card.scrollIntoView({behavior:'smooth',block:'start'});
+  });
+};
 window.toggleMoreMenu = function(){
   const el = document.getElementById('moreMenuOverlay');
   if (!el) return;
@@ -12243,27 +12252,24 @@ function renderHomeTab() {
   }
 
   const _personalSchedulePool = schedules.filter(schedule => {
-    if (schedule.recordScope !== 'personal') return false;
-    if (isAdmin) return true;
-    return !!(myClaim && myClaim !== 'pending' && !myClaim.isGuest && (schedule.ownerUid === myClaim.uid || (schedule.participantUids || []).includes(myClaim.uid)));
+    return schedule.recordScope === 'personal' && !!schedule.date && schedule.date >= todayStr;
   }).sort((a,b) => {
-    const aPast = (a.date || '') < todayStr, bPast = (b.date || '') < todayStr;
-    if (aPast !== bPast) return aPast ? 1 : -1;
-    return (a.date || '').localeCompare(b.date || '');
+    return a.date.localeCompare(b.date)
+      || (a.time || '').localeCompare(b.time || '')
+      || Number(a.ts || 0) - Number(b.ts || 0);
   });
-  const _nextPersonalSchedule = _personalSchedulePool[0] || null;
-  const personalMatchHomeHtml = _nextPersonalSchedule ? (() => {
-    const rows = getScheduleAttendanceRows(_nextPersonalSchedule);
-    const myRow = myClaim && myClaim.uid ? rows.find(row => row.uid === myClaim.uid) : null;
-    const dateLabel = _nextPersonalSchedule.date ? new Date(`${_nextPersonalSchedule.date}T00:00:00`).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
-    return `<div onclick="navTo('personal')" style="cursor:pointer;background:linear-gradient(135deg,#ECFDF5,#EFF6FF);border:1px solid #99E1C5;border-radius:14px;padding:13px 14px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div style="font-size:13px;font-weight:900;color:#0F766E">📅 다가오는 개인 경기</div><span style="font-size:11px;font-weight:900;color:#0F766E">전체 보기 ›</span></div>
-      <div style="font-size:14px;font-weight:900;color:#1E293B;margin-top:8px">${_nextPersonalSchedule.title || _nextPersonalSchedule.content || '개인 경기 일정'}</div>
-      <div style="font-size:11px;color:#475569;margin-top:4px">${dateLabel}${_nextPersonalSchedule.time?` · ${scheduleHourLabel(_nextPersonalSchedule.time)}`:''}${_nextPersonalSchedule.place?` · ${_nextPersonalSchedule.place}`:''}</div>
-      <div style="font-size:10px;font-weight:800;color:#0F766E;margin-top:5px">👤 호스트 · ${personalGameEscape(personalScheduleHostName(_nextPersonalSchedule))}</div>
-      ${myRow ? `<div style="font-size:10px;color:#0F766E;margin-top:7px;font-weight:800">내 참석 상태 · ${myRow.status}</div>` : ''}
-    </div>`;
-  })() : `<div onclick="navTo('personal')" style="cursor:pointer;background:#F8FCFC;border:1px solid #C8E0DE;border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px"><div><div style="font-size:13px;font-weight:900;color:#0F766E">📅 개인 경기</div><div style="font-size:11px;color:#64748B;margin-top:3px">일정, 참석 여부와 개인 경기 결과를 확인하세요.</div></div><span style="font-size:18px;color:#0F766E">›</span></div>`;
+  const personalMatchHomeHtml = _personalSchedulePool.length ? `<section style="background:linear-gradient(135deg,#ECFDF5,#EFF6FF);border:1px solid #99E1C5;border-radius:14px;padding:13px 14px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px"><div style="font-size:13px;font-weight:900;color:#0F766E">📅 다가오는 개인 경기 <span style="font-size:11px">${_personalSchedulePool.length}건</span></div><button onclick="navTo('personal')" style="border:0;background:transparent;font-size:11px;font-weight:900;color:#0F766E;cursor:pointer">전체 보기 ›</button></div>
+    ${_personalSchedulePool.map((schedule,index) => {
+      const dateLabel = new Date(`${schedule.date}T00:00:00`).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'});
+      const showDate = index === 0 || schedule.date !== _personalSchedulePool[index-1].date;
+      return `${showDate ? `<div style="font-size:11px;font-weight:900;color:#0F766E;margin:${index?'11px':'2px'} 0 5px">${dateLabel}</div>` : ''}
+        <button data-schedule-id="${personalGameEscape(schedule.id)}" onclick="openHomePersonalSchedule(this.dataset.scheduleId)" style="display:block;width:100%;text-align:left;cursor:pointer;background:#fff;border:1px solid #C8E0DE;border-radius:10px;padding:9px 10px;margin-top:5px;color:#1E293B">
+          <span style="display:block;font-size:12px;font-weight:900">${personalGameEscape(schedule.title || schedule.content || '개인 경기 일정')}</span>
+          <span style="display:block;font-size:10px;color:#475569;margin-top:4px">${schedule.time?`${personalGameEscape(scheduleHourLabel(schedule.time))} · `:''}${schedule.place?`📍 ${personalGameEscape(schedule.place)} · `:''}호스트 ${personalGameEscape(personalScheduleHostName(schedule))}</span>
+        </button>`;
+    }).join('')}
+  </section>` : `<div onclick="navTo('personal')" style="cursor:pointer;background:#F8FCFC;border:1px solid #C8E0DE;border-radius:14px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px"><div><div style="font-size:13px;font-weight:900;color:#0F766E">📅 개인 경기</div><div style="font-size:11px;color:#64748B;margin-top:3px">다가오는 개인 경기가 없어요.</div></div><span style="font-size:18px;color:#0F766E">›</span></div>`;
   const _pollUser = pollCurrentUser();
   const _openPolls = attendancePolls.filter(poll => isPollOpen(poll) && (_pollUser?.role !== 'guest' || poll.allowGuests));
   const _myPendingPolls = _pollUser ? _openPolls.filter(poll => !getPollResponse(poll,_pollUser.uid)) : [];
