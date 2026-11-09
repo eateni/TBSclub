@@ -1802,7 +1802,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.46';
+const APP_VERSION = '1.17.47';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -9826,6 +9826,22 @@ function personalScheduleWithScores(schedule) {
   return {...schedule,gamePairs};
 }
 
+function remapPersonalScoreUpdatesAfterDelete(gamePairs, scoreUpdates, roundIndex, matchIndex) {
+  const remaining = {};
+  let nextRoundIndex = 0;
+  (gamePairs || []).forEach((round, oldRoundIndex) => {
+    let nextMatchIndex = 0;
+    (round.matches || []).forEach((match, oldMatchIndex) => {
+      if (oldRoundIndex === roundIndex && oldMatchIndex === matchIndex) return;
+      const update = scoreUpdates?.[`${oldRoundIndex}_${oldMatchIndex}`];
+      if (update) remaining[`${nextRoundIndex}_${nextMatchIndex}`] = update;
+      nextMatchIndex++;
+    });
+    if (nextMatchIndex) nextRoundIndex++;
+  });
+  return remaining;
+}
+
 function scheduleDirectory() {
   return [
     ...members.map(member => ({...member, role:'member', source:'profile'})),
@@ -13179,6 +13195,48 @@ function getScheduleGameRoster(schedule) {
     });
 }
 
+function getPersonalScheduleRanking(schedule) {
+  const players = new Map();
+  let completed = 0;
+  (schedule.gamePairs || []).forEach(round => (round.matches || []).forEach(match => {
+    if (!analysisHasScore(match.score1) || !analysisHasScore(match.score2)) return;
+    const team1 = (match.team1 || []).filter(Boolean), team2 = (match.team2 || []).filter(Boolean);
+    if (team1.length !== 2 || team2.length !== 2 || new Set([...team1,...team2]).size !== 4) return;
+    const score1 = Number(match.score1), score2 = Number(match.score2);
+    if (!Number.isInteger(score1) || !Number.isInteger(score2) || score1 < 0 || score2 < 0) return;
+    completed++;
+    [[team1,score1,score2],[team2,score2,score1]].forEach(([team,scored,conceded]) => team.forEach(name => {
+      const item = players.get(name) || {name,games:0,wins:0,draws:0,losses:0,points:0,scored:0,conceded:0,diff:0};
+      item.games++; item.scored += scored; item.conceded += conceded; item.diff += scored - conceded;
+      if (scored > conceded) { item.wins++; item.points += 3; }
+      else if (scored === conceded) { item.draws++; item.points++; }
+      else item.losses++;
+      players.set(name,item);
+    }));
+  }));
+  const ranking = [...players.values()].sort((a,b) => b.points-a.points || b.diff-a.diff || b.scored-a.scored || b.wins-a.wins || a.name.localeCompare(b.name,'ko'));
+  ranking.forEach((item,index) => {
+    const previous = ranking[index-1];
+    item.rank = previous && item.points===previous.points && item.diff===previous.diff
+      && item.scored===previous.scored && item.wins===previous.wins ? previous.rank : index+1;
+  });
+  return {completed,ranking};
+}
+
+function personalScheduleRankingHtml(schedule) {
+  const {completed,ranking} = getPersonalScheduleRanking(schedule);
+  const memberNames = new Set(members.map(member => member.name));
+  return `<div style="margin-top:11px;padding:10px;background:#F8FCFC;border:1px solid #C8E0DE;border-radius:10px">
+    <div style="font-size:12px;font-weight:900;color:#0F766E">🏅 이 일정의 개인 순위</div>
+    <div style="font-size:10px;color:#64748B;margin-top:4px">${completed}경기 결과 기준 · 승 3점, 무 1점 · 동점 시 득실차, 득점</div>
+    ${ranking.length ? ranking.map(item => `<div style="display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:6px;align-items:center;border-top:1px solid #E7F0EF;padding:8px 1px;margin-top:5px;font-size:11px">
+      <b style="color:#0F766E">${item.rank}위</b>
+      <span style="min-width:0;font-weight:800;color:#1E293B;overflow-wrap:anywhere">${personalGameEscape(item.name)}${memberNames.has(item.name)?'':' <small style="font-weight:600;color:#7C3AED">게스트</small>'}<small style="display:block;color:#64748B;font-weight:500;margin-top:2px">${item.games}경기 · ${item.wins}승 ${item.draws}무 ${item.losses}패</small></span>
+      <span style="text-align:right;color:#334155"><b style="color:#0F766E">${item.points}점</b><small style="display:block;color:#64748B">득실 ${item.diff>=0?'+':''}${item.diff}</small></span>
+    </div>`).join('') : '<div style="font-size:11px;color:#64748B;margin-top:8px">점수가 입력되면 이 일정의 순위가 표시됩니다.</div>'}
+  </div>`;
+}
+
 function getPersonalScheduleHighlightData(schedule) {
   if (!schedule || schedule.recordScope !== 'personal') return null;
   const matches = (schedule.gamePairs || []).flatMap(round => round.matches || []);
@@ -13296,7 +13354,15 @@ function buildPersonalParticipantReplacement(schedule, oldKey, replacement) {
     const players = [...team1, ...team2].map(name => roster.find(item => item.name === name) || {name,gender:''});
     return {...match, team1, team2, positions, type:players.length === 4 ? getPersonalMatchType(players) : match.type};
   })}));
-  return {participantSnapshots, participantUids, attendanceByUid, attend, gamePairs};
+  const scoreUpdates = Object.fromEntries(Object.entries(schedule.scoreUpdates || {}).map(([key,update]) => {
+    const positions = {...(update.positions || {})};
+    if (Object.hasOwn(positions,oldName)) { positions[next.name] = positions[oldName]; delete positions[oldName]; }
+    return [key,{...update,
+      team1:(update.team1 || []).map(name => name === oldName ? next.name : name),
+      team2:(update.team2 || []).map(name => name === oldName ? next.name : name),
+      positions}];
+  }));
+  return {participantSnapshots, participantUids, attendanceByUid, attend, gamePairs, scoreUpdates};
 }
 
 window.openPersonalParticipantReplacement = function(scheduleId) {
@@ -13350,7 +13416,7 @@ window.savePersonalParticipantReplacement = async function() {
       transaction.update(scheduleRef, {...changes, updatedAt:serverTimestamp()});
       return changes;
     });
-    Object.assign(schedule, updated);
+    Object.assign(schedule, {...updated,gamePairs:personalScheduleWithScores({...schedule,...updated}).gamePairs});
     hide('personalParticipantModal');
     renderPersonalSchedules();
     renderAdminPersonalSchedules();
@@ -13369,21 +13435,24 @@ window.deletePersonalGame = async function(scheduleId, roundIndex, matchIndex) {
   const hasScore = match.score1 != null || match.score2 != null;
   if (!confirm(`${gameNumber}게임 (${(match.team1 || []).join(' / ')} vs ${(match.team2 || []).join(' / ')})을 삭제할까요?${hasScore ? '\n입력된 점수와 포·백 기록도 함께 삭제됩니다.' : ''}`)) return;
   try {
-    const updatedPairs = await runTransaction(db, async transaction => {
+    const updated = await runTransaction(db, async transaction => {
       const scheduleRef = doc(db, 'schedules', scheduleId);
       const snapshot = await transaction.get(scheduleRef);
       if (!snapshot.exists() || snapshot.data().recordScope !== 'personal') throw new Error('개인 일정을 찾을 수 없어요.');
-      const pairs = JSON.parse(JSON.stringify(snapshot.data().gamePairs || []));
-      const latest = pairs[roundIndex]?.matches?.[matchIndex];
+      const stored = snapshot.data();
+      const pairs = JSON.parse(JSON.stringify(stored.gamePairs || []));
+      const latest = personalScheduleWithScores(stored).gamePairs?.[roundIndex]?.matches?.[matchIndex];
       if (!latest || JSON.stringify(latest) !== JSON.stringify(match)) throw new Error('경기 내용이 변경됐어요. 새로고침 후 다시 시도해 주세요.');
+      const scoreUpdates = remapPersonalScoreUpdatesAfterDelete(pairs,stored.scoreUpdates,roundIndex,matchIndex);
       pairs[roundIndex].matches.splice(matchIndex, 1);
       const remaining = pairs.filter(round => (round.matches || []).length);
       let number = 0;
       remaining.forEach(round => round.matches.forEach(item => { item.gameNo = ++number; }));
-      transaction.update(scheduleRef, {gamePairs:remaining, updatedAt:serverTimestamp()});
-      return remaining;
+      transaction.update(scheduleRef, {gamePairs:remaining, scoreUpdates, updatedAt:serverTimestamp()});
+      return {gamePairs:remaining,scoreUpdates};
     });
-    schedule.gamePairs = updatedPairs;
+    schedule.scoreUpdates = updated.scoreUpdates;
+    schedule.gamePairs = personalScheduleWithScores({...schedule,gamePairs:updated.gamePairs}).gamePairs;
     renderPersonalSchedules();
     renderAdminPersonalSchedules();
     alert('경기를 삭제하고 게임 수를 변경했어요.');
@@ -13501,7 +13570,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
       <div style="margin-top:9px;padding-top:8px;border-top:1px solid #E7F0EF"><div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:5px"><span style="font-size:10px;font-weight:900;color:#0F766E">참가자 ${rows.length}명 · 참가 당시 시작 년월</span>${canManage ? `<button onclick="openPersonalParticipantReplacement('${schedule.id}')" style="padding:5px 7px;border:1px solid #C8E0DE;background:#F0FDFA;color:#0F766E;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">✏️ 참가자 변경</button>` : ''}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${rows.map(row => `<span style="font-size:10px;color:#334155;background:#F5FAFA;border:1px solid #D9EAE8;border-radius:99px;padding:4px 7px">${row.name}${row.tennisStartDate?` · ${row.tennisStartDate.replace('-', '.')}`:''}</span>`).join('')}</div>
       </div>
-      ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록 · ${gameNumber}게임</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">게임 수를 바꾸려면 경기를 추가하거나 각 경기의 삭제 버튼을 누르세요.</div>${canManage ? `<button onclick="openPersonalManualGame('${schedule.id}')" style="width:100%;margin-top:8px;padding:8px;border:1px solid #6EE7B7;background:#ECFDF5;color:#047857;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">＋ 수동 경기 추가</button>` : ''}${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>` : ''}
+      ${schedule.isGameMeetup ? `<div style="margin-top:10px;padding:9px;background:#FAF7FF;border:1px solid #E4D5FF;border-radius:9px"><div style="display:flex;justify-content:space-between;align-items:center;gap:7px"><span style="font-size:11px;font-weight:900;color:#6D28D9">🎾 개인 게임 기록 · ${gameNumber}게임</span>${canManage ? `<button onclick="openMeetupPairModal('${schedule.id}')" style="padding:6px 8px;border:none;background:#7C3AED;color:#fff;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">게임 기록 관리</button>` : ''}</div><div style="font-size:10px;color:#64748B;margin-top:5px">게임 수를 바꾸려면 경기를 추가하거나 각 경기의 삭제 버튼을 누르세요.</div>${canManage ? `<button onclick="openPersonalManualGame('${schedule.id}')" style="width:100%;margin-top:8px;padding:8px;border:1px solid #6EE7B7;background:#ECFDF5;color:#047857;border-radius:8px;font-size:11px;font-weight:900;cursor:pointer">＋ 수동 경기 추가</button>` : ''}${resultHtml || '<div style="font-size:10px;color:#64748B;margin-top:6px">아직 등록된 게임이 없어요.</div>'}</div>${personalScheduleRankingHtml(schedule)}` : ''}
       ${highlightData ? `<div style="margin-top:11px;padding:9px;background:#F0FDFA;border:1px solid #99DCCF;border-radius:10px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:7px"><b style="font-size:11px;color:#0F766E">✨ 개인 일정 하이라이트</b><button onclick="sharePersonalScheduleHighlightCard('${schedule.id}')" style="padding:6px 8px;border:1px solid #0F766E;background:#fff;color:#0F766E;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🖼️ 카드 공유</button></div><canvas data-personal-schedule-highlight="${schedule.id}" width="1080" height="680" style="display:block;width:100%;height:auto;border-radius:8px;background:#0C766E"></canvas><div style="font-size:10px;color:#475569;line-height:1.5;margin-top:7px">${personalGameEscape(highlightData.summary)}</div>${videoAnalysisHighlightHtml('personal',schedule)}</div>` : videoAnalysisHighlightHtml('personal',schedule)}
       ${canManage ? `<button onclick="deletePersonalSchedule('${schedule.id}')" style="display:block;margin:11px 0 0 auto;padding:6px 9px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">🗑️ 일정 삭제</button>` : ''}
       </div>
@@ -14470,6 +14539,8 @@ window.submitScore=async function(){
     const sch=(schedules||[]).find(s=>s.id===pendingScore.schId);
     if(!sch)return;
     if(!canScoreSchedule(sch)){alert('정회원 또는 관리자만 결과를 저장할 수 있어요.');return;}
+    const raw1=document.getElementById('s1').value.trim(), raw2=document.getElementById('s2').value.trim();
+    if(!/^\d+$/.test(raw1) || !/^\d+$/.test(raw2)){alert('점수는 0 이상의 정수로 입력해주세요.');return;}
     const scoreTarget={...pendingScore};
     const currentMatch=sch.gamePairs?.[scoreTarget.rdIdx]?.matches?.[scoreTarget.mIdx];
     if(!currentMatch)return;
@@ -14501,11 +14572,13 @@ window.submitScore=async function(){
         if(latest.score1!==currentMatch.score1 || latest.score2!==currentMatch.score2
           || JSON.stringify(latest.positions||{})!==JSON.stringify(currentMatch.positions||{}))
           throw new Error('다른 회원이 먼저 결과를 변경했어요. 다시 열어주세요.');
-        transaction.update(ref,{[`scoreUpdates.${scoreKey}`]:{
+        const scoreUpdates={...(stored.scoreUpdates||{})};
+        scoreUpdates[scoreKey]={
           team1:m.team1||[], team2:m.team2||[], score1:s1, score2:s2,
           positions:{...(latest.positions||{}),...selectedPositions},
           editorUid:auth.currentUser?.uid||'', editorName:myClaim?.name||'관리자', updatedAt:new Date().toISOString()
-        }});
+        };
+        transaction.update(ref,{scoreUpdates});
       });
       hide('scoreModal');
     } catch(error) {
