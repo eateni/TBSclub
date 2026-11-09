@@ -75,7 +75,7 @@ service cloud.firestore {
       allow write: if canRecordResults();
     }
 
-    // 회원 일정: 결과는 공개, 생성·대진·기록 관리는 정회원 일정 생성자만
+    // 회원 일정: 결과는 공개, 생성·대진 관리는 일정 생성자만, 경기 결과는 정회원도 입력 가능
     // 참석 응답은 지정된 정회원이 본인의 상태 필드만 바꿀 수 있다.
     match /schedules/{document=**} {
       allow read: if true;
@@ -90,6 +90,14 @@ service cloud.firestore {
         isMember()
         && resource.data.ownerUid == request.auth.uid
       );
+      allow update: if isMember()
+        && resource.data.recordScope == 'personal'
+        && request.resource.data.recordScope == 'personal'
+        && request.resource.data.scoreUpdates is map
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['scoreUpdates'])
+        && request.resource.data.scoreUpdates.diff(resource.data.get('scoreUpdates', {})).addedKeys().size()
+          + request.resource.data.scoreUpdates.diff(resource.data.get('scoreUpdates', {})).changedKeys().size() <= 1
+        && request.resource.data.scoreUpdates.diff(resource.data.get('scoreUpdates', {})).removedKeys().size() == 0;
       allow update: if isMember()
         && resource.data.participantUids.hasAny([request.auth.uid])
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendanceByUid', 'updatedAt'])

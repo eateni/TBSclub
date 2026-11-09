@@ -1802,7 +1802,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.45';
+const APP_VERSION = '1.17.46';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -9806,6 +9806,26 @@ function canManageSchedule(schedule) {
   return !!(isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest && schedule && schedule.ownerUid === myClaim.uid));
 }
 
+function canScoreSchedule(schedule) {
+  return !!(schedule && schedule.recordScope === 'personal'
+    && (isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest && !!myClaim.uid)));
+}
+
+function personalScheduleWithScores(schedule) {
+  if (schedule.recordScope !== 'personal' || !schedule.scoreUpdates) return schedule;
+  const gamePairs = (schedule.gamePairs || []).map((round, roundIndex) => ({
+    ...round,
+    matches: (round.matches || []).map((match, matchIndex) => {
+      const update = schedule.scoreUpdates[`${roundIndex}_${matchIndex}`];
+      if (!update || JSON.stringify(update.team1 || []) !== JSON.stringify(match.team1 || [])
+        || JSON.stringify(update.team2 || []) !== JSON.stringify(match.team2 || [])
+        || !Number.isInteger(update.score1) || !Number.isInteger(update.score2)) return match;
+      return {...match, score1:update.score1, score2:update.score2, positions:update.positions || match.positions || {}};
+    })
+  }));
+  return {...schedule,gamePairs};
+}
+
 function scheduleDirectory() {
   return [
     ...members.map(member => ({...member, role:'member', source:'profile'})),
@@ -13452,6 +13472,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
     const highlightData = getPersonalScheduleHighlightData(schedule);
     const dateLabel = schedule.date ? new Date(`${schedule.date}T00:00:00`).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : '날짜 미정';
     const canManage = canManageSchedule(schedule);
+    const canScore = canScoreSchedule(schedule);
     const hostName = personalGameEscape(personalScheduleHostName(schedule));
     const expanded = personalScheduleExpanded.has(schedule.id) ? personalScheduleExpanded.get(schedule.id) : (schedule.date || '') >= today;
     let gameNumber = 0;
@@ -13464,7 +13485,7 @@ function renderPersonalSchedules(targetId = 'personalScheduleList', forceAll = f
           <span style="font-weight:800;color:#1D4ED8"><small style="display:block;color:#2563EB">A팀</small>${(match.team1 || []).join(' / ')}${positionText(match.team1||[])?`<small style="display:block;color:#64748B;font-weight:500">${positionText(match.team1||[])}</small>`:''}</span>
           <span style="font-weight:900;color:${done?'#0F766E':'#94A3B8'};white-space:nowrap">${done ? `${match.score1} : ${match.score2}` : 'VS'}</span>
           <span style="font-weight:800;color:#BE185D;text-align:right"><small style="display:block;color:#DB2777">B팀</small>${(match.team2 || []).join(' / ')}${positionText(match.team2||[])?`<small style="display:block;color:#64748B;font-weight:500">${positionText(match.team2||[])}</small>`:''}</span>
-        </div>${matchVideoHtml('personal',schedule.id,roundIndex,matchIndex,match.videoUrl,canManage,match.analysisVideoUrl,match.videoAnalysis)}${canManage ? `<div style="display:flex;gap:5px;margin:2px 0 5px"><button onclick="openMeetupScore('${schedule.id}',${roundIndex},${matchIndex})" style="flex:1;padding:5px;border:1px solid #C4B5FD;background:#fff;color:#6D28D9;font-size:10px;font-weight:800;cursor:pointer">${done?'점수·포백 수정':'점수·포백 입력'}</button><button onclick="deletePersonalGame('${schedule.id}',${roundIndex},${matchIndex})" style="padding:5px 8px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">경기 삭제</button></div>` : ''}`;
+        </div>${matchVideoHtml('personal',schedule.id,roundIndex,matchIndex,match.videoUrl,canManage,match.analysisVideoUrl,match.videoAnalysis)}${canScore || canManage ? `<div style="display:flex;gap:5px;margin:2px 0 5px">${canScore ? `<button onclick="openMeetupScore('${schedule.id}',${roundIndex},${matchIndex})" style="flex:1;padding:5px;border:1px solid #C4B5FD;background:#fff;color:#6D28D9;font-size:10px;font-weight:800;cursor:pointer">${done?'점수·포백 수정':'점수·포백 입력'}</button>` : ''}${canManage ? `<button onclick="deletePersonalGame('${schedule.id}',${roundIndex},${matchIndex})" style="padding:5px 8px;border:1px solid #FECACA;background:#FFF7F7;color:#B91C1C;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer">경기 삭제</button>` : ''}</div>` : ''}`;
       }).join('');
       return games;
     }).join('');
@@ -14294,7 +14315,7 @@ window.openScore=function(dayId, rIdx, mId){
 window.openMeetupScore=function(schId, rdIdx, mIdx){
   const sch=(schedules||[]).find(s=>s.id===schId);
   if(!sch||!sch.gamePairs)return;
-  if(!canManageSchedule(sch)){alert('일정 생성자 또는 관리자만 결과를 입력할 수 있어요.');return;}
+  if(!canScoreSchedule(sch)){alert('정회원 또는 관리자만 결과를 입력할 수 있어요.');return;}
   const rd=sch.gamePairs[rdIdx]; if(!rd)return;
   const m=(rd.matches||[])[mIdx]; if(!m)return;
   pendingScore={type:'gamePairs', schId, rdIdx:parseInt(rdIdx), mIdx:parseInt(mIdx)};
@@ -14448,23 +14469,49 @@ window.submitScore=async function(){
   if(pendingScore.type==='gamePairs'){
     const sch=(schedules||[]).find(s=>s.id===pendingScore.schId);
     if(!sch)return;
-    if(!canManageSchedule(sch)){alert('일정 생성자 또는 관리자만 결과를 저장할 수 있어요.');return;}
-    const pairs=JSON.parse(JSON.stringify(sch.gamePairs||[]));
-    const m=(pairs[pendingScore.rdIdx].matches||[])[pendingScore.mIdx];
-    if(!m)return;
-    m.score1=s1; m.score2=s2;
-    const gpAllP=[...(m.team1||[]),...(m.team2||[])].filter(Boolean);
-    const gpPos={...(m.positions||{})};
+    if(!canScoreSchedule(sch)){alert('정회원 또는 관리자만 결과를 저장할 수 있어요.');return;}
+    const scoreTarget={...pendingScore};
+    const currentMatch=sch.gamePairs?.[scoreTarget.rdIdx]?.matches?.[scoreTarget.mIdx];
+    if(!currentMatch)return;
+    if(currentMatch.score1 != null && currentMatch.score2 != null
+      && (currentMatch.score1 !== s1 || currentMatch.score2 !== s2)
+      && !confirm('이미 입력된 경기 점수를 수정할까요?'))return;
+    const gpAllP=[...(currentMatch.team1||[]),...(currentMatch.team2||[])].filter(Boolean);
+    const selectedPositions={};
     gpAllP.forEach(p=>{
       const key=p.replace(/\s/g,'_');
       const fb=document.getElementById(`pos_fore_${key}`);
       const bb=document.getElementById(`pos_back_${key}`);
-      if(fb?.dataset?.selected==='1')gpPos[p]='fore';
-      else if(bb?.dataset?.selected==='1')gpPos[p]='back';
+      if(fb?.dataset?.selected==='1')selectedPositions[p]='fore';
+      else if(bb?.dataset?.selected==='1')selectedPositions[p]='back';
     });
-    m.positions=gpPos;
-    await updateDoc(doc(db,'schedules',pendingScore.schId),{gamePairs:pairs});
-    hide('scoreModal');
+    try {
+      await runTransaction(db,async transaction=>{
+        const ref=doc(db,'schedules',scoreTarget.schId);
+        const snapshot=await transaction.get(ref);
+        if(!snapshot.exists() || snapshot.data().recordScope!=='personal')throw new Error('개인 경기 일정을 찾을 수 없어요.');
+        const stored=snapshot.data();
+        const m=stored.gamePairs?.[scoreTarget.rdIdx]?.matches?.[scoreTarget.mIdx];
+        if(!m || JSON.stringify(m.team1||[])!==JSON.stringify(currentMatch.team1||[])
+          || JSON.stringify(m.team2||[])!==JSON.stringify(currentMatch.team2||[]))throw new Error('경기 구성이 변경됐어요. 다시 열어주세요.');
+        const scoreKey=`${scoreTarget.rdIdx}_${scoreTarget.mIdx}`;
+        const previous=stored.scoreUpdates?.[scoreKey];
+        const latest=previous && JSON.stringify(previous.team1||[])===JSON.stringify(m.team1||[])
+          && JSON.stringify(previous.team2||[])===JSON.stringify(m.team2||[]) ? previous : m;
+        if(latest.score1!==currentMatch.score1 || latest.score2!==currentMatch.score2
+          || JSON.stringify(latest.positions||{})!==JSON.stringify(currentMatch.positions||{}))
+          throw new Error('다른 회원이 먼저 결과를 변경했어요. 다시 열어주세요.');
+        transaction.update(ref,{[`scoreUpdates.${scoreKey}`]:{
+          team1:m.team1||[], team2:m.team2||[], score1:s1, score2:s2,
+          positions:{...(latest.positions||{}),...selectedPositions},
+          editorUid:auth.currentUser?.uid||'', editorName:myClaim?.name||'관리자', updatedAt:new Date().toISOString()
+        }});
+      });
+      hide('scoreModal');
+    } catch(error) {
+      console.error('개인 경기 결과 저장 실패:',error);
+      alert(error.message || '결과를 저장하지 못했어요. 다시 시도해주세요.');
+    }
     return;
   }
   if(pendingScore.type==='evMatch'){
@@ -16333,7 +16380,7 @@ onSnapshot(collection(db,'events'), snap => {
   if(document.getElementById('addEvMatchModal')?.style.display!=='none')renderAddEvAllocationPreview();
 });
 onSnapshot(collection(db,'schedules'), snap => {
-  schedules = snap.docs.map(d=>({id:d.id,...d.data()}));
+  schedules = snap.docs.map(d=>personalScheduleWithScores({id:d.id,...d.data()}));
   refreshAnalysisSourcesIfVisible();
   renderCalendar();
   renderSchedules();
