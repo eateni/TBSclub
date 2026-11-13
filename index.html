@@ -312,6 +312,27 @@ body::after {
 .guest-chip-head{display:flex;align-items:flex-start;gap:4px;min-width:0;}
 .guest-chip-name{flex:1;min-width:0;color:#E2E8F0;font-weight:700;line-height:1.35;white-space:normal;overflow-wrap:anywhere;}
 .guest-chip-actions{display:flex;align-items:center;justify-content:flex-end;gap:3px;flex-wrap:wrap;}
+/* 관리자 회원 목록과 참석 설정 */
+#memberChips,#guestChips{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:8px}
+#memberChips .admin-person-card,#guestChips .admin-person-card{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0;padding:12px;border:1px solid #C9DFDD;border-radius:12px;background:#F8FCFC;color:#1E293B;overflow:visible}
+.admin-person-head{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+.admin-person-name{font-size:14px;font-weight:900;line-height:1.35;overflow-wrap:anywhere}
+.admin-person-badge{flex:none;border-radius:6px;padding:3px 6px;background:#FFF7ED;color:#9A4A04;font-size:10px;font-weight:800}
+.admin-person-badge.joined{background:#E6F7EF;color:#087355}
+.admin-person-fields{display:flex;flex-direction:column;align-items:stretch;gap:4px}
+.admin-person-fields button{display:block;width:100%;padding:5px 7px;border:1px solid #D9E8E6;border-radius:7px;background:#fff;color:#334155;text-align:left;font-size:11px;line-height:1.35;overflow-wrap:anywhere;cursor:pointer}
+.admin-person-actions{display:flex;gap:5px;flex-wrap:wrap}
+.admin-person-actions button{padding:6px 8px;border:1px solid #B7DBD7;border-radius:7px;background:#fff;color:#0F766E;font-size:11px;font-weight:800;cursor:pointer}
+.admin-person-actions .danger{border-color:#FECACA;color:#B91C1C}
+.attendance-list{max-width:480px}
+.attendance-row{display:grid;grid-template-columns:minmax(100px,1fr) auto;align-items:center;gap:12px;padding:8px 10px;border:1px solid #DFECEA;border-radius:9px;background:#fff;margin-bottom:5px}
+.attendance-name{min-width:0;font-size:13px;font-weight:700;color:#1E293B;overflow-wrap:anywhere}
+.attendance-actions{display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap}
+.attendance-actions button{min-height:32px;padding:5px 10px;border:1px solid #C7DAD8;border-radius:7px;background:#fff;color:#475569;font-size:11px;font-weight:800;cursor:pointer}
+.attendance-actions button.selected-yes{background:#DCFCE7;border-color:#22A86B;color:#11623E}
+.attendance-actions button.selected-no{background:#FEE2E2;border-color:#EF7070;color:#A81717}
+.attendance-actions button.selected-wait{background:#E8EEF5;border-color:#8295A8;color:#334155}
+@media(max-width:480px){#memberChips,#guestChips{grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr))}.attendance-row{grid-template-columns:minmax(0,1fr);gap:6px}.attendance-actions{justify-content:flex-start}.attendance-actions button{flex:1;min-width:65px}}
 .guest-add-form{flex-wrap:wrap;align-items:flex-end;}
 .guest-add-form #newGuest{min-width:190px;}
 .guest-start-wrap{display:flex;flex:0 0 150px;flex-direction:column;gap:3px;color:#059669;font-size:10px;font-weight:700;}
@@ -1094,7 +1115,7 @@ tr:nth-child(even){background:#F5FCFB;}
         <!-- 게스트 회원 (관리자 전용) -->
         <div class="admin-sec guest-sec">
           <h3>🙋 게스트 목록</h3>
-          <div style="font-size:11px;color:rgba(52,211,153,0.6);margin-bottom:10px">게스트는 경기에 참여하지만 정규 통계에는 포함되지 않아요</div>
+          <div style="font-size:11px;color:#087355;margin-bottom:10px">게스트는 경기에 참여하지만 정규 통계에는 포함되지 않아요</div>
           <div class="chips-wrap" id="guestChips"></div>
           <div id="guestStatsDetail"></div>
           <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(52,211,153,0.2)">
@@ -1802,7 +1823,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.47';
+const APP_VERSION = '1.17.48';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -8775,57 +8796,32 @@ function renderAdmin(){
       </div>` : '';
   }
 
-  // ── 정규 회원 칩 ──
+  // 회원 정보와 동작을 각 카드 안에 함께 표시한다.
+  const personCard = (person, guest) => {
+    const name = personalGameEscape(person.name);
+    const nameArg = personalGameEscape(JSON.stringify(person.name));
+    const gender = person.gender === 'f' ? '♀' : '♂';
+    const genderClass = person.gender === 'f' ? 'g-f' : 'g-m';
+    const field = (key, label, value) => `<button onclick="${guest?'editGuestField':'editMemberField'}(${nameArg},'${key}')">${label} · ${personalGameEscape(value || '미입력')}</button>`;
+    return `<div class="chip ${guest?'chip-guest':''} admin-person-card">
+      <div class="admin-person-head"><span class="admin-person-name"><span class="${genderClass}">${gender}</span> ${name}</span><span class="admin-person-badge ${person.uid?'joined':''}">${person.uid?'가입 완료':'미가입'}</span></div>
+      <div class="admin-person-fields">
+        ${guest?'':field('birthDate','생년월일',(person.birthDate || '') + (person.birthDate && person.isLunarBirth ? ' (음력)' : ''))}
+        ${field('tennisStartDate','테니스 시작',person.tennisStartDate)}
+        ${guest?'':field('email','이메일',person.email)}
+      </div>
+      <div class="admin-person-actions">
+        <button onclick="${guest?'renameGuest':'renameMember'}(${nameArg})">이름 수정</button>
+        <button onclick="${guest?'promoteGuest':'demoteMember'}(${nameArg})">${guest?'정회원 전환':'게스트 전환'}</button>
+        <button class="danger" onclick="${guest?'delGuest':'delMember'}(${nameArg})" aria-label="${name} 삭제">삭제</button>
+      </div>
+    </div>`;
+  };
   document.getElementById('memberChips').innerHTML = members.length
-    ? members.map(m=>`
-        <span class="chip" style="display:inline-flex;flex-direction:column;align-items:stretch;gap:2px">
-          <span style="display:flex;align-items:center;gap:4px">
-            <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span>
-            <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.name}</span>
-            ${m.uid
-              ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)" title="Firebase 가입 완료">🔑</span>`
-              : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(245,158,11,0.12);color:#B45309;border:1px solid rgba(245,158,11,0.4)" title="앱 미가입 (관리자 등록)">미가입</span>`}
-            <button onclick="renameMember('${m.name}')" title="이름 변경"
-              style="background:none;border:none;color:#2563EB;font-size:11px;cursor:pointer;padding:0 1px">✏️</button>
-            <button onclick="demoteMember('${m.name}')" title="게스트로 전환"
-              style="background:none;border:none;color:#D97706;font-size:11px;cursor:pointer;padding:0 1px">⬇️</button>
-            <button class="chip-x" onclick="delMember('${m.name}')">×</button>
-          </span>
-          <span style="display:flex;gap:3px;flex-wrap:wrap">
-            <button onclick="editMemberField('${m.name}','birthDate')" title="생년월일: ${m.birthDate||'미입력'}${m.isLunarBirth?' (음력)':''}"
-              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎂 ${m.birthDate||'—'}${m.isLunarBirth?'<span style="font-size:8px;color:#7C3AED;margin-left:1px">(음)</span>':''}</button>
-            <button onclick="editMemberField('${m.name}','tennisStartDate')" title="테니스 시작: ${m.tennisStartDate||'미입력'}"
-              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎾 ${m.tennisStartDate||'—'}</button>
-            <button onclick="editMemberField('${m.name}','email')" title="이메일: ${m.email||'미입력'}"
-              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">✉️ ${m.email||'—'}</button>
-          </span>
-        </span>`).join('')
+    ? members.map(person => personCard(person,false)).join('')
     : '<span style="color:#64748B;font-size:12px">등록된 회원 없음</span>';
-
-  // ── 게스트 칩 ──
   document.getElementById('guestChips').innerHTML = guests.length
-    ? guests.map(g=>`
-        <span class="chip chip-guest" style="display:inline-flex;flex-direction:column;align-items:stretch;gap:4px">
-          <span class="guest-chip-head">
-            <span class="g-guest">👤</span>
-            <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span>
-            <span class="guest-chip-name" title="${g.name}">${g.name}</span>
-          </span>
-          <span class="guest-chip-actions">
-            ${g.uid
-              ? `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(52,211,153,0.13);color:#059669;border:1px solid rgba(52,211,153,0.4)" title="Firebase 가입 완료">🔑</span>`
-              : `<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:6px;background:rgba(245,158,11,0.12);color:#B45309;border:1px solid rgba(245,158,11,0.4)" title="앱 미가입 (관리자 등록)">미가입</span>`}
-            <button onclick="renameGuest('${g.name}')" title="이름 변경"
-              style="background:none;border:none;color:#2563EB;font-size:11px;cursor:pointer;padding:0 1px">✏️</button>
-            <button onclick="promoteGuest('${g.name}')" title="정규회원으로 전환"
-              style="background:none;border:none;color:#059669;font-size:11px;cursor:pointer;padding:0 1px">⬆️</button>
-            <button class="chip-x" onclick="delGuest('${g.name}')">×</button>
-          </span>
-          <span style="display:flex;gap:3px;flex-wrap:wrap">
-            <button onclick="editGuestField('${g.name}','tennisStartDate')" title="테니스 시작: ${g.tennisStartDate||'미입력'}"
-              style="background:none;border:1px solid rgba(148,163,184,0.3);border-radius:4px;color:#94A3B8;font-size:9px;cursor:pointer;padding:0px 3px;line-height:1.5">🎾 ${g.tennisStartDate||'—'}</button>
-          </span>
-        </span>`).join('')
+    ? guests.map(person => personCard(person,true)).join('')
     : '<span style="color:#64748B;font-size:12px">등록된 게스트 없음</span>';
 
   // ── 게스트 상세 성적 (합산/시즌별 토글, 정렬 가능) ──
@@ -8986,64 +8982,26 @@ function renderAdmin(){
         const matchSch = schedules.find(s => s.date === day.date && s.isGameMeetup);
         const schAttend = matchSch ? (matchSch.attend || {}) : {};
 
-        // 정규회원 행 — v2: 🟢/🔴/⚪ 3단계, legacy: ✅/❌ 2단계
-        const memberRows = members.map(m => {
+        // 이름과 참석 버튼을 같은 행에 묶어 표시한다.
+        const dayArg = personalGameEscape(JSON.stringify(day.id));
+        const memberRows = `<div class="attendance-list">${members.map(m => {
+          const nameArg = personalGameEscape(JSON.stringify(m.name));
           const fromSch = schAttend[m.name] === '참석';
-          const badge = fromSch
-            ? `<span style="font-size:9px;padding:1px 6px;border-radius:6px;background:rgba(37,99,235,0.12);color:#2563EB;border:1px solid rgba(37,99,235,0.28);vertical-align:middle;margin-left:5px;font-weight:700">📅 일정 참석</span>`
-            : '';
-          const nameHtml = `<span style="font-size:13px;font-weight:600;color:#1E293B">
-              <span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span> ${m.name}${badge}
-            </span>`;
-          if (isV2) {
-            const s = att[m.name]; // true/false/undefined
-            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #EEF7F6">
-              ${nameHtml}
-              <div style="display:flex;gap:4px">
-                <button onclick="setAttendance('${day.id}','${m.name}',true)"
-                  style="padding:4px 9px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-                    background:${s===true?'#34d399':'rgba(3,12,45,0.8)'};color:${s===true?'#fff':'#4a8ab5'}">🟢 참석</button>
-                <button onclick="setAttendance('${day.id}','${m.name}',false)"
-                  style="padding:4px 9px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-                    background:${s===false?'#f87171':'rgba(3,12,45,0.8)'};color:${s===false?'#fff':'#4a8ab5'}">🔴 불참</button>
-                <button onclick="setAttendance('${day.id}','${m.name}',null)"
-                  style="padding:4px 9px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-                    background:${s===undefined?'#94A3B8':'rgba(3,12,45,0.8)'};color:${s===undefined?'#fff':'#4a8ab5'}">⚪ 미정</button>
-              </div>
-            </div>`;
-          }
-          const status = att[m.name] ?? true;
-          return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid #EEF7F6">
-            ${nameHtml}
-            <div style="display:flex;gap:6px">
-              <button onclick="setAttendance('${day.id}','${m.name}',true)"
-                style="padding:4px 12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-                  background:${status?'#34d399':'rgba(3,12,45,0.8)'};color:${status?'#fff':'#4a8ab5'}">✅ 참석</button>
-              <button onclick="setAttendance('${day.id}','${m.name}',false)"
-                style="padding:4px 12px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-                  background:${!status?'#f87171':'rgba(3,12,45,0.8)'};color:${!status?'#fff':'#4a8ab5'}">❌ 불참</button>
-            </div>
-          </div>`;
-        }).join('');
+          const badge = fromSch ? '<span style="font-size:10px;color:#1D4ED8;margin-left:5px">일정 참석</span>' : '';
+          const state = isV2 ? att[m.name] : (att[m.name] ?? true);
+          const button = (value,label,selectedClass) => `<button class="${state === value ? selectedClass : ''}" aria-pressed="${state === value}" onclick="setAttendance(${dayArg},${nameArg},${value === undefined ? 'null' : String(value)})">${label}</button>`;
+          return `<div class="attendance-row"><span class="attendance-name"><span class="${m.gender==='f'?'g-f':'g-m'}">${m.gender==='f'?'♀':'♂'}</span> ${personalGameEscape(m.name)}${badge}</span>
+            <div class="attendance-actions">${button(true,'참석','selected-yes')}${button(false,'불참','selected-no')}${isV2 ? button(undefined,'미정','selected-wait') : ''}</div></div>`;
+        }).join('')}</div>`;
 
-        // 게스트 행
-        const guestRows = guests.length ? `
-          <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(52,211,153,0.2)">
-            <div style="font-size:11px;color:#059669;margin-bottom:6px">👤 게스트 참석</div>
-            ${guests.map(g => {
-              const joined = dayGuests.includes(g.name);
-              return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0">
-                <span style="font-size:13px;color:#1E293B">
-                  <span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span> ${g.name}
-                </span>
-                <button onclick="toggleDayGuest('${day.id}','${g.name}')"
-                  style="padding:4px 14px;border-radius:8px;border:none;cursor:pointer;font-size:11px;font-weight:700;
-                    background:${joined?'#0d9488':'rgba(3,12,45,0.8)'};color:${joined?'#fff':'#4a8ab5'}">
-                  ${joined?'✅ 참석중':'+ 참석 추가'}
-                </button>
-              </div>`;
-            }).join('')}
-          </div>` : '';
+        const guestRows = guests.length ? `<div style="margin-top:12px;padding-top:10px;border-top:1px solid #CDE7DF">
+          <div style="font-size:12px;font-weight:900;color:#087355;margin-bottom:7px">👤 게스트 참석</div>
+          <div class="attendance-list">${guests.map(g => {
+            const joined = dayGuests.includes(g.name);
+            const nameArg = personalGameEscape(JSON.stringify(g.name));
+            return `<div class="attendance-row"><span class="attendance-name"><span class="${g.gender==='f'?'g-f':'g-m'}">${g.gender==='f'?'♀':'♂'}</span> ${personalGameEscape(g.name)}</span>
+              <div class="attendance-actions"><button class="${joined?'selected-yes':''}" aria-pressed="${joined}" onclick="toggleDayGuest(${dayArg},${nameArg})">${joined?'✓ 참석 중':'＋ 참석 추가'}</button></div></div>`;
+          }).join('')}</div></div>` : '';
 
         // 코트 예약 관리 (관리자)
         const cr = day.courtReservation || {};
