@@ -1823,7 +1823,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.48';
+const APP_VERSION = '1.17.49';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -8971,8 +8971,14 @@ function renderAdmin(){
         const att = day.attendance || {};
         const dayGuests = day.guests || [];
         const isV2 = day.attendancePolicy === 'v2';
-        const attendingCount = members.filter(m => isV2 ? att[m.name] === true : (att[m.name]??true)).length
-          + guests.filter(g=>dayGuests.includes(g.name)).length;
+        const attendees = [
+          ...members.filter(m => isV2 ? att[m.name] === true : (att[m.name]??true)),
+          ...guests.filter(g => dayGuests.includes(g.name))
+        ];
+        const attendingCount = attendees.length;
+        const maleCount = attendees.filter(person => person.gender === 'm').length;
+        const femaleCount = attendees.filter(person => person.gender === 'f').length;
+        const unknownCount = attendingCount - maleCount - femaleCount;
         const dateStr = day.date ? new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'short'}) : day.date;
         const bodyId = `att_body_${day.id}`;
         const arrId  = `att_arr_${day.id}`;
@@ -9057,7 +9063,7 @@ function renderAdmin(){
               <span style="font-size:13px;font-weight:800;color:#f59e0b">📅 ${dateStr}${day.place?' · '+day.place:''}</span>
               <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;
                 background:rgba(5,150,105,0.2);color:#059669;border:1px solid rgba(52,211,153,0.3)">
-                참석 ${attendingCount}명
+                참석 ${attendingCount}명 · 남 ${maleCount}명 · 여 ${femaleCount}명${unknownCount ? ` · 성별 미입력 ${unknownCount}명` : ''}
               </span>
               ${v2Badge}
             </div>
