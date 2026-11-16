@@ -1823,7 +1823,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.49';
+const APP_VERSION = '1.17.50';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -4934,7 +4934,7 @@ function renderDays() {
           : '';
         const delBtn=isAdmin?`<button class="btn-del-sm" style="padding:5px 8px;border:1px solid #FCA5A5;border-radius:7px;background:#FFF1F2;color:#DC2626;font-weight:800" onclick="delMatch('${day.id}','${rIdx}','${m.id}')">🗑 경기 삭제</button>`:'';
         const editBtn=(isAdmin||isRegularMember)&&m.done?`<button class="btn-del-sm" style="color:#2563EB" onclick="openScoreEdit('${day.id}','${rIdx}','${m.id}')">✏️ 수정</button>`:'';
-        const pairEditBtn=isAdmin&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식'?`<button class="btn-del-sm" style="color:#059669" onclick="openPairEdit('${day.id}','${rIdx}','${m.id}')">✏ 페어</button>`:'';
+        const pairEditBtn=(isAdmin||isRegularMember)&&!m.isRally&&m.tag!=='랠리'&&m.tag!=='휴식'?`<button class="btn-del-sm" style="color:#059669" onclick="openPairEdit('${day.id}','${rIdx}','${m.id}')">✏ 페어</button>`:'';
         const tagBadge=m.tag?`<span style="font-size:10px;color:#6D28D9">[${m.tag}]</span>`:'';
         const genderNoticeHtml=m.genderNotice==='남여대결'?`<div style="margin-top:6px;text-align:center"><span style="display:inline-block;padding:4px 9px;border-radius:12px;background:#FFF7ED;border:1px solid #FDBA74;color:#C2410C;font-size:10px;font-weight:900">⚔️ 남여대결 · 남복 페어 vs 여복 페어</span></div>`:'';
         let evalHtml='';
@@ -14754,11 +14754,15 @@ window.submitMatch=async function(){
     alert('경기를 추가하지 못했어요. 다시 시도해주세요.\n\n'+(e.message||e));
   }
 };
+function canEditRegularPair() {
+  return !!(isAdmin || (myClaim && myClaim !== 'pending' && !myClaim.isGuest && myClaim.uid));
+}
+
 window.openPairEdit = function(dayId, rIdx, mId) {
   const day = days.find(d => d.id === dayId);
   const round = (day?.rounds||[])[parseInt(rIdx)];
   const match = (round?.matches||[]).find(m => m.id === mId);
-  if (!match || !isAdmin) return;
+  if (!match || match.isRally || match.tag === '랠리' || match.tag === '휴식' || !canEditRegularPair()) return;
 
   // 정규시즌 대진 생성에 실제 반영되는 참석자 풀과 동일하게 사용합니다.
   // 참석 투표(v2)에서 아직 응답하지 않은 회원이 수정 대상에 섞이지 않게 합니다.
@@ -14802,6 +14806,7 @@ window.openPairEdit = function(dayId, rIdx, mId) {
 };
 
 window.savePairEdit = async function(dayId, rIdx, mId) {
+  if (!canEditRegularPair()) { alert('정회원 또는 관리자만 페어를 수정할 수 있어요.'); return; }
   const t1p1 = document.getElementById('pe_t1p1')?.value;
   const t1p2 = document.getElementById('pe_t1p2')?.value;
   const t2p1 = document.getElementById('pe_t2p1')?.value;
@@ -14910,6 +14915,12 @@ window.savePairEdit = async function(dayId, rIdx, mId) {
       const openedSignature=JSON.stringify(matchHistorySnapshot(originalMatch));
       const latestSignature=JSON.stringify(matchHistorySnapshot(latestTarget));
       if(openedSignature!==latestSignature)throw new Error('화면을 연 뒤 다른 기기에서 이 경기가 변경됐습니다.');
+      for (const changedId of changedById.keys()) {
+        const opened=(round.matches||[]).find(match=>match.id===changedId);
+        const latest=(latestRounds[ri].matches||[]).find(match=>match.id===changedId);
+        if (!opened || !latest || JSON.stringify(matchHistorySnapshot(opened))!==JSON.stringify(matchHistorySnapshot(latest)))
+          throw new Error('다른 코트의 경기가 변경됐습니다. 화면을 새로고침하고 다시 시도해 주세요.');
+      }
       latestRounds[ri]={...latestRounds[ri],matches:(latestRounds[ri].matches||[]).map(current=>{
         const planned=changedById.get(current.id);
         if(!planned)return current;
