@@ -492,6 +492,7 @@ tr:nth-child(even){background:#F5FCFB;}
 .day-play-count-grid.open{display:grid}
 .day-play-count-item{padding:7px 9px;border:1px solid #E0ECE9;border-radius:8px;background:#fff;font-size:10px;color:#64748B}
 .day-play-count-item b{display:block;color:#1E293B;font-size:11px;margin-bottom:2px}
+.day-play-count-item span{display:block;line-height:1.5}
 .instant-board{margin:0 0 12px;padding:14px;border-radius:14px;background:#F5F3FF;border:1px solid #DDD6FE;box-shadow:0 5px 16px rgba(109,40,217,.09);color:#1E293B}
 .instant-board-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:12px}.instant-board-kicker{font-size:9px;font-weight:900;letter-spacing:.8px;color:#7C3AED}.instant-board-title{font-size:16px;font-weight:900;margin-top:2px}.instant-board-time{font-size:10px;color:#64748B;text-align:right;line-height:1.45}
 .instant-board-totals{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px}.instant-board-total{border-radius:10px;padding:9px 5px;text-align:center;background:#fff;border:1px solid #E9E3FF;font-size:10px;color:#64748B}.instant-board-total b{display:block;font-size:18px;color:#6D28D9;margin-bottom:1px}
@@ -1830,7 +1831,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.51';
+const APP_VERSION = '1.17.52';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -1994,6 +1995,28 @@ let selectedGender = 'm';
 let selectedGuestGender = 'm';
 let generatedPairing = [];
 let generatedAllRounds = [];
+let regularSetupDayId = '';
+
+function savedRegularRound(dayId, rIdx) {
+  const day = days.find(item => item.id === dayId);
+  return (day?.rounds || []).find(round => round.name === `${rIdx+1}라운드`) || null;
+}
+
+function fixedRegularRound(dayId, rIdx) {
+  const saved = savedRegularRound(dayId,rIdx);
+  return saved ? {...saved, matches:(saved.matches || []).map(match => ({...match})), _persistedRound:true} : null;
+}
+
+function addFixedRoundTypeHistory(typeHistory, round) {
+  (round?.matches || []).forEach(match => {
+    const tag = match.isRally || match.tag === '랠리' || match.tag === '휴식' ? '휴식' : match.tag;
+    if (!['혼복','남복','여복','잡복','휴식'].includes(tag)) return;
+    [...(match.team1 || []),...(match.team2 || [])].filter(Boolean).forEach(name => {
+      if (!typeHistory[name]) typeHistory[name] = {혼복:0,남복:0,여복:0,잡복:0,휴식:0};
+      typeHistory[name][tag]++;
+    });
+  });
+}
 let _placeMapInstance = null;
 let _placeMarker = null;
 let _selectedPlaceLat = null;
@@ -2309,14 +2332,14 @@ function getTodayOpponents(dayId, excludeRoundIdx) {
   const day = days.find(d=>d.id===dayId);
   if (day) {
     (day.rounds||[]).forEach((r,idx) => {
-      if (idx === excludeRoundIdx) return;
+      if (r.name === `${excludeRoundIdx+1}라운드`) return;
       collect(r.matches);
     });
   }
   // 아직 저장하지 않은 미리보기 라운드도 포함해야 전체 섞기에서
   // 바로 앞 라운드와 같은 상대가 반복되지 않는다.
   generatedAllRounds.forEach((r,idx) => {
-    if (!r || idx === excludeRoundIdx) return;
+    if (!r || r._persistedRound || idx === excludeRoundIdx) return;
     collect(r.matches);
   });
   return opp;
@@ -2349,8 +2372,8 @@ function getTodayTeamMatchCounts(dayId, excludeRoundIdx) {
     });
   };
   const day=days.find(d=>d.id===dayId);
-  if(day)(day.rounds||[]).forEach((r,idx)=>{if(idx!==excludeRoundIdx)collect(r.matches);});
-  generatedAllRounds.forEach((r,idx)=>{if(r&&idx!==excludeRoundIdx)collect(r.matches);});
+  if(day)(day.rounds||[]).forEach(r=>{if(r.name!==`${excludeRoundIdx+1}라운드`)collect(r.matches);});
+  generatedAllRounds.forEach((r,idx)=>{if(r&&!r._persistedRound&&idx!==excludeRoundIdx)collect(r.matches);});
   return counts;
 }
 function matchUpUnits(units, pastOpp, todayOpp, teamMatchCounts, previousMatches) {
@@ -2409,7 +2432,7 @@ function getTodayPairs(dayId, excludeRoundIdx) {
   }
   // 현재 미리보기 페어도 포함 (단, 지금 굴리는 라운드는 제외)
   generatedAllRounds.forEach((rd, ri) => {
-    if (!rd) return;
+    if (!rd || rd._persistedRound) return;
     if (excludeRoundIdx !== undefined && ri === excludeRoundIdx) return; // 자기 자신 제외
     (rd.matches||[]).forEach(m => {
       for(let i=0;i<(m.team1||[]).length;i++)
@@ -3114,7 +3137,7 @@ function updateRoundTypeSelectors() {
   const defaultCourtTypes = ['혼복','혼복','남복','여복'];
 
   el.innerHTML = Array.from({length:nR}, (_,r) => `
-    <div style="background:#F5FAFA;border-radius:10px;padding:12px;border:1px solid #C8E0DE">
+    <div id="regularRound_${r}" style="background:#F5FAFA;border-radius:10px;padding:12px;border:1px solid #C8E0DE">
       <div class="regular-round-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
         <span style="font-size:12px;font-weight:800;color:#f59e0b">🏆 ${r+1}라운드</span>
         <div class="regular-round-actions" style="display:flex;gap:5px">
@@ -3128,7 +3151,7 @@ function updateRoundTypeSelectors() {
           </button>
           <button onclick="saveOneRound(${r}, this)"
             style="padding:5px 12px;background:rgba(37,99,235,0.85);border:none;border-radius:8px;color:#fff;font-size:11px;font-weight:700;cursor:pointer">
-            💾 저장
+            💾 라운드 저장
           </button>
         </div>
       </div>
@@ -3169,6 +3192,28 @@ function updateRoundTypeSelectors() {
 
   // 수동 셀렉터 채우기
   for (let r=0;r<nR;r++) fillManualSelectors(r);
+  syncSavedRegularRounds(_rtsDayId,nR);
+}
+
+function syncSavedRegularRounds(dayId, count) {
+  for (let r=0; r<count; r++) {
+    const fixed = fixedRegularRound(dayId,r);
+    if (fixed) generatedAllRounds[r] = fixed;
+    else if (generatedAllRounds[r]?._persistedRound) generatedAllRounds[r] = {name:`${r+1}라운드`,matches:[]};
+    const panel = document.getElementById(`regularRound_${r}`);
+    if (panel) {
+      if (fixed) panel.querySelectorAll('select[id^="ct_"]').forEach((control,index) => {
+        const day=days.find(item=>item.id===dayId);
+        const court=(day?.courtNumbers?.length ? day.courtNumbers : COURT_NAMES)[index];
+        const match=(fixed.matches||[]).find(item=>item.court===court);
+        if (match && TYPE_OPTS.includes(match.tag)) control.value=match.tag;
+      });
+      panel.querySelectorAll('.regular-round-actions button,select[id^="ct_"]').forEach(control => { control.disabled=!!fixed; });
+      const saveButton=panel.querySelector('.regular-round-actions button:last-child');
+      if (saveButton) saveButton.textContent=fixed?'🔒 저장됨':'💾 라운드 저장';
+    }
+    if (fixed || generatedAllRounds[r]?.matches?.length) renderRoundPreview(r);
+  }
 }
 
 // 날짜 선택 변경 시 수동 셀렉터 갱신
@@ -3176,6 +3221,7 @@ window.onRndDayChange = function() {
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
   for (let r=0;r<nR;r++) fillManualSelectors(r);
   const dayId = document.getElementById('rndDayId')?.value || '';
+  if (regularSetupDayId !== dayId) { generatedAllRounds = []; regularSetupDayId = dayId; }
   const pairDay = document.getElementById('datePairSel');
   if (pairDay) pairDay.value = dayId;
   renderDatePairs();
@@ -3186,6 +3232,7 @@ window.onRndDayChange = function() {
     if (nc) { ncSel.value = String(nc); updateRoundTypeSelectors(); }
   }
   renderRegularSetupAttendeeSummary();
+  syncSavedRegularRounds(dayId,nR);
   renderSavedGameCount();
   renderRegularSavedPairEditor();
 };
@@ -3666,8 +3713,9 @@ window.rollAllBalanced = function() {
   const nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
   const dayId = document.getElementById('rndDayId')?.value || '';
+  syncSavedRegularRounds(dayId,nR);
   const previousRounds=generatedAllRounds;
-  if(previousRounds.some(round=>(round?.matches||[]).some(match=>match.tag==='수동'||match.manual))&&
+  if(previousRounds.some(round=>!round?._persistedRound&&(round?.matches||[]).some(match=>match.tag==='수동'||match.manual))&&
       !confirm('수동 등록한 경기가 있어요. 하루 전체 섞기를 하면 수동 경기가 모두 지워져요. 계속할까요?'))return;
   const attendees=dayId?getAttendees(dayId):allPlayers();
   const history={pastPairs:getPastPairCounts(currentSeason,dayId),pastOpp:getPastOpponents(dayId)};
@@ -3684,9 +3732,10 @@ window.rollAllBalanced = function() {
       const target=Math.max(1,Math.round(nR/2));
       pairSchedule[key]=new Set(shuffle(Array.from({length:nR},(_,i)=>i)).slice(0,target));
     });
-    generatedAllRounds=Array.from({length:nR},(_,r)=>({name:`${r+1}라운드`,matches:[]}));
+    generatedAllRounds=Array.from({length:nR},(_,r)=>fixedRegularRound(dayId,r)||({name:`${r+1}라운드`,matches:[]}));
     try{
       for(let r=0;r<nR;r++){
+        if (generatedAllRounds[r]._persistedRound) { addFixedRoundTypeHistory(typeHistory,generatedAllRounds[r]); continue; }
         generatedAllRounds[r]={name:`${r+1}라운드`,matches:generateRoundByCourtTypes(r,nC,dayId,typeHistory,pairSchedule,history)};
       }
       const candidate=generatedAllRounds;
@@ -3704,16 +3753,7 @@ window.rollAllBalanced = function() {
     previousRounds.some(round=>(round?.matches||[]).some(match=>!match.isRally))
     ?'현재 기준에서 경기 수와 반복 수준을 유지하며 바꿀 수 있는 대진을 찾지 못했어요. 코트 종목이나 섞기 기준을 조정해보세요.':'';
   // 3) 미리보기 렌더링
-  for (let r=0; r<nR; r++) {
-    const el = document.getElementById(`rndPreview_${r}`);
-    if (!el) continue;
-    const ms = generatedAllRounds[r]?.matches || [];
-    if (!ms.length) { el.innerHTML='<span style="color:#f87171">⚠️ 인원 부족</span>'; continue; }
-    el.innerHTML = ms.map(m => m.isRally
-      ? `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG['랠리']};color:${TYPE_COLOR['랠리']}">⏳ 대기</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#059669">${m.team1.join(', ')}</div><span style="color:#64748B;font-size:10px;margin-left:6px">${m.court}</span></div>`
-      : `<div style="display:flex;align-items:center;padding:5px 0;border-bottom:1px solid #EEF7F6"><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-right:6px;background:${TYPE_BG[m.tag]};color:${TYPE_COLOR[m.tag]}">${m.tag}</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team1.join(' / ')}</div><span style="color:#64748B;font-size:10px;margin:0 6px">vs</span><div style="flex:1;text-align:center;font-weight:700;font-size:12px;color:#1E293B">${m.team2.join(' / ')}</div></div>`
-    ).join('');
-  }
+  for (let r=0; r<nR; r++) renderRoundPreview(r);
   renderTypeStatTable();
 };
 
@@ -3807,6 +3847,8 @@ window.onCourtTypeChange = function(rIdx) {
 };
 
 window.rollRound = function(rIdx) {
+  const selectedDayId = document.getElementById('rndDayId')?.value || '';
+  if (savedRegularRound(selectedDayId,rIdx)) { alert('저장된 라운드는 고정되어 있습니다. 저장된 대진표에서 페어를 수정할 수 있어요.'); return; }
   // 수동 등록 경기가 있으면 확인
   const existing = generatedAllRounds[rIdx];
   const hasManual = existing && existing.matches && existing.matches.some(m => m.tag === '수동' || m.manual);
@@ -3894,6 +3936,7 @@ window.rollRound = function(rIdx) {
 
 // ── ✋수동 버튼: 해당 라운드 카드 안 수동 입력 영역 펼치기/접기 ──
 window.openManualRound = function(rIdx) {
+  if (savedRegularRound(document.getElementById('rndDayId')?.value || '',rIdx)) { alert('저장된 라운드는 고정되어 있습니다.'); return; }
   const area = document.getElementById(`manualArea_${rIdx}`);
   if (!area) return;
   const opening = area.style.display === 'none';
@@ -3906,6 +3949,7 @@ window.openManualRound = function(rIdx) {
 
 // ── 해당 라운드/코트에 수동 경기 1개 추가 ──
 window.addManualToRound = function(rIdx) {
+  if (savedRegularRound(document.getElementById('rndDayId')?.value || '',rIdx)) { alert('저장된 라운드는 고정되어 있습니다.'); return; }
   const court = document.getElementById(`mc_court_${rIdx}`)?.value;
   const t1p1 = document.getElementById(`mc_t1p1_${rIdx}`)?.value;
   const t1p2 = document.getElementById(`mc_t1p2_${rIdx}`)?.value;
@@ -4025,13 +4069,22 @@ window.saveOneRound = async function(rIdx, btn) {
         court:m.court, tag:m.tag, isRally:m.isRally||false
       }))
     };
-    await updateDoc(doc(db,'days',dayId), { rounds:[...(day.rounds||[]), newRound] });
-    generatedAllRounds[rIdx] = { name:`${rIdx+1}라운드`, matches:[] };
-    const el = document.getElementById(`rndPreview_${rIdx}`);
-    if (el) el.innerHTML = '<span style="color:#059669;font-size:11px">✅ 저장 완료! 대진표 탭에서 확인하세요</span>';
+    const savedRounds = await runTransaction(db,async transaction => {
+      const ref=doc(db,'days',dayId), snapshot=await transaction.get(ref);
+      if (!snapshot.exists()) throw new Error('경기 날짜를 찾을 수 없어요.');
+      const rounds=snapshot.data().rounds||[];
+      if (rounds.some(existing=>existing.name===roundName)) throw new Error('이미 저장된 라운드입니다.');
+      const updated=[...rounds,newRound];
+      transaction.update(ref,{rounds:updated});
+      return updated;
+    });
+    day.rounds=savedRounds;
+    syncSavedRegularRounds(dayId,parseInt(document.getElementById('totalRounds')?.value)||3);
     alert(`✅ ${rIdx+1}라운드 저장 완료!`);
+  } catch(error) {
+    alert(`라운드를 저장하지 못했어요. ${error.message||error}`);
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '💾 저장'; }
+    if (btn && !savedRegularRound(dayId,rIdx)) { btn.disabled = false; btn.textContent = '💾 라운드 저장'; }
   }
 };
 
@@ -4042,6 +4095,7 @@ window.saveAllRounds = async function(btn) {
 
   const nR = parseInt(document.getElementById('totalRounds')?.value) || 3;
   const nC = parseInt(document.getElementById('rndCourts')?.value) || 2;
+  syncSavedRegularRounds(dayId,nR);
   for (let r=0; r<nR; r++) {
     if (!generatedAllRounds[r] || !generatedAllRounds[r].matches.length) {
       generatedAllRounds[r] = { name:`${r+1}라운드`, matches: generateRoundByCourtTypes(r, nC, dayId) };
@@ -4079,13 +4133,22 @@ window.saveAllRounds = async function(btn) {
 
   if (btn) { btn.disabled = true; btn.textContent = '저장 중…'; }
   try {
-    await updateDoc(doc(db,'days',dayId), { rounds: [...(day.rounds||[]), ...newRounds] });
+    const savedRounds=await runTransaction(db,async transaction=>{
+      const ref=doc(db,'days',dayId), snapshot=await transaction.get(ref);
+      if(!snapshot.exists())throw new Error('경기 날짜를 찾을 수 없어요.');
+      const latest=snapshot.data().rounds||[];
+      if(newRounds.some(round=>latest.some(existing=>existing.name===round.name)))
+        throw new Error('다른 곳에서 라운드를 저장했어요. 새로고침한 뒤 다시 확인해 주세요.');
+      const updated=[...latest,...newRounds];
+      transaction.update(ref,{rounds:updated});
+      return updated;
+    });
+    day.rounds=savedRounds;
     generatedAllRounds = [];
-    for (let r=0; r<nR; r++) {
-      const el = document.getElementById(`rndPreview_${r}`);
-      if (el) el.innerHTML = '<span style="color:#64748B;font-size:11px">🎲 섞기를 눌러 대진을 생성해요</span>';
-    }
+    syncSavedRegularRounds(dayId,nR);
     alert(`✅ ${newRounds.length}개 라운드 저장 완료!`);
+  } catch(error) {
+    alert(`라운드를 저장하지 못했어요. ${error.message||error}`);
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '✅ 전체 라운드 저장'; }
   }
@@ -4884,9 +4947,11 @@ function renderDays() {
     playableMatches.forEach(m=>{
       const instant = isFreeMode || m.matchKind === 'instant';
       [...(m.team1||[]),...(m.team2||[])].filter(Boolean).forEach(name=>{
-        if(!playCounts[name]) playCounts[name]={official:0,instant:0,total:0};
+        if(!playCounts[name]) playCounts[name]={official:0,instant:0,total:0,혼복:0,남복:0,여복:0,잡복:0,기타:0};
         playCounts[name].total++;
         if(instant) playCounts[name].instant++; else playCounts[name].official++;
+        const type=['혼복','남복','여복','잡복'].includes(m.tag) ? m.tag : '기타';
+        playCounts[name][type]++;
       });
     });
     const playCountRows = Object.entries(playCounts).sort((a,b)=>b[1].total-a[1].total||a[0].localeCompare(b[0]));
@@ -4894,7 +4959,7 @@ function renderDays() {
     const playCountHtml = playCountRows.length ? `<div class="day-play-count">
       <button onclick="toggleDayPlayCount('${playCountId}',this)" aria-expanded="false"><span>👥 오늘 출전 횟수</span><span>펼치기 ↓</span></button>
       <div id="${playCountId}" class="day-play-count-grid">
-        ${playCountRows.map(([name,c])=>`<div class="day-play-count-item"><b>${name} · 총 ${c.total}경기</b>공식 ${c.official} · 즉석 ${c.instant}</div>`).join('')}
+        ${playCountRows.map(([name,c])=>`<div class="day-play-count-item"><b>${name} · 총 ${c.total}경기</b><span>혼복 ${c.혼복} · 남복 ${c.남복} · 여복 ${c.여복}${c.잡복 ? ` · 잡복 ${c.잡복}` : ''}${c.기타 ? ` · 기타 ${c.기타}` : ''}</span><span>공식 ${c.official} · 즉석 ${c.instant}</span></div>`).join('')}
       </div>
     </div>` : '';
 
