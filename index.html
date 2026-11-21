@@ -1831,7 +1831,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.53';
+const APP_VERSION = '1.17.54';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -5119,13 +5119,13 @@ function renderDays() {
     if((!isHistorical || isExpanded) && totalMatches>0&&doneMatches===totalMatches){
       let dBadges=day.dayBadges;
       let dSummary=day.daySummary;
-      if((!dBadges||!dSummary||day.highlightVersion!==highlightVersionForDate(day.date))&&guestsLoaded){
+      if((!dBadges||!dSummary||day.highlightVersion!==roundHighlightVersion(day))&&guestsLoaded){
         const dayNorm=regularDayHighlightMatches(day);
         dBadges=buildDayBadges(dayNorm,day.date);
-        dSummary=buildDaySummary(dayNorm,dBadges,day.date);
+        dSummary=buildDaySummary(dayNorm, dBadges, day);
         if(dBadges.length&&dSummary){
-          day.dayBadges=dBadges;day.daySummary=dSummary;day.highlightVersion=highlightVersionForDate(day.date);
-          const _dId=day.id,_db=dBadges,_ds=dSummary,_hv=highlightVersionForDate(day.date);
+          day.dayBadges=dBadges;day.daySummary=dSummary;day.highlightVersion=roundHighlightVersion(day);
+          const _dId=day.id,_db=dBadges,_ds=dSummary,_hv=roundHighlightVersion(day);
           if (!isHistorical) (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds,highlightVersion:_hv});}catch(e){}})();
         }
       }
@@ -6558,6 +6558,12 @@ function highlightVersionForDate(date) {
   return date >= HIGHLIGHT_REPORT_START_DATE ? 3 : HIGHLIGHT_VERSION;
 }
 
+// 일자 전체 총평은 시즌 3 첫 라운드부터 새 문체로 표시한다.
+const ROUND_REPORT_START_SEASON = 3;
+function roundHighlightVersion(day) {
+  return Number(day.season || 1) >= ROUND_REPORT_START_SEASON ? 4 : highlightVersionForDate(day.date);
+}
+
 function hasHighlightResult(match) {
   return [match.score1, match.score2].every(score =>
     analysisHasScore(score) && Number(score) >= 0);
@@ -6878,9 +6884,10 @@ function getJosa(name, type) {
   if (type === '을를') return hasBatchim ? '을' : '를';
   return '';
 }
-function buildDaySummary(dayMatches, badges, date) {
+function buildDaySummary(dayMatches, badges, day) {
   if (!dayMatches||!dayMatches.length) return '';
-  if (date >= HIGHLIGHT_REPORT_START_DATE) {
+  const {date} = day;
+  if (Number(day.season || 1) >= ROUND_REPORT_START_SEASON || date >= HIGHLIGHT_REPORT_START_DATE) {
     const unbeaten = (badges || []).find(badge=>badge.type==='unbeaten')?.names || [];
     const mvp = (badges || []).find(badge=>badge.type==='mvp');
     const unbeatenNames = unbeaten.slice(0,3).join(', ') + (unbeaten.length > 3 ? ` 외 ${unbeaten.length - 3}명` : '');
@@ -7068,9 +7075,9 @@ async function _drawDayHighlightCard(day,badges,summary,canvas) {
 window.shareDayHighlightCard = async function(dayId) {
   const day=days.find(d=>d.id===dayId); if(!day) return;
   let badges=day.dayBadges||[]; let summary=day.daySummary||'';
-  if(!badges.length || !summary || day.highlightVersion !== highlightVersionForDate(day.date)) {
+  if(!badges.length || !summary || day.highlightVersion !== roundHighlightVersion(day)) {
     const norm=regularDayHighlightMatches(day);
-    badges=buildDayBadges(norm,day.date); summary=buildDaySummary(norm,badges,day.date);
+    badges=buildDayBadges(norm,day.date); summary=buildDaySummary(norm, badges, day);
   }
   if(!badges.length && !summary) { alert('완료된 경기 하이라이트가 아직 없어요.'); return; }
   const canvas=await _drawDayHighlightCard(day,badges,summary);
@@ -12422,13 +12429,13 @@ function renderHomeTab() {
   if(_hDay){
     let hBadges=_hDay.dayBadges;
     let hSummary=_hDay.daySummary;
-    if((!hBadges||!hSummary||_hDay.highlightVersion!==highlightVersionForDate(_hDay.date))&&guestsLoaded){
+    if((!hBadges||!hSummary||_hDay.highlightVersion!==roundHighlightVersion(_hDay))&&guestsLoaded){
       const hNorm=regularDayHighlightMatches(_hDay);
       hBadges=buildDayBadges(hNorm,_hDay.date);
-      hSummary=buildDaySummary(hNorm,hBadges,_hDay.date);
+      hSummary=buildDaySummary(hNorm, hBadges, _hDay);
       if(hBadges.length&&hSummary){
-        _hDay.dayBadges=hBadges;_hDay.daySummary=hSummary;_hDay.highlightVersion=highlightVersionForDate(_hDay.date);
-        const _dId=_hDay.id,_db=hBadges,_ds=hSummary,_hv=highlightVersionForDate(_hDay.date);
+        _hDay.dayBadges=hBadges;_hDay.daySummary=hSummary;_hDay.highlightVersion=roundHighlightVersion(_hDay);
+        const _dId=_hDay.id,_db=hBadges,_ds=hSummary,_hv=roundHighlightVersion(_hDay);
         (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds,highlightVersion:_hv});}catch(e){}})();
       }
     }
@@ -13188,15 +13195,12 @@ function makeDayHighlightItem(day) {
       && m.score2 !== null && m.score2 !== undefined && m.score2 !== '');
   if (!complete) return null;
 
-  const normalized = playable.map(m => ({
-    team1:m.team1||[], team2:m.team2||[], score1:Number(m.score1), score2:Number(m.score2),
-    matchType:m.tag||'', date:day.date, isExchange:false
-  }));
+  const normalized = regularDayHighlightMatches(day);
   let badges = Array.isArray(day.dayBadges) ? day.dayBadges : [];
   let summary = day.daySummary || '';
-  if (!badges.length || !summary || day.highlightVersion !== highlightVersionForDate(day.date)) {
+  if (!badges.length || !summary || day.highlightVersion !== roundHighlightVersion(day)) {
     badges = buildDayBadges(normalized, day.date);
-    summary = buildDaySummary(normalized, badges, day.date);
+    summary = buildDaySummary(normalized, badges, day);
   }
   if (!badges.length && !summary) return null;
 
