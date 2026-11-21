@@ -1831,7 +1831,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.52';
+const APP_VERSION = '1.17.53';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -5011,14 +5011,14 @@ function renderDays() {
         const genderNoticeHtml=m.genderNotice==='남여대결'?`<div style="margin-top:6px;text-align:center"><span style="display:inline-block;padding:4px 9px;border-radius:12px;background:#FFF7ED;border:1px solid #FDBA74;color:#C2410C;font-size:10px;font-weight:900">⚔️ 남여대결 · 남복 페어 vs 여복 페어</span></div>`:'';
         let evalHtml='';
         if (m.done) {
-          if (m.evalText && m.highlightVersion === HIGHLIGHT_VERSION) {
+          if (m.evalText && m.highlightVersion === highlightVersionForDate(day.date)) {
             evalHtml=m.evalText;
           } else {
             evalHtml=buildMatchEval({team1:m.team1||[],team2:m.team2||[],score1:m.score1,score2:m.score2,matchType:m.tag||'',isExchange:false},day.date||'');
             if (evalHtml) {
               m.evalText=evalHtml;
-              m.highlightVersion=HIGHLIGHT_VERSION;
-              const _dId=day.id,_rI=rIdx,_mId=m.id,_et=evalHtml,_hv=HIGHLIGHT_VERSION;
+              m.highlightVersion=highlightVersionForDate(day.date);
+              const _dId=day.id,_rI=rIdx,_mId=m.id,_et=evalHtml,_hv=highlightVersionForDate(day.date);
               if (!isHistorical) (async()=>{const _d=days.find(d=>d.id===_dId);if(!_d)return;const nr=(_d.rounds||[]).map((rn,ri)=>ri!==_rI?rn:{...rn,matches:(rn.matches||[]).map(mx=>mx.id===_mId?{...mx,evalText:_et,highlightVersion:_hv}:mx)});try{await updateDoc(doc(db,'days',_dId),{rounds:nr});}catch(e){}})();
             }
           }
@@ -5119,13 +5119,13 @@ function renderDays() {
     if((!isHistorical || isExpanded) && totalMatches>0&&doneMatches===totalMatches){
       let dBadges=day.dayBadges;
       let dSummary=day.daySummary;
-      if((!dBadges||!dSummary||day.highlightVersion!==HIGHLIGHT_VERSION)&&guestsLoaded){
-        const dayNorm=_getAllMatchHistory(day.date).filter(function(h){return h.date===day.date;});
+      if((!dBadges||!dSummary||day.highlightVersion!==highlightVersionForDate(day.date))&&guestsLoaded){
+        const dayNorm=regularDayHighlightMatches(day);
         dBadges=buildDayBadges(dayNorm,day.date);
         dSummary=buildDaySummary(dayNorm,dBadges,day.date);
         if(dBadges.length&&dSummary){
-          day.dayBadges=dBadges;day.daySummary=dSummary;day.highlightVersion=HIGHLIGHT_VERSION;
-          const _dId=day.id,_db=dBadges,_ds=dSummary,_hv=HIGHLIGHT_VERSION;
+          day.dayBadges=dBadges;day.daySummary=dSummary;day.highlightVersion=highlightVersionForDate(day.date);
+          const _dId=day.id,_db=dBadges,_ds=dSummary,_hv=highlightVersionForDate(day.date);
           if (!isHistorical) (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds,highlightVersion:_hv});}catch(e){}})();
         }
       }
@@ -6552,6 +6552,94 @@ const HIGHLIGHT_VERSION = 2;
 // 기존 경기의 문구와 캐시는 보존하고, 이후 경기부터 새 서술 방식을 적용한다.
 const HIGHLIGHT_STYLE_START_DATE = '2026-11-04';
 
+// 새 문체는 이 날짜 이후 경기부터 적용한다.
+const HIGHLIGHT_REPORT_START_DATE = '2026-11-21';
+function highlightVersionForDate(date) {
+  return date >= HIGHLIGHT_REPORT_START_DATE ? 3 : HIGHLIGHT_VERSION;
+}
+
+function hasHighlightResult(match) {
+  return [match.score1, match.score2].every(score =>
+    analysisHasScore(score) && Number(score) >= 0);
+}
+
+function regularDayHighlightMatches(day) {
+  return (day.rounds || []).flatMap(round => round.matches || [])
+    .filter(match => match.done && !match.isRally && !['랠리','휴식'].includes(match.tag) && hasHighlightResult(match))
+    .map(match => ({...match, score1:Number(match.score1), score2:Number(match.score2),
+      matchType:match.tag || '', date:day.date, isExchange:false}));
+}
+
+function highlightMatchLabel(match) {
+  return [match.team1, match.team2].map(team => (team || []).filter(Boolean).join('·')).join(' 대 ');
+}
+
+function buildMatchReport(match, date) {
+  if (!hasHighlightResult(match)) return '';
+  const s1 = Number(match.score1), s2 = Number(match.score2);
+  if (!s1 && !s2) return '';
+  const names = [match.team1, match.team2].map(team => (team || []).filter(Boolean).join('·'));
+  if (!names.every(Boolean)) return '';
+  const seed = [date, ...names, s1, s2].join('|');
+  const pick = options => stableHighlightPick(options, seed);
+  if (s1 === s2) return pick([
+    `${highlightMatchLabel(match)}, ${s1}–${s2}로 비겼다.`,
+    `두 페어가 ${s1}게임씩 가져갔다. ${highlightMatchLabel(match)}의 결과는 무승부.`
+  ]);
+  const side = s1 > s2 ? 0 : 1;
+  const winner = names[side], loser = names[1-side];
+  const won = Math.max(s1,s2), lost = Math.min(s1,s2), score = `${won}–${lost}`;
+  if (!lost) return pick([
+    `${winner} 페어가 ${loser} 페어를 상대로 한 게임도 내주지 않았다. ${score} 승리.`,
+    `${score}. ${winner} 페어가 ${loser} 페어와의 경기에서 모든 게임을 가져갔다.`
+  ]);
+  const lead = won-lost === 1 ? pick([
+    `딱 한 게임 차였다. ${winner} 페어가 ${loser} 페어에 ${score}로 이겼다.`,
+    `${winner} 페어의 ${score} 승리. ${loser} 페어와는 한 게임 차였다.`
+  ]) : pick([
+    `${winner} 페어가 ${loser} 페어에 ${score}로 이겼다.`,
+    `${score}. ${winner} 페어가 ${loser} 페어와의 승부를 가져갔다.`
+  ]);
+  const key = team => JSON.stringify((team || []).filter(Boolean).slice().sort());
+  const firstKey = key(match.team1), secondKey = key(match.team2);
+  const prior = _getAllMatchHistory(date).findLast(item => {
+    if (item.date >= date || !!item.isExchange !== !!match.isExchange || !hasHighlightResult(item)) return false;
+    const a = key(item.team1), b = key(item.team2);
+    return (a === firstKey && b === secondKey) || (a === secondKey && b === firstKey);
+  });
+  if (!prior) return lead;
+  const winnerWasFirst = key(prior.team1) === (side === 0 ? firstKey : secondKey);
+  const priorWinnerScore = winnerWasFirst ? prior.score1 : prior.score2;
+  const priorLoserScore = winnerWasFirst ? prior.score2 : prior.score1;
+  if (priorWinnerScore < priorLoserScore) return `${lead} 두 페어의 직전 맞대결과는 승자가 바뀌었다.`;
+  if (priorWinnerScore === priorLoserScore) return `${lead} 직전 맞대결은 ${priorWinnerScore}–${priorLoserScore} 무승부였다.`;
+  return lead;
+}
+
+function buildResultsReport(matches, date, standout = '') {
+  const results = matches.filter(match => hasHighlightResult(match)
+    && (match.team1 || []).some(Boolean) && (match.team2 || []).some(Boolean));
+  if (!results.length) return '';
+  const close = results.filter(match => Math.abs(match.score1-match.score2) === 1);
+  const draws = results.filter(match => Number(match.score1) === Number(match.score2));
+  const shutouts = results.filter(match => Math.min(match.score1,match.score2) === 0 && Number(match.score1) !== Number(match.score2));
+  const highlight = close[0] || shutouts[0] || draws[0];
+  let lead;
+  if (close.length > 1) lead = `${results.length}경기 중 ${close.length}경기가 한 게임 차로 갈렸다.`;
+  else if (close.length) lead = `한 게임 차로 끝난 ${highlightMatchLabel(highlight)}. 스코어는 ${highlight.score1}–${highlight.score2}였다.`;
+  else if (shutouts.length) {
+    const winner = (Number(highlight.score1) > Number(highlight.score2) ? highlight.team1 : highlight.team2).filter(Boolean).join('·');
+    lead = `${winner} 페어가 한 게임도 내주지 않고 ${Math.max(highlight.score1,highlight.score2)}–0으로 이겼다.`;
+  } else if (draws.length) lead = `${results.length}경기 가운데 ${draws.length}경기가 무승부였다.`;
+  else {
+    const margin = match => Math.abs(match.score1 - match.score2);
+    const widest = Math.max(...results.map(margin));
+    const match = stableHighlightPick(results.filter(item => margin(item) === widest),date);
+    lead = `${highlightMatchLabel(match)}는 ${match.score1}–${match.score2}로 끝났다.`;
+  }
+  return [lead,standout].filter(Boolean).join(' ');
+}
+
 function buildMatchEvalFromScore(norm, date) {
   const score1 = Number(norm.score1), score2 = Number(norm.score2);
   if (!Number.isFinite(score1) || !Number.isFinite(score2) || (score1 === 0 && score2 === 0)) return '';
@@ -6642,6 +6730,7 @@ function _getAllMatchHistory(upToDate) {
 
 function buildMatchEval(norm, date) {
   if (!norm||!date) return '';
+  if (date >= HIGHLIGHT_REPORT_START_DATE) return buildMatchReport(norm, date);
   if (date >= HIGHLIGHT_STYLE_START_DATE) return buildMatchEvalFromScore(norm, date);
   const s1=Number(norm.score1), s2=Number(norm.score2);
   if (isNaN(s1)||isNaN(s2)||(s1===0&&s2===0)) return '';
@@ -6791,6 +6880,15 @@ function getJosa(name, type) {
 }
 function buildDaySummary(dayMatches, badges, date) {
   if (!dayMatches||!dayMatches.length) return '';
+  if (date >= HIGHLIGHT_REPORT_START_DATE) {
+    const unbeaten = (badges || []).find(badge=>badge.type==='unbeaten')?.names || [];
+    const mvp = (badges || []).find(badge=>badge.type==='mvp');
+    const unbeatenNames = unbeaten.slice(0,3).join(', ') + (unbeaten.length > 3 ? ` 외 ${unbeaten.length - 3}명` : '');
+    const standout = unbeaten.length
+      ? `출전 경기 전승은 ${unbeatenNames}.`
+      : mvp ? `${mvp.name} 선수가 ${mvp.wins}승으로 이날 MVP에 올랐다.` : '';
+    return buildResultsReport(dayMatches, date, standout);
+  }
   if (date >= HIGHLIGHT_STYLE_START_DATE) return buildDaySummaryFromResults(dayMatches, badges);
   const total=dayMatches.length;
   let pickSeq=0;
@@ -6970,8 +7068,8 @@ async function _drawDayHighlightCard(day,badges,summary,canvas) {
 window.shareDayHighlightCard = async function(dayId) {
   const day=days.find(d=>d.id===dayId); if(!day) return;
   let badges=day.dayBadges||[]; let summary=day.daySummary||'';
-  if(!badges.length || !summary) {
-    const norm=_getAllMatchHistory(day.date).filter(h=>h.date===day.date);
+  if(!badges.length || !summary || day.highlightVersion !== highlightVersionForDate(day.date)) {
+    const norm=regularDayHighlightMatches(day);
     badges=buildDayBadges(norm,day.date); summary=buildDaySummary(norm,badges,day.date);
   }
   if(!badges.length && !summary) { alert('완료된 경기 하이라이트가 아직 없어요.'); return; }
@@ -7026,6 +7124,16 @@ function getPartnershipEventHighlightData(ev) {
 
 function getPartnershipEventHighlightSummary(ev, data) {
   if (!ev || !data) return '';
+  if (ev.date >= HIGHLIGHT_REPORT_START_DATE) {
+    const {winner,runnerUp} = data;
+    const name = winner.players.join('·');
+    const runner = runnerUp?.players.join('·');
+    if (runnerUp && winner.points === runnerUp.points)
+      return `승점은 두 페어 모두 ${winner.points}점. ${name} 페어가 ${runner} 페어와 승점이 같은 가운데 1위에 올랐다.`;
+    if (!winner.draws && !winner.losses && winner.wins > 1)
+      return `${name} 페어가 ${winner.wins}경기를 모두 이겼다. 승점 ${winner.points}점으로 1위.`;
+    return `${name} 페어가 ${winner.wins}승으로 1위에 올랐다.${runnerUp ? ` 2위 ${runner} 페어와는 승점 ${winner.points - runnerUp.points}점 차였다.` : ''}`;
+  }
   if (ev.date >= HIGHLIGHT_STYLE_START_DATE) {
     const winner = data.winner;
     const name = winner.players.join('·');
@@ -7106,6 +7214,16 @@ function getFriendlyEventHighlightData(ev) {
 function getFriendlyEventHighlightSummary(ev,data) {
   if(!ev||!data) return '';
   const {mvp,completed,closeGames}=data;
+  if (ev.date >= HIGHLIGHT_REPORT_START_DATE) {
+    const matches = (ev.matches || []).map(match => ({
+      team1:(match.ourPair || match.team1 || []).filter(Boolean),
+      team2:(match.oppPair || match.team2 || []).filter(Boolean),
+      score1:match.ourScore ?? match.score1, score2:match.oppScore ?? match.score2
+    })).filter(match => match.team1.length === 2 && match.team2.length === 2);
+    const standout = mvp.wins
+      ? `${mvp.name} 선수가 ${mvp.games}경기에서 ${mvp.wins}승을 거두며 MVP에 올랐다.` : '';
+    return buildResultsReport(matches, ev.date, standout);
+  }
   if (ev.date >= HIGHLIGHT_STYLE_START_DATE) {
     let summary = `${completed}경기 결과를 집계했다. ${mvp.name}${getJosa(mvp.name, '이가')} ${mvp.wins}승 ${mvp.draws}무 ${mvp.losses}패로 MVP에 선정됐다.`;
     if (closeGames) summary += ` 한 게임 차 경기는 ${closeGames}경기였다.`;
@@ -7294,14 +7412,14 @@ function buildEvExMatchCard(m, mi, evId, isAdmin, defaultOppClub, parts, isMembe
   if (!m.id) m.id=Date.now().toString(36)+Math.random().toString(36).slice(2,6);
   let evalHtml='';
   if (done) {
-    if (m.evalText && m.highlightVersion === HIGHLIGHT_VERSION) {
+    if (m.evalText && m.highlightVersion === highlightVersionForDate(evDate)) {
       evalHtml=m.evalText;
     } else {
       evalHtml=buildMatchEval({team1:m.ourPair||[],team2:m.oppPair||[],score1:Number(m.ourScore),score2:Number(m.oppScore),matchType:m.courtType||'',isExchange:true},evDate);
       if (evalHtml) {
         m.evalText=evalHtml;
-        m.highlightVersion=HIGHLIGHT_VERSION;
-        const _eId=evId,_mId=m.id,_eMi=mi,_et=evalHtml,_hv=HIGHLIGHT_VERSION;
+        m.highlightVersion=highlightVersionForDate(evDate);
+        const _eId=evId,_mId=m.id,_eMi=mi,_et=evalHtml,_hv=highlightVersionForDate(evDate);
         // ID 기반으로 매치 탐색, 없으면 인덱스 폴백 (하위호환)
         (async()=>{const _ev2=events.find(e=>e.id===_eId);if(!_ev2)return;const nm=(_ev2.matches||[]).map((mx,i)=>(_mId?mx.id===_mId:i===_eMi)?{...mx,id:_mId,evalText:_et,highlightVersion:_hv}:mx);try{await updateDoc(doc(db,'events',_eId),{matches:nm});}catch(e){}})();
       }
@@ -12304,13 +12422,13 @@ function renderHomeTab() {
   if(_hDay){
     let hBadges=_hDay.dayBadges;
     let hSummary=_hDay.daySummary;
-    if((!hBadges||!hSummary||_hDay.highlightVersion!==HIGHLIGHT_VERSION)&&guestsLoaded){
-      const hNorm=_getAllMatchHistory(_hDay.date).filter(function(h){return h.date===_hDay.date;});
+    if((!hBadges||!hSummary||_hDay.highlightVersion!==highlightVersionForDate(_hDay.date))&&guestsLoaded){
+      const hNorm=regularDayHighlightMatches(_hDay);
       hBadges=buildDayBadges(hNorm,_hDay.date);
       hSummary=buildDaySummary(hNorm,hBadges,_hDay.date);
       if(hBadges.length&&hSummary){
-        _hDay.dayBadges=hBadges;_hDay.daySummary=hSummary;_hDay.highlightVersion=HIGHLIGHT_VERSION;
-        const _dId=_hDay.id,_db=hBadges,_ds=hSummary,_hv=HIGHLIGHT_VERSION;
+        _hDay.dayBadges=hBadges;_hDay.daySummary=hSummary;_hDay.highlightVersion=highlightVersionForDate(_hDay.date);
+        const _dId=_hDay.id,_db=hBadges,_ds=hSummary,_hv=highlightVersionForDate(_hDay.date);
         (async()=>{try{await updateDoc(doc(db,'days',_dId),{dayBadges:_db,daySummary:_ds,highlightVersion:_hv});}catch(e){}})();
       }
     }
@@ -13076,7 +13194,7 @@ function makeDayHighlightItem(day) {
   }));
   let badges = Array.isArray(day.dayBadges) ? day.dayBadges : [];
   let summary = day.daySummary || '';
-  if (!badges.length || !summary || day.highlightVersion !== HIGHLIGHT_VERSION) {
+  if (!badges.length || !summary || day.highlightVersion !== highlightVersionForDate(day.date)) {
     badges = buildDayBadges(normalized, day.date);
     summary = buildDaySummary(normalized, badges, day.date);
   }
@@ -13297,7 +13415,10 @@ function getPersonalScheduleHighlightData(schedule) {
   const ranking = [...pairs.values()].sort((a,b) => b.wins - a.wins || b.diff - a.diff || b.games - a.games || a.names.join(' / ').localeCompare(b.names.join(' / '),'ko'));
   const leader = ranking[0] || null;
   const closeGames = scored.filter(match => Math.abs(Number(match.score1) - Number(match.score2)) <= 2).length;
-  const summary = schedule.date >= HIGHLIGHT_STYLE_START_DATE
+  const summary = schedule.date >= HIGHLIGHT_REPORT_START_DATE
+    ? buildResultsReport(scored, schedule.date, leader?.wins > 1
+      ? `${leader.names.join('·')} 페어는 ${leader.games}경기에서 ${leader.wins}승을 거뒀다.` : '')
+    : schedule.date >= HIGHLIGHT_STYLE_START_DATE
     ? (leader && leader.wins
       ? `${scored.length}경기 중 ${leader.names.join('·')} 페어가 ${leader.wins}승 ${leader.draws}무 ${leader.losses}패를 기록했다.${closeGames ? ` 두 게임 차 이내로 끝난 경기는 ${closeGames}경기였다.` : ''}`
       : `${scored.length}경기 결과가 기록됐다.${closeGames ? ` 두 게임 차 이내로 끝난 경기는 ${closeGames}경기였다.` : ''}`)
