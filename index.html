@@ -1541,6 +1541,7 @@ tr:nth-child(even){background:#F5FCFB;}
       <button class="btn-cancel" onclick="hide('adminLoginModal')">취소</button>
       <button class="btn-ok" onclick="doAdminLogin()">로그인</button>
     </div>
+    <button type="button" class="btn-cancel" onclick="openSignup()" style="width:100%;margin-top:8px;color:#0F766E">회원가입</button>
   </div>
 </div>
 
@@ -1831,7 +1832,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.55';
+const APP_VERSION = '1.17.56';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -16086,11 +16087,16 @@ function populateSignupNameSelect(){
   }
 }
 
+window.openSignup = function(){
+  populateSignupNameSelect();
+  hide('adminLoginModal');
+  document.getElementById('signupModal').style.display = 'flex';
+};
+
 window.onSignupNameChange = function(){
   const val = document.getElementById('signupNameSelect').value;
   const isNew = val === '__new__';
   document.getElementById('signupNewNameWrap').style.display = isNew ? 'block' : 'none';
-  document.getElementById('signupNicknameWrap').style.display = (val && !isNew) ? 'block' : 'none';
 };
 
 window.doGoogleSignIn = async function(){
@@ -16127,22 +16133,6 @@ window.doSignup = async function(){
     gender = found ? found.gender : 'm';
   }
 
-  let uid, email;
-  if (googleAuthedUser) {
-    uid = googleAuthedUser.uid; email = googleAuthedUser.email;
-  } else {
-    const em = document.getElementById('signupEmail').value.trim();
-    const pw = document.getElementById('signupPw').value;
-    const pw2 = document.getElementById('signupPw2').value;
-    if (!em || !pw) { alert('이메일과 비밀번호를 입력하세요'); return; }
-    if (pw !== pw2) { alert('비밀번호가 일치하지 않아요'); return; }
-    if (pw.length < 6) { alert('비밀번호는 6자 이상이어야 해요'); return; }
-    try {
-      const cred = await createUserWithEmailAndPassword(auth, em, pw);
-      uid = cred.user.uid; email = em;
-    } catch(e) { alert('가입 실패: ' + (e.message || e)); return; }
-  }
-
   const tennisY = document.getElementById('signupTennisYear').value;
   const tennisM = document.getElementById('signupTennisMonth').value;
   const tennisStartDate = (tennisY && tennisM) ? `${tennisY}-${tennisM}` : '';
@@ -16162,6 +16152,22 @@ window.doSignup = async function(){
         alert('음력 날짜를 양력으로 변환할 수 없습니다. 양력으로 직접 입력하거나 날짜를 확인해주세요.'); return;
       }
     }
+  }
+
+  let uid, email;
+  if (googleAuthedUser) {
+    uid = googleAuthedUser.uid; email = googleAuthedUser.email;
+  } else {
+    const em = document.getElementById('signupEmail').value.trim();
+    const pw = document.getElementById('signupPw').value;
+    const pw2 = document.getElementById('signupPw2').value;
+    if (!em || !pw) { alert('이메일과 비밀번호를 입력하세요'); return; }
+    if (pw !== pw2) { alert('비밀번호가 일치하지 않아요'); return; }
+    if (pw.length < 6) { alert('비밀번호는 6자 이상이어야 해요'); return; }
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, em, pw);
+      uid = cred.user.uid; email = em;
+    } catch(e) { alert('가입 실패: ' + (e.message || e)); return; }
   }
 
   const reqData = { uid, email, claimedName, gender, isNewName, status: 'pending', requestedAt: serverTimestamp() };
@@ -16434,7 +16440,7 @@ function renderMyDashboardState(){
     btn.onclick = () => openMyDashboard();
   } else {
     btn.textContent = '회원가입';
-    btn.onclick = () => { populateSignupNameSelect(); document.getElementById('signupModal').style.display = 'flex'; };
+    btn.onclick = window.openSignup;
   }
   updateSloganVisibility();
   updatePushButton();
