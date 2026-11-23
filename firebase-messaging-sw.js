@@ -16,13 +16,13 @@ messaging.onBackgroundMessage(payload => {
   const notice = payload.notification || {};
   self.registration.showNotification(notice.title || '🎾 TBS HISTORY', {
     body: notice.body || '새 알림이 도착했어요.',
-    icon: '/TBSclub/tbs_logo.png',
+    icon: new URL('tbs_logo.png', self.registration.scope).href,
     data: payload.data || {}
   });
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const targetUrl = event.notification.data?.url || '/TBSclub/';
+  const targetUrl = event.notification.data?.url || self.registration.scope;
   event.waitUntil(clients.openWindow(targetUrl));
 });

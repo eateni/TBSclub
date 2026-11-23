@@ -1891,7 +1891,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.59';
+const APP_VERSION = '1.17.60';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -9838,7 +9838,7 @@ window.sendAttendanceNotification = async function() {
 window.sendAdminTestNotification = async function() {
   const title=document.getElementById('notificationTitleInput')?.value.trim()||'🔔 TBS 테스트 알림';
   const body=document.getElementById('notificationBodyInput')?.value.trim()||'관리자 기기의 푸시 알림 연결이 정상입니다.';
-  await createNotificationRequest({type:'test',title,body,target:'admin',url:'https://eateni.github.io/TBSclub/'},'관리자 기기로 테스트 알림을 보내는 중...');
+  await createNotificationRequest({type:'test',title,body,target:'admin',url:new URL('./',location.href).href},'관리자 기기로 테스트 알림을 보내는 중...');
 };
 
 window.sendCustomNotification = async function() {
@@ -9846,7 +9846,7 @@ window.sendCustomNotification = async function() {
   const body=document.getElementById('notificationBodyInput')?.value.trim()||'';
   if(!title||!body){alert('알림 제목과 내용을 모두 입력해주세요.');return;}
   if(!confirm(`알림을 켠 전체 회원에게 전송할까요?\n\n${title}\n${body}`))return;
-  await createNotificationRequest({type:'custom',title,body,target:'all',url:'https://eateni.github.io/TBSclub/'},'전체 알림을 준비하는 중...');
+  await createNotificationRequest({type:'custom',title,body,target:'all',url:new URL('./',location.href).href},'전체 알림을 준비하는 중...');
 };
 
 window.dismissAnnouncement = function(id){
@@ -16549,8 +16549,7 @@ window.enablePushNotifications = async function() {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') { alert('알림 권한이 허용되지 않았어요. 브라우저 설정에서 알림을 허용해주세요.'); return; }
     messaging = messaging || getMessaging(app);
-    // GitHub Pages 프로젝트 경로(/TBSclub/)에서 서비스 워커를 명시적으로 등록한다.
-    const serviceWorkerRegistration = await navigator.serviceWorker.register('/TBSclub/firebase-messaging-sw.js');
+    const serviceWorkerRegistration = await navigator.serviceWorker.register('./firebase-messaging-sw.js');
     const token = await getToken(messaging, { vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration });
     if (!token) throw new Error('알림 기기 정보를 만들지 못했습니다.');
     await setDoc(doc(db,'pushTokens',auth.currentUser.uid), {
