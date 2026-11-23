@@ -398,6 +398,45 @@ tr:nth-child(even){background:#F5FCFB;}
 .btn-cancel{flex:1;padding:13px;background:#F8FFFE;border:1px solid #C8E0DE;border-radius:12px;color:#64748B;font-size:14px;font-weight:600;cursor:pointer;}
 .btn-ok{flex:2;padding:13px;background:#60a5fa;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
 .btn-ok-green{flex:2;padding:13px;background:#34d399;border:none;border-radius:12px;color:#fff;font-size:14px;font-weight:700;cursor:pointer;}
+/* 회원가입 */
+#signupModal{background:rgba(15,23,42,.68);padding:16px}
+.signup-panel{display:flex;flex-direction:column;max-width:510px;max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);padding:0;overflow:hidden;box-shadow:0 24px 64px rgba(15,23,42,.22)}
+.signup-header,.signup-footer{flex:none;padding:16px 22px}
+.signup-header{background:#EAF7F4;border-bottom:1px solid #D6E9E5}
+.signup-header h2{font-size:21px;line-height:1.3;color:#17443F}
+.signup-header p{margin-top:3px;font-size:12px;color:#465F5C}
+.signup-body{min-height:0;padding:16px 22px 18px;overflow-y:auto;overscroll-behavior:contain}
+.signup-section{min-width:0}
+.signup-section+.signup-section{margin-top:16px;padding-top:14px;border-top:1px solid #DFEBE8}
+.signup-section h3{margin-bottom:9px;font-size:15px;color:#17443F}
+.signup-google{width:100%;min-height:44px;border:1px solid #C8DBD8;border-radius:10px;background:#fff;color:#24363C;font:inherit;font-size:14px;font-weight:700;cursor:pointer}
+.signup-divider{display:flex;align-items:center;gap:10px;margin:10px 0;color:#52656E;font-size:12px}
+.signup-divider::before,.signup-divider::after{content:'';flex:1;height:1px;background:#DFEBE8}
+.signup-notice{padding:8px 10px;border-radius:8px;background:#EAF7F4;color:#115E54;font-size:13px;overflow-wrap:anywhere}
+.signup-fields{display:grid;gap:10px}
+.signup-fields h3{margin-bottom:0}
+#signupNewNameWrap{margin-top:9px}
+.signup-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.signup-label{display:block;margin-bottom:4px;color:#334B53;font-size:12px;font-weight:700}
+.signup-control{display:block;width:100%;min-width:0;max-width:100%;min-height:44px;margin:0;padding:8px 10px;background:#F7FBFA;border:1px solid #BFD6D2;border-radius:9px;color:#1E293B;font:inherit;font-size:16px}
+.signup-control[type="date"]{-webkit-appearance:none;appearance:none}
+.signup-control[type="date"]::-webkit-date-and-time-value{text-align:left;min-height:1.25em}
+.signup-control::placeholder{color:#667680}
+.signup-panel :is(button,input,select):focus-visible{outline:2px solid #0F766E;outline-offset:2px}
+.signup-birth-label{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 8px;margin-bottom:4px}
+.signup-birth-label .signup-label{margin:0}
+.signup-calendar{display:flex;gap:10px;color:#334B53;font-size:12px}
+.signup-calendar label{display:flex;align-items:center;gap:3px;min-height:30px;cursor:pointer}
+.signup-calendar input{accent-color:#0F766E}
+.signup-footer{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.8fr);gap:8px;background:#fff;border-top:1px solid #D6E9E5}
+.signup-footer button{min-height:44px;padding:8px;font:inherit;font-size:14px;font-weight:700;border-radius:10px}
+.signup-footer .btn-ok{background:#0F766E}
+@media(max-width:480px){
+  #signupModal{padding:12px}
+  .signup-panel{max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);border-radius:18px}
+  .signup-header,.signup-footer{padding:13px 14px}
+  .signup-body{padding:13px 14px 16px}
+}
 .ev-part-check-list{display:grid;grid-template-columns:1fr;gap:8px 12px;}
 .ev-part-check-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 10px;background:#F8FFFE;border:1px solid #D7E9E7;border-radius:10px;}
 .ev-part-check-name{min-width:0;font-size:14px;font-weight:800;color:#1E293B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -1468,52 +1507,72 @@ tr:nth-child(even){background:#F5FCFB;}
   </div>
 </div>
 
-<!-- 관리자 로그인 모달 -->
-<div class="overlay" id="signupModal" style="display:none" onclick="if(event.target.id==='signupModal')hide('signupModal')">
-  <div class="modal">
-    <div class="modal-title">회원가입</div>
-    <button type="button" onclick="doGoogleSignIn()" style="width:100%;padding:12px;margin-bottom:10px;background:#fff;color:#3c4043;border:1px solid #dadce0;border-radius:10px;font-weight:700;font-size:14px;cursor:pointer">🔵 구글로 계속하기</button>
-    <div id="signupGoogleNotice" style="display:none;text-align:center;font-size:12px;color:#059669;font-weight:700;margin-bottom:10px;padding:8px;background:rgba(52,211,153,0.1);border-radius:8px"></div>
-    <div style="text-align:center;font-size:11px;color:#64748B;margin:8px 0">— 또는 이메일로 —</div>
-    <div id="signupEmailPwFields">
-      <input type="email" id="signupEmail" class="row-inp" placeholder="이메일" style="width:100%;margin-bottom:8px">
-      <input type="password" id="signupPw" class="row-inp" placeholder="비밀번호(6자 이상)" style="width:100%;margin-bottom:8px">
-      <input type="password" id="signupPw2" class="row-inp" placeholder="비밀번호 확인" style="width:100%;margin-bottom:8px">
+<!-- 회원가입 -->
+<div class="overlay" id="signupModal" style="display:none" onclick="if(event.target===this)hide('signupModal')">
+  <div class="modal signup-panel" role="dialog" aria-modal="true" aria-labelledby="signupTitle">
+    <header class="signup-header">
+      <h2 id="signupTitle">회원가입</h2>
+      <p>관리자 승인 후 이용할 수 있어요.</p>
+    </header>
+    <div class="signup-body">
+      <section class="signup-section" aria-labelledby="signupAccountTitle">
+        <h3 id="signupAccountTitle">계정 정보</h3>
+        <button type="button" class="signup-google" onclick="doGoogleSignIn()">Google로 계속하기</button>
+        <p id="signupGoogleNotice" class="signup-notice" style="display:none" role="status"></p>
+        <div id="signupEmailPwFields">
+          <div class="signup-divider">또는 이메일로 가입</div>
+          <div class="signup-fields">
+            <label><span class="signup-label">이메일</span><input type="email" id="signupEmail" class="signup-control" autocomplete="email" autocapitalize="none" placeholder="name@example.com"></label>
+            <div class="signup-pair">
+              <label><span class="signup-label">비밀번호</span><input type="password" id="signupPw" class="signup-control" autocomplete="new-password" placeholder="6자 이상"></label>
+              <label><span class="signup-label">비밀번호 확인</span><input type="password" id="signupPw2" class="signup-control" autocomplete="new-password" placeholder="다시 입력"></label>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="signup-section signup-fields" aria-labelledby="signupProfileTitle">
+        <h3 id="signupProfileTitle">회원 정보</h3>
+        <div>
+          <label class="signup-label" for="signupNameSelect">본인 이름</label>
+          <select id="signupNameSelect" class="signup-control" onchange="onSignupNameChange()">
+            <option value="">이름 선택</option>
+            <option value="__new__">명단에 없음 · 직접 입력</option>
+          </select>
+          <div id="signupNewNameWrap" class="signup-pair" style="display:none">
+            <label><span class="signup-label">이름</span><input type="text" id="signupNewName" class="signup-control" autocomplete="name"></label>
+            <label><span class="signup-label">성별</span><select id="signupNewGender" class="signup-control"><option value="m">남</option><option value="f">여</option></select></label>
+          </div>
+        </div>
+        <div>
+          <span class="signup-label" id="signupTennisLabel">테니스 시작 연월</span>
+          <div class="signup-pair" role="group" aria-labelledby="signupTennisLabel">
+            <select id="signupTennisYear" class="signup-control" aria-label="시작 연도" required>
+              <option value="">연도</option>
+            </select>
+            <select id="signupTennisMonth" class="signup-control" aria-label="시작 월" required>
+              <option value="">월</option>
+              <option value="01">1월</option><option value="02">2월</option><option value="03">3월</option><option value="04">4월</option>
+              <option value="05">5월</option><option value="06">6월</option><option value="07">7월</option><option value="08">8월</option>
+              <option value="09">9월</option><option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="signup-birth-label">
+            <label class="signup-label" for="signupBirthDate">생년월일</label>
+            <div class="signup-calendar" role="group" aria-label="생년월일 달력 기준">
+              <label><input type="radio" name="signupBirthCal" value="solar" checked>양력</label>
+              <label><input type="radio" name="signupBirthCal" value="lunar">음력</label>
+            </div>
+          </div>
+          <input type="date" id="signupBirthDate" class="signup-control" autocomplete="bday" required>
+        </div>
+      </section>
     </div>
-    <label style="font-size:12px;color:#64748B;display:block;margin-top:10px">본인 이름</label>
-    <select id="signupNameSelect" class="row-sel" style="width:100%;margin-bottom:8px" onchange="onSignupNameChange()">
-      <option value="">선택하세요</option>
-      <option value="__new__">➕ 명단에 없어요 (새 이름으로 등록)</option>
-    </select>
-    <div id="signupNewNameWrap" style="display:none">
-      <input type="text" id="signupNewName" class="row-inp" placeholder="이름" style="width:100%;margin-bottom:8px">
-      <select id="signupNewGender" class="row-sel" style="width:100%;margin-bottom:8px">
-        <option value="m">남</option><option value="f">여</option>
-      </select>
-    </div>
-    <label style="font-size:12px;color:#64748B;display:block;margin-top:10px">테니스 시작년월 <span style="color:#f87171;font-size:11px">(필수)</span></label>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <select id="signupTennisYear" class="row-sel" style="flex:1" required>
-        <option value="">연도</option>
-      </select>
-      <select id="signupTennisMonth" class="row-sel" style="flex:1">
-        <option value="">월</option>
-        <option value="01">1월</option><option value="02">2월</option><option value="03">3월</option>
-        <option value="04">4월</option><option value="05">5월</option><option value="06">6월</option>
-        <option value="07">7월</option><option value="08">8월</option><option value="09">9월</option>
-        <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
-      </select>
-    </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-      <label style="font-size:12px;color:#64748B">생년월일 <span style="color:#f87171;font-size:11px">(필수)</span></label>
-      <span style="display:flex;gap:8px;font-size:11px;color:#475569">
-        <label style="cursor:pointer;display:flex;align-items:center;gap:2px"><input type="radio" name="signupBirthCal" value="solar" checked style="margin:0">양력</label>
-        <label style="cursor:pointer;display:flex;align-items:center;gap:2px"><input type="radio" name="signupBirthCal" value="lunar" style="margin:0">음력</label>
-      </span>
-    </div>
-    <input type="date" id="signupBirthDate" class="row-inp" style="width:100%;margin-bottom:12px" required>
-    <button onclick="doSignup()" style="width:100%;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#1a120a;border:none;border-radius:10px;font-weight:800;cursor:pointer">가입 신청</button>
-    <div class="mft"><button class="btn-cancel" onclick="hide('signupModal')">취소</button></div>
+    <footer class="signup-footer">
+      <button type="button" class="btn-cancel" onclick="hide('signupModal')">취소</button>
+      <button type="button" class="btn-ok" onclick="doSignup()">가입 신청</button>
+    </footer>
   </div>
 </div>
 
@@ -1832,7 +1891,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.56';
+const APP_VERSION = '1.17.57';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -16070,9 +16129,9 @@ function populateSignupNameSelect(){
   if (!sel) return;
   const cur = sel.value;
   const names = [...members, ...guests].map(p=>p.name).sort((a,b)=>a.localeCompare(b));
-  sel.innerHTML = '<option value="">선택하세요</option>'
+  sel.innerHTML = '<option value="">이름 선택</option>'
     + names.map(n=>`<option value="${n}">${n}</option>`).join('')
-    + '<option value="__new__">➕ 명단에 없어요 (새 이름으로 등록)</option>';
+    + '<option value="__new__">명단에 없음 · 직접 입력</option>';
   if (cur) sel.value = cur;
 
   const ySel = document.getElementById('signupTennisYear');
@@ -16096,7 +16155,7 @@ window.openSignup = function(){
 window.onSignupNameChange = function(){
   const val = document.getElementById('signupNameSelect').value;
   const isNew = val === '__new__';
-  document.getElementById('signupNewNameWrap').style.display = isNew ? 'block' : 'none';
+  document.getElementById('signupNewNameWrap').style.display = isNew ? 'grid' : 'none';
 };
 
 window.doGoogleSignIn = async function(){
