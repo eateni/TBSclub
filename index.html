@@ -1891,7 +1891,7 @@ const app = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(app);
 setPersistence(auth, browserLocalPersistence).catch(e => console.error('persistence 설정 실패:', e));
 const db = getFirestore(app);
-const APP_VERSION = '1.17.57';
+const APP_VERSION = '1.17.58';
 
 function copyRoundsForUpdate(data) {
   return (data?.rounds||[]).map(round=>({...round,matches:(round.matches||[]).map(match=>({...match}))}));
@@ -7162,69 +7162,102 @@ function _fitHighlightText(ctx,text,maxWidth,startSize,minSize,weight) {
   return size;
 }
 async function _drawDayHighlightCard(day,badges,summary,canvas) {
-  canvas=canvas||document.createElement('canvas'); canvas.width=1080; canvas.height=1350;
-  const ctx=canvas.getContext('2d');
-  const paragraphGap = 16, lineHeight = 39;
-  const summaryFont = '500 27px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';
-  ctx.font = summaryFont;
-  const paragraphs = String(summary || '').split(/\n\s*\n/).filter(Boolean)
-    .map(paragraph => _cardWrap(ctx,paragraph,790));
-  const lineCount = paragraphs.reduce((count,lines)=>count+lines.length,0);
-  const summaryHeight = Math.max(226,42 + lineCount*lineHeight + Math.max(0,paragraphs.length-1)*paragraphGap);
-  const extraHeight = summaryHeight - 226;
-  canvas.height = 1350 + extraHeight;
-  try {
-    const [court,logoSource]=await Promise.all([
-      _loadHighlightImage('assets/tbs-highlight-night-court.png'),
-      _loadHighlightImage('assets/tbs-highlight-logo-gold.png')
-    ]);
-    ctx.fillStyle='#061C2D';ctx.fillRect(0,0,1080,canvas.height);
-    _drawHighlightCover(ctx,court,1080,1350);
-    ctx.fillStyle='rgba(1,12,28,.28)';ctx.fillRect(0,0,1080,1350);
-    const logo=_makeGoldHighlightLogo(logoSource);
-    ctx.save();ctx.globalCompositeOperation='screen';ctx.drawImage(logo,387,20,306,266);ctx.restore();
-  } catch(e) {
-    const bg=ctx.createLinearGradient(0,0,1080,canvas.height);bg.addColorStop(0,'#04152B');bg.addColorStop(1,'#082C44');ctx.fillStyle=bg;ctx.fillRect(0,0,1080,canvas.height);
-    ctx.textAlign='center';ctx.fillStyle='#E8C56A';ctx.font='900 42px "Apple SD Gothic Neo",Arial,sans-serif';ctx.fillText('TBS CLUB',540,145);ctx.font='700 24px "Apple SD Gothic Neo",Arial,sans-serif';ctx.fillText('THE BEST SET',540,182);
-  }
-
-  _cardRoundRect(ctx,70,326,940,988+extraHeight,30);ctx.fillStyle='rgba(2,17,36,.87)';ctx.fill();ctx.strokeStyle='rgba(172,211,239,.65)';ctx.lineWidth=2;ctx.stroke();
-  ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='900 36px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('TBS HISTORY',540,398);
-  ctx.font='600 28px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('인생 최고의 세트',540,442);
-  ctx.strokeStyle='#E8C56A';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(512,467);ctx.lineTo(568,467);ctx.stroke();
-  const dLabel=day.date?new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric',weekday:'short'}):'정규시즌';
-  const seasonRoundNo=getRegularSeasonRoundNumber(day);
-  const seasonRoundLabel=seasonRoundNo?`시즌 ${day.season||1} ${seasonRoundNo}라운드`:`시즌 ${day.season||1}`;
-  ctx.fillStyle='rgba(255,255,255,.94)';ctx.font='600 28px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(dLabel+' · 정규시즌',540,515);
-  ctx.fillStyle='#fff';ctx.font='900 58px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(seasonRoundLabel+' 하이라이트',540,615);
-  ctx.strokeStyle='#E8C56A';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(220,647);ctx.lineTo(860,647);ctx.stroke();
-
-  const shown=(badges||[]).slice(0,4);
-  const cardGap=16,cardW=shown.length===4?211:280,cardH=232;
-  const totalW=shown.length*cardW+Math.max(0,shown.length-1)*cardGap;
-  const startX=(1080-totalW)/2;
-  shown.forEach(function(b,i){
-    const x=startX+i*(cardW+cardGap),y=675;
-    _cardRoundRect(ctx,x,y,cardW,cardH,18);ctx.fillStyle='rgba(1,17,36,.76)';ctx.fill();ctx.strokeStyle='#E8C56A';ctx.lineWidth=2;ctx.stroke();
-    const icon=b.type==='mvp'?'🏆':b.type==='streak'?'📈':b.type==='unbeaten'?'🛡️':'🥖';
-    const main=b.type==='mvp'?`MVP · ${b.name}`:b.type==='streak'?`연승왕 · ${b.name}`:b.type==='unbeaten'?`무패 · ${(b.names||[]).join(', ')}`:`제빵왕 · ${(b.names||[]).join(', ')}`;
-    const value=b.type==='mvp'?`(${b.wins}승)`:b.type==='streak'?`(${b.count}연승)`:'';
-    ctx.font='46px "Apple Color Emoji","Apple SD Gothic Neo",sans-serif';ctx.fillText(icon,x+cardW/2,y+70);
-    const mainSize=_fitHighlightText(ctx,main,cardW-24,29,20,800);ctx.fillStyle='#fff';ctx.font=`800 ${mainSize}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText(main,x+cardW/2,y+137);
-    if(value){ctx.fillStyle='#E8C56A';ctx.font='900 35px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText(value,x+cardW/2,y+187);}
+  canvas = canvas || document.createElement('canvas');
+  const court = await _loadHighlightImage('assets/tbs-partnership-highlight-day-court.png').catch(() => null);
+  const width = 1080, margin = 72, contentWidth = width - 2 * margin;
+  const headerHeight = 400, gap = 18;
+  const font = (weight,size) => `${weight} ${size}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;
+  const ctx = canvas.getContext('2d');
+  const paragraphGap = 21, lineHeight = 43;
+  const paragraphs = String(summary || '').split(/\n\s*\n/).filter(Boolean);
+  ctx.font = font(500,30);
+  const summaryLines = paragraphs.map(paragraph => _cardWrap(ctx,paragraph,contentWidth));
+  const videoSummary = videoAnalysisHighlightText('day',day);
+  ctx.font = font(650,26);
+  const videoLines = _cardWrap(ctx,videoSummary,contentWidth-56);
+  const badgeWidth = (contentWidth-gap)/2;
+  const badgeGroups = (badges || []).slice(0,4).map(badge => {
+    const label = {mvp:'MVP',streak:'연승왕',unbeaten:'무패',breadking:'제빵왕'}[badge.type] || '';
+    const value = badge.type==='mvp' ? `${badge.name} · ${badge.wins}승`
+      : badge.type==='streak' ? `${badge.name} · ${badge.count}연승`
+      : (badge.names || []).join(', ');
+    ctx.font = font(750,29);
+    return {label,lines:_cardWrap(ctx,value,badgeWidth-52),mvp:badge.type==='mvp'};
   });
-
-  _cardRoundRect(ctx,102,932,876,summaryHeight,20);ctx.fillStyle='rgba(1,14,30,.82)';ctx.fill();ctx.strokeStyle='#E8C56A';ctx.lineWidth=2;ctx.stroke();
-  ctx.textAlign='left';ctx.fillStyle='rgba(255,255,255,.94)';ctx.font=summaryFont;
-  let summaryY = 974;
-  for (const lines of paragraphs) {
-    for (const line of lines) { ctx.fillText(line,145,summaryY); summaryY += lineHeight; }
-    summaryY += paragraphGap;
+  const badgeRows = [];
+  for (let i=0; i<badgeGroups.length; i+=2) {
+    const cards = badgeGroups.slice(i,i+2);
+    badgeRows.push({cards,height:77 + 37 * Math.max(...cards.map(card=>card.lines.length))});
   }
-  const videoSummary=videoAnalysisHighlightText('day',day);
-  if(videoSummary){ctx.textAlign='center';ctx.fillStyle='#A7F3D0';const size=_fitHighlightText(ctx,'🎥 '+videoSummary,820,22,16,700);ctx.font=`700 ${size}px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif`;ctx.fillText('🎥 '+videoSummary,540,1190+extraHeight);}
-  ctx.textAlign='center';ctx.fillStyle='#fff';ctx.font='800 27px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('AFTER MATCH, START AGAIN',540,1228+extraHeight);
-  ctx.fillStyle='rgba(255,255,255,.92)';ctx.font='600 24px "Apple SD Gothic Neo","Noto Sans KR",Arial,sans-serif';ctx.fillText('경기가 끝나도 우리의 즐거움은 시작',540,1273+extraHeight);
+  const badgeHeight = badgeRows.reduce((total,row)=>total+row.height+gap,0);
+  const summaryHeight = summaryLines.reduce((total,lines)=>total+lines.length*lineHeight+paragraphGap,0);
+  canvas.width = width;
+  canvas.height = headerHeight + 102 + badgeHeight + summaryHeight
+    + (summaryLines.length ? 48 : 0) + (videoLines.length ? 54+36*videoLines.length : 0) + 70;
+
+  ctx.fillStyle = '#F7F4EB';
+  ctx.fillRect(0,0,width,canvas.height);
+  ctx.fillStyle = '#173C32';
+  ctx.fillRect(0,0,width,headerHeight);
+  if (court) _drawHighlightCover(ctx,court,width,headerHeight);
+  const shade = ctx.createLinearGradient(0,0,width,0);
+  shade.addColorStop(0,'rgba(10,38,32,.96)');
+  shade.addColorStop(.64,'rgba(10,38,32,.69)');
+  shade.addColorStop(1,'rgba(10,38,32,.15)');
+  ctx.fillStyle = shade;
+  ctx.fillRect(0,0,width,headerHeight);
+  const drawText = (value,x,y,weight,size,color) => {
+    ctx.font = font(weight,size);
+    ctx.fillStyle = color;
+    ctx.fillText(value,x,y);
+  };
+  const seasonRoundNo = getRegularSeasonRoundNumber(day);
+  const roundLabel = `시즌 ${day.season||1}${seasonRoundNo ? ` · ${seasonRoundNo}라운드` : ''}`;
+  const dateLabel = day.date ? new Date(day.date+'T00:00:00').toLocaleDateString('ko-KR',
+    {year:'numeric',month:'long',day:'numeric',weekday:'short'}) : '';
+  drawText('TBS HISTORY',margin,96,850,29,'#F5CE80');
+  drawText(roundLabel,margin,168,700,37,'#F1F6EE');
+  drawText('라운드 하이라이트',margin,270,900,74,'#FFFFFF');
+  if (dateLabel) drawText(dateLabel,margin,335,600,28,'#F1F6EE');
+  ctx.fillStyle = '#D6A554';
+  ctx.fillRect(0,headerHeight,width,5);
+
+  let y = headerHeight+44;
+  for (const row of badgeRows) {
+    row.cards.forEach((card,i) => {
+      const x = margin+i*(badgeWidth+gap);
+      _cardRoundRect(ctx,x,y,badgeWidth,row.height,18);
+      ctx.fillStyle = card.mvp ? '#DAEAE0' : '#FFFCF5';
+      ctx.fill();
+      ctx.strokeStyle = '#CDDBD0';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      drawText(card.label,x+26,y+39,850,22,'#2B584A');
+      card.lines.forEach((line,j)=>drawText(line,x+26,y+80+j*37,750,29,'#173C32'));
+    });
+    y += row.height+gap;
+  }
+  if (summaryLines.length) {
+    drawText('라운드 총평',margin,y+39,850,32,'#173C32');
+    y += 72;
+    for (const lines of summaryLines) {
+      for (const line of lines) {
+        drawText(line,margin,y,500,30,'#263A35');
+        y += lineHeight;
+      }
+      y += paragraphGap;
+    }
+  }
+  if (videoLines.length) {
+    _cardRoundRect(ctx,margin,y,contentWidth,34+36*videoLines.length,14);
+    ctx.fillStyle = '#E4EDE4';
+    ctx.fill();
+    videoLines.forEach((line,i)=>drawText(line,margin+28,y+42+i*36,650,26,'#2B584A'));
+  }
+  const footerY = canvas.height-57;
+  ctx.fillStyle = '#C7D4C9';
+  ctx.fillRect(margin,footerY-27,contentWidth,2);
+  drawText('AFTER MATCH, START AGAIN',margin,footerY+9,800,24,'#2B584A');
   return canvas;
 }
 window.shareDayHighlightCard = async function(dayId) {
@@ -12597,7 +12630,7 @@ function renderHomeTab() {
     if((hBadges||[]).length||hSummary){
       regularHighlightHtml='<div style="background:#F7FBFA;border:1px solid rgba(13,148,136,.25);border-radius:16px;padding:10px;margin-bottom:12px;box-shadow:0 5px 16px rgba(6,48,71,.12)">'
         +'<div style="font-size:13px;font-weight:900;color:#0F766E;padding:3px 3px 9px">🏆 최신 정규시즌 하이라이트</div>'
-        +'<canvas data-day-highlight-card="'+_hDay.id+'" onclick="goToGameDay(\''+_hDay.id+'\')" width="1080" height="1350" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto;border-radius:12px;cursor:pointer;background:#061C2D"></canvas>'
+        +'<canvas data-day-highlight-card="'+_hDay.id+'" onclick="goToGameDay(\''+_hDay.id+'\')" width="1080" height="1350" style="display:block;width:100%;max-width:520px;height:auto;margin:0 auto;border-radius:12px;cursor:pointer;background:#F7F4EB"></canvas>'
         +videoAnalysisHighlightHtml('day',_hDay)
         +'<div style="display:flex;gap:7px;margin-top:9px"><button onclick="goToGameDay(\''+_hDay.id+'\')" style="flex:1;border:1px solid #B7DBD7;background:#fff;color:#0F766E;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">경기 상세보기</button><button onclick="shareDayHighlightCard(\''+_hDay.id+'\')" style="flex:1;border:none;background:#0F766E;color:#fff;border-radius:9px;padding:9px;font-size:11px;font-weight:900;cursor:pointer">🖼️ 이미지 공유</button></div>'
         +'</div>';
